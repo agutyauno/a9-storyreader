@@ -1,0 +1,239 @@
+body{
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #f0f0f0;
+    background-color: #5a5a5a;
+}
+
+a{
+    text-decoration: none;
+    color: inherit;
+}
+
+a:hover{
+    border: 1px solid #e9e3ff;
+}
+
+/* ================================================================================================= */
+/* header */
+header{
+    background-color: #2a2a2a;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-content{
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#title{
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #e9e3ff;
+}
+
+.subtitle{
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: #b0b0b0;
+}
+
+/* ================================================================================================= */
+/* main container */
+.container{
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ================================================================================================= */
+/* info */
+#info{
+    background-color: #3a3a3a;
+    padding: 30px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 40px;
+    border: 1px solid #4a4a4a;
+}
+
+.info-title{
+    margin: 0 0 20px 0;
+    font-size: 28px;
+    color: #e9e3ff;
+    font-weight: 600;
+}
+
+#info p{
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #d0d0d0;
+}
+
+/* ================================================================================================= */
+/* tabs */
+.tab-buttons{
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    justify-content: center;
+    border-bottom: 2px solid #4a4a4a;
+}
+
+.tab-button{
+    padding: 12px 25px;
+    background-color: transparent;
+    color: #b0b0b0;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover{
+    color: #e9e3ff;
+}
+
+.tab-button.active{
+    color: #e9e3ff;
+    border-bottom-color: #b8a9ff;
+}
+
+.tab-content{
+    display: none;
+}
+
+.tab-content.active{
+    display: block;
+}
+
+/* ================================================================================================= */
+/* selection panel */
+.section-title{
+    margin: 0 0 30px 0;
+    font-size: 24px;
+    color: #e9e3ff;
+    font-weight: 600;
+    text-align: center;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #4a4a4a;
+}
+
+.selection-list{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px;
+}
+
+.selection-panel-item{
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #3a3a3a;
+    border: 2px solid #4a4a4a;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.selection-panel-item:hover{
+    border-color: #f0f0f0;
+}
+
+.selection-panel-item img{
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+}
+
+.selection-content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 1;
+}
+
+.region_name{
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    font-weight: bold;
+    color: #e9e3ff;
+}
+
+.region_description{
+    margin: 0;
+    font-size: 14px;
+    color: #b0b0b0;
+    line-height: 1.5;
+}
+
+/* ================================================================================================= */
+/* footer */
+footer{
+    background-color: #2a2a2a;
+    padding: 40px 20px 20px 20px;
+    margin-top: 60px;
+}
+
+.footer-content{
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 20px;
+}
+
+.footer-section{
+    flex: 1;
+    min-width: 250px;
+}
+
+.footer-section h3{
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #e9e3ff;
+    border-bottom: 2px solid #5a5a5a;
+    padding-bottom: 10px;
+}
+
+.footer-section p{
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.footer-section a{
+    color: #b8a9ff;
+    transition: color 0.3s;
+}
+
+.footer-section a:hover{
+    color: #e9e3ff;
+    border: none;
+    text-decoration: underline;
+}
+
+.footer-bottom{
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #4a4a4a;
+    margin-top: 20px;
+}
+
+.footer-bottom p{
+    margin: 0;
+    font-size: 13px;
+    color: #b0b0b0;
+}
