@@ -1,0 +1,138 @@
+/* ================================================================================================= */
+/* Region Page Specific Styles */
+/* ================================================================================================= */
+
+.region-sticky-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 101;
+	background-color: var(--color-bg-dark);
+	box-shadow: var(--shadow-sm);
+	padding: var(--spacing-base);
+	transform: translateY(-110%);
+	transition: var(--transition-base);
+}
+
+header {
+	transition: var(--transition-base);
+}
+
+.region-sticky-content {
+	max-width: var(--container-max-width);
+	margin: 0 auto;
+	text-align: center;
+}
+
+.region-sticky-title {
+	margin: 0;
+	font-size: var(--font-size-2xl);
+	font-weight: 700;
+	color: var(--color-accent);
+}
+
+.region-sticky-active .region-sticky-header {
+	transform: translateY(0);
+}
+
+.region-sticky-active header {
+	transform: translateY(-110%);
+	transition: all 0.9s ease;
+}
+
+/* ================================================================================================= */
+/* Arc Sections Layout */
+/* ================================================================================================= */
+
+.arc-sections-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-3xl);
+}
+
+.arc-section {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--color-bg-secondary);
+	border: 2px solid var(--color-border);
+	border-radius: var(--radius-base);
+	box-shadow: var(--shadow-lg);
+	transition: var(--transition-base);
+}
+
+/* Arc Header */
+.arc-header {
+	display: flex;
+    flex-direction: column;
+	padding: var(--spacing-2xl);
+	background-color: var(--color-bg-primary);
+	border-radius: var(--radius-base);
+	border: 1px solid var(--color-border);
+	box-shadow: var(--shadow-md);
+	width: 100%;
+	box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+}
+
+.arc-image {
+	width: 2rem;
+	height: 2rem;
+	object-fit: cover;
+	border-radius: var(--radius-base);
+	flex-shrink: 0;
+    margin-right: var(--spacing-sm);
+}
+
+.arc-info {
+	display: flex;
+	justify-content: center;
+}
+
+.arc-name {
+	margin: 0 0 var(--spacing-sm) 0;
+	font-size: var(--font-size-xl);
+	font-weight: 700;
+	color: var(--color-accent);
+}
+
+.arc-description {
+	margin: 0;
+	font-size: var(--font-size-xs);
+	color: var(--color-text-secondary);
+	line-height: 1.6;
+    text-align: center;
+}
+
+/* Arc Items */
+.arc-items {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	margin: 0;
+	padding: var(--spacing-lg) var(--spacing-3xl);
+}
+
+/* Arc Suggestion */
+.arc-suggestion {
+	padding: var(--spacing-xl);
+	background-color: var(--color-bg-primary);
+	border-radius: var(--radius-base);
+	box-shadow: var(--shadow-md);
+}
+
+.suggestion-text {
+	display: block;
+	margin: 0;
+	font-size: var(--font-size-sm);
+	color: var(--color-accent-light);
+	font-weight: 500;
+	transition: var(--transition-base);
+	text-decoration: none;
+}
+
+.suggestion-text:hover {
+	color: var(--color-accent);
+}
+
