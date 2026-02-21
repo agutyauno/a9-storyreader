@@ -1,0 +1,70 @@
+/* ================================================================================================= */
+/* Event Page Specific Styles */
+/* ================================================================================================= */
+
+/* Sticky Header */
+.event-sticky-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 101;
+	background-color: var(--color-bg-dark);
+	box-shadow: var(--shadow-sm);
+	padding: var(--spacing-base);
+	transform: translateY(-110%);
+	transition: var(--transition-base);
+}
+
+.event-sticky-header img {
+	width: 2rem;
+	height: 2rem;
+	object-fit: cover;
+	border-radius: var(--radius-base);
+}
+
+header {
+	transition: var(--transition-base);
+}
+
+.event-sticky-content {
+	max-width: var(--container-max-width);
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-base);
+}
+
+.event-sticky-title {
+	margin: 0;
+	font-size: var(--font-size-2xl);
+	font-weight: 700;
+	color: var(--color-accent);
+	flex: 1;
+	text-align: center;
+}
+
+.event-sticky-active .event-sticky-header {
+	transform: translateY(0);
+}
+
+.event-sticky-active header {
+	transform: translateY(-110%);
+	transition: all 0.9s ease;
+}
+
+/* ================================================================================================= */
+/* Story Selection Grid */
+/* ================================================================================================= */
+
+.selection-panel-item {
+	align-items: center;
+	justify-content: center;
+}
+
+#story_selection-panel{
+    background-color: var(--color-bg-dark);
+    padding: var(--spacing-base);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-sm);
+}
