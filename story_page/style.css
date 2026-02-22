@@ -1,0 +1,28 @@
+/* ================================================================================================= */
+/* Story Page Specific Styles */
+/* ================================================================================================= */
+/* header */
+#story_page-header{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: var(--container-max-width);
+    justify-self: center;
+}
+
+.header-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border-radius: var(--radius-base);
+}
+
+.header-name {
+    margin-left: var(--spacing-base);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-accent);
+    flex-grow: 1;
+}
