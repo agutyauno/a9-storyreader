@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Page - Arknights Story Reader VN</title>
+    <title>Event - Arknights Story Reader VN</title>
     <link rel="icon" type="image/png" href="../assets/images/dreambind castle_b.png">
     <link rel="stylesheet" href="../global/style.css">
     <link rel="stylesheet" href="./style.css">
@@ -29,7 +29,7 @@
 
             <!-- Placeholder for event story sections -->
              <div id="story_selection-panel" class="selection-grid">
-                <a href="#" class="selection-panel-item">
+                <a href="../story_page/index.html" class="selection-panel-item">
                     ST-1 Before
                 </a>
                 <a href="#" class="selection-panel-item">
@@ -49,11 +49,59 @@
                 </a>
              </div>
 
-            <div id="character_list"></div>
-            <div id="gallery"></div>
+             <!-- Character List Section -->
+            <section class="collapsible-section" id="character-section">
+                <div class="collapsible-header" data-section="character">
+                    <h3 class="section-title">Nhân Vật</h3>
+                    <button class="toggle-btn" aria-expanded="true" aria-label="Toggle character list">
+                        <span class="toggle-icon">-</span>
+                    </button>
+                </div>
+                <div class="collapsible-content" id="character_list" data-section="character">
+                    <!-- Characters will be populated here -->
+                </div>
+            </section>
+
+            <!-- Gallery Section -->
+            <section class="collapsible-section" id="gallery-section">
+                <div class="collapsible-header" data-section="gallery">
+                    <h3 class="section-title">Thư Viện</h3>
+                    <button class="toggle-btn" aria-expanded="true" aria-label="Toggle gallery">
+                        <span class="toggle-icon">-</span>
+                    </button>
+                </div>
+                <div class="collapsible-content" id="gallery" data-section="gallery">
+                    <!-- Gallery items will be populated here -->
+                </div>
+            </section>
         </div>
     </main>
-    <!-- ================================================================================= -->
+
+    <!-- Modal for Character Details -->
+    <div id="character-modal" class="modal" aria-hidden="true" role="dialog">
+        <div class="modal-overlay" data-action="close"></div>
+        <div class="modal-container">
+            <button class="modal-close" aria-label="Close">x</button>
+            <img class="modal-image" src="" alt="">
+            <div class="modal-info">
+                <h3 class="modal-title"></h3>
+                <p class="modal-description"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Gallery Details -->
+    <div id="gallery-modal" class="modal" aria-hidden="true" role="dialog">
+        <div class="modal-overlay" data-action="close"></div>
+        <div class="modal-container">
+            <button class="modal-close" aria-label="Close">x</button>
+            <img class="modal-image" src="" alt="">
+            <div class="modal-info">
+                <h3 class="modal-title"></h3>
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================================ -->
 
     <!-- Footer will be loaded here -->
     <div id="footer-placeholder"></div>

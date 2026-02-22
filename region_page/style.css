@@ -23,7 +23,7 @@
 }
 
 header {
-	transition: var(--transition-base);
+	transition: all 0.2s cubic-bezier(0,1,0,.7);
 }
 
 .region-sticky-content {
