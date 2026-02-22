@@ -92,39 +92,29 @@ function initializeGallery() {
 	});
 }
 
-// ============= Modal Functions =============
+// ============= Modal Functions (Using Global Modal System) =============
 function openCharacterModal(character) {
-	const modal = document.getElementById('character-modal');
-	if (!modal) return;
-
-	modal.querySelector('.modal-image').src = character.fullImage;
-	modal.querySelector('.modal-image').alt = character.name;
-	modal.querySelector('.modal-title').textContent = character.name;
-	modal.querySelector('.modal-description').textContent = character.description;
-	modal.classList.add('active');
-	modal.setAttribute('aria-hidden', 'false');
-	document.body.style.overflow = 'hidden';
+	openModal('character-modal', {
+		image: character.fullImage,
+		imageAlt: character.name,
+		title: character.name,
+		description: character.description
+	}, {
+		imageSelector: '.modal-image',
+		titleSelector: '.modal-title',
+		descriptionSelector: '.modal-description'
+	});
 }
 
 function openGalleryModal(gallery) {
-	const modal = document.getElementById('gallery-modal');
-	if (!modal) return;
-
-	modal.querySelector('.modal-image').src = gallery.image;
-	modal.querySelector('.modal-image').alt = gallery.title;
-	modal.querySelector('.modal-title').textContent = gallery.title;
-	modal.classList.add('active');
-	modal.setAttribute('aria-hidden', 'false');
-	document.body.style.overflow = 'hidden';
-}
-
-function closeModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) {
-		modal.classList.remove('active');
-		modal.setAttribute('aria-hidden', 'true');
-		document.body.style.overflow = '';
-	}
+	openModal('gallery-modal', {
+		image: gallery.image,
+		imageAlt: gallery.title,
+		title: gallery.title
+	}, {
+		imageSelector: '.modal-image',
+		titleSelector: '.modal-title'
+	});
 }
 
 // ============= Collapsible Functionality =============
@@ -143,43 +133,10 @@ function setupCollapsibleSections() {
 	});
 }
 
-// ============= Modal Event Listeners =============
-function setupModalHandlers() {
-	// Character modal
-	const characterModal = document.getElementById('character-modal');
-	if (characterModal) {
-		characterModal.querySelector('.modal-close').addEventListener('click', () => {
-			closeModal('character-modal');
-		});
-
-		characterModal.addEventListener('click', (e) => {
-			if (e.target.getAttribute('data-action') === 'close') {
-				closeModal('character-modal');
-			}
-		});
-	}
-
-	// Gallery modal
-	const galleryModal = document.getElementById('gallery-modal');
-	if (galleryModal) {
-		galleryModal.querySelector('.modal-close').addEventListener('click', () => {
-			closeModal('gallery-modal');
-		});
-
-		galleryModal.addEventListener('click', (e) => {
-			if (e.target.getAttribute('data-action') === 'close') {
-				closeModal('gallery-modal');
-			}
-		});
-	}
-
-	// Close modal on Escape key
-	document.addEventListener('keydown', (e) => {
-		if (e.key === 'Escape') {
-			closeModal('character-modal');
-			closeModal('gallery-modal');
-		}
-	});
+// ============= Modal Event Listeners (Using Global Modal System) =============
+function setupModalHandlersForEvent() {
+	// Use global setupModalHandlers function
+	setupModalHandlers(['character-modal', 'gallery-modal']);
 }
 
 // ============= Sticky Header =============
@@ -243,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	setupCollapsibleSections();
 	
 	// Setup modal handlers
-	setupModalHandlers();
+	setupModalHandlersForEvent();
 
 	// Setup sticky header
 	if (document.getElementById('header-placeholder')) {
