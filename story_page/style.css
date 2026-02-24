@@ -1,15 +1,74 @@
 /* ================================================================================================= */
 /* Story Page Specific Styles */
 /* ================================================================================================= */
+
+/* Sticky Header */
+.story-sticky-header {
+    width: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 101;
+	background-color: var(--color-bg-dark);
+	box-shadow: var(--shadow-sm);
+	padding: var(--spacing-base);
+	transform: translateY(-110%);
+	transition: var(--transition-base);
+}
+
+.story-sticky-content {
+	max-width: var(--container-max-width);
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-base);
+}
+
+.story-sticky-title {
+	margin: 0;
+	font-size: var(--font-size-2xl);
+	font-weight: 700;
+	color: var(--color-accent);
+	flex: 1;
+	text-align: center;
+}
+
+.story-sticky-active .story-sticky-header {
+	transform: translateY(0);
+}
+
+.story-sticky-active header {
+	transform: translateY(-110%);
+	transition: all 0.5s ease-in;
+}
+
+/* ================================================================================================= */
 /* header */
 #story_page-header{
+    margin: 0 auto;
     display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: center;
     width: 100%;
     max-width: var(--container-max-width);
-    justify-self: center;
+    gap: var(--spacing-base);
+}
+
+.sidebar-toggle-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.sidebar-toggle-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
 }
 
 .header-logo {
@@ -25,4 +84,260 @@
     font-weight: 700;
     color: var(--color-accent);
     flex-grow: 1;
+    text-align: center;
+}
+
+header {
+	transition: all 0.2s cubic-bezier(0,1,0,.7);
+}
+
+/* ================================================================================================= */
+/* Chapter Sidebar */
+.chapter-sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 320px;
+    height: 100vh;
+    background-color: var(--color-bg-dark);
+    border-left: 2px solid var(--color-border);
+    z-index: 200;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.chapter-sidebar.active {
+    right: 0;
+}
+
+.sidebar-header {
+    padding: var(--spacing-lg);
+    border-bottom: 2px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: var(--font-size-xl);
+    color: var(--color-accent);
+}
+
+.sidebar-close-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.sidebar-close-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-base);
+}
+
+.chapter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chapter-list li {
+    margin-bottom: var(--spacing-xs);
+}
+
+.chapter-item {
+    display: block;
+    padding: var(--spacing-base);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    text-decoration: none;
+    transition: all var(--transition-base);
+}
+
+.chapter-item:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.chapter-item.active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background-color: var(--color-bg-dark);
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 199;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ================================================================================================= */
+/* container */
+.container {
+    padding-top: 0;
+}
+
+
+/* ================================================================================================= */
+/* dialogue */
+
+.dialogue-background{
+    position: relative;
+    display: grid;
+    grid-template-areas: "content";
+}
+
+.background-wrapper {
+    grid-area: content;
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    width: 100%;
+    height: fit-content;
+    align-self: start;
+    transition: top 0.15s ease-out;
+}
+
+.background-wrapper .background-image {
+    width: 100%;
+    height: auto;
+    max-width: var(--container-max-width);
+    object-fit: contain;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-border);
+    display: block;
+}
+
+.background-wrapper .expand-icon {
+    position: absolute;
+    top: var(--spacing-xl);
+    right: var(--spacing-sm);
+    width: 2.5rem;
+    height: 2.5rem;
+    cursor: pointer;
+    background-color: var(--color-bg-secondary);
+    z-index: 1;
+}
+
+.dialogue-container{
+    grid-area: content;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-2xl);
+    pointer-events: none; /* Cho phép click xuyên qua container */
+    align-self: start;
+}
+
+.dialogue-box{
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+	justify-content: center;
+    margin: 0 1rem;
+}
+
+.character_avt
+{
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: cover;
+    border-radius: var(--radius-base);
+}
+
+.dialogue-content{
+    background-color: #27272790;
+    padding: 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+.character_name{
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: var(--font-size-sm);
+    font-weight: bold;
+    color: var(--color-accent);
+    line-height: 1;
+}
+
+.dialogue{
+    margin: 0;
+    font-size: var(--font-size-xl);
+    color: var(--color-text-primary);
+	line-height: 1;
+}
+
+/* ================================================================================================= */
+/* info */
+#info {
+    padding-top: 0;
+}
+
+/* ================================================================================================= */
+/* Switch Chapter Buttons */
+.switch-chapter-button {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg) 0;
+}
+
+.switch-chapter-button button {
+    flex: 1;
+    max-width: 15rem;
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: var(--color-bg-dark);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.switch-chapter-button button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.switch-chapter-button button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.switch-chapter-button button:disabled:hover {
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
 }

@@ -7,22 +7,22 @@ const characterData = [
 	{
 		id: 1,
 		name: 'Amiya',
-		avatar: '../assets/images/dreambind castle.png',
-		fullImage: '../assets/images/dreambind castle.png',
+		avatar: '../assets/images/icon/dreambind castle.png',
+		fullImage: '../assets/images/icon/dreambind castle.png',
 		description: 'Protagonist - The leader of the team'
 	},
 	{
 		id: 2,
 		name: 'Doctor',
-		avatar: '../assets/images/dreambind castle.png',
-		fullImage: '../assets/images/dreambind castle.png',
+		avatar: '../assets/images/icon/dreambind castle.png',
+		fullImage: '../assets/images/icon/dreambind castle.png',
 		description: 'Main character - Strategic advisor'
 	},
 	{
 		id: 3,
 		name: 'Exusiai',
-		avatar: '../assets/images/dreambind castle.png',
-		fullImage: '../assets/images/dreambind castle.png',
+		avatar: '../assets/images/icon/dreambind castle.png',
+		fullImage: '../assets/images/icon/dreambind castle.png',
 		description: 'Combat specialist'
 	}
 ];
@@ -31,17 +31,17 @@ const galleryData = [
 	{
 		id: 1,
 		title: 'Main Scene',
-		image: '../assets/images/dreambind castle.png'
+		image: '../assets/images/icon/dreambind castle.png'
 	},
 	{
 		id: 2,
 		title: 'Background 1',
-		image: '../assets/images/dreambind castle.png'
+		image: '../assets/images/icon/dreambind castle.png'
 	},
 	{
 		id: 3,
 		title: 'Background 2',
-		image: '../assets/images/dreambind castle.png'
+		image: '../assets/images/icon/dreambind castle.png'
 	}
 ];
 
