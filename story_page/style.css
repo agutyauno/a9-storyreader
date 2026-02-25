@@ -2,47 +2,6 @@
 /* Story Page Specific Styles */
 /* ================================================================================================= */
 
-/* Sticky Header */
-.story-sticky-header {
-    width: 100%;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 101;
-	background-color: var(--color-bg-dark);
-	box-shadow: var(--shadow-sm);
-	padding: var(--spacing-base);
-	transform: translateY(-110%);
-	transition: var(--transition-base);
-}
-
-.story-sticky-content {
-	max-width: var(--container-max-width);
-	margin: 0 auto;
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-base);
-}
-
-.story-sticky-title {
-	margin: 0;
-	font-size: var(--font-size-2xl);
-	font-weight: 700;
-	color: var(--color-accent);
-	flex: 1;
-	text-align: center;
-}
-
-.story-sticky-active .story-sticky-header {
-	transform: translateY(0);
-}
-
-.story-sticky-active header {
-	transform: translateY(-110%);
-	transition: all 0.5s ease-in;
-}
-
 /* ================================================================================================= */
 /* header */
 #story_page-header{
@@ -202,6 +161,7 @@ header {
 /* container */
 .container {
     padding-top: 0;
+    padding-bottom: 0;
 }
 
 
@@ -226,12 +186,10 @@ header {
 }
 
 .background-wrapper .background-image {
-    width: 100%;
     height: auto;
     max-width: var(--container-max-width);
     object-fit: contain;
     box-shadow: var(--shadow-lg);
-    border: 1px solid var(--color-border);
     display: block;
 }
 
@@ -242,19 +200,24 @@ header {
     width: 2.5rem;
     height: 2.5rem;
     cursor: pointer;
-    background-color: var(--color-bg-secondary);
+    background-color: #1a1a1a90;
     z-index: 1;
 }
 
+.background-wrapper:hover .expand-icon {
+    opacity: 1;
+}
+
 .dialogue-container{
+    width: 90%;
     grid-area: content;
     z-index: 10;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
-    padding: var(--spacing-2xl);
-    pointer-events: none; /* Cho phép click xuyên qua container */
+    justify-self: center;
     align-self: start;
+    padding: var(--spacing-lg) 0;
 }
 
 .dialogue-box{
@@ -271,10 +234,17 @@ header {
     height: 5.5rem;
     object-fit: cover;
     border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.character_avt:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
 }
 
 .dialogue-content{
-    background-color: #27272790;
+    background-color: #1a1a1a90;
     padding: 1rem 1rem;
     display: flex;
     flex-direction: column;
@@ -297,17 +267,49 @@ header {
 	line-height: 1;
 }
 
+/* Video Box in Dialogue Container */
+
+.dialogue-video-box video {
+    width: 100%;
+    height: auto;
+}
+
 /* ================================================================================================= */
 /* info */
 #info {
     padding-top: 0;
+    margin-bottom: 0;
+    border-radius: var(--radius-base) var(--radius-base) 0 0;
+}
+
+.info-header {
+    position: relative;
+}
+
+#dr-name {
+    position: absolute;
+    top: 0.4rem;
+    left: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+#dr-name input {
+    width: 100px;
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
 }
 
 /* ================================================================================================= */
 /* Switch Chapter Buttons */
 .switch-chapter-button {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     align-items: center;
     gap: var(--spacing-lg);
     padding: var(--spacing-lg) 0;
@@ -316,8 +318,8 @@ header {
 .switch-chapter-button button {
     flex: 1;
     max-width: 15rem;
-    padding: var(--spacing-lg) var(--spacing-2xl);
-    font-size: var(--font-size-lg);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--color-text-primary);
     background: var(--color-bg-dark);
@@ -340,4 +342,84 @@ header {
 .switch-chapter-button button:disabled:hover {
     border-color: var(--color-border);
     color: var(--color-text-primary);
+}
+
+/* ================================================================================================= */
+/* Image Modal */
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.image-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-modal .modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-modal .modal-image {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--radius-base);
+}
+
+/* ================================================================================================= */
+/* Back to Top Button */
+.back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 3rem;
+    height: 3rem;
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.back-to-top img {
+    width: 1.5rem;
+    height: 1.5rem;
+    filter: brightness(0) invert(1);
+}
+
+.back-to-top:hover img {
+    filter: brightness(0) saturate(100%) invert(73%) sepia(60%) saturate(500%) hue-rotate(5deg);
 }

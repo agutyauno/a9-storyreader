@@ -2,37 +2,38 @@
 /* Story Page Script */
 /* ================================================================================================= */
 
-// ============= Sticky Header =============
-function setupStoryStickyHeader() {
+// ============= Header Title Update =============
+function setupHeaderTitleUpdate() {
 	const infoSection = document.getElementById('info');
-	const stickyHeader = document.getElementById('story-sticky-header');
-	const stickyTitle = stickyHeader ? stickyHeader.querySelector('.story-sticky-title') : null;
+	const headerName = document.querySelector('.header-name');
 	const infoTitle = document.querySelector('.info-title');
 
-	if (!infoSection || !stickyHeader || !stickyTitle) {
+	if (!infoSection || !headerName || !infoTitle) {
 		return;
 	}
 
-	if (infoTitle && infoTitle.textContent) {
-		stickyTitle.textContent = infoTitle.textContent.trim();
-	}
-
+	const originalTitle = headerName.textContent.trim();
+	const storyTitle = infoTitle.textContent.trim();
 	let headerHeight = 0;
+	let isShowingStoryTitle = false;
 
 	const updateHeaderHeight = () => {
 		const globalHeader = document.querySelector('header');
 		headerHeight = globalHeader ? globalHeader.offsetHeight : 0;
 	};
 
-	const updateStickyState = () => {
+	const updateHeaderTitle = () => {
 		const infoBottom = infoSection.offsetTop + infoSection.offsetHeight;
-		const shouldShow = window.scrollY >= (infoBottom - headerHeight);
-		document.body.classList.toggle('story-sticky-active', shouldShow);
-		stickyHeader.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+		const shouldShowStoryTitle = window.scrollY >= (infoBottom - headerHeight);
+		
+		if (shouldShowStoryTitle !== isShowingStoryTitle) {
+			isShowingStoryTitle = shouldShowStoryTitle;
+			headerName.textContent = shouldShowStoryTitle ? storyTitle : originalTitle;
+		}
 	};
 
 	updateHeaderHeight();
-	updateStickyState();
+	updateHeaderTitle();
 
 	let ticking = false;
 	window.addEventListener('scroll', () => {
@@ -41,22 +42,24 @@ function setupStoryStickyHeader() {
 		}
 		ticking = true;
 		window.requestAnimationFrame(() => {
-			updateStickyState();
+			updateHeaderTitle();
 			ticking = false;
 		});
 	});
 
 	window.addEventListener('resize', () => {
 		updateHeaderHeight();
-		updateStickyState();
+		updateHeaderTitle();
 	});
 }
 
 // ============= Initialization =============
 document.addEventListener('DOMContentLoaded', () => {
-	setupStoryStickyHeader();
+	setupHeaderTitleUpdate();
 	setupBackgroundParallax();
 	setupChapterSidebar();
+	setupImageModals();
+	setupBackToTop();
 });
 
 // ============= Chapter Sidebar =============
@@ -64,7 +67,6 @@ function setupChapterSidebar() {
 	const sidebar = document.getElementById('chapter-sidebar');
 	const overlay = document.getElementById('sidebar-overlay');
 	const toggleBtn = document.getElementById('sidebar-toggle');
-	const stickyToggle = document.querySelector('.sticky-toggle');
 
 	if (!sidebar || !overlay || !toggleBtn) return;
 
@@ -76,9 +78,6 @@ function setupChapterSidebar() {
 	};
 
 	toggleBtn.addEventListener('click', openSidebar);
-	if (stickyToggle) {
-		stickyToggle.addEventListener('click', openSidebar);
-	}
 
 	// Close sidebar
 	const closeSidebar = () => {
@@ -120,7 +119,7 @@ function setupBackgroundParallax() {
 			const scrollThreshold = wrapperHeight / 20; // Khoảng cách cuộn để đạt căn giữa
 			const progress = Math.min(1, Math.max(0, -rect.top / scrollThreshold));
 			
-			const topValue = progress * maxTop + 30;
+			const topValue = progress * maxTop + 50;
 			wrapper.style.top = `${topValue}px`;
 		});
 	};
@@ -141,4 +140,103 @@ function setupBackgroundParallax() {
 	
 	// Cập nhật lần đầu
 	updateBackgroundPosition();
+}
+// ============= Image Modals =============
+function setupImageModals() {
+// Setup modal handlers
+setupModalHandlers(['character-modal', 'background-modal']);
+
+// Handle character avatar clicks
+document.querySelectorAll('.character_avt').forEach(avatar => {
+avatar.addEventListener('click', (e) => {
+const imageSrc = avatar.getAttribute('src');
+// Skip blank avatars
+if (!imageSrc || imageSrc.includes('blank.png')) {
+return;
+}
+
+// Get full size character image
+// Replace _avatar.webp with full image path if needed
+const fullImageSrc = imageSrc.replace('_avatar.webp', '.png').replace('_avatar.png', '.png');
+
+const modal = document.getElementById('character-modal');
+const modalImage = modal.querySelector('.modal-image');
+modalImage.src = fullImageSrc;
+modalImage.alt = 'Character Full Image';
+
+modal.classList.add('active');
+modal.setAttribute('aria-hidden', 'false');
+document.body.style.overflow = 'hidden';
+});
+});
+
+// Handle expand icon clicks for background image
+document.querySelectorAll('.background-wrapper .expand-icon').forEach(expandIcon => {
+expandIcon.addEventListener('click', (e) => {
+const wrapper = expandIcon.closest('.background-wrapper');
+const backgroundImage = wrapper.querySelector('.background-image');
+if (!backgroundImage) return;
+
+const imageSrc = backgroundImage.getAttribute('src');
+const modal = document.getElementById('background-modal');
+const modalImage = modal.querySelector('.modal-image');
+modalImage.src = imageSrc;
+modalImage.alt = 'Background Image';
+
+modal.classList.add('active');
+modal.setAttribute('aria-hidden', 'false');
+document.body.style.overflow = 'hidden';
+});
+});
+
+// Close modals on click
+['character-modal', 'background-modal'].forEach(modalId => {
+const modal = document.getElementById(modalId);
+if (!modal) return;
+
+// Close when clicking outside the image
+modal.addEventListener('click', (e) => {
+if (e.target === modal) {
+modal.classList.remove('active');
+modal.setAttribute('aria-hidden', 'true');
+document.body.style.overflow = '';
+}
+});
+});
+}
+
+// ============= Back to Top Button =============
+function setupBackToTop() {
+	const backToTopBtn = document.getElementById('back-to-top');
+	if (!backToTopBtn) return;
+
+	// Show/hide button based on scroll position
+	const toggleVisibility = () => {
+		if (window.scrollY > 300) {
+			backToTopBtn.classList.add('visible');
+		} else {
+			backToTopBtn.classList.remove('visible');
+		}
+	};
+
+	let ticking = false;
+	window.addEventListener('scroll', () => {
+		if (ticking) return;
+		ticking = true;
+		window.requestAnimationFrame(() => {
+			toggleVisibility();
+			ticking = false;
+		});
+	});
+
+	// Scroll to top on click
+	backToTopBtn.addEventListener('click', () => {
+		window.scrollTo({
+			top: 0,
+			behavior: 'smooth'
+		});
+	});
+
+	// Initial check
+	toggleVisibility();
 }

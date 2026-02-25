@@ -107,7 +107,7 @@ header{
 .container{
     max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: var(--spacing-3xl) var(--spacing-base);
+    padding: var(--spacing-3xl) 0;
 }
 
 /* ================================================================================================= */
