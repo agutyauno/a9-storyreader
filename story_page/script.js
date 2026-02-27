@@ -2,6 +2,18 @@
 /* Story Page Script */
 /* ================================================================================================= */
 
+// ============= Initialization =============
+document.addEventListener('DOMContentLoaded', () => {
+	setupHeaderTitleUpdate();
+	setupBackgroundParallax();
+	setupChapterSidebar();
+	setupImageModals();
+	setupBackToTop();
+	setupDecisionChoice();
+	setupBGM();
+	setupSFX();
+});
+
 // ============= Header Title Update =============
 function setupHeaderTitleUpdate() {
 	const infoSection = document.getElementById('info');
@@ -53,16 +65,52 @@ function setupHeaderTitleUpdate() {
 	});
 }
 
-// ============= Initialization =============
-document.addEventListener('DOMContentLoaded', () => {
-	setupHeaderTitleUpdate();
-	setupBackgroundParallax();
-	setupChapterSidebar();
-	setupImageModals();
-	setupBackToTop();
-	setupBGM();
-	setupSFX();
-});
+// ============= Decision Choice System =============
+function setupDecisionChoice() {
+	// Find all decision groups
+	const decisionGroups = document.querySelectorAll('.decision-group');
+	
+	decisionGroups.forEach(group => {
+		const groupId = group.getAttribute('data-choice-group');
+		const decisions = group.querySelectorAll('.decision');
+		
+		// Get all response dialogues for this group
+		const responses = document.querySelectorAll(`.choice-response[data-choice-group="${groupId}"]`);
+		
+		// Add click handler to each decision
+		decisions.forEach(decision => {
+			decision.addEventListener('click', () => {
+				const choiceValue = decision.getAttribute('data-choice-value');
+				
+				// Remove selected from other decisions
+				decisions.forEach(otherDecision => {
+					if (otherDecision !== decision) {
+						otherDecision.classList.remove('selected');
+					}
+				});
+				
+				// Mark current decision as selected
+				decision.classList.add('selected');
+				
+				// Show corresponding response and hide others
+				responses.forEach(response => {
+					const responseValue = response.getAttribute('data-choice-response');
+					if (responseValue === choiceValue) {
+						response.classList.add('active');
+					} else {
+						response.classList.remove('active');
+					}
+				});
+			});
+		});
+		
+		// Auto-select first choice (choice 1) by default
+		const firstDecision = decisions[0];
+		if (firstDecision) {
+			firstDecision.click();
+		}
+	});
+}
 
 // ============= BGM Setup =============
 function setupBGM() {
@@ -101,7 +149,6 @@ function setupChapterSidebar() {
 	const openSidebar = () => {
 		sidebar.classList.add('active');
 		overlay.classList.add('active');
-		document.body.style.overflow = 'hidden';
 	};
 
 	toggleBtn.addEventListener('click', openSidebar);
@@ -168,6 +215,7 @@ function setupBackgroundParallax() {
 	// Cập nhật lần đầu
 	updateBackgroundPosition();
 }
+
 // ============= Image Modals =============
 function setupImageModals() {
 // Setup modal handlers

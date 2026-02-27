@@ -2,7 +2,7 @@
 /* Global JavaScript - Shared across all pages */
 /* ================================================================================================= */
 
-// Load header and footer automatically
+// ============= Load header and footer automatically =============
 async function loadHeaderFooter() {
     try {
         // Determine the relative path based on current directory
@@ -33,7 +33,7 @@ async function loadHeaderFooter() {
 // Call on page load
 document.addEventListener('DOMContentLoaded', loadHeaderFooter);
 
-// ============= Modal System =============
+//  Modal System =============
 /**
  * Opens a modal with the provided content
  * @param {string} modalId - The ID of the modal element
@@ -129,7 +129,7 @@ function setupModalHandlers(modalIds = []) {
     }
 }
 
-// Tab switching functionality
+// ============= Tab switching functionality =============
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {

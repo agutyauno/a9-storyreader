@@ -75,7 +75,7 @@
         <div class="container">
             <div id="info">
                 <div class="info-header">
-                    <p id="dr-name">Dr. <input type="text" placeholder="Doctor"></p>
+                    <p id="dr-name">Dr. <input type="text" placeholder="{Dr.@nickname}"></p>
                     <h2 class="info-title">ST-1 Before: Story Name</h2>
                 </div>
                 <p class="info-description">Mô tả chap - Trong mọi câu chuyện, luôn có những anh hùng và cũng có những
@@ -147,6 +147,83 @@
                             <div class="sfx_player" data-sfx-src="avg_d_avg_swordexsheath.wav" data-sfx-name="Rút kiếm">
                             </div>
 
+                            <!-- Template lựa chọn -->
+                            <!-- data-choice-group: ID nhóm lựa chọn này để phân biệt với các nhóm khác -->
+                            <div class="dialogue-box decision-group" data-choice-group="choice1">
+                                <img class="character_avt" src="../assets/images/character/doctor/doctor_avatar.png"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content decision-choice">
+                                    <!-- data-choice-value: giá trị của lựa chọn này -->
+                                    <p class="decision" data-choice-value="1">lựa chọn 1</p>
+                                    <p class="decision" data-choice-value="2">lựa chọn 2</p>
+                                    <p class="decision" data-choice-value="3">lựa chọn 3</p>
+                                </div>
+                                <img class="character_avt" src="../assets/images/character/blank.png"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+
+                            <!-- data-choice-response: dialogue này tương ứng với lựa chọn nào -->
+                            <!-- data-choice-group: thuộc nhóm lựa chọn nào -->
+                             <div class="dialogue-box choice-response" data-choice-response="1" data-choice-group="choice1">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại1</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                             <div class="dialogue-box choice-response" data-choice-response="2" data-choice-group="choice1">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại2</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                             <div class="dialogue-box choice-response" data-choice-response="3" data-choice-group="choice1">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại3</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                             <div class="dialogue-box choice-response" data-choice-response="3" data-choice-group="choice1">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại3</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                             <div class="dialogue-box choice-response" data-choice-response="3" data-choice-group="choice1">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại3</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
                         </div>
                     </section>
 
@@ -185,6 +262,8 @@
                                 <img class="character_avt"
                                     src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
                                     alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                            <div class="sfx_player" data-sfx-src="avg_d_avg_swordexsheath.wav" data-sfx-name="Rút kiếm">
                             </div>
                             <div class="dialogue-box">
                                 <img class="character_avt" src="../assets/images/character/blank.png"

@@ -41,6 +41,10 @@
 }
 
 .header-logo {
+    position: absolute;
+    left: var(--spacing-lg);
+    top: 50%;
+    transform: translateY(-50%);
     width: 2.5rem;
     height: 2.5rem;
     object-fit: cover;
@@ -272,9 +276,50 @@ header {
 
 .dialogue{
     margin: 0;
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     color: var(--color-text-primary);
 	line-height: 1;
+}
+
+/* Decision Choice Styles */
+.decision-choice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-base);
+}
+
+.decision {
+    margin: 0;
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-lg);
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    background: var(--color-bg-dark);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    user-select: none;
+}
+
+.decision:hover {
+    border-color: var(--color-accent);
+    background: var(--color-bg-secondary);
+}
+
+.decision.selected {
+    border-color: var(--color-accent);
+    background: var(--color-bg-secondary);
+    color: var(--color-accent);
+}
+
+/* Hidden state for choice responses */
+.choice-response {
+    display: none;
+}
+
+.choice-response.active {
+    display: flex;
 }
 
 /* Video Box in Dialogue Container */
