@@ -60,7 +60,34 @@ document.addEventListener('DOMContentLoaded', () => {
 	setupChapterSidebar();
 	setupImageModals();
 	setupBackToTop();
+	setupBGM();
+	setupSFX();
 });
+
+// ============= BGM Setup =============
+function setupBGM() {
+	// Initialize UI bindings
+	if (window.bgmManager && window.bgmManager.initUI()) {
+		// Setup scroll-based BGM triggers
+		// Elements with data-bgm-id attribute will trigger BGM changes when scrolled into view
+		window.bgmManager.setupScrollTriggers({
+			selector: '[data-bgm-id]',
+			threshold: 0.5,
+			rootMargin: '0px 0px 0% 0px'
+		});
+		
+		// Auto-play requires user interaction first (browser policy)
+		// The user needs to click the play button to start music
+	}
+}
+
+// ============= SFX Setup =============
+function setupSFX() {
+	// Initialize SFX manager with scroll triggers
+	if (window.sfxManager) {
+		window.sfxManager.init();
+	}
+}
 
 // ============= Chapter Sidebar =============
 function setupChapterSidebar() {

@@ -16,8 +16,22 @@
                 <img class="header-logo" src="../assets/images/icon/dreambind castle.png" alt="">
             </a>
             <h1 class="header-name">event name</h1>
-            <button id="sidebar-toggle" class="sidebar-toggle-btn"><img src="../assets/images/web icon/list.png"
-                    alt=""></button>
+
+            <!-- Header Right Controls -->
+            <div class="header-right-controls">
+                <!-- Audio Controls -->
+                <div id="audio-controls" class="audio-controls">
+                    <button id="audio-toggle" class="audio-btn" title="Bật/Tắt âm thanh">
+                        <span id="audio-icon" class="audio-icon">🔊</span>
+                    </button>
+                    <div class="volume-slider-container">
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" title="Âm lượng">
+                    </div>
+                </div>
+
+                <button id="sidebar-toggle" class="sidebar-toggle-btn"><img src="../assets/images/web icon/list.png"
+                        alt=""></button>
+            </div>
         </div>
     </header>
 
@@ -71,12 +85,22 @@
 
             <div id="story-content">
                 <!-- template thoại  -->
-                <section class="dialogue-section">
+                <!-- 
+                    BGM Scroll Trigger: Thêm data-bgm-id, data-bgm-intro, data-bgm-loop vào element để tự động đổi nhạc khi cuộn tới
+                    Ví dụ: data-bgm-id="calm" data-bgm-intro="calm_intro.wav" data-bgm-loop="calm_loop.wav"
+                -->
+                <section class="dialogue-section" >
+
                     <!-- Video Box Template -->
-                    <div class="dialogue-video-box">
+                    <div class="dialogue-video-box" data-bgm-id="">
                         <video src="../assets/videos/ak_chap10_pv.mp4" controls></video>
                     </div>
-                    <section class="dialogue-background">
+
+                    <section class="dialogue-background"
+                    data-bgm-id="m_avg_tense"
+                    data-bgm-intro="music_act15d0d0_m_avg_tense_intro.wav" 
+                    data-bgm-loop="m_avg_tense_loop.wav">
+
                         <div class="background-wrapper">
                             <img class="background-image" src="../assets/images/art gallery/Amiya_Awakening.png" alt="">
                             <img class="expand-icon" src="../assets/images/web icon/expand.png" alt="">
@@ -120,8 +144,109 @@
                                     alt=""><!-- ảnh nhân vật (bên phải)-->
                             </div>
 
+                            <div class="sfx_player" data-sfx-src="avg_d_avg_swordexsheath.wav" data-sfx-name="Rút kiếm">
+                            </div>
+
                         </div>
                     </section>
+
+                    <section class="dialogue-background"
+                    data-bgm-id="m_avg_tense2"
+                    data-bgm-loop="music_act15d0d0_m_avg_jealous_intro.wav">
+
+                        <div class="background-wrapper">
+                            <img class="background-image" src="../assets/images/art gallery/Amiya_Awakening.png" alt="">
+                            <img class="expand-icon" src="../assets/images/web icon/expand.png" alt="">
+                        </div>
+
+                        <div class="dialogue-container">
+                            <div class="dialogue-box">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">Trong mọi câu chuyện, luôn có những anh hùng và cũng có những
+                                        kẻ phản diện. Những người mang trong mình lý tưởng sẽ chiến đấu cho những gì họ
+                                        tin là lựa chọn đúng đắn.</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                            <div class="dialogue-box">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                            <div class="dialogue-box">
+                                <img class="character_avt" src="../assets/images/character/blank.png"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại</p>
+                                </div>
+                                <img class="character_avt" src="../assets/images/character/blank.png"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="dialogue-background"
+                    data-bgm-id="">
+
+                        <div class="background-wrapper">
+                            <img class="background-image" src="../assets/images/art gallery/Amiya_Awakening.png" alt="">
+                            <img class="expand-icon" src="../assets/images/web icon/expand.png" alt="">
+                        </div>
+
+                        <div class="dialogue-container">
+                            <div class="dialogue-box">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">Trong mọi câu chuyện, luôn có những anh hùng và cũng có những
+                                        kẻ phản diện. Những người mang trong mình lý tưởng sẽ chiến đấu cho những gì họ
+                                        tin là lựa chọn đúng đắn.</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                            <div class="dialogue-box">
+                                <img class="character_avt"
+                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại</p>
+                                </div>
+                                <img class="character_avt"
+                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                            <div class="dialogue-box">
+                                <img class="character_avt" src="../assets/images/character/blank.png"
+                                    alt=""><!-- ảnh nhân vật (bên trái)-->
+                                <div class="dialogue-content">
+                                    <p class="character_name">tên</p>
+                                    <p class="dialogue">thoại</p>
+                                </div>
+                                <img class="character_avt" src="../assets/images/character/blank.png"
+                                    alt=""><!-- ảnh nhân vật (bên phải)-->
+                            </div>
+                        </div>
+                    </section>
+                    
                 </section>
 
             </div>
@@ -144,6 +269,8 @@
     <div id="footer-placeholder"></div>
 </body>
 <script src="../global/script.js"></script>
+<script src="./bgm-manager.js"></script>
+<script src="./sfx-manager.js"></script>
 <script src="./script.js"></script>
 
 </html>
