@@ -23,6 +23,10 @@ class SFXManager {
         this.playedElements = new Set(); // Track which SFX have been auto-played
         this.scrollObserver = null;
         this.currentAudio = null;
+        this.isPlaying = false;
+        
+        // Queue for sequential playback
+        this.sfxQueue = [];
         
         // Load state from localStorage
         this.loadState();
@@ -50,10 +54,14 @@ class SFXManager {
     setEnabled(enabled) {
         this.isEnabled = enabled;
         
-        // Stop current audio if disabling
-        if (!enabled && this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio = null;
+        // Stop current audio and clear queue if disabling
+        if (!enabled) {
+            this.sfxQueue = [];
+            this.isPlaying = false;
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
         }
     }
     
@@ -175,18 +183,40 @@ class SFXManager {
      * @param {HTMLElement} element - The SFX player element
      * @param {boolean} isAutoTrigger - Whether this was auto-triggered by scroll
      */
-    async playSFX(element, isAutoTrigger = false) {
+    playSFX(element, isAutoTrigger = false) {
         // Don't play if audio is disabled
         if (!this.isEnabled) return;
         
         const sfxSrc = element.dataset.sfxSrc;
         if (!sfxSrc) return;
         
-        // Stop current audio if playing
-        if (this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
+        // Add to queue
+        this.sfxQueue.push(element);
+        
+        // Start processing queue if not already playing
+        if (!this.isPlaying) {
+            this.processQueue();
         }
+    }
+    
+    /**
+     * Process the SFX queue - plays one SFX at a time
+     */
+    async processQueue() {
+        // Exit if queue is empty or already playing
+        if (this.sfxQueue.length === 0 || this.isPlaying) return;
+        
+        // Get next element from queue
+        const element = this.sfxQueue.shift();
+        const sfxSrc = element.dataset.sfxSrc;
+        
+        if (!sfxSrc || !this.isEnabled) {
+            // Skip invalid or disabled, continue to next
+            this.processQueue();
+            return;
+        }
+        
+        this.isPlaying = true;
         
         // Update UI to playing state
         element.classList.add('playing');
@@ -205,11 +235,15 @@ class SFXManager {
             audio.volume = this.volume;
             this.currentAudio = audio;
             
-            // Handle audio end
+            // Handle audio end - play next in queue
             audio.addEventListener('ended', () => {
                 element.classList.remove('playing');
                 element.classList.add('played');
                 this.currentAudio = null;
+                this.isPlaying = false;
+                
+                // Process next item in queue
+                this.processQueue();
             });
             
             // Handle audio error
@@ -218,6 +252,10 @@ class SFXManager {
                 element.classList.remove('playing');
                 element.classList.add('error');
                 this.currentAudio = null;
+                this.isPlaying = false;
+                
+                // Continue to next item in queue
+                this.processQueue();
             });
             
             await audio.play();
@@ -225,6 +263,10 @@ class SFXManager {
         } catch (error) {
             console.error('SFXManager: Playback error', error);
             element.classList.remove('playing');
+            this.isPlaying = false;
+            
+            // Continue to next item in queue
+            this.processQueue();
         }
     }
     
@@ -233,6 +275,8 @@ class SFXManager {
      */
     resetPlayedState() {
         this.playedElements.clear();
+        this.sfxQueue = [];
+        this.isPlaying = false;
         document.querySelectorAll(this.selector).forEach(el => {
             el.classList.remove('played', 'playing', 'error');
         });
@@ -252,6 +296,8 @@ class SFXManager {
             this.currentAudio = null;
         }
         
+        this.sfxQueue = [];
+        this.isPlaying = false;
         this.playedElements.clear();
     }
 }
