@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	setupImageModals();
 	setupBackToTop();
 	setupDecisionChoice();
+	setupNicknameReplacement();
 	setupBGM();
 	setupSFX();
 });
@@ -110,6 +111,65 @@ function setupDecisionChoice() {
 			firstDecision.click();
 		}
 	});
+}
+
+// ============= Nickname Replacement System =============
+function setupNicknameReplacement() {
+	const nicknameInput = document.querySelector('#dr-name input');
+	const storyContent = document.getElementById('story-content');
+	
+	if (!nicknameInput || !storyContent) return;
+	
+	const STORAGE_KEY = 'doctor_nickname';
+	
+	// Find and store all text nodes containing "Dr.@nickname"
+	const textNodesToUpdate = [];
+	const walker = document.createTreeWalker(
+		storyContent,
+		NodeFilter.SHOW_TEXT,
+		null
+	);
+	
+	let node;
+	while (node = walker.nextNode()) {
+		if (node.textContent.includes('Dr.@nickname')) {
+			textNodesToUpdate.push({
+				node: node,
+				original: node.textContent
+			});
+		}
+	}
+	
+	// Function to replace Dr.@nickname with the entered name
+	const updateNicknameInDialogues = () => {
+		const nickname = nicknameInput.value.trim();
+		
+		// Update each text node
+		textNodesToUpdate.forEach(item => {
+			if (nickname) {
+				item.node.textContent = item.original.replace(/Dr\.@nickname/g, `Dr. ${nickname}`);
+				localStorage.setItem(STORAGE_KEY, nickname);
+			} else {
+				// Restore original
+				item.node.textContent = item.original;
+				localStorage.removeItem(STORAGE_KEY);
+			}
+		});
+	};
+	
+	// Restore saved nickname from localStorage
+	const savedNickname = localStorage.getItem(STORAGE_KEY);
+	if (savedNickname) {
+		nicknameInput.value = savedNickname;
+		updateNicknameInDialogues();
+	}
+	
+	// Listen to input changes
+	nicknameInput.addEventListener('input', updateNicknameInDialogues);
+	nicknameInput.addEventListener('change', updateNicknameInDialogues);
+	
+	// Optional: Add placeholder hint
+	nicknameInput.placeholder = '@nickname';
 }
 
 // ============= BGM Setup =============
