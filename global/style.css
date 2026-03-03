@@ -73,7 +73,7 @@ a{
 /* header */
 header{
     background-color: var(--color-bg-dark);
-    padding: var(--spacing-base);
+    padding: var(--spacing-base) 0;
     text-align: center;
     box-shadow: var(--shadow-sm);
     position: fixed;

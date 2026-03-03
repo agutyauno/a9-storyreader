@@ -6,15 +6,68 @@
 /**
  * Story Content Schema (expected JSONB structure):
  * {
- *   characters: {
- *     "Amiya": {
- *       avatar: "url_to_avatar",
- *       full_image: "url_to_full_image"
- *     },
- *     "Doctor": { ... }
- *   },
- *   sections: [...]
- * }
+  "characters": {
+    "Amiya": {
+      "avatar": "url",
+      "full_image": "url"
+    },
+    "Doctor": {
+      "avatar": "url",
+      "full_image": "url"
+    },
+    "Kal'tsit": {
+      "avatar": "url",
+      "full_image": "url"
+    }	
+  },
+  "sections": [
+    {
+      "type": "dialogue_section",
+      "elements": [
+        {
+          "type": "video",
+          "src": "url",
+          "bgm_id": "url?"
+        },
+        {
+          "type": "background",
+          "image": "url",
+          "bgm": { "id": "url", "intro": "url", "loop": "url" },
+          "dialogues": [
+            {
+              "type": "dialogue",
+              "name": "string",
+              "text": "string",
+              "left": "character name defined in characters",
+              "right": "character name defined in characters"
+            },
+            {
+              "type": "sfx",
+              "src": "url",
+              "name": "sfx name"
+            },
+            {
+              "type": "decision",
+              "group_id": "string",
+              "choices": ["string", "string"],
+              "left": "character name defined in characters",
+              "right": "character name defined in characters"
+            },
+            {
+              "type": "choice_response",
+              "group_id": "string",
+              "choice_value": "number",
+              "name": "character name defined in characters",
+              "text": "string",
+              "left": "character name defined in characters",
+              "right": "character name defined in characters"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
  */
 
 const StoryRenderer = {

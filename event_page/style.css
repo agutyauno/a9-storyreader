@@ -29,11 +29,17 @@ header {
 }
 
 .event-sticky-content {
+	position: relative;
 	max-width: var(--container-max-width);
 	margin: 0 auto;
 	display: flex;
 	align-items: center;
 	gap: var(--spacing-base);
+}
+
+.event-sticky-content a{
+	position: absolute;
+	left: var(--spacing-base);
 }
 
 .event-sticky-title {
@@ -61,6 +67,7 @@ header {
 .selection-panel-item {
 	align-items: center;
 	justify-content: center;
+	padding: var(--spacing-base) 0;
 }
 
 #story_selection-panel{

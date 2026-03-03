@@ -5,13 +5,12 @@
 /* ================================================================================================= */
 /* header */
 #story_page-header{
-    margin: 0 auto;
+    justify-self: center;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     max-width: var(--container-max-width);
-    gap: var(--spacing-base);
     position: relative;
 }
 
@@ -20,7 +19,6 @@
     right: 0;
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
 }
 
 .sidebar-toggle-btn {
@@ -52,12 +50,24 @@
 }
 
 .header-name {
-    margin-left: var(--spacing-base);
     font-size: var(--font-size-2xl);
     font-weight: 700;
     color: var(--color-accent);
-    flex-grow: 1;
     text-align: center;
+}
+
+.header-name-link {
+    flex-grow: 1;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.header-name-link:hover {
+    opacity: 0.8;
+}
+
+.header-name-link:hover .header-name {
+    text-decoration: underline;
 }
 
 header {

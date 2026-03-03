@@ -28,11 +28,17 @@ header {
 }
 
 .region-sticky-content {
+	position: relative;
 	max-width: var(--container-max-width);
 	margin: 0 auto;
 	display: flex;
 	align-items: center;
 	gap: var(--spacing-base);
+}
+
+.region-sticky-header a{
+	position: absolute;
+	left: var(--spacing-base);
 }
 
 .region-sticky-title {

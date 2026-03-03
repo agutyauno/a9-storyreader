@@ -33,8 +33,8 @@ async function loadStoryData() {
 
 		currentStory = story;
 		
-		// Update info
-		updateStoryInfo(story);
+		// Update info (await to ensure event name is set before setupHeaderTitleUpdate)
+		await updateStoryInfo(story);
 
 		// Render story content
 		renderStoryContent(story.story_content);
@@ -66,14 +66,32 @@ async function loadStoryData() {
 }
 
 // ============= Update Story Info =============
-function updateStoryInfo(story) {
+async function updateStoryInfo(story) {
 	const infoTitle = document.querySelector('.info-title');
 	const infoDescription = document.querySelector('.info-description');
 	const headerName = document.querySelector('.header-name');
+	const headerEventLink = document.getElementById('header-event-link');
 
 	if (infoTitle) infoTitle.textContent = story.name;
 	if (infoDescription) infoDescription.textContent = story.description || '';
-	if (headerName) headerName.textContent = story.name;
+
+	// Fetch event name and update header
+	if (story.event_id) {
+		try {
+			const event = await SupabaseAPI.getEvent(story.event_id);
+			if (event && headerName) {
+				headerName.textContent = event.name;
+			}
+			if (headerEventLink) {
+				headerEventLink.href = `../event_page/index.html?event=${story.event_id}`;
+			}
+		} catch (err) {
+			console.error('Error fetching event:', err);
+			if (headerName) headerName.textContent = story.name;
+		}
+	} else {
+		if (headerName) headerName.textContent = story.name;
+	}
 
 	// Update page title
 	document.title = `${story.name} - Arknights Story Reader`;
