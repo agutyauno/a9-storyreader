@@ -80,7 +80,6 @@ async function renderArcs(arcs) {
 			<article class="arc-section">
 				<div class="arc-header">
 					<div class="arc-info">
-						<img src="${arc.image_url || '../assets/images/icon/default.png'}" alt="${arc.name}" class="arc-image">
 						<h3 class="arc-name">${arc.name || ''}</h3>
 					</div>
 					<p class="arc-description">${arc.description || ''}</p>

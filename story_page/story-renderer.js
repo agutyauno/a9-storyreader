@@ -6,57 +6,21 @@
 /**
  * Story Content Schema (expected JSONB structure):
  * {
- *   sections: [
- *     {
- *       type: "dialogue_section",
- *       elements: [
- *         {
- *           type: "video",
- *           src: "video_url",
- *           bgm_id?: "bgm_id"
- *         },
- *         {
- *           type: "background",
- *           image: "image_url",
- *           bgm?: { id: "bgm_id", intro: "intro.wav", loop: "loop.wav" },
- *           dialogues: [
- *             {
- *               type: "dialogue",
- *               left_avatar: "avatar_url",
- *               right_avatar: "avatar_url",
- *               character_name: "Name",
- *               text: "Dialogue text with Dr.@nickname support"
- *             },
- *             {
- *               type: "sfx",
- *               src: "sfx_file.wav",
- *               name: "SFX Name"
- *             },
- *             {
- *               type: "decision",
- *               group_id: "choice1",
- *               left_avatar: "avatar_url",
- *               right_avatar: "avatar_url",
- *               choices: ["Option 1", "Option 2", "Option 3"]
- *             },
- *             {
- *               type: "choice_response",
- *               group_id: "choice1",
- *               choice_value: 1,
- *               left_avatar: "avatar_url",
- *               right_avatar: "avatar_url",
- *               character_name: "Name",
- *               text: "Response text"
- *             }
- *           ]
- *         }
- *       ]
- *     }
- *   ]
+ *   characters: {
+ *     "Amiya": {
+ *       avatar: "url_to_avatar",
+ *       full_image: "url_to_full_image"
+ *     },
+ *     "Doctor": { ... }
+ *   },
+ *   sections: [...]
  * }
  */
 
 const StoryRenderer = {
+	// Character map for current story
+	characters: {},
+
 	/**
 	 * Render story content from JSONB data
 	 * @param {Object} storyContent - The story_content JSONB
@@ -67,7 +31,38 @@ const StoryRenderer = {
 			return '<p class="no-data">Không có nội dung truyện.</p>';
 		}
 
+		// Store character map for use in rendering
+		this.characters = storyContent.characters || {};
+
 		return storyContent.sections.map(section => this.renderSection(section)).join('');
+	},
+
+	/**
+	 * Get character avatar URL by name
+	 * @param {string} name - Character name or direct URL
+	 * @returns {string} - Avatar URL
+	 */
+	getAvatar(name) {
+		if (!name) return '../assets/images/character/blank.png';
+		// If it's a URL (contains / or .), return as-is
+		if (name.includes('/') || name.includes('.')) return name;
+		// Look up in character map
+		const char = this.characters[name];
+		return char?.avatar || '../assets/images/character/blank.png';
+	},
+
+	/**
+	 * Get character full image URL by name
+	 * @param {string} name - Character name or direct URL
+	 * @returns {string} - Full image URL or empty string
+	 */
+	getFullImage(name) {
+		if (!name) return '';
+		// If it's a URL, return as-is
+		if (name.includes('/') || name.includes('.')) return name;
+		// Look up in character map
+		const char = this.characters[name];
+		return char?.full_image || '';
 	},
 
 	/**
@@ -155,17 +150,19 @@ const StoryRenderer = {
 	 * Render a normal dialogue box
 	 */
 	renderDialogueBox(dialogue) {
-		const leftAvatar = dialogue.left_avatar || '../assets/images/character/blank.png';
-		const rightAvatar = dialogue.right_avatar || '../assets/images/character/blank.png';
+		const leftAvatar = this.getAvatar(dialogue.left);
+		const rightAvatar = this.getAvatar(dialogue.right);
+		const leftFull = this.getFullImage(dialogue.left);
+		const rightFull = this.getFullImage(dialogue.right);
 
 		return `
 			<div class="dialogue-box">
-				<img class="character_avt" src="${leftAvatar}" alt="">
+				<img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
 				<div class="dialogue-content">
-					<p class="character_name">${dialogue.character_name || ''}</p>
+					<p class="character_name">${dialogue.name || ''}</p>
 					<p class="dialogue">${dialogue.text || ''}</p>
 				</div>
-				<img class="character_avt" src="${rightAvatar}" alt="">
+				<img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
 			</div>
 		`;
 	},
@@ -184,8 +181,10 @@ const StoryRenderer = {
 	 * Render decision group
 	 */
 	renderDecision(decision) {
-		const leftAvatar = decision.left_avatar || '../assets/images/character/doctor/doctor_avatar.png';
-		const rightAvatar = decision.right_avatar || '../assets/images/character/blank.png';
+		const leftAvatar = this.getAvatar(decision.left || 'Doctor');
+		const rightAvatar = this.getAvatar(decision.right);
+		const leftFull = this.getFullImage(decision.left || 'Doctor');
+		const rightFull = this.getFullImage(decision.right);
 
 		const choices = (decision.choices || []).map((choice, index) => {
 			return `<p class="decision" data-choice-value="${index + 1}">${choice}</p>`;
@@ -193,11 +192,11 @@ const StoryRenderer = {
 
 		return `
 			<div class="dialogue-box decision-group" data-choice-group="${decision.group_id}">
-				<img class="character_avt" src="${leftAvatar}" alt="">
+				<img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
 				<div class="dialogue-content decision-choice">
 					${choices}
 				</div>
-				<img class="character_avt" src="${rightAvatar}" alt="">
+				<img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
 			</div>
 		`;
 	},
@@ -206,17 +205,19 @@ const StoryRenderer = {
 	 * Render choice response
 	 */
 	renderChoiceResponse(response) {
-		const leftAvatar = response.left_avatar || '../assets/images/character/blank.png';
-		const rightAvatar = response.right_avatar || '../assets/images/character/blank.png';
+		const leftAvatar = this.getAvatar(response.left);
+		const rightAvatar = this.getAvatar(response.right);
+		const leftFull = this.getFullImage(response.left);
+		const rightFull = this.getFullImage(response.right);
 
 		return `
 			<div class="dialogue-box choice-response" data-choice-response="${response.choice_value}" data-choice-group="${response.group_id}">
-				<img class="character_avt" src="${leftAvatar}" alt="">
+				<img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
 				<div class="dialogue-content">
-					<p class="character_name">${response.character_name || ''}</p>
+					<p class="character_name">${response.name || ''}</p>
 					<p class="dialogue">${response.text || ''}</p>
 				</div>
-				<img class="character_avt" src="${rightAvatar}" alt="">
+				<img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
 			</div>
 		`;
 	}

@@ -420,9 +420,13 @@ if (!imageSrc || imageSrc.includes('blank.png')) {
 return;
 }
 
-// Get full size character image
-// Replace _avatar.webp with full image path if needed
-const fullImageSrc = imageSrc.replace('_avatar.webp', '.png').replace('_avatar.png', '.png');
+// Check for explicit full image data attribute first
+let fullImageSrc = avatar.getAttribute('data-full-image');
+
+if (!fullImageSrc) {
+// Fallback: Replace _avatar.webp with full image path
+fullImageSrc = imageSrc.replace('_avatar.webp', '.png').replace('_avatar.png', '.png');
+}
 
 const modal = document.getElementById('character-modal');
 const modalImage = modal.querySelector('.modal-image');
