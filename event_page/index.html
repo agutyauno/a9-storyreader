@@ -29,24 +29,8 @@
 
             <!-- Placeholder for event story sections -->
              <div id="story_selection-panel" class="selection-grid">
-                <a href="../story_page/index.html" class="selection-panel-item">
-                    ST-1 Before
-                </a>
-                <a href="#" class="selection-panel-item">
-                    ST-1 After
-                </a>
-                <a href="#" class="selection-panel-item">
-                    ST-2 Before
-                </a>
-                <a href="#" class="selection-panel-item">
-                    ST-2 After
-                </a>
-                <a href="#" class="selection-panel-item">
-                    ST-SS 3 Before 
-                </a>
-                <a href="#" class="selection-panel-item">
-                    ST-4
-                </a>
+                <!-- Stories will be loaded from Supabase -->
+                <div class="loading-placeholder">Đang tải...</div>
              </div>
 
              <!-- Character List Section -->
@@ -106,6 +90,8 @@
     <!-- Footer will be loaded here -->
     <div id="footer-placeholder"></div>
 </body>
+<script src="../global/supabase-client.js"></script>
+<script src="../global/supabase-api.js"></script>
 <script src="../global/script.js"></script>
 <script src="./script.js"></script>
 </html>

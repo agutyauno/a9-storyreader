@@ -1,0 +1,184 @@
+/* ================================================================================================= */
+/* Supabase API Service */
+/* ================================================================================================= */
+
+/**
+ * API service for fetching data from Supabase
+ * Requires supabase-client.js to be loaded first
+ */
+const SupabaseAPI = {
+	// ============= Regions =============
+	/**
+	 * Get all regions ordered by display_order
+	 * @returns {Promise<Array>}
+	 */
+	async getRegions() {
+		return SupabaseClient.get('regions', {
+			order: 'display_order',
+			ascending: true
+		});
+	},
+
+	/**
+	 * Get a single region by region_id
+	 * @param {string} regionId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getRegion(regionId) {
+		return SupabaseClient.getOne('regions', 'region_id', regionId);
+	},
+
+	// ============= Arcs =============
+	/**
+	 * Get all arcs for a region
+	 * @param {string} regionId
+	 * @returns {Promise<Array>}
+	 */
+	async getArcsByRegion(regionId) {
+		return SupabaseClient.get('arcs', {
+			filters: [{ column: 'region_id', operator: 'eq', value: regionId }],
+			order: 'display_order',
+			ascending: true
+		});
+	},
+
+	/**
+	 * Get a single arc by arc_id
+	 * @param {string} arcId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getArc(arcId) {
+		return SupabaseClient.getOne('arcs', 'arc_id', arcId);
+	},
+
+	// ============= Events =============
+	/**
+	 * Get all events for an arc
+	 * @param {string} arcId
+	 * @returns {Promise<Array>}
+	 */
+	async getEventsByArc(arcId) {
+		return SupabaseClient.get('events', {
+			filters: [{ column: 'arc_id', operator: 'eq', value: arcId }],
+			order: 'display_order',
+			ascending: true
+		});
+	},
+
+	/**
+	 * Get a single event by event_id
+	 * @param {string} eventId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getEvent(eventId) {
+		return SupabaseClient.getOne('events', 'event_id', eventId);
+	},
+
+	// ============= Stories =============
+	/**
+	 * Get all stories for an event
+	 * @param {string} eventId
+	 * @returns {Promise<Array>}
+	 */
+	async getStoriesByEvent(eventId) {
+		return SupabaseClient.get('stories', {
+			filters: [{ column: 'event_id', operator: 'eq', value: eventId }],
+			order: 'display_order',
+			ascending: true
+		});
+	},
+
+	/**
+	 * Get a single story by story_id
+	 * @param {string} storyId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getStory(storyId) {
+		return SupabaseClient.getOne('stories', 'story_id', storyId);
+	},
+
+	// ============= Characters =============
+	/**
+	 * Get all characters
+	 * @returns {Promise<Array>}
+	 */
+	async getCharacters() {
+		return SupabaseClient.get('characters');
+	},
+
+	/**
+	 * Get a single character by character_id
+	 * @param {string} characterId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getCharacter(characterId) {
+		return SupabaseClient.getOne('characters', 'character_id', characterId);
+	},
+
+	/**
+	 * Get characters for an event (via event_characters junction table)
+	 * @param {string} eventId
+	 * @returns {Promise<Array>}
+	 */
+	async getCharactersByEvent(eventId) {
+		// First get the character IDs from event_characters
+		const eventCharacters = await SupabaseClient.get('event_characters', {
+			select: 'character_id',
+			filters: [{ column: 'event_id', operator: 'eq', value: eventId }]
+		});
+
+		if (eventCharacters.length === 0) {
+			return [];
+		}
+
+		// Then fetch the full character data
+		const characterIds = eventCharacters.map(ec => ec.character_id);
+		const characters = await SupabaseClient.get('characters', {
+			filters: [{ column: 'character_id', operator: 'in', value: `(${characterIds.join(',')})` }]
+		});
+
+		return characters;
+	},
+
+	// ============= Gallery =============
+	/**
+	 * Get gallery items for an event
+	 * @param {string} eventId
+	 * @returns {Promise<Array>}
+	 */
+	async getGalleryByEvent(eventId) {
+		return SupabaseClient.get('gallery', {
+			filters: [{ column: 'event_id', operator: 'eq', value: eventId }],
+			order: 'display_order',
+			ascending: true
+		});
+	},
+
+	// ============= Suggestions =============
+	/**
+	 * Get suggestion for an arc
+	 * @param {string} arcId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getSuggestion(arcId) {
+		return SupabaseClient.getOne('suggestions', 'arc_id', arcId);
+	},
+
+	/**
+	 * Get the suggested event for an arc
+	 * @param {string} arcId
+	 * @returns {Promise<Object|null>}
+	 */
+	async getSuggestedEvent(arcId) {
+		const suggestion = await this.getSuggestion(arcId);
+		if (!suggestion) {
+			return null;
+		}
+		return this.getEvent(suggestion.target_event_id);
+	}
+};
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = SupabaseAPI;
+}

@@ -2,48 +2,99 @@
 /* Event Page Script */
 /* ================================================================================================= */
 
-// ============= Sample Data =============
-const characterData = [
-	{
-		id: 1,
-		name: 'Amiya',
-		avatar: '../assets/images/icon/dreambind castle.png',
-		fullImage: '../assets/images/icon/dreambind castle.png',
-		description: 'Protagonist - The leader of the team'
-	},
-	{
-		id: 2,
-		name: 'Doctor',
-		avatar: '../assets/images/icon/dreambind castle.png',
-		fullImage: '../assets/images/icon/dreambind castle.png',
-		description: 'Main character - Strategic advisor'
-	},
-	{
-		id: 3,
-		name: 'Exusiai',
-		avatar: '../assets/images/icon/dreambind castle.png',
-		fullImage: '../assets/images/icon/dreambind castle.png',
-		description: 'Combat specialist'
-	}
-];
+// ============= Data Storage =============
+let characterData = [];
+let galleryData = [];
 
-const galleryData = [
-	{
-		id: 1,
-		title: 'Main Scene',
-		image: '../assets/images/icon/dreambind castle.png'
-	},
-	{
-		id: 2,
-		title: 'Background 1',
-		image: '../assets/images/icon/dreambind castle.png'
-	},
-	{
-		id: 3,
-		title: 'Background 2',
-		image: '../assets/images/icon/dreambind castle.png'
+// ============= Get Event ID from URL =============
+function getEventIdFromURL() {
+	const urlParams = new URLSearchParams(window.location.search);
+	return urlParams.get('event');
+}
+
+// ============= Load Event Data from Supabase =============
+async function loadEventData() {
+	const eventId = getEventIdFromURL();
+	if (!eventId) {
+		console.error('No event ID in URL');
+		return;
 	}
-];
+
+	try {
+		// Fetch event info
+		const event = await SupabaseAPI.getEvent(eventId);
+		if (event) {
+			updateEventInfo(event);
+		}
+
+		// Fetch stories, characters, and gallery in parallel
+		const [stories, characters, gallery] = await Promise.all([
+			SupabaseAPI.getStoriesByEvent(eventId),
+			SupabaseAPI.getCharactersByEvent(eventId),
+			SupabaseAPI.getGalleryByEvent(eventId)
+		]);
+
+		// Store data for modal usage
+		characterData = characters.map(c => ({
+			id: c.character_id,
+			name: c.name,
+			avatar: c.avatar_url,
+			fullImage: c.image_url,
+			description: c.description
+		}));
+
+		galleryData = gallery.map(g => ({
+			id: g.gallery_id,
+			title: g.title,
+			image: g.image_url
+		}));
+
+		// Render content
+		renderStories(stories);
+		initializeCharacterList();
+		initializeGallery();
+
+		// Setup sticky header after content is loaded
+		setupEventStickyHeader();
+	} catch (error) {
+		console.error('Error loading event data:', error);
+		const container = document.getElementById('story_selection-panel');
+		if (container) {
+			container.innerHTML = '<p class="error-message">Đã xảy ra lỗi khi tải dữ liệu.</p>';
+		}
+	}
+}
+
+// ============= Update Event Info =============
+function updateEventInfo(event) {
+	const infoTitle = document.querySelector('.info-title');
+	const infoDescription = document.querySelector('.info-description');
+	const stickyTitle = document.querySelector('.event-sticky-title');
+
+	if (infoTitle) infoTitle.textContent = event.name;
+	if (infoDescription) infoDescription.textContent = event.description || '';
+	if (stickyTitle) stickyTitle.textContent = event.name;
+
+	// Update page title
+	document.title = `${event.name} - Arknights Story Reader VN`;
+}
+
+// ============= Render Stories =============
+function renderStories(stories) {
+	const container = document.getElementById('story_selection-panel');
+	if (!container) return;
+
+	if (stories.length === 0) {
+		container.innerHTML = '<p class="no-data">Chưa có truyện cho sự kiện này.</p>';
+		return;
+	}
+
+	container.innerHTML = stories.map(story => `
+		<a href="../story_page/index.html?story=${story.story_id}" class="selection-panel-item">
+			${story.name}
+		</a>
+	`).join('');
+}
 
 // ============= Initialize Sections =============
 function initializeCharacterList() {
@@ -192,30 +243,12 @@ function setupEventStickyHeader() {
 // ============= Initialization =============
 
 document.addEventListener('DOMContentLoaded', () => {
-	// Initialize character list and gallery
-	initializeCharacterList();
-	initializeGallery();
+	// Load event data from Supabase
+	loadEventData();
 	
 	// Setup collapsible sections
 	setupCollapsibleSections();
 	
 	// Setup modal handlers
 	setupModalHandlersForEvent();
-
-	// Setup sticky header
-	if (document.getElementById('header-placeholder')) {
-		const observer = new MutationObserver(() => {
-			if (document.querySelector('header')) {
-				observer.disconnect();
-				setupEventStickyHeader();
-			}
-		});
-
-		observer.observe(document.getElementById('header-placeholder'), {
-			childList: true,
-			subtree: true
-		});
-	} else {
-		setupEventStickyHeader();
-	}
 });

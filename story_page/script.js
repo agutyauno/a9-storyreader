@@ -2,17 +2,147 @@
 /* Story Page Script */
 /* ================================================================================================= */
 
+// ============= Global State =============
+let currentStory = null;
+let allStories = []; // Stories in the same event for navigation
+
+// ============= Get Story ID from URL =============
+function getStoryIdFromURL() {
+	const urlParams = new URLSearchParams(window.location.search);
+	return urlParams.get('story');
+}
+
+// ============= Load Story Data from Supabase =============
+async function loadStoryData() {
+	const storyId = getStoryIdFromURL();
+	if (!storyId) {
+		console.error('No story ID in URL');
+		return;
+	}
+
+	try {
+		// Fetch story
+		const story = await SupabaseAPI.getStory(storyId);
+		if (!story) {
+			const container = document.getElementById('story-content');
+			if (container) {
+				container.innerHTML = '<p class="error-message">Không tìm thấy truyện.</p>';
+			}
+			return;
+		}
+
+		currentStory = story;
+		
+		// Update info
+		updateStoryInfo(story);
+
+		// Render story content
+		renderStoryContent(story.story_content);
+
+		// Fetch other stories in the same event for navigation
+		if (story.event_id) {
+			allStories = await SupabaseAPI.getStoriesByEvent(story.event_id);
+			updateChapterSidebar(allStories, story.story_id);
+			updateNavigationButtons(allStories, story.story_id);
+		}
+
+		// Setup all features after content is loaded
+		setupHeaderTitleUpdate();
+		setupBackgroundParallax();
+		setupChapterSidebar();
+		setupImageModals();
+		setupBackToTop();
+		setupDecisionChoice();
+		setupNicknameReplacement();
+		setupBGM();
+		setupSFX();
+	} catch (error) {
+		console.error('Error loading story data:', error);
+		const container = document.getElementById('story-content');
+		if (container) {
+			container.innerHTML = '<p class="error-message">Đã xảy ra lỗi khi tải dữ liệu.</p>';
+		}
+	}
+}
+
+// ============= Update Story Info =============
+function updateStoryInfo(story) {
+	const infoTitle = document.querySelector('.info-title');
+	const infoDescription = document.querySelector('.info-description');
+	const headerName = document.querySelector('.header-name');
+
+	if (infoTitle) infoTitle.textContent = story.name;
+	if (infoDescription) infoDescription.textContent = story.description || '';
+	if (headerName) headerName.textContent = story.name;
+
+	// Update page title
+	document.title = `${story.name} - Arknights Story Reader`;
+}
+
+// ============= Render Story Content =============
+function renderStoryContent(storyContent) {
+	const container = document.getElementById('story-content');
+	if (!container) return;
+
+	if (!storyContent) {
+		container.innerHTML = '<p class="no-data">Chưa có nội dung truyện.</p>';
+		return;
+	}
+
+	// Use StoryRenderer to render content
+	container.innerHTML = StoryRenderer.render(storyContent);
+}
+
+// ============= Update Chapter Sidebar =============
+function updateChapterSidebar(stories, currentStoryId) {
+	const chapterList = document.querySelector('.chapter-list');
+	if (!chapterList) return;
+
+	chapterList.innerHTML = stories.map(story => `
+		<li>
+			<a href="../story_page/index.html?story=${story.story_id}" 
+			   class="chapter-item ${story.story_id === currentStoryId ? 'active' : ''}">
+				${story.name}
+			</a>
+		</li>
+	`).join('');
+}
+
+// ============= Update Navigation Buttons =============
+function updateNavigationButtons(stories, currentStoryId) {
+	const prevButton = document.querySelector('.switch-chapter-button .prevous');
+	const nextButton = document.querySelector('.switch-chapter-button .next');
+
+	if (!prevButton || !nextButton) return;
+
+	const currentIndex = stories.findIndex(s => s.story_id === currentStoryId);
+
+	// Previous button
+	if (currentIndex > 0) {
+		const prevStory = stories[currentIndex - 1];
+		prevButton.onclick = () => {
+			window.location.href = `../story_page/index.html?story=${prevStory.story_id}`;
+		};
+		prevButton.disabled = false;
+	} else {
+		prevButton.disabled = true;
+	}
+
+	// Next button
+	if (currentIndex < stories.length - 1) {
+		const nextStory = stories[currentIndex + 1];
+		nextButton.onclick = () => {
+			window.location.href = `../story_page/index.html?story=${nextStory.story_id}`;
+		};
+		nextButton.disabled = false;
+	} else {
+		nextButton.disabled = true;
+	}
+}
+
 // ============= Initialization =============
 document.addEventListener('DOMContentLoaded', () => {
-	setupHeaderTitleUpdate();
-	setupBackgroundParallax();
-	setupChapterSidebar();
-	setupImageModals();
-	setupBackToTop();
-	setupDecisionChoice();
-	setupNicknameReplacement();
-	setupBGM();
-	setupSFX();
+	loadStoryData();
 });
 
 // ============= Header Title Update =============

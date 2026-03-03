@@ -44,13 +44,13 @@
         <div class="sidebar-content">
             <ul class="chapter-list">
                 <li><a href="#" class="chapter-item active">ST-1 Before: Story Name</a></li>
-                <li><a href="#" class="chapter-item">ST-2: Chapter 2</a></li>
-                <li><a href="#" class="chapter-item">ST-3: Chapter 3</a></li>
-                <li><a href="#" class="chapter-item">ST-4: Chapter 4</a></li>
-                <li><a href="#" class="chapter-item">ST-5: Chapter 5</a></li>
-                <li><a href="#" class="chapter-item">ST-6: Chapter 6</a></li>
-                <li><a href="#" class="chapter-item">ST-7: Chapter 7</a></li>
-                <li><a href="#" class="chapter-item">ST-8: Chapter 8</a></li>
+                <li><a href="#" class="chapter-item">ST-2</a></li>
+                <li><a href="#" class="chapter-item">ST-3</a></li>
+                <li><a href="#" class="chapter-item">ST-4</a></li>
+                <li><a href="#" class="chapter-item">ST-5</a></li>
+                <li><a href="#" class="chapter-item">ST-6</a></li>
+                <li><a href="#" class="chapter-item">ST-7</a></li>
+                <li><a href="#" class="chapter-item">ST-8</a></li>
             </ul>
         </div>
     </div>
@@ -76,111 +76,14 @@
             <div id="info">
                 <div class="info-header">
                     <p id="dr-name">Dr. <input type="text" placeholder="@nickname"></p> 
-                    <h2 class="info-title">ST-1 Before: Story Name</h2>
+                    <h2 class="info-title">Loading...</h2>
                 </div>
-                <p class="info-description">Mô tả chap - Trong mọi câu chuyện, luôn có những anh hùng và cũng có những
-                    kẻ phản diện. Những người mang trong mình lý tưởng sẽ chiến đấu cho những gì họ tin là lựa chọn đúng
-                    đắn.</p>
+                <p class="info-description"></p>
             </div>
 
             <div id="story-content">
-                <!-- template thoại  -->
-                <!-- 
-                    BGM Scroll Trigger: Thêm data-bgm-id, data-bgm-intro, data-bgm-loop vào element để tự động đổi nhạc khi cuộn tới
-                    Ví dụ: data-bgm-id="calm" data-bgm-intro="calm_intro.wav" data-bgm-loop="calm_loop.wav"
-                -->
-                <section class="dialogue-section" >
-
-                    <!-- Video Box Template -->
-                    <div class="dialogue-video-box" data-bgm-id="">
-                        <video src="../assets/videos/ak_chap10_pv.mp4" controls></video>
-                    </div>
-
-                    <section class="dialogue-background"
-                    data-bgm-id="m_avg_tense"
-                    data-bgm-intro="music_act15d0d0_m_avg_tense_intro.wav" 
-                    data-bgm-loop="m_avg_tense_loop.wav">
-
-                        <div class="background-wrapper">
-                            <img class="background-image" src="../assets/images/art gallery/Amiya_Awakening.png" alt="">
-                            <img class="expand-icon" src="../assets/images/web icon/expand.png" alt="">
-                        </div>
-
-                        <div class="dialogue-container">
-                            <div class="dialogue-box">
-                                <img class="character_avt"
-                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên trái)-->
-                                <div class="dialogue-content">
-                                    <p class="character_name">tên</p>
-                                    <p class="dialogue"> Dr.@nickname Trong mọi câu chuyện, luôn có những anh hùng và cũng có những
-                                        kẻ phản diện. Những người mang trong mình lý tưởng sẽ chiến đấu cho những gì họ
-                                        tin là lựa chọn đúng đắn.</p>
-                                </div>
-                                <img class="character_avt"
-                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên phải)-->
-                            </div>
-                           
-                            <div class="sfx_player" data-sfx-src="avg_d_avg_swordexsheath.wav" data-sfx-name="Rút kiếm">
-                            </div>
-
-                            <!-- Template lựa chọn -->
-                            <!-- data-choice-group: ID nhóm lựa chọn này để phân biệt với các nhóm khác -->
-                            <div class="dialogue-box decision-group" data-choice-group="choice1">
-                                <img class="character_avt" src="../assets/images/character/doctor/doctor_avatar.png"
-                                    alt=""><!-- ảnh nhân vật (bên trái)-->
-                                <div class="dialogue-content decision-choice">
-                                    <!-- data-choice-value: giá trị của lựa chọn này -->
-                                    <p class="decision" data-choice-value="1">lựa chọn 1</p>
-                                    <p class="decision" data-choice-value="2">lựa chọn 2</p>
-                                    <p class="decision" data-choice-value="3">lựa chọn 3</p>
-                                </div>
-                                <img class="character_avt" src="../assets/images/character/blank.png"
-                                    alt=""><!-- ảnh nhân vật (bên phải)-->
-                            </div>
-
-                            <!-- data-choice-response: dialogue này tương ứng với lựa chọn nào -->
-                            <!-- data-choice-group: thuộc nhóm lựa chọn nào -->
-                             <div class="dialogue-box choice-response" data-choice-response="1" data-choice-group="choice1">
-                                <img class="character_avt"
-                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên trái)-->
-                                <div class="dialogue-content">
-                                    <p class="character_name">tên</p>
-                                    <p class="dialogue">thoại1</p>
-                                </div>
-                                <img class="character_avt"
-                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên phải)-->
-                            </div>
-                             <div class="dialogue-box choice-response" data-choice-response="2" data-choice-group="choice1">
-                                <img class="character_avt"
-                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên trái)-->
-                                <div class="dialogue-content">
-                                    <p class="character_name">tên</p>
-                                    <p class="dialogue">thoại2</p>
-                                </div>
-                                <img class="character_avt"
-                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên phải)-->
-                            </div>
-                             <div class="dialogue-box choice-response" data-choice-response="3" data-choice-group="choice1">
-                                <img class="character_avt"
-                                    src="../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên trái)-->
-                                <div class="dialogue-content">
-                                    <p class="character_name">tên</p>
-                                    <p class="dialogue">thoại3</p>
-                                </div>
-                                <img class="character_avt"
-                                    src="../assets/images/character/hibiscus/hibiscus_avatar.webp"
-                                    alt=""><!-- ảnh nhân vật (bên phải)-->
-                            </div>
-                        </div>
-                    </section>
-                </section>
+                <!-- Story content will be loaded from Supabase -->
+                <div class="loading-placeholder">Đang tải...</div>
             </div>
 
             <div class="switch-chapter-button">
@@ -200,9 +103,12 @@
     <!-- Footer will be loaded here -->
     <div id="footer-placeholder"></div>
 </body>
+<script src="../global/supabase-client.js"></script>
+<script src="../global/supabase-api.js"></script>
 <script src="../global/script.js"></script>
 <script src="./bgm-manager.js"></script>
 <script src="./sfx-manager.js"></script>
+<script src="./story-renderer.js"></script>
 <script src="./script.js"></script>
 
 </html>
