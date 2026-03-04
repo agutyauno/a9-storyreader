@@ -12,6 +12,33 @@ function getEventIdFromURL() {
 	return urlParams.get('event');
 }
 
+// ============= Get Region ID from URL =============
+function getRegionIdFromURL() {
+	const urlParams = new URLSearchParams(window.location.search);
+	return urlParams.get('region');
+}
+
+// ============= Setup Back to Region Button =============
+async function setupBackToRegionButton(event) {
+	const backButton = document.getElementById('back-to-region-btn');
+	if (!backButton) return;
+
+	let regionId = getRegionIdFromURL();
+
+	// If no region in URL, fetch from event's arc
+	if (!regionId && event && event.arc_id) {
+		const arc = await SupabaseAPI.getArc(event.arc_id);
+		regionId = arc ? arc.region_id : null;
+	}
+
+	if (!regionId) {
+		backButton.style.display = 'none';
+		return;
+	}
+
+	backButton.href = `../region_page/index.html?region=${encodeURIComponent(regionId)}`;
+}
+
 // ============= Load Event Data from Supabase =============
 async function loadEventData() {
 	const eventId = getEventIdFromURL();
@@ -25,6 +52,7 @@ async function loadEventData() {
 		const event = await SupabaseAPI.getEvent(eventId);
 		if (event) {
 			updateEventInfo(event);
+			await setupBackToRegionButton(event);
 		}
 
 		// Fetch stories, characters, and gallery in parallel

@@ -67,6 +67,7 @@ async function renderArcs(arcs) {
 		return;
 	}
 
+	const regionId = getRegionIdFromURL();
 	let html = '';
 
 	for (const arc of arcs) {
@@ -85,7 +86,7 @@ async function renderArcs(arcs) {
 					<p class="arc-description">${arc.description || ''}</p>
 				</div>
 				<div class="arc-items">
-					${renderEvents(events, suggestion)}
+					${renderEvents(events, suggestion, regionId)}
 				</div>
 			</article>
 		`;
@@ -95,20 +96,21 @@ async function renderArcs(arcs) {
 }
 
 // ============= Render Events with Suggestion =============
-function renderEvents(events, suggestion) {
+function renderEvents(events, suggestion, regionId) {
 	if (events.length === 0) {
 		return '<p class="no-data">Chưa có sự kiện.</p>';
 	}
 
 	let html = '';
 	let suggestionInserted = false;
+	const regionParam = regionId ? `&region=${encodeURIComponent(regionId)}` : '';
 
 	events.forEach((event, index) => {
 		// Insert suggestion at the specified position
 		if (suggestion && !suggestionInserted && suggestion.position <= index) {
 			html += `
 				<div class="arc-suggestion">
-					<a href="../event_page/index.html?event=${suggestion.target_event_id}" class="suggestion-text">
+					<a href="../event_page/index.html?event=${suggestion.target_event_id}${regionParam}" class="suggestion-text">
 						Gợi ý: Đọc tiếp tại đây...
 					</a>
 				</div>
@@ -117,7 +119,7 @@ function renderEvents(events, suggestion) {
 		}
 
 		html += `
-			<a class="selection-panel-item" href="../event_page/index.html?event=${event.event_id}">
+			<a class="selection-panel-item" href="../event_page/index.html?event=${event.event_id}${regionParam}">
 				<img src="${event.image_url || '../assets/images/icon/default.png'}" alt="${event.name}">
 				<div class="selection-content">
 					<p class="event_name name">${event.name}</p>
@@ -131,7 +133,7 @@ function renderEvents(events, suggestion) {
 	if (suggestion && !suggestionInserted) {
 		html += `
 			<div class="arc-suggestion">
-				<a href="../event_page/index.html?event=${suggestion.target_event_id}" class="suggestion-text">
+				<a href="../event_page/index.html?event=${suggestion.target_event_id}${regionParam}" class="suggestion-text">
 					Gợi ý: Đọc tiếp tại đây...
 				</a>
 			</div>
