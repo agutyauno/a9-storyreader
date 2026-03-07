@@ -75,7 +75,7 @@ async function renderArcs(arcs) {
 		const events = await SupabaseAPI.getEventsByArc(arc.arc_id);
 		
 		// Fetch suggestion for this arc
-		const suggestion = await SupabaseAPI.getSuggestion(arc.arc_id);
+		const suggestions = await SupabaseAPI.getSuggestionsByArc(arc.arc_id);
 
 		html += `
 			<article class="arc-section">
@@ -86,7 +86,7 @@ async function renderArcs(arcs) {
 					<p class="arc-description">${arc.description || ''}</p>
 				</div>
 				<div class="arc-items">
-					${renderEvents(events, suggestion, regionId)}
+					${renderEvents(events, suggestions, regionId)}
 				</div>
 			</article>
 		`;
@@ -95,28 +95,43 @@ async function renderArcs(arcs) {
 	container.innerHTML = html;
 }
 
-// ============= Render Events with Suggestion =============
-function renderEvents(events, suggestion, regionId) {
+// ============= Render Events with Suggestions =============
+function renderEvents(events, suggestions, regionId) {
 	if (events.length === 0) {
 		return '<p class="no-data">Chưa có sự kiện.</p>';
 	}
 
 	let html = '';
-	let suggestionInserted = false;
 	const regionParam = regionId ? `&region=${encodeURIComponent(regionId)}` : '';
 
-	events.forEach((event, index) => {
-		// Insert suggestion at the specified position
-		if (suggestion && !suggestionInserted && suggestion.position <= index) {
-			html += `
-				<div class="arc-suggestion">
-					<a href="../event_page/index.html?event=${suggestion.target_event_id}${regionParam}" class="suggestion-text">
-						Gợi ý: Đọc tiếp tại đây...
-					</a>
-				</div>
-			`;
-			suggestionInserted = true;
+	// Build a map of suggestions by position for easy lookup
+	const suggestionsByPosition = new Map();
+	suggestions.forEach(s => {
+		if (!suggestionsByPosition.has(s.position)) {
+			suggestionsByPosition.set(s.position, []);
 		}
+		suggestionsByPosition.get(s.position).push(s);
+	});
+
+	// Track which suggestions have been inserted
+	const insertedPositions = new Set();
+
+	events.forEach((event, index) => {
+		// Insert suggestions whose position <= current index
+		suggestionsByPosition.forEach((suggs, position) => {
+			if (!insertedPositions.has(position) && position <= index) {
+				suggs.forEach(s => {
+					html += `
+						<div class="arc-suggestion">
+							<a href="../event_page/index.html?event=${s.target_event_id}${regionParam}" class="suggestion-text">
+								Gợi ý: Đọc tiếp tại đây...
+							</a>
+						</div>
+					`;
+				});
+				insertedPositions.add(position);
+			}
+		});
 
 		html += `
 			<a class="selection-panel-item" href="../event_page/index.html?event=${event.event_id}${regionParam}">
@@ -129,16 +144,20 @@ function renderEvents(events, suggestion, regionId) {
 		`;
 	});
 
-	// Insert suggestion at the end if not yet inserted and position is after all events
-	if (suggestion && !suggestionInserted) {
-		html += `
-			<div class="arc-suggestion">
-				<a href="../event_page/index.html?event=${suggestion.target_event_id}${regionParam}" class="suggestion-text">
-					Gợi ý: Đọc tiếp tại đây...
-				</a>
-			</div>
-		`;
-	}
+	// Insert remaining suggestions at the end
+	suggestionsByPosition.forEach((suggs, position) => {
+		if (!insertedPositions.has(position)) {
+			suggs.forEach(s => {
+				html += `
+					<div class="arc-suggestion">
+						<a href="../event_page/index.html?event=${s.target_event_id}${regionParam}" class="suggestion-text">
+							Gợi ý: Đọc tiếp tại đây...
+						</a>
+					</div>
+				`;
+			});
+		}
+	});
 
 	return html;
 }

@@ -156,25 +156,87 @@ const SupabaseAPI = {
 
 	// ============= Suggestions =============
 	/**
-	 * Get suggestion for an arc
+	 * Get all suggestions for an arc, ordered by position
 	 * @param {string} arcId
-	 * @returns {Promise<Object|null>}
+	 * @returns {Promise<Array>}
 	 */
-	async getSuggestion(arcId) {
-		return SupabaseClient.getOne('suggestions', 'arc_id', arcId);
+	async getSuggestionsByArc(arcId) {
+		return SupabaseClient.get('suggestions', {
+			filters: [{ column: 'arc_id', operator: 'eq', value: arcId }],
+			order: 'position',
+			ascending: true
+		});
 	},
 
 	/**
-	 * Get the suggested event for an arc
+	 * Get the suggested events for an arc
 	 * @param {string} arcId
+	 * @returns {Promise<Array>}
+	 */
+	async getSuggestedEvents(arcId) {
+		const suggestions = await this.getSuggestionsByArc(arcId);
+		if (suggestions.length === 0) return [];
+
+		const events = [];
+		for (const suggestion of suggestions) {
+			const event = await this.getEvent(suggestion.target_event_id);
+			if (event) {
+				events.push({ ...event, suggestion_position: suggestion.position });
+			}
+		}
+		return events;
+	},
+
+	// ============= Character Expressions =============
+	/**
+	 * Get all expressions for a character
+	 * @param {string} characterId
+	 * @returns {Promise<Array>}
+	 */
+	async getExpressionsByCharacter(characterId) {
+		return SupabaseClient.get('charater_expressions', {
+			filters: [{ column: 'character_id', operator: 'eq', value: characterId }]
+		});
+	},
+
+	// ============= Assets =============
+	/**
+	 * Get all assets
+	 * @returns {Promise<Array>}
+	 */
+	async getAssets() {
+		return SupabaseClient.get('assets');
+	},
+
+	/**
+	 * Get assets by type
+	 * @param {string} type
+	 * @returns {Promise<Array>}
+	 */
+	async getAssetsByType(type) {
+		return SupabaseClient.get('assets', {
+			filters: [{ column: 'type', operator: 'eq', value: type }]
+		});
+	},
+
+	/**
+	 * Get assets by category
+	 * @param {string} category
+	 * @returns {Promise<Array>}
+	 */
+	async getAssetsByCategory(category) {
+		return SupabaseClient.get('assets', {
+			filters: [{ column: 'category', operator: 'eq', value: category }]
+		});
+	},
+
+	/**
+	 * Get a single asset by asset_id
+	 * @param {string} assetId
 	 * @returns {Promise<Object|null>}
 	 */
-	async getSuggestedEvent(arcId) {
-		const suggestion = await this.getSuggestion(arcId);
-		if (!suggestion) {
-			return null;
-		}
-		return this.getEvent(suggestion.target_event_id);
+	async getAsset(assetId) {
+		return SupabaseClient.getOne('assets', 'asset_id', assetId);
 	}
 };
 
