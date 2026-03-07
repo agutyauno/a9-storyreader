@@ -1,0 +1,121 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Editor</title>
+    <link rel="icon" type="image/png" href="../assets/images/icon/dreambind castle_b.png">
+    <link rel="stylesheet" href="../global/style.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <header>
+        <div id="editor-header">
+            <a href="../home_page/index.html">
+                <img class="header-logo" src="../assets/images/icon/dreambind castle.png" alt="">
+            </a>
+            <p class="header-title">Story Editor</p>
+        </div>
+    </header>
+    <main>
+        <section id="left-sidebar">
+            <div id="sidebar-tabs">
+                <button class="sidebar-tab-btn active" data-tab="story">Story</button>
+                <button class="sidebar-tab-btn" data-tab="asset">Asset</button>
+            </div>
+            
+            <div class="story_tab tab-content active">
+                <div id="tree-toolbar">
+                    <button class="toolbar-btn" id="add-region-btn" title="Add new region">
+                        <span class="btn-icon">+</span> Region
+                    </button>
+                    <button class="toolbar-btn" id="add-arc-btn" title="Add new arc" disabled>
+                        <span class="btn-icon">+</span> Arc
+                    </button>
+                    <button class="toolbar-btn" id="add-event-btn" title="Add new event" disabled>
+                        <span class="btn-icon">+</span> Event
+                    </button>
+                    <button class="toolbar-btn" id="add-story-btn" title="Add new story" disabled>
+                        <span class="btn-icon">+</span> Story
+                    </button>
+                </div>
+                <div id="story-tree-container">
+                    <ul class="tree" id="story-tree"></ul>
+                </div>
+            </div>
+            
+            <div class="asset_tab tab-content">
+                <div id="asset-tree-container">
+                    <ul class="tree" id="asset-tree"></ul>
+                </div>
+            </div>
+        </section>
+        <section id="editor"></section>
+        <section id="preview"></section>
+    </main>
+    
+    <!-- Add Item Modal -->
+    <div id="add-item-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New Item</h3>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-item-form">
+                    <input type="hidden" id="item-type" name="type">
+                    <input type="hidden" id="parent-id" name="parentId">
+                    
+                    <div class="form-group">
+                        <label for="item-name">Name <span style="color: #ff6b6b;">*</span></label>
+                        <input type="text" id="item-name" name="name" required placeholder="Enter name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-description">Description</label>
+                        <textarea id="item-description" name="description" rows="3" placeholder="Enter description (optional)"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-display-order">Display Order</label>
+                        <input type="number" id="item-display-order" name="displayOrder" min="1" placeholder="Auto (next available)">
+                    </div>
+                    
+                    <div class="form-group" id="image-upload-group" style="display: none;">
+                        <label>Image</label>
+                        <small style="color: var(--color-text-tertiary); font-size: var(--font-size-xs); display: block; margin-bottom: 8px;">For Region: icon image | For Event: banner image</small>
+                        
+                        <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+                            <button type="button" class="image-option-btn active" data-option="file">Upload File</button>
+                            <button type="button" class="image-option-btn" data-option="url">Enter URL</button>
+                        </div>
+                        
+                        <div id="file-upload-section">
+                            <input type="file" id="item-image-file" accept="image/*" style="display: none;">
+                            <button type="button" id="choose-file-btn" class="btn-secondary" style="width: 100%;">
+                                Choose Image File
+                            </button>
+                            <div id="file-name-display" style="margin-top: 8px; font-size: var(--font-size-xs); color: var(--color-text-secondary);"></div>
+                        </div>
+                        
+                        <div id="url-input-section" style="display: none;">
+                            <input type="text" id="item-image-url" placeholder="Enter image URL">
+                        </div>
+                        
+                        <div id="image-preview" style="margin-top: var(--spacing-sm); display: none;">
+                            <img id="preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: var(--radius-base); border: 1px solid var(--color-border);">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../global/script.js"></script>
+    <script src="./script.js"></script>
+</body>
+</html>

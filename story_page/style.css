@@ -40,6 +40,7 @@
 
 .header-logo {
     position: absolute;
+    z-index: 1;
     left: var(--spacing-lg);
     top: 50%;
     transform: translateY(-50%);
