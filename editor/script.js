@@ -29,10 +29,10 @@ const mockAssets = [
     // Backgrounds
     {
         id: 10,
-        asset_id: 'bg-rhodes',
+        asset_id: 'bg-amiya-awakening',
         type: 'image',
         category: 'background',
-        url: '../assets/images/art gallery/bg_rhodes.jpg'
+        url: '../assets/images/art gallery/Amiya_Awakening.png'
     },
     // Character images
     {
@@ -59,17 +59,24 @@ const mockAssets = [
     // BGM
     {
         id: 30,
-        asset_id: 'bgm-main-intro',
+        asset_id: 'bgm-tense-loop',
         type: 'audio',
         category: 'bgm',
-        url: '../assets/audio/bgm/main_intro.mp3'
+        url: '../assets/audio/bgm/m_avg_tense_loop.wav'
     },
     {
         id: 31,
-        asset_id: 'bgm-main-loop',
+        asset_id: 'bgm-tense-intro',
         type: 'audio',
         category: 'bgm',
-        url: '../assets/audio/bgm/main_loop.mp3'
+        url: '../assets/audio/bgm/music_act15d0d0_m_avg_tense_intro.wav'
+    },
+    {
+        id: 32,
+        asset_id: 'bgm-jealous-intro',
+        type: 'audio',
+        category: 'bgm',
+        url: '../assets/audio/bgm/music_act15d0d0_m_avg_jealous_intro.wav'
     },
     // SFX
     {
@@ -77,14 +84,142 @@ const mockAssets = [
         asset_id: 'sfx-footstep',
         type: 'audio',
         category: 'sfx',
-        url: '../assets/audio/sfx/footstep.mp3'
+        url: '../assets/audio/sfx/avg_d_avg_footstep_stonestep.wav'
     },
     {
         id: 41,
-        asset_id: 'sfx-alert',
+        asset_id: 'sfx-applause',
         type: 'audio',
         category: 'sfx',
-        url: '../assets/audio/sfx/alert.mp3'
+        url: '../assets/audio/sfx/avg_d_avg_applause.wav'
+    },
+    {
+        id: 42,
+        asset_id: 'sfx-glass-break',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_glass_break.wav'
+    },
+    {
+        id: 43,
+        asset_id: 'sfx-sword-swing',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_swordy.wav'
+    },
+    {
+        id: 44,
+        asset_id: 'sfx-sword-tsing',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_swordtsing1.wav'
+    },
+    {
+        id: 45,
+        asset_id: 'sfx-sword-exsheath',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_swordexsheath.wav'
+    },
+    {
+        id: 46,
+        asset_id: 'sfx-magic',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_magic_1.wav'
+    },
+    {
+        id: 47,
+        asset_id: 'sfx-monster-roar',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_monsterroar.wav'
+    },
+    {
+        id: 48,
+        asset_id: 'sfx-walk-fast',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_walkfast.wav'
+    },
+    {
+        id: 49,
+        asset_id: 'sfx-walk-water',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_walk_water.wav'
+    },
+    {
+        id: 50,
+        asset_id: 'sfx-walk-stage',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_walk_stage.wav'
+    },
+    {
+        id: 51,
+        asset_id: 'sfx-walk-gen',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_gen_walk_n.wav'
+    },
+    {
+        id: 52,
+        asset_id: 'sfx-bowstring',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_bowstring.wav'
+    },
+    {
+        id: 53,
+        asset_id: 'sfx-originium-cast',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_originiumcastshort.wav'
+    },
+    {
+        id: 54,
+        asset_id: 'sfx-audience-chaos',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/avg_d_avg_audience_chaos.wav'
+    },
+    {
+        id: 55,
+        asset_id: 'sfx-crowns-flash',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/enemy_e_skill_e_skill_crownsflash.wav'
+    },
+    {
+        id: 56,
+        asset_id: 'sfx-assault-rifle',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/player_p_imp_p_imp_assaultrifle_n.wav'
+    },
+    {
+        id: 57,
+        asset_id: 'sfx-mon3tr-aoe',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/player_p_aoe_p_aoe_Mon3tr2_n.wav'
+    },
+    // Videos
+    {
+        id: 70,
+        asset_id: 'video-chap10-pv',
+        type: 'video',
+        category: 'video',
+        url: '../assets/videos/ak_chap10_pv.mp4'
+    },
+    // Gallery
+    {
+        id: 60,
+        asset_id: 'gallery-amiya-awakening',
+        type: 'image',
+        category: 'gallery',
+        url: '../assets/images/art gallery/Amiya_Awakening.png'
     }
 ];
 
@@ -178,7 +313,7 @@ const mockCharacters = [
 
 const mockExpressions = [
     // Amiya expressions
-    { character_id: 'char-amiya', name: 'default', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
+    { character_id: 'char-amiya', name: 'default', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417_avatar.webp', full_url: '../assets/images/character/avg_npc_417/avg_npc_417.png' },
     { character_id: 'char-amiya', name: 'happy', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
     { character_id: 'char-amiya', name: 'sad', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
     // Doctor expressions
@@ -582,7 +717,418 @@ function initializeEditor() {
     
     // Setup image picker modal
     setupImagePickerModal();
+    
+    // Setup asset browser
+    AssetBrowser.init();
 }
+
+/* ================================================================================================= */
+/* Asset Browser                                                                                     */
+/* ================================================================================================= */
+const AssetBrowser = {
+    currentCategory: null,
+
+    categories: [
+        { key: 'bgm',        label: 'BGM',        type: 'audio', category: 'bgm' },
+        { key: 'sfx',        label: 'SFX',        type: 'audio', category: 'sfx' },
+        { key: 'background', label: 'Backgrounds', type: 'image', category: 'background' },
+        { key: 'image',      label: 'Images',      type: 'image', category: 'thumbnail' },
+        { key: 'video',      label: 'Videos',      type: 'video', category: null },
+        { key: 'character',  label: 'Characters',  type: null,    category: null },
+        { key: 'gallery',    label: 'Gallery',     type: null,    category: null },
+    ],
+
+    init() {
+        this.renderCategoryGrid();
+        this.setupSearch();
+    },
+
+    /* ---- Category Grid ---- */
+    renderCategoryGrid() {
+        const grid = document.getElementById('asset-category-grid');
+        grid.innerHTML = this.categories.map(cat => {
+            const count = this.getCategoryCount(cat);
+            return `
+                <div class="asset-cat-card" data-cat="${cat.key}">
+                    <span class="asset-cat-label">${cat.label}</span>
+                    <span class="asset-cat-count">${count}</span>
+                </div>
+            `;
+        }).join('');
+
+        grid.addEventListener('click', (e) => {
+            const card = e.target.closest('.asset-cat-card');
+            if (!card) return;
+            this.openCategory(card.dataset.cat);
+        });
+    },
+
+    getCategoryCount(cat) {
+        if (cat.key === 'character') return mockCharacters.length;
+        if (cat.key === 'gallery') {
+            // Count unique gallery-like assets or placeholder
+            return mockAssets.filter(a => a.category === 'gallery').length;
+        }
+        if (cat.key === 'video') return mockAssets.filter(a => a.type === 'video').length;
+        if (cat.key === 'image') {
+            // "Images" = thumbnails + any image not in background/character/gallery
+            return mockAssets.filter(a => a.type === 'image' && a.category === 'thumbnail').length;
+        }
+        return mockAssets.filter(a => {
+            if (cat.type && a.type !== cat.type) return false;
+            if (cat.category && a.category !== cat.category) return false;
+            return true;
+        }).length;
+    },
+
+    /* ---- Open / Close Category ---- */
+    openCategory(key) {
+        this.currentCategory = key;
+        const cat = this.categories.find(c => c.key === key);
+        if (!cat) return;
+
+        // Show nav header
+        document.getElementById('asset-nav-header').style.display = 'flex';
+        document.getElementById('asset-nav-title').textContent = cat.label;
+
+        // Hide grid, show list
+        document.getElementById('asset-category-grid').style.display = 'none';
+        document.getElementById('asset-list').style.display = 'block';
+
+        // Back button
+        const backBtn = document.getElementById('asset-back-btn');
+        backBtn.onclick = () => this.closeCategory();
+
+        // Clear search
+        document.getElementById('asset-search-input').value = '';
+
+        this.renderAssetList(key);
+    },
+
+    closeCategory() {
+        this.currentCategory = null;
+        document.getElementById('asset-nav-header').style.display = 'none';
+        document.getElementById('asset-category-grid').style.display = 'grid';
+        document.getElementById('asset-list').style.display = 'none';
+        document.getElementById('asset-search-input').value = '';
+    },
+
+    /* ---- Asset List per Category ---- */
+    getAssetsForCategory(key) {
+        switch (key) {
+            case 'bgm':        return mockAssets.filter(a => a.type === 'audio' && a.category === 'bgm');
+            case 'sfx':        return mockAssets.filter(a => a.type === 'audio' && a.category === 'sfx');
+            case 'background': return mockAssets.filter(a => a.type === 'image' && a.category === 'background');
+            case 'image':      return mockAssets.filter(a => a.type === 'image' && a.category === 'thumbnail');
+            case 'video':      return mockAssets.filter(a => a.type === 'video');
+            case 'gallery':    return mockAssets.filter(a => a.category === 'gallery');
+            default:           return [];
+        }
+    },
+
+    renderAssetList(key, filter = '') {
+        const listContainer = document.getElementById('asset-list');
+        const filterLower = filter.toLowerCase();
+
+        if (key === 'character') {
+            this.renderCharacterList(listContainer, filterLower);
+            return;
+        }
+
+        const assets = this.getAssetsForCategory(key);
+        const filtered = filterLower
+            ? assets.filter(a => a.asset_id.toLowerCase().includes(filterLower))
+            : assets;
+
+        if (filtered.length === 0) {
+            listContainer.innerHTML = '<div class="asset-list-empty">No assets found</div>';
+            return;
+        }
+
+        listContainer.innerHTML = filtered.map(a => {
+            const thumb = (a.type === 'image')
+                ? `<img class="asset-list-thumb" src="${escapeHtml(a.url)}" alt="">`
+                : '';
+            return `
+                <div class="asset-list-item" data-asset-id="${escapeHtml(a.asset_id)}">
+                    ${thumb}
+                    <span class="asset-item-name">${escapeHtml(a.asset_id)}</span>
+                </div>
+            `;
+        }).join('');
+
+        // Click handler
+        listContainer.onclick = (e) => {
+            const item = e.target.closest('.asset-list-item');
+            if (!item) return;
+            const assetId = item.dataset.assetId;
+            const asset = mockAssets.find(a => a.asset_id === assetId);
+            if (asset) this.showAssetPreview(asset);
+        };
+    },
+
+    renderCharacterList(container, filter) {
+        const chars = filter
+            ? mockCharacters.filter(c =>
+                c.name.toLowerCase().includes(filter) ||
+                c.character_id.toLowerCase().includes(filter))
+            : mockCharacters;
+
+        if (chars.length === 0) {
+            container.innerHTML = '<div class="asset-list-empty">No characters found</div>';
+            return;
+        }
+
+        container.innerHTML = chars.map(c => {
+            const exprs = mockExpressions.filter(e => e.character_id === c.character_id);
+            const defaultExpr = exprs.find(e => e.name === 'default') || exprs[0];
+            const avatarUrl = defaultExpr ? defaultExpr.avatar_url : '';
+            const exprItems = exprs.map(ex => `
+                <div class="asset-list-subitem" data-char-id="${escapeHtml(c.character_id)}" data-expr="${escapeHtml(ex.name)}">
+                    <img class="asset-expr-thumb" src="${escapeHtml(ex.avatar_url)}" alt="">
+                    <span>${escapeHtml(ex.name)}</span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="asset-char-group">
+                    <div class="asset-list-item asset-char-header" data-char-id="${escapeHtml(c.character_id)}">
+                        <span class="asset-item-name">${escapeHtml(c.name)}</span>
+                        <span class="asset-cat-count">${exprs.length}</span>
+                        <span class="asset-char-toggle">▶</span>
+                    </div>
+                    <div class="asset-char-expressions" style="display: none;">
+                        ${exprItems}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Toggle expressions
+        container.onclick = (e) => {
+            const header = e.target.closest('.asset-char-header');
+            if (header) {
+                const group = header.closest('.asset-char-group');
+                const exprsDiv = group.querySelector('.asset-char-expressions');
+                const toggle = header.querySelector('.asset-char-toggle');
+                const visible = exprsDiv.style.display !== 'none';
+                exprsDiv.style.display = visible ? 'none' : 'block';
+                toggle.textContent = visible ? '▶' : '▼';
+                return;
+            }
+
+            const subitem = e.target.closest('.asset-list-subitem');
+            if (subitem) {
+                const charId = subitem.dataset.charId;
+                const exprName = subitem.dataset.expr;
+                const char = mockCharacters.find(c => c.character_id === charId);
+                const expr = mockExpressions.find(e => e.character_id === charId && e.name === exprName);
+                if (char && expr) this.showCharacterPreview(char, expr);
+            }
+        };
+    },
+
+
+
+    /* ---- Search ---- */
+    setupSearch() {
+        const input = document.getElementById('asset-search-input');
+        input.addEventListener('input', () => {
+            const query = input.value.trim();
+
+            if (this.currentCategory) {
+                // Filter within current category
+                this.renderAssetList(this.currentCategory, query);
+            } else if (query.length >= 2) {
+                // Global search across all assets
+                this.renderSearchResults(query);
+            } else {
+                // Back to grid
+                document.getElementById('asset-category-grid').style.display = 'grid';
+                document.getElementById('asset-list').style.display = 'none';
+                document.getElementById('asset-nav-header').style.display = 'none';
+            }
+        });
+    },
+
+    renderSearchResults(query) {
+        const lower = query.toLowerCase();
+
+        // Search assets
+        const matchedAssets = mockAssets.filter(a =>
+            a.asset_id.toLowerCase().includes(lower)
+        );
+
+        // Search characters
+        const matchedChars = mockCharacters.filter(c =>
+            c.name.toLowerCase().includes(lower) ||
+            c.character_id.toLowerCase().includes(lower)
+        );
+
+        const listContainer = document.getElementById('asset-list');
+
+        if (matchedAssets.length === 0 && matchedChars.length === 0) {
+            document.getElementById('asset-category-grid').style.display = 'none';
+            listContainer.style.display = 'block';
+            document.getElementById('asset-nav-header').style.display = 'none';
+            listContainer.innerHTML = '<div class="asset-list-empty">No results</div>';
+            return;
+        }
+
+        let html = '';
+
+        // Group assets by category
+        const grouped = {};
+        matchedAssets.forEach(a => {
+            const catKey = a.category || a.type;
+            if (!grouped[catKey]) grouped[catKey] = [];
+            grouped[catKey].push(a);
+        });
+
+        for (const [catKey, assets] of Object.entries(grouped)) {
+            html += `<div class="asset-search-group-label">${escapeHtml(catKey)}</div>`;
+            html += assets.map(a => `
+                <div class="asset-list-item" data-asset-id="${escapeHtml(a.asset_id)}">
+                    <span class="asset-item-name">${escapeHtml(a.asset_id)}</span>
+                </div>
+            `).join('');
+        }
+
+        if (matchedChars.length > 0) {
+            html += '<div class="asset-search-group-label">characters</div>';
+            html += matchedChars.map(c => `
+                <div class="asset-list-item" data-char-id="${escapeHtml(c.character_id)}">
+                    <span class="asset-item-name">${escapeHtml(c.name)}</span>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('asset-category-grid').style.display = 'none';
+        listContainer.style.display = 'block';
+        document.getElementById('asset-nav-header').style.display = 'none';
+        listContainer.innerHTML = html;
+
+        listContainer.onclick = (e) => {
+            const item = e.target.closest('.asset-list-item');
+            if (!item) return;
+            const assetId = item.dataset.assetId;
+            const charId = item.dataset.charId;
+            if (assetId) {
+                const asset = mockAssets.find(a => a.asset_id === assetId);
+                if (asset) this.showAssetPreview(asset);
+            } else if (charId) {
+                const char = mockCharacters.find(c => c.character_id === charId);
+                const expr = mockExpressions.find(e => e.character_id === charId && e.name === 'default');
+                if (char) this.showCharacterPreview(char, expr);
+            }
+        };
+    },
+
+    /* ---- Preview Modal ---- */
+    showAssetPreview(asset) {
+        const modal = document.getElementById('asset-preview-modal');
+        const title = document.getElementById('asset-preview-title');
+        const media = document.getElementById('asset-preview-media');
+        const info = document.getElementById('asset-preview-info');
+
+        title.textContent = asset.asset_id;
+        media.innerHTML = this.buildMediaPreview(asset);
+        info.innerHTML = `
+            <table class="asset-info-table">
+                <tr><td>ID</td><td>${escapeHtml(asset.asset_id)}</td></tr>
+                <tr><td>Type</td><td>${escapeHtml(asset.type)}</td></tr>
+                <tr><td>Category</td><td>${escapeHtml(asset.category)}</td></tr>
+                <tr><td>URL</td><td class="asset-info-url">${escapeHtml(asset.url)}</td></tr>
+            </table>
+        `;
+
+        this.setupCopyButton(asset.asset_id);
+        modal.style.display = 'flex';
+        modal.onclick = (e) => { if (e.target === modal) this.closePreview(); };
+        document.getElementById('asset-preview-close-btn').onclick = () => this.closePreview();
+    },
+
+    showCharacterPreview(character, expression) {
+        const modal = document.getElementById('asset-preview-modal');
+        const title = document.getElementById('asset-preview-title');
+        const media = document.getElementById('asset-preview-media');
+        const info = document.getElementById('asset-preview-info');
+
+        title.textContent = character.name;
+
+        let mediaHtml = '';
+        if (expression) {
+            if (expression.full_url) {
+                mediaHtml = `<img class="asset-preview-img" src="${escapeHtml(expression.full_url)}" alt="full">`;
+            } else if (expression.avatar_url) {
+                mediaHtml = `<img class="asset-preview-img" src="${escapeHtml(expression.avatar_url)}" alt="avatar">`;
+            }
+        }
+        media.innerHTML = mediaHtml;
+
+        const exprLabel = expression ? expression.name : '-';
+        info.innerHTML = `
+            <table class="asset-info-table">
+                <tr><td>Character ID</td><td>${escapeHtml(character.character_id)}</td></tr>
+                <tr><td>Name</td><td>${escapeHtml(character.name)}</td></tr>
+                <tr><td>Expression</td><td>${escapeHtml(exprLabel)}</td></tr>
+            </table>
+        `;
+
+        this.setupCopyButton(character.character_id);
+        modal.style.display = 'flex';
+        modal.onclick = (e) => { if (e.target === modal) this.closePreview(); };
+        document.getElementById('asset-preview-close-btn').onclick = () => this.closePreview();
+    },
+
+    buildMediaPreview(asset) {
+        const url = AssetResolver.toUrl(asset.asset_id);
+        if (!url) return '<div class="asset-preview-none">No preview available</div>';
+
+        const filename = url.split('/').pop();
+
+        if (asset.type === 'image') {
+            return `<img class="asset-preview-img" src="${escapeHtml(url)}" alt="">`;
+        }
+        if (asset.type === 'audio') {
+            return `
+                <div class="asset-preview-audio-wrap">
+                    <div class="asset-preview-audio-label">${escapeHtml(filename)}</div>
+                    <audio class="asset-preview-audio" controls src="${escapeHtml(url)}"></audio>
+                </div>
+            `;
+        }
+        if (asset.type === 'video') {
+            return `
+                <div class="asset-preview-video-wrap">
+                    <video class="asset-preview-video" controls src="${escapeHtml(url)}"></video>
+                    <div class="asset-preview-video-label">${escapeHtml(filename)}</div>
+                </div>
+            `;
+        }
+        return '<div class="asset-preview-none">No preview available</div>';
+    },
+
+    setupCopyButton(id) {
+        const btn = document.getElementById('asset-preview-copy-btn');
+        btn.onclick = () => {
+            navigator.clipboard.writeText(id).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy Asset ID'; }, 1500);
+            });
+        };
+    },
+
+    closePreview() {
+        const modal = document.getElementById('asset-preview-modal');
+        modal.style.display = 'none';
+        // Stop any playing media
+        const audio = modal.querySelector('audio');
+        const video = modal.querySelector('video');
+        if (audio) audio.pause();
+        if (video) video.pause();
+    }
+};
 
 /* ================================================================================================= */
 /* Tab Switching */

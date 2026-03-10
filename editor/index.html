@@ -46,8 +46,16 @@
             </div>
             
             <div class="asset_tab tab-content">
-                <div id="asset-tree-container">
-                    <ul class="tree" id="asset-tree"></ul>
+                <div id="asset-search-bar">
+                    <input type="text" id="asset-search-input" placeholder="Search assets..." autocomplete="off">
+                </div>
+                <div id="asset-nav-header" style="display: none;">
+                    <button id="asset-back-btn" title="Back to categories">◀</button>
+                    <span id="asset-nav-title"></span>
+                </div>
+                <div id="asset-content">
+                    <div id="asset-category-grid"></div>
+                    <div id="asset-list" style="display: none;"></div>
                 </div>
             </div>
         </section>
@@ -136,6 +144,23 @@
                     <button type="button" class="btn-secondary" id="image-picker-cancel-btn">Cancel</button>
                     <button type="button" class="btn-primary" id="image-picker-select-btn">Select</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Preview Modal -->
+    <div id="asset-preview-modal" class="modal" style="display: none;">
+        <div class="modal-content asset-preview-modal-content">
+            <div class="modal-header">
+                <h3 id="asset-preview-title">Asset Preview</h3>
+                <button class="modal-close" id="asset-preview-close-btn">&times;</button>
+            </div>
+            <div class="modal-body asset-preview-body">
+                <div id="asset-preview-media"></div>
+                <div id="asset-preview-info"></div>
+            </div>
+            <div class="asset-preview-footer">
+                <button type="button" class="btn-secondary" id="asset-preview-copy-btn">Copy Asset ID</button>
             </div>
         </div>
     </div>

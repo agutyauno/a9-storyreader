@@ -27,7 +27,6 @@
         {
           "type": "video",
           "src": "url",
-          "bgm_id": "url?"
         },
         {
           "type": "background",
@@ -155,11 +154,11 @@ const StoryRenderer = {
 
 	/**
 	 * Render video box
+	 * No bgm here because video elements are meant for cutscenes and should not have bgm controls
 	 */
 	renderVideo(element) {
-		const bgmAttr = element.bgm_id ? `data-bgm-id="${element.bgm_id}"` : '';
 		return `
-			<div class="dialogue-video-box" ${bgmAttr}>
+			<div class="dialogue-video-box" data-bgm-id="">
 				<video src="${element.src}" controls></video>
 			</div>
 		`;

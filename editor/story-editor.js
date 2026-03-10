@@ -180,7 +180,7 @@ const StoryScriptParser = {
                 result.sections.push(currentSection);
             }
 
-            // @video src="url" bgm="url"
+            // @video src="url"
             const videoMatch = trimmed.match(/^@video\s*(.*)/);
             if (videoMatch) {
                 if (currentBackground) {
@@ -189,7 +189,6 @@ const StoryScriptParser = {
                 }
                 const params = this.parseParams(videoMatch[1]);
                 const video = { type: 'video', src: AssetResolver.toUrl(params.src || '') };
-                if (params.bgm) video.bgm_id = AssetResolver.toUrl(params.bgm);
                 currentSection.elements.push(video);
                 continue;
             }
@@ -395,7 +394,6 @@ const StoryScriptSerializer = {
     serializeVideo(el, lines) {
         let line = '@video';
         if (el.src) line += ` src="${AssetResolver.toId(el.src)}"`;
-        if (el.bgm_id) line += ` bgm="${AssetResolver.toId(el.bgm_id)}"`;
         lines.push(line);
         lines.push('');
     },
@@ -571,7 +569,7 @@ const StoryEditor = {
             section:  '\n@section\n',
             bg:       '@bg ""',
             bgm:      '@bgm id="" intro="" loop=""',
-            video:    '@video src="" bgm=""',
+            video:    '@video src=""',
             dialogue: 'Name [, ]: ',
             sfx:      '@sfx "" src=""',
             decision: '@decision "" [, ]\n- Choice 1\n- Choice 2',
