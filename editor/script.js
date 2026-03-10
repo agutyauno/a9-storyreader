@@ -2,6 +2,271 @@
 /* Story Editor - Tree Sidebar Manager */
 /* ================================================================================================= */
 
+// Mock asset data matching Supabase assets table
+const mockAssets = [
+    // Thumbnails (for region/event images)
+    {
+        id: 1,
+        asset_id: 'icon-dreambind',
+        type: 'image',
+        category: 'thumbnail',
+        url: '../assets/images/icon/dreambind castle.png'
+    },
+    {
+        id: 2,
+        asset_id: 'icon-dreambind-b',
+        type: 'image',
+        category: 'thumbnail',
+        url: '../assets/images/icon/dreambind castle_b.png'
+    },
+    {
+        id: 3,
+        asset_id: 'logo-main',
+        type: 'image',
+        category: 'thumbnail',
+        url: '../assets/images/logo/logo.png'
+    },
+    // Backgrounds
+    {
+        id: 10,
+        asset_id: 'bg-rhodes',
+        type: 'image',
+        category: 'background',
+        url: '../assets/images/art gallery/bg_rhodes.jpg'
+    },
+    // Character images
+    {
+        id: 20,
+        asset_id: 'char-amiya-avatar',
+        type: 'image',
+        category: 'character',
+        url: '../assets/images/character/avg_npc_417/avg_npc_417.png'
+    },
+    {
+        id: 21,
+        asset_id: 'char-doctor-avatar',
+        type: 'image',
+        category: 'character',
+        url: '../assets/images/character/doctor/doctor.png'
+    },
+    {
+        id: 22,
+        asset_id: 'char-hibiscus-avatar',
+        type: 'image',
+        category: 'character',
+        url: '../assets/images/character/hibiscus/hibiscus.png'
+    },
+    // BGM
+    {
+        id: 30,
+        asset_id: 'bgm-main-intro',
+        type: 'audio',
+        category: 'bgm',
+        url: '../assets/audio/bgm/main_intro.mp3'
+    },
+    {
+        id: 31,
+        asset_id: 'bgm-main-loop',
+        type: 'audio',
+        category: 'bgm',
+        url: '../assets/audio/bgm/main_loop.mp3'
+    },
+    // SFX
+    {
+        id: 40,
+        asset_id: 'sfx-footstep',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/footstep.mp3'
+    },
+    {
+        id: 41,
+        asset_id: 'sfx-alert',
+        type: 'audio',
+        category: 'sfx',
+        url: '../assets/audio/sfx/alert.mp3'
+    }
+];
+
+/* ================================================================================================= */
+/* Mock API - simulates DB and GitHub upload */
+const MockAssetAPI = {
+    /**
+     * Get all assets, optionally filtered by type and/or category
+     */
+    async getAssets(type = null, category = null) {
+        await new Promise(r => setTimeout(r, 200));
+        return mockAssets.filter(a => {
+            if (type && a.type !== type) return false;
+            if (category && a.category !== category) return false;
+            return true;
+        });
+    },
+
+    /**
+     * Upload image file to GitHub repo (mock) and create asset record in DB
+     * In production: POST file to GitHub API, then INSERT url into assets table
+     * @param {File} file - The image file from user's device
+     * @returns {Promise<Object>} - The new asset record
+     */
+    async uploadAndCreateAsset(file) {
+        // Simulate upload delay
+        await new Promise(r => setTimeout(r, 500));
+
+        // Mock: convert file to a local object URL to simulate a stored URL
+        // In production this would be the raw GitHub URL after upload
+        const fakeGitHubUrl = URL.createObjectURL(file);
+
+        const newAsset = {
+            id: mockAssets.length > 0 ? Math.max(...mockAssets.map(a => a.id)) + 1 : 1,
+            asset_id: `asset-thumb-${Date.now()}`,
+            type: 'image',
+            category: 'thumbnail',
+            url: fakeGitHubUrl
+        };
+
+        // Add to mock DB
+        mockAssets.push(newAsset);
+        return newAsset;
+    },
+
+    /**
+     * Delete an asset by id (mock)
+     */
+    async deleteAsset(assetId) {
+        await new Promise(r => setTimeout(r, 100));
+        const idx = mockAssets.findIndex(a => a.id === assetId);
+        if (idx !== -1) mockAssets.splice(idx, 1);
+    }
+};
+
+/* ================================================================================================= */
+/* Asset Resolver - converts between asset_id and url                                                */
+/* ================================================================================================= */
+const AssetResolver = {
+    /**
+     * Resolve an asset_id to its URL. If not found, return the input as-is (treat as raw URL).
+     * @param {string} idOrUrl
+     * @returns {string} resolved URL
+     */
+    toUrl(idOrUrl) {
+        if (!idOrUrl) return '';
+        const asset = mockAssets.find(a => a.asset_id === idOrUrl);
+        return asset ? asset.url : idOrUrl;
+    },
+
+    /**
+     * Convert a URL to its asset_id. If not found, return the URL as-is.
+     * @param {string} url
+     * @returns {string} asset_id or original URL
+     */
+    toId(url) {
+        if (!url) return '';
+        const asset = mockAssets.find(a => a.url === url);
+        return asset ? asset.asset_id : url;
+    }
+};
+
+/* ================================================================================================= */
+/* Mock Characters & Expressions (matching DB tables: characters + charater_expressions)              */
+/* ================================================================================================= */
+const mockCharacters = [
+    { id: 1, character_id: 'char-amiya', name: 'Amiya', description: 'Leader of Rhodes Island' },
+    { id: 2, character_id: 'char-doctor', name: 'Doctor', description: 'The player character' },
+    { id: 3, character_id: 'char-hibiscus', name: 'Hibiscus', description: 'Medic operator' }
+];
+
+const mockExpressions = [
+    // Amiya expressions
+    { character_id: 'char-amiya', name: 'default', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
+    { character_id: 'char-amiya', name: 'happy', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
+    { character_id: 'char-amiya', name: 'sad', avatar_url: '../assets/images/character/avg_npc_417/avg_npc_417.png', full_url: '' },
+    // Doctor expressions
+    { character_id: 'char-doctor', name: 'default', avatar_url: '../assets/images/character/doctor/doctor.png', full_url: '' },
+    // Hibiscus expressions
+    { character_id: 'char-hibiscus', name: 'default', avatar_url: '../assets/images/character/hibiscus/hibiscus.png', full_url: '' },
+    { character_id: 'char-hibiscus', name: 'smile', avatar_url: '../assets/images/character/hibiscus/hibiscus.png', full_url: '' }
+];
+
+const MockCharacterAPI = {
+    /** Get all characters */
+    async getCharacters() {
+        await new Promise(r => setTimeout(r, 100));
+        return [...mockCharacters];
+    },
+
+    /** Get a character by character_id */
+    getCharacter(characterId) {
+        return mockCharacters.find(c => c.character_id === characterId) || null;
+    },
+
+    /** Get all expressions for a character_id */
+    getExpressions(characterId) {
+        return mockExpressions.filter(e => e.character_id === characterId);
+    },
+
+    /** Get a specific expression */
+    getExpression(characterId, expressionName) {
+        return mockExpressions.find(
+            e => e.character_id === characterId && e.name === expressionName
+        ) || null;
+    },
+
+    /** Find character by display name (e.g. "Amiya") */
+    findByName(name) {
+        return mockCharacters.find(c => c.name === name) || null;
+    }
+};
+
+/**
+ * CharacterResolver — resolves character + expression names to avatar/full URLs
+ *
+ * Script syntax:
+ *   @char Amiya id="char-amiya"         → loads all expressions from DB
+ *   Amiya.happy [Amiya.happy, Doctor]: text  → uses expression "happy"
+ *   Amiya [Amiya, Doctor]: text              → uses expression "default"
+ *
+ * In story_content JSON characters map:
+ *   "Amiya"       → default expression avatar/full
+ *   "Amiya.happy" → happy expression avatar/full
+ */
+const CharacterResolver = {
+    /**
+     * Build the characters map for story_content JSON from @char declarations.
+     * Returns { "Name": {avatar, full_image}, "Name.expr": {avatar, full_image}, ... }
+     * @param {Array} charDeclarations - [{name: "Amiya", character_id: "char-amiya"}, ...]
+     * @returns {Object}
+     */
+    buildCharacterMap(charDeclarations) {
+        const map = {};
+        for (const decl of charDeclarations) {
+            const expressions = MockCharacterAPI.getExpressions(decl.character_id);
+            for (const expr of expressions) {
+                const key = expr.name === 'default' ? decl.name : `${decl.name}.${expr.name}`;
+                map[key] = {
+                    avatar: expr.avatar_url || '',
+                    full_image: expr.full_url || ''
+                };
+            }
+        }
+        return map;
+    },
+
+    /**
+     * Reverse-lookup: given a characters map key like "Amiya" or "Amiya.happy",
+     * find the character_id. Returns { character_id, expression } or null.
+     */
+    resolveKey(key) {
+        const dotIdx = key.indexOf('.');
+        const displayName = dotIdx >= 0 ? key.substring(0, dotIdx) : key;
+        const exprName = dotIdx >= 0 ? key.substring(dotIdx + 1) : 'default';
+
+        const char = MockCharacterAPI.findByName(displayName);
+        if (!char) return null;
+        return { character_id: char.character_id, name: displayName, expression: exprName };
+    }
+};
+
 // Mock data structure matching Supabase database schema
 const mockStoryData = [
     {
@@ -46,8 +311,43 @@ const mockStoryData = [
                                 description: 'The beginning of the journey',
                                 display_order: 1,
                                 story_content: {
-                                    scenes: [],
-                                    characters: ['char-amiya', 'char-doctor']
+                                    characters: {
+                                        'Amiya': {
+                                            avatar: '../assets/images/character/avg_npc_417/avg_npc_417.png',
+                                            full_image: ''
+                                        },
+                                        'Amiya.happy': {
+                                            avatar: '../assets/images/character/avg_npc_417/avg_npc_417.png',
+                                            full_image: ''
+                                        },
+                                        'Amiya.sad': {
+                                            avatar: '../assets/images/character/avg_npc_417/avg_npc_417.png',
+                                            full_image: ''
+                                        },
+                                        'Doctor': {
+                                            avatar: '../assets/images/character/doctor/doctor.png',
+                                            full_image: ''
+                                        }
+                                    },
+                                    sections: [
+                                        {
+                                            type: 'dialogue_section',
+                                            elements: [
+                                                {
+                                                    type: 'background',
+                                                    image: '../assets/images/art gallery/bg_rhodes.jpg',
+                                                    bgm: { id: 'bgm_main', intro: '', loop: '' },
+                                                    dialogues: [
+                                                        { type: 'dialogue', name: 'Amiya', text: 'Doctor, you are finally awake!', left: 'Amiya.happy', right: 'Doctor' },
+                                                        { type: 'dialogue', name: 'Doctor', text: 'Where... am I?', left: 'Amiya', right: 'Doctor' },
+                                                        { type: 'decision', group_id: 'intro-choice', choices: ['Ask about Rhodes Island', 'Stay silent'], left: 'Doctor', right: 'Amiya' },
+                                                        { type: 'choice_response', group_id: 'intro-choice', choice_value: '1', name: 'Amiya', text: 'This is Rhodes Island, Doctor. Welcome home.', left: 'Amiya.happy', right: 'Doctor' },
+                                                        { type: 'choice_response', group_id: 'intro-choice', choice_value: '2', name: 'Amiya', text: '...It is okay. Take your time.', left: 'Amiya.sad', right: 'Doctor' }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 }
                             },
                             {
@@ -279,6 +579,9 @@ function initializeEditor() {
     
     // Setup modal
     setupModal();
+    
+    // Setup image picker modal
+    setupImagePickerModal();
 }
 
 /* ================================================================================================= */
@@ -451,31 +754,235 @@ function handleTreeItemSelect(contentDiv) {
 function loadItemIntoEditor(treeItemElement) {
     const id = treeItemElement.getAttribute('data-id');
     const type = treeItemElement.getAttribute('data-type');
-    const name = treeItemElement.getAttribute('data-name');
-    const description = treeItemElement.getAttribute('data-description');
+    const item = findItemById(parseInt(id));
     
-    // Get the appropriate ID field based on type
-    let specificId = id;
-    if (type === 'region') specificId = treeItemElement.getAttribute('data-region-id');
-    if (type === 'arc') specificId = treeItemElement.getAttribute('data-arc-id');
-    if (type === 'event') specificId = treeItemElement.getAttribute('data-event-id');
-    if (type === 'story') specificId = treeItemElement.getAttribute('data-story-id');
+    if (!item) return;
     
     const editorSection = document.getElementById('editor');
     
-    // Placeholder content - will be replaced with actual editor functionality
-    editorSection.innerHTML = `
-        <div style="padding: var(--spacing-base); color: var(--color-text-primary);">
-            <h2 style="margin-bottom: var(--spacing-sm);">${escapeHtml(name)}</h2>
-            <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-base);">
-                Type: ${capitalizeType(type)} | ${capitalizeType(type)} ID: ${escapeHtml(specificId)}
-            </p>
-            ${description ? `<p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg);">${escapeHtml(description)}</p>` : ''}
-            <hr style="border: none; border-top: 1px solid var(--color-border); margin: var(--spacing-lg) 0;">
-            <p style="color: var(--color-text-tertiary); font-style: italic;">Editor content for <strong>${escapeHtml(name)}</strong> will be loaded here.</p>
-            <p style="color: var(--color-text-tertiary); font-size: var(--font-size-xs); margin-top: var(--spacing-base);">This will connect to Supabase to load/save ${type} data.</p>
+    if (type === 'story') {
+        StoryEditor.init(editorSection, item);
+        return;
+    }
+    
+    editorSection.innerHTML = buildEditorForm(item, type);
+    setupEditorFormHandlers(item, type);
+}
+
+/* ================================================================================================= */
+/* Editor Form Builder */
+function buildEditorForm(item, type) {
+    const specificId = getSpecificId(item, type);
+    
+    let imageField = '';
+    if (type === 'region') {
+        const currentUrl = item.icon_url || '';
+        imageField = `
+            <div class="editor-form-group">
+                <label class="editor-label">Icon Image</label>
+                <div class="editor-image-picker">
+                    <input type="hidden" id="editor-icon-url" value="${escapeHtml(currentUrl)}">
+                    <div class="editor-image-picker-actions">
+                        <button type="button" class="editor-btn editor-btn-secondary" id="editor-pick-from-db">Browse Assets</button>
+                        <button type="button" class="editor-btn editor-btn-secondary" id="editor-upload-file">Upload from Device</button>
+                        ${currentUrl ? '<button type="button" class="editor-btn editor-btn-danger" id="editor-clear-image">Clear</button>' : ''}
+                    </div>
+                    <input type="file" id="editor-image-file-input" accept="image/*" style="display:none;">
+                    ${currentUrl ? `<div class="editor-image-preview"><img src="${escapeHtml(currentUrl)}" alt="Icon preview"></div>` : '<div class="editor-image-preview" style="display:none;"><img src="" alt="Preview"></div>'}
+                </div>
+            </div>
+        `;
+    } else if (type === 'event') {
+        const currentUrl = item.image_url || '';
+        imageField = `
+            <div class="editor-form-group">
+                <label class="editor-label">Event Image</label>
+                <div class="editor-image-picker">
+                    <input type="hidden" id="editor-image-url" value="${escapeHtml(currentUrl)}">
+                    <div class="editor-image-picker-actions">
+                        <button type="button" class="editor-btn editor-btn-secondary" id="editor-pick-from-db">Browse Assets</button>
+                        <button type="button" class="editor-btn editor-btn-secondary" id="editor-upload-file">Upload from Device</button>
+                        ${currentUrl ? '<button type="button" class="editor-btn editor-btn-danger" id="editor-clear-image">Clear</button>' : ''}
+                    </div>
+                    <input type="file" id="editor-image-file-input" accept="image/*" style="display:none;">
+                    ${currentUrl ? `<div class="editor-image-preview"><img src="${escapeHtml(currentUrl)}" alt="Image preview"></div>` : '<div class="editor-image-preview" style="display:none;"><img src="" alt="Preview"></div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="editor-panel">
+            <div class="editor-header-bar">
+                <h2 class="editor-title">${escapeHtml(item.name)}</h2>
+                <span class="editor-type-label">${capitalizeType(type)}</span>
+            </div>
+            <form id="editor-form" class="editor-form">
+                <div class="editor-form-row">
+                    <div class="editor-form-group">
+                        <label class="editor-label">${capitalizeType(type)} ID</label>
+                        <input type="text" class="editor-input editor-input-readonly" value="${escapeHtml(specificId)}" readonly>
+                    </div>
+                    <div class="editor-form-group">
+                        <label class="editor-label">Display Order</label>
+                        <input type="number" class="editor-input" id="editor-display-order" value="${item.display_order ?? ''}" min="0" placeholder="0">
+                    </div>
+                </div>
+                <div class="editor-form-group">
+                    <label class="editor-label">Name <span class="required">*</span></label>
+                    <input type="text" class="editor-input" id="editor-name" value="${escapeHtml(item.name)}" required placeholder="Enter name">
+                </div>
+                <div class="editor-form-group">
+                    <label class="editor-label">Description</label>
+                    <textarea class="editor-textarea" id="editor-description" rows="4" placeholder="Enter description">${escapeHtml(item.description || '')}</textarea>
+                </div>
+                ${imageField}
+                <div class="editor-form-actions">
+                    <button type="button" class="editor-btn editor-btn-secondary" id="editor-reset-btn">Reset</button>
+                    <button type="submit" class="editor-btn editor-btn-primary" id="editor-save-btn">Save Changes</button>
+                </div>
+            </form>
         </div>
     `;
+}
+
+function getSpecificId(item, type) {
+    if (type === 'region') return item.region_id;
+    if (type === 'arc') return item.arc_id;
+    if (type === 'event') return item.event_id;
+    if (type === 'story') return item.story_id;
+    return '';
+}
+
+function setupEditorFormHandlers(item, type) {
+    const form = document.getElementById('editor-form');
+    const resetBtn = document.getElementById('editor-reset-btn');
+    
+    // Image picker handlers (Browse Assets / Upload from Device / Clear)
+    const hiddenUrlInput = document.getElementById('editor-icon-url') || document.getElementById('editor-image-url');
+    const pickFromDbBtn = document.getElementById('editor-pick-from-db');
+    const uploadFileBtn = document.getElementById('editor-upload-file');
+    const clearImageBtn = document.getElementById('editor-clear-image');
+    const fileInput = document.getElementById('editor-image-file-input');
+
+    if (pickFromDbBtn) {
+        pickFromDbBtn.addEventListener('click', () => {
+            showImagePickerModal((selectedUrl) => {
+                hiddenUrlInput.value = selectedUrl;
+                updateEditorImagePreview(hiddenUrlInput, selectedUrl);
+            });
+        });
+    }
+
+    if (uploadFileBtn && fileInput) {
+        uploadFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            uploadFileBtn.disabled = true;
+            uploadFileBtn.textContent = 'Uploading...';
+            try {
+                const asset = await MockAssetAPI.uploadAndCreateAsset(file);
+                hiddenUrlInput.value = asset.url;
+                updateEditorImagePreview(hiddenUrlInput, asset.url);
+            } finally {
+                uploadFileBtn.disabled = false;
+                uploadFileBtn.textContent = 'Upload from Device';
+                fileInput.value = '';
+            }
+        });
+    }
+
+    if (clearImageBtn) {
+        clearImageBtn.addEventListener('click', () => {
+            hiddenUrlInput.value = '';
+            updateEditorImagePreview(hiddenUrlInput, '');
+        });
+    }
+    
+    // Reset button
+    resetBtn.addEventListener('click', () => {
+        loadItemIntoEditor(currentSelected);
+    });
+    
+    // Save
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveEditorForm(item, type);
+    });
+}
+
+function saveEditorForm(item, type) {
+    const name = document.getElementById('editor-name').value.trim();
+    if (!name) return;
+    
+    const description = document.getElementById('editor-description').value.trim();
+    const displayOrder = document.getElementById('editor-display-order').value;
+    
+    // Update item data
+    item.name = name;
+    item.description = description || null;
+    item.display_order = displayOrder !== '' ? parseInt(displayOrder) : null;
+    
+    // Update type-specific image fields
+    if (type === 'region') {
+        const iconUrl = document.getElementById('editor-icon-url');
+        if (iconUrl) item.icon_url = iconUrl.value.trim() || null;
+    } else if (type === 'event') {
+        const imageUrl = document.getElementById('editor-image-url');
+        if (imageUrl) item.image_url = imageUrl.value.trim() || null;
+    }
+    
+    // Re-render tree to reflect changes
+    renderStoryTree();
+    
+    // Re-select the item in the tree
+    const treeItem = document.querySelector(`.tree-item[data-id="${item.id}"]`);
+    if (treeItem) {
+        // Expand parents
+        expandParents(treeItem);
+        
+        const content = treeItem.querySelector(':scope > .tree-item-content');
+        if (content) {
+            content.classList.add('selected');
+        }
+        currentSelected = treeItem;
+        updateToolbarState(type);
+        
+        // Reload editor with updated data
+        loadItemIntoEditor(treeItem);
+    }
+    
+    showSaveNotification();
+}
+
+function expandParents(element) {
+    let parent = element.parentElement;
+    while (parent) {
+        if (parent.classList && parent.classList.contains('tree-item')) {
+            parent.classList.add('expanded');
+        }
+        parent = parent.parentElement;
+    }
+}
+
+function showSaveNotification() {
+    // Remove existing notification
+    const existing = document.querySelector('.save-notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = 'save-notification';
+    notification.textContent = 'Changes saved successfully';
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    requestAnimationFrame(() => notification.classList.add('show'));
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
 }
 
 /* ================================================================================================= */
@@ -506,6 +1013,130 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/* ================================================================================================= */
+/* Editor Image Preview Helper */
+function updateEditorImagePreview(hiddenInput, url) {
+    const group = hiddenInput.closest('.editor-form-group');
+    const previewDiv = group.querySelector('.editor-image-preview');
+    if (url) {
+        if (previewDiv) {
+            previewDiv.style.display = '';
+            previewDiv.querySelector('img').src = url;
+        }
+    } else if (previewDiv) {
+        previewDiv.style.display = 'none';
+        previewDiv.querySelector('img').src = '';
+    }
+    // Toggle clear button visibility
+    let clearBtn = group.querySelector('#editor-clear-image');
+    if (url && !clearBtn) {
+        const actionsDiv = group.querySelector('.editor-image-picker-actions');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'editor-btn editor-btn-danger';
+        btn.id = 'editor-clear-image';
+        btn.textContent = 'Clear';
+        btn.addEventListener('click', () => {
+            hiddenInput.value = '';
+            updateEditorImagePreview(hiddenInput, '');
+        });
+        actionsDiv.appendChild(btn);
+    } else if (!url && clearBtn) {
+        clearBtn.remove();
+    }
+}
+
+/* ================================================================================================= */
+/* Image Picker Modal */
+let imagePickerCallback = null;
+let imagePickerFilter = { type: 'image', category: 'thumbnail' };
+
+async function showImagePickerModal(onSelect, type = 'image', category = 'thumbnail') {
+    imagePickerCallback = onSelect;
+    imagePickerFilter = { type, category };
+    const modal = document.getElementById('image-picker-modal');
+    const grid = document.getElementById('image-picker-grid');
+
+    // Show loading
+    grid.innerHTML = '<div class="image-picker-loading">Loading assets...</div>';
+    modal.style.display = 'flex';
+
+    // Fetch assets from mock DB
+    const assets = await MockAssetAPI.getAssets(type, category);
+
+    if (assets.length === 0) {
+        grid.innerHTML = '<div class="image-picker-empty">No images found. Upload one!</div>';
+    } else {
+        grid.innerHTML = '';
+        assets.forEach(asset => {
+            const card = document.createElement('div');
+            card.className = 'image-picker-card';
+            card.setAttribute('data-url', asset.url);
+            card.setAttribute('data-asset-id', asset.asset_id);
+            card.innerHTML = `
+                <img src="${escapeHtml(asset.url)}" alt="${escapeHtml(asset.asset_id)}">
+                <span class="image-picker-card-label">${escapeHtml(asset.asset_id)}</span>
+            `;
+            card.addEventListener('click', () => {
+                // Deselect all
+                grid.querySelectorAll('.image-picker-card.selected').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
+            grid.appendChild(card);
+        });
+    }
+}
+
+function hideImagePickerModal() {
+    const modal = document.getElementById('image-picker-modal');
+    modal.style.display = 'none';
+    imagePickerCallback = null;
+}
+
+function setupImagePickerModal() {
+    const modal = document.getElementById('image-picker-modal');
+    const closeBtn = document.getElementById('image-picker-close-btn');
+    const cancelBtn = document.getElementById('image-picker-cancel-btn');
+    const selectBtn = document.getElementById('image-picker-select-btn');
+    const uploadBtn = document.getElementById('image-picker-upload-btn');
+    const fileInput = document.getElementById('image-picker-file');
+
+    closeBtn.addEventListener('click', hideImagePickerModal);
+    cancelBtn.addEventListener('click', hideImagePickerModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) hideImagePickerModal();
+    });
+
+    // Select button
+    selectBtn.addEventListener('click', () => {
+        const selected = document.querySelector('#image-picker-grid .image-picker-card.selected');
+        if (!selected) return;
+        const url = selected.getAttribute('data-url');
+        if (imagePickerCallback) imagePickerCallback(url);
+        hideImagePickerModal();
+    });
+
+    // Upload button within picker
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+        try {
+            const asset = await MockAssetAPI.uploadAndCreateAsset(file);
+            // Refresh the grid
+            if (imagePickerCallback) {
+                await showImagePickerModal(imagePickerCallback, imagePickerFilter.type, imagePickerFilter.category);
+            }
+        } finally {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload New Image';
+            fileInput.value = '';
+        }
+    });
 }
 
 /* ================================================================================================= */

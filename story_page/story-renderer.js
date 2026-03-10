@@ -97,10 +97,15 @@ const StoryRenderer = {
 	 */
 	getAvatar(name) {
 		if (!name) return '../assets/images/character/blank.png';
-		// If it's a URL (contains / or .), return as-is
-		if (name.includes('/') || name.includes('.')) return name;
-		// Look up in character map
-		const char = this.characters[name];
+		// If it's a URL (contains /), return as-is
+		if (name.includes('/')) return name;
+		// Look up exact key first (e.g. "Amiya.happy")
+		if (this.characters[name]) {
+			return this.characters[name].avatar || '../assets/images/character/blank.png';
+		}
+		// Fallback: try base name without expression (e.g. "Amiya")
+		const baseName = name.includes('.') ? name.split('.')[0] : name;
+		const char = this.characters[baseName];
 		return char?.avatar || '../assets/images/character/blank.png';
 	},
 
@@ -112,9 +117,14 @@ const StoryRenderer = {
 	getFullImage(name) {
 		if (!name) return '';
 		// If it's a URL, return as-is
-		if (name.includes('/') || name.includes('.')) return name;
-		// Look up in character map
-		const char = this.characters[name];
+		if (name.includes('/')) return name;
+		// Look up exact key first (e.g. "Amiya.happy")
+		if (this.characters[name]) {
+			return this.characters[name].full_image || '';
+		}
+		// Fallback: try base name without expression
+		const baseName = name.includes('.') ? name.split('.')[0] : name;
+		const char = this.characters[baseName];
 		return char?.full_image || '';
 	},
 

@@ -4,6 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Story Editor</title>
     <link rel="icon" type="image/png" href="../assets/images/icon/dreambind castle_b.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-darker.min.css">
     <link rel="stylesheet" href="../global/style.css">
     <link rel="stylesheet" href="./style.css">
 </head>
@@ -115,7 +117,34 @@
         </div>
     </div>
     
+    <!-- Image Picker Modal -->
+    <div id="image-picker-modal" class="modal" style="display: none;">
+        <div class="modal-content image-picker-modal-content">
+            <div class="modal-header">
+                <h3>Select Image</h3>
+                <button class="modal-close" id="image-picker-close-btn">&times;</button>
+            </div>
+            <div class="modal-body image-picker-body">
+                <div id="image-picker-grid" class="image-picker-grid"></div>
+            </div>
+            <div class="image-picker-footer">
+                <div class="image-picker-footer-left">
+                    <button type="button" class="btn-secondary" id="image-picker-upload-btn">Upload New Image</button>
+                    <input type="file" id="image-picker-file" accept="image/*" style="display:none;">
+                </div>
+                <div class="image-picker-footer-right">
+                    <button type="button" class="btn-secondary" id="image-picker-cancel-btn">Cancel</button>
+                    <button type="button" class="btn-primary" id="image-picker-select-btn">Select</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../global/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+    <script src="./story-editor.js"></script>
     <script src="./script.js"></script>
 </body>
 </html>
