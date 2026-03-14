@@ -48,6 +48,7 @@
             <div class="asset_tab tab-content">
                 <div id="asset-search-bar">
                     <input type="text" id="asset-search-input" placeholder="Search assets..." autocomplete="off">
+                    <button id="add-asset-btn">+ Add Asset</button>
                 </div>
                 <div id="asset-nav-header" style="display: none;">
                     <button id="asset-back-btn" title="Back to categories">◀</button>
@@ -60,7 +61,6 @@
             </div>
         </section>
         <section id="editor"></section>
-        <section id="preview"></section>
     </main>
     
     <!-- Add Item Modal -->
@@ -160,7 +160,136 @@
                 <div id="asset-preview-info"></div>
             </div>
             <div class="asset-preview-footer">
-                <button type="button" class="btn-secondary" id="asset-preview-copy-btn">Copy Asset ID</button>
+                <div style="margin-right:auto; display:flex; gap:8px;">
+                    <button type="button" class="btn-secondary" id="asset-preview-edit-btn">Edit</button>
+                    <button type="button" class="btn-secondary" id="asset-preview-delete-btn">Delete</button>
+                </div>
+                <div>
+                    <button type="button" class="btn-secondary" id="asset-preview-copy-btn">Copy Asset ID</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Asset Modal -->
+    <div id="add-asset-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="add-asset-modal-title">Create Asset</h3>
+                <button class="modal-close" id="add-asset-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-asset-form">
+                    <div class="form-group">
+                        <label for="asset-type">Type <span style="color: #ff6b6b;">*</span></label>
+                        <select id="asset-type" required class="editor-input">
+                            <option value="">Select type</option>
+                            <option value="character">Character</option>
+                            <option value="image">Image / Thumbnail</option>
+                            <option value="gallery">Gallery Image</option>
+                            <option value="background">Background Image</option>
+                            <option value="video">Video</option>
+                            <option value="bgm">BGM (audio)</option>
+                            <option value="sfx">SFX (audio)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="asset-id">Asset ID <span style="color: #ff6b6b;">*</span></label>
+                        <input type="text" id="asset-id" class="editor-input" placeholder="e.g. char-new, sfx-step" required>
+                        <small style="color: var(--color-text-tertiary);">Must be unique.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="asset-name">Display Name</label>
+                        <input type="text" id="asset-name" class="editor-input" placeholder="Human-friendly name">
+                    </div>
+
+                    <div id="asset-character-section" style="display:none;">
+                        <div class="form-group">
+                            <label for="asset-desc">Description</label>
+                            <textarea id="asset-desc" class="editor-textarea" rows="3" placeholder="Character description"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Expressions</label>
+                            <div id="expressions-list"></div>
+                            <div style="display:flex; gap:8px; margin-top:8px;">
+                                <button type="button" id="add-expression-btn" class="btn-secondary">+ Add Expression</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="asset-media-section" style="display:none;">
+                        <div class="form-group">
+                            <label id="media-label">Media File <span style="color: #ff6b6b;">*</span></label>
+                            <input type="file" id="asset-file-input" accept="image/*,audio/*,video/*">
+                            <div id="asset-file-name" style="margin-top:8px; font-size:var(--font-size-xs); color:var(--color-text-secondary);"></div>
+                        </div>
+                        <div id="media-preview" style="display:none; margin-top:8px;"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="add-asset-cancel">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Asset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Asset Modal (separate from Create) -->
+    <div id="edit-asset-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="edit-asset-modal-title">Edit Asset</h3>
+                <button class="modal-close" id="edit-asset-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-asset-form">
+                    <div class="form-group">
+                        <label for="edit-asset-type">Type</label>
+                        <input type="text" id="edit-asset-type" class="editor-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-asset-id">Asset ID</label>
+                        <input type="text" id="edit-asset-id" class="editor-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-asset-name">Display Name</label>
+                        <input type="text" id="edit-asset-name" class="editor-input">
+                    </div>
+
+                    <div id="edit-asset-character-section" style="display:none;">
+                        <div class="form-group">
+                            <label for="edit-asset-desc">Description</label>
+                            <textarea id="edit-asset-desc" class="editor-textarea" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Expressions</label>
+                            <div id="edit-expressions-list"></div>
+                            <div style="display:flex; gap:8px; margin-top:8px;">
+                                <button type="button" id="edit-add-expression-btn" class="btn-secondary">Add Expression</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="edit-asset-media-section" style="display:none;">
+                        <div class="form-group">
+                            <label id="edit-media-label">Replace File (optional)</label>
+                            <input type="file" id="edit-asset-file-input" accept="image/*,audio/*,video/*">
+                            <div id="edit-asset-file-name" style="margin-top:8px; font-size:var(--font-size-xs); color:var(--color-text-secondary);"></div>
+                        </div>
+                        <div id="edit-media-preview" style="display:none; margin-top:8px;"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="edit-asset-cancel">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

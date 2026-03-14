@@ -14,6 +14,43 @@ function getStoryIdFromURL() {
 
 // ============= Load Story Data from Supabase =============
 async function loadStoryData() {
+	// Preview mode: load story JSON from sessionStorage (set by editor)
+	const urlParams = new URLSearchParams(window.location.search);
+	if (urlParams.get('preview')) {
+		const raw = sessionStorage.getItem('preview_story');
+		if (!raw) {
+			const container = document.getElementById('story-content');
+			if (container) container.innerHTML = '<p class="error-message">Không tìm thấy dữ liệu preview.</p>';
+			return;
+		}
+
+		try {
+			const story = JSON.parse(raw);
+			currentStory = story;
+
+			// Update info and render content
+			await updateStoryInfo(story);
+			renderStoryContent(story.story_content);
+
+			// Initialize UI features that do not require Supabase
+			setupHeaderTitleUpdate();
+			setupBackgroundParallax();
+			setupChapterSidebar();
+			setupImageModals();
+			setupBackToTop();
+			setupDecisionChoice();
+			setupNicknameReplacement();
+			setupBGM();
+			setupSFX();
+		} catch (err) {
+			console.error('Error loading preview:', err);
+			const container = document.getElementById('story-content');
+			if (container) container.innerHTML = '<p class="error-message">Đã xảy ra lỗi khi tải preview.</p>';
+		}
+
+		return;
+	}
+
 	const storyId = getStoryIdFromURL();
 	if (!storyId) {
 		console.error('No story ID in URL');

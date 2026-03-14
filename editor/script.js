@@ -266,6 +266,64 @@ const MockAssetAPI = {
     },
 
     /**
+     * Update an existing asset record in mock DB. If file provided, replace URL.
+     * @param {Object} meta - { asset_id, type, category, name, url }
+     * @param {File|null} file
+     */
+    async updateAsset(meta = {}, file = null) {
+        await new Promise(r => setTimeout(r, 200));
+        const asset = mockAssets.find(a => a.asset_id === meta.asset_id || a.id === meta.id);
+        if (!asset) throw new Error('not-found');
+        if (meta.type) asset.type = meta.type;
+        if (meta.category !== undefined) asset.category = meta.category;
+        if (meta.url) asset.url = meta.url;
+        if (meta.name) asset.name = meta.name;
+        if (file) {
+            asset.url = URL.createObjectURL(file);
+        }
+        return asset;
+    },
+
+    /**
+     * Create a generic asset (image/audio/video) or character-related records.
+     * @param {Object} meta - { asset_id, type, category, name, description }
+     * @param {File|null} file - optional file to upload (will use objectURL in mock)
+     */
+    async createAsset(meta = {}, file = null) {
+        // Simulate delay
+        await new Promise(r => setTimeout(r, 300));
+
+        // Duplicate check
+        if (meta.type === 'character') {
+            const exists = mockCharacters.find(c => c.character_id === meta.asset_id);
+            if (exists) throw new Error('duplicate-character');
+
+            const newChar = {
+                id: mockCharacters.length > 0 ? Math.max(...mockCharacters.map(c => c.id)) + 1 : 1,
+                character_id: meta.asset_id,
+                name: meta.name || meta.asset_id,
+                description: meta.description || ''
+            };
+            mockCharacters.push(newChar);
+            return newChar;
+        }
+
+        const assetExists = mockAssets.find(a => a.asset_id === meta.asset_id);
+        if (assetExists) throw new Error('duplicate-asset');
+
+        const url = file ? URL.createObjectURL(file) : (meta.url || '');
+        const newAsset = {
+            id: mockAssets.length > 0 ? Math.max(...mockAssets.map(a => a.id)) + 1 : 1,
+            asset_id: meta.asset_id,
+            type: meta.type || (meta.category === 'sfx' || meta.category === 'bgm' ? 'audio' : 'image'),
+            category: meta.category || null,
+            url
+        };
+        mockAssets.push(newAsset);
+        return newAsset;
+    },
+
+    /**
      * Delete an asset by id (mock)
      */
     async deleteAsset(assetId) {
@@ -717,6 +775,10 @@ function initializeEditor() {
     
     // Setup image picker modal
     setupImagePickerModal();
+    // Setup add-asset modal
+    setupAssetModal();
+    // Setup edit-asset modal
+    setupEditAssetModal();
     
     // Setup asset browser
     AssetBrowser.init();
@@ -1046,6 +1108,18 @@ const AssetBrowser = {
         modal.style.display = 'flex';
         modal.onclick = (e) => { if (e.target === modal) this.closePreview(); };
         document.getElementById('asset-preview-close-btn').onclick = () => this.closePreview();
+
+        // Setup edit/delete handlers
+        const editBtn = document.getElementById('asset-preview-edit-btn');
+        const deleteBtn = document.getElementById('asset-preview-delete-btn');
+        editBtn.onclick = () => openEditAssetEditor({ kind: 'asset', record: asset });
+        deleteBtn.onclick = async () => {
+            if (!confirm(`Delete asset ${asset.asset_id}? This cannot be undone in mock.`)) return;
+            await MockAssetAPI.deleteAsset(asset.id);
+            this.closePreview();
+            this.renderCategoryGrid();
+            if (this.currentCategory) this.renderAssetList(this.currentCategory);
+        };
     },
 
     showCharacterPreview(character, expression) {
@@ -1079,6 +1153,24 @@ const AssetBrowser = {
         modal.style.display = 'flex';
         modal.onclick = (e) => { if (e.target === modal) this.closePreview(); };
         document.getElementById('asset-preview-close-btn').onclick = () => this.closePreview();
+
+        // Setup edit/delete handlers for character
+        const editBtn = document.getElementById('asset-preview-edit-btn');
+        const deleteBtn = document.getElementById('asset-preview-delete-btn');
+        editBtn.onclick = () => openEditAssetEditor({ kind: 'character', record: character });
+        deleteBtn.onclick = () => {
+            if (!confirm(`Delete character ${character.character_id}? This will remove expressions.`)) return;
+            // remove character
+            const idx = mockCharacters.findIndex(c => c.character_id === character.character_id);
+            if (idx !== -1) mockCharacters.splice(idx, 1);
+            // remove expressions
+            for (let i = mockExpressions.length - 1; i >= 0; i--) {
+                if (mockExpressions[i].character_id === character.character_id) mockExpressions.splice(i, 1);
+            }
+            this.closePreview();
+            this.renderCategoryGrid();
+            if (this.currentCategory === 'character') this.renderAssetList('character');
+        };
     },
 
     buildMediaPreview(asset) {
@@ -1500,6 +1592,14 @@ function saveEditorForm(item, type) {
     }
     
     showSaveNotification();
+
+    // Export current story data as JSON and log it for debugging/inspection
+    try {
+        const exported = JSON.stringify(mockStoryData, null, 2);
+        console.log('Exported story JSON:', exported);
+    } catch (err) {
+        console.error('Failed to serialize story data to JSON', err);
+    }
 }
 
 function expandParents(element) {
@@ -1683,6 +1783,546 @@ function setupImagePickerModal() {
             fileInput.value = '';
         }
     });
+}
+
+/* ================================================================================================= */
+/* Add Asset Modal (prototype)                                                */
+/* ================================================================================================= */
+function setupAssetModal() {
+    const openBtn = document.getElementById('add-asset-btn');
+    const modal = document.getElementById('add-asset-modal');
+    const closeBtn = document.getElementById('add-asset-modal-close');
+    const cancelBtn = document.getElementById('add-asset-cancel');
+    const typeSelect = document.getElementById('asset-type');
+    const charSection = document.getElementById('asset-character-section');
+    const mediaSection = document.getElementById('asset-media-section');
+    const fileInput = document.getElementById('asset-file-input');
+    const fileName = document.getElementById('asset-file-name');
+    const mediaPreview = document.getElementById('media-preview');
+    const addExprBtn = document.getElementById('add-expression-btn');
+
+    openBtn.addEventListener('click', () => showAddAssetModal());
+    closeBtn.addEventListener('click', hideAddAssetModal);
+    cancelBtn.addEventListener('click', hideAddAssetModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) hideAddAssetModal(); });
+
+    typeSelect.addEventListener('change', () => {
+        const val = typeSelect.value;
+        charSection.style.display = val === 'character' ? '' : 'none';
+        // media types: image, gallery, background, video, bgm, sfx
+        const mediaTypes = ['image','gallery','background','video','bgm','sfx'];
+        mediaSection.style.display = mediaTypes.includes(val) ? '' : 'none';
+        // adjust accept/label
+        const mediaLabel = document.getElementById('media-label');
+        if (val === 'video') {
+            fileInput.accept = 'video/*';
+            mediaLabel.textContent = 'Video File *';
+        } else if (val === 'bgm' || val === 'sfx') {
+            fileInput.accept = 'audio/*';
+            mediaLabel.textContent = 'Audio File *';
+        } else if (val === 'image' || val === 'gallery' || val === 'background') {
+            fileInput.accept = 'image/*';
+            mediaLabel.textContent = 'Image File *';
+        } else {
+            fileInput.accept = 'image/*,audio/*,video/*';
+            mediaLabel.textContent = 'Media File *';
+        }
+    });
+
+    function showAddAssetModal() {
+        // Reset form
+        document.getElementById('add-asset-form').reset();
+        document.getElementById('expressions-list').innerHTML = '';
+        document.getElementById('asset-file-name').textContent = '';
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        charSection.style.display = 'none';
+        mediaSection.style.display = 'none';
+        // clear editing state
+        formRemoveEditingFlag();
+        modal.style.display = 'flex';
+    }
+
+    function hideAddAssetModal() {
+        modal.style.display = 'none';
+    }
+
+    // Editing helpers
+    function setEditingState(kind, id) {
+        const form = document.getElementById('add-asset-form');
+        form.dataset.editing = '1';
+        form.dataset.editKind = kind;
+        form.dataset.editId = id;
+    }
+
+    function formRemoveEditingFlag() {
+        const form = document.getElementById('add-asset-form');
+        delete form.dataset.editing;
+        delete form.dataset.editKind;
+        delete form.dataset.editId;
+    }
+
+    function getEditingState() {
+        const form = document.getElementById('add-asset-form');
+        if (!form.dataset.editing) return null;
+        return { kind: form.dataset.editKind, id: form.dataset.editId };
+    }
+
+    // Open editor prefilled for asset or character
+    window.openAssetEditor = function ({ kind, record }) {
+        showAddAssetModal();
+        const typeSelectEl = document.getElementById('asset-type');
+        const idEl = document.getElementById('asset-id');
+        const nameEl = document.getElementById('asset-name');
+        const descEl = document.getElementById('asset-desc');
+
+        if (kind === 'asset') {
+            // asset types: audio, image, video
+            let sel = 'image';
+            if (record.type === 'audio') sel = record.category === 'bgm' ? 'bgm' : 'sfx';
+            if (record.type === 'video') sel = 'video';
+            if (record.type === 'image' && record.category === 'background') sel = 'background';
+            if (record.type === 'image' && record.category === 'gallery') sel = 'gallery';
+            if (record.type === 'image' && record.category === 'thumbnail') sel = 'image';
+            typeSelectEl.value = sel;
+            typeSelectEl.dispatchEvent(new Event('change'));
+            idEl.value = record.asset_id;
+            idEl.disabled = true;
+            nameEl.value = record.name || '';
+            // preview
+            const previewContainer = document.getElementById('media-preview');
+            previewContainer.style.display = '';
+            if (record.type === 'audio') previewContainer.innerHTML = `<audio controls src="${escapeHtml(record.url)}"></audio>`;
+            else if (record.type === 'video') previewContainer.innerHTML = `<video controls src="${escapeHtml(record.url)}" style="max-width:100%;"></video>`;
+            else previewContainer.innerHTML = `<img src="${escapeHtml(record.url)}" style="max-width:100%;">`;
+            setEditingState('asset', record.asset_id);
+        } else if (kind === 'character') {
+            typeSelectEl.value = 'character';
+            typeSelectEl.dispatchEvent(new Event('change'));
+            idEl.value = record.character_id;
+            idEl.disabled = true;
+            nameEl.value = record.name || '';
+            descEl.value = record.description || '';
+            // populate expressions
+            const list = document.getElementById('expressions-list');
+            list.innerHTML = '';
+            const exprs = mockExpressions.filter(e => e.character_id === record.character_id);
+            for (const ex of exprs) {
+                const row = document.createElement('div');
+                row.className = 'form-group';
+                row.innerHTML = `
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name" style="flex:1;" value="${escapeHtml(ex.name)}">
+                        <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
+                        <button type="button" class="btn-secondary expr-remove">Remove</button>
+                    </div>
+                `;
+                list.appendChild(row);
+                row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
+            }
+            setEditingState('character', record.character_id);
+        }
+    };
+
+    fileInput.addEventListener('change', handleAssetFileChange);
+    addExprBtn.addEventListener('click', addExpressionRow);
+
+    const form = document.getElementById('add-asset-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await submitAddAssetForm();
+        } catch (err) {
+            alert(err.message || 'Failed to create asset');
+        }
+    });
+
+    function handleAssetFileChange(e) {
+        const f = e.target.files[0];
+        if (!f) {
+            fileName.textContent = '';
+            mediaPreview.style.display = 'none';
+            mediaPreview.innerHTML = '';
+            return;
+        }
+        fileName.textContent = `${f.name} (${Math.round(f.size/1024)} KB)`;
+        // preview depending on type
+        const val = typeSelect.value;
+        mediaPreview.style.display = '';
+        if (val === 'video') {
+            mediaPreview.innerHTML = `<video controls style="max-width:100%;" src="${URL.createObjectURL(f)}"></video>`;
+        } else if (val === 'bgm' || val === 'sfx') {
+            mediaPreview.innerHTML = `<audio controls src="${URL.createObjectURL(f)}"></audio>`;
+        } else {
+            mediaPreview.innerHTML = `<img src="${URL.createObjectURL(f)}" style="max-width:100%; max-height:240px; object-fit:contain;" alt="preview">`;
+        }
+    }
+
+    function addExpressionRow() {
+        const list = document.getElementById('expressions-list');
+        const idx = list.children.length;
+        const row = document.createElement('div');
+        row.className = 'form-group';
+        row.innerHTML = `
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name" style="flex:1;">
+                <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
+                <button type="button" class="btn-secondary expr-remove">Remove</button>
+            </div>
+        `;
+        list.appendChild(row);
+        // remove handler
+        row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
+    }
+
+    async function submitAddAssetForm() {
+        const type = document.getElementById('asset-type').value;
+        const assetId = document.getElementById('asset-id').value.trim();
+        const name = document.getElementById('asset-name').value.trim();
+        if (!type || !assetId) return alert('Type and Asset ID are required');
+        // Duplicate checks across assets and characters
+        if (mockAssets.find(a => a.asset_id === assetId) || mockCharacters.find(c => c.character_id === assetId)) {
+            return alert('Asset ID already exists');
+        }
+
+        if (type === 'character') {
+            // editing character?
+            const editing = getEditingState();
+            if (editing && editing.kind === 'character' && editing.id === assetId) {
+                // update character
+                const char = mockCharacters.find(c => c.character_id === assetId);
+                if (char) {
+                    char.name = name || char.name;
+                    char.description = document.getElementById('asset-desc').value.trim() || char.description;
+                }
+
+                // Merge expressions instead of blind replace.
+                // Build maps of existing and submitted expressions.
+                const existing = mockExpressions.filter(e => e.character_id === assetId).reduce((m, e) => { m[e.name] = e; return m; }, {});
+                const submittedRows = Array.from(document.querySelectorAll('#expressions-list .form-group'));
+                const submitted = [];
+                for (const row of submittedRows) {
+                    const exprName = row.querySelector('.expr-name').value.trim() || 'default';
+                    const avatarInput = row.querySelector('.expr-avatar');
+                    submitted.push({ name: exprName, fileInput: avatarInput });
+                }
+
+                // Determine differences for confirmation message
+                const existingNames = Object.keys(existing);
+                const submittedNames = submitted.map(s => s.name);
+                const toAdd = submittedNames.filter(n => !existingNames.includes(n));
+                const toRemove = existingNames.filter(n => !submittedNames.includes(n));
+                const toUpdate = submittedNames.filter(n => existingNames.includes(n));
+
+                if (toAdd.length || toRemove.length || toUpdate.length) {
+                    let msg = 'You are about to apply expression changes:';
+                    if (toAdd.length) msg += `\nAdd: ${toAdd.join(', ')}`;
+                    if (toUpdate.length) msg += `\nUpdate: ${toUpdate.join(', ')}`;
+                    if (toRemove.length) msg += `\nRemove: ${toRemove.join(', ')}`;
+                    msg += '\n\nProceed?';
+                    if (!confirm(msg)) return; // abort if user cancels
+                }
+
+                // Apply changes: update existing entries, add new ones, remove missing ones
+                // Update or add
+                for (const s of submitted) {
+                    const nameKey = s.name;
+                    const avatarInput = s.fileInput;
+                    let avatarUrl = '';
+                    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                        const f = avatarInput.files[0];
+                        const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
+                        avatarUrl = uploaded.url;
+                    }
+
+                    if (existing[nameKey]) {
+                        // update avatar only if new uploaded, otherwise keep existing
+                        if (avatarUrl) existing[nameKey].avatar_url = avatarUrl;
+                    } else {
+                        mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: '' });
+                    }
+                }
+
+                // Remove expressions that are no longer present
+                for (const rem of toRemove) {
+                    const idx = mockExpressions.findIndex(e => e.character_id === assetId && e.name === rem);
+                    if (idx !== -1) mockExpressions.splice(idx, 1);
+                }
+
+                hideAddAssetModal();
+                AssetBrowser.renderCategoryGrid();
+                AssetBrowser.openCategory('character');
+                return;
+            }
+
+            // create character
+            const desc = document.getElementById('asset-desc').value.trim();
+            await MockAssetAPI.createAsset({ asset_id: assetId, type: 'character', name, description: desc }, null);
+
+            // create expressions
+            const exprRows = Array.from(document.querySelectorAll('#expressions-list .form-group'));
+            for (const row of exprRows) {
+                const exprName = row.querySelector('.expr-name').value.trim();
+                const avatarInput = row.querySelector('.expr-avatar');
+                let avatarUrl = '';
+                if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+                    const f = avatarInput.files[0];
+                    const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
+                    avatarUrl = uploaded.url;
+                }
+                mockExpressions.push({ character_id: assetId, name: exprName || 'default', avatar_url: avatarUrl, full_url: '' });
+            }
+
+            hideAddAssetModal();
+            AssetBrowser.renderCategoryGrid();
+            AssetBrowser.openCategory('character');
+            return;
+        }
+
+        // media types
+        const file = document.getElementById('asset-file-input').files[0];
+        if (!file) return alert('Please select a media file');
+
+        let meta = { asset_id: assetId, name };
+        if (type === 'sfx' || type === 'bgm') {
+            meta.type = 'audio';
+            meta.category = type; // 'sfx' or 'bgm'
+        } else if (type === 'video') {
+            meta.type = 'video';
+            meta.category = 'video';
+        } else if (type === 'image') {
+            meta.type = 'image';
+            meta.category = 'thumbnail';
+        } else if (type === 'gallery') {
+            meta.type = 'image';
+            meta.category = 'gallery';
+        } else if (type === 'background') {
+            meta.type = 'image';
+            meta.category = 'background';
+        } else {
+            meta.type = 'image';
+        }
+
+        const editing = getEditingState();
+        if (editing && editing.kind === 'asset' && editing.id === assetId) {
+            // update existing asset
+            await MockAssetAPI.updateAsset({ asset_id: assetId, type: meta.type, category: meta.category, name: name }, file);
+            hideAddAssetModal();
+            AssetBrowser.renderCategoryGrid();
+            if (AssetBrowser.currentCategory) AssetBrowser.renderAssetList(AssetBrowser.currentCategory);
+            return;
+        }
+
+        const created = await MockAssetAPI.createAsset(meta, file);
+        hideAddAssetModal();
+        AssetBrowser.renderCategoryGrid();
+        // open the correct category tab if applicable
+        const openKey = (type === 'image' ? 'image' : type === 'gallery' ? 'gallery' : type === 'background' ? 'background' : type === 'video' ? 'video' : type === 'sfx' ? 'sfx' : type === 'bgm' ? 'bgm' : null);
+        if (openKey) AssetBrowser.openCategory(openKey);
+        return;
+    }
+
+}
+
+/* ================================================================================================= */
+/* Edit Asset Modal (separate)                                                                    */
+/* ================================================================================================= */
+function setupEditAssetModal() {
+    const modal = document.getElementById('edit-asset-modal');
+    const closeBtn = document.getElementById('edit-asset-modal-close');
+    const cancelBtn = document.getElementById('edit-asset-cancel');
+    const typeEl = document.getElementById('edit-asset-type');
+    const idEl = document.getElementById('edit-asset-id');
+    const nameEl = document.getElementById('edit-asset-name');
+    const descEl = document.getElementById('edit-asset-desc');
+    const charSection = document.getElementById('edit-asset-character-section');
+    const mediaSection = document.getElementById('edit-asset-media-section');
+    const fileInput = document.getElementById('edit-asset-file-input');
+    const fileName = document.getElementById('edit-asset-file-name');
+    const mediaPreview = document.getElementById('edit-media-preview');
+    const addExprBtn = document.getElementById('edit-add-expression-btn');
+
+    closeBtn.addEventListener('click', () => modal.style.display = 'none');
+    cancelBtn.addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    fileInput.addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        if (!f) { fileName.textContent = ''; mediaPreview.style.display = 'none'; mediaPreview.innerHTML = ''; return; }
+        fileName.textContent = `${f.name} (${Math.round(f.size/1024)} KB)`;
+        // preview
+        if (f.type.startsWith('image/')) mediaPreview.innerHTML = `<img src="${URL.createObjectURL(f)}" style="max-width:100%;">`;
+        else if (f.type.startsWith('audio/')) mediaPreview.innerHTML = `<audio controls src="${URL.createObjectURL(f)}"></audio>`;
+        else if (f.type.startsWith('video/')) mediaPreview.innerHTML = `<video controls src="${URL.createObjectURL(f)}" style="max-width:100%;"></video>`;
+        mediaPreview.style.display = '';
+    });
+
+    addExprBtn.addEventListener('click', () => {
+        const list = document.getElementById('edit-expressions-list');
+        const row = document.createElement('div');
+        row.className = 'form-group';
+        row.innerHTML = `
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" placeholder="expression name" class="editor-input expr-name" style="flex:1;">
+                <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
+                <button type="button" class="btn-secondary expr-remove">Remove</button>
+            </div>
+        `;
+        list.appendChild(row);
+        row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
+    });
+
+    const form = document.getElementById('edit-asset-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kind = document.getElementById('edit-asset-type').value;
+        const assetId = document.getElementById('edit-asset-id').value.trim();
+        const name = document.getElementById('edit-asset-name').value.trim();
+
+        if (!assetId) return alert('Missing asset id');
+
+        if (kind === 'character') {
+            // update character
+            const char = mockCharacters.find(c => c.character_id === assetId);
+            if (!char) return alert('Character not found');
+            char.name = name || char.name;
+            char.description = document.getElementById('edit-asset-desc').value.trim() || char.description;
+
+            // Merge expressions (similar to create modal behavior)
+            const existing = mockExpressions.filter(e => e.character_id === assetId).reduce((m, e) => { m[e.name] = e; return m; }, {});
+            const rows = Array.from(document.querySelectorAll('#edit-expressions-list .form-group'));
+            const submitted = [];
+            for (const row of rows) {
+                const exprName = row.querySelector('.expr-name').value.trim() || 'default';
+                const avatarInput = row.querySelector('.expr-avatar');
+                submitted.push({ name: exprName, fileInput: avatarInput });
+            }
+
+            const existingNames = Object.keys(existing);
+            const submittedNames = submitted.map(s => s.name);
+            const toAdd = submittedNames.filter(n => !existingNames.includes(n));
+            const toRemove = existingNames.filter(n => !submittedNames.includes(n));
+            const toUpdate = submittedNames.filter(n => existingNames.includes(n));
+
+            if (toAdd.length || toRemove.length || toUpdate.length) {
+                let msg = 'You are about to apply expression changes:';
+                if (toAdd.length) msg += `\nAdd: ${toAdd.join(', ')}`;
+                if (toUpdate.length) msg += `\nUpdate: ${toUpdate.join(', ')}`;
+                if (toRemove.length) msg += `\nRemove: ${toRemove.join(', ')}`;
+                msg += '\n\nProceed?';
+                if (!confirm(msg)) return;
+            }
+
+            for (const s of submitted) {
+                const nameKey = s.name;
+                let avatarUrl = '';
+                if (s.fileInput && s.fileInput.files && s.fileInput.files[0]) {
+                    const f = s.fileInput.files[0];
+                    const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
+                    avatarUrl = uploaded.url;
+                }
+                if (existing[nameKey]) {
+                    if (avatarUrl) existing[nameKey].avatar_url = avatarUrl;
+                } else {
+                    mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: '' });
+                }
+            }
+            for (const rem of toRemove) {
+                const idx = mockExpressions.findIndex(e => e.character_id === assetId && e.name === rem);
+                if (idx !== -1) mockExpressions.splice(idx, 1);
+            }
+
+            modal.style.display = 'none';
+            AssetBrowser.renderCategoryGrid();
+            AssetBrowser.openCategory('character');
+            return;
+        }
+
+        // asset media update
+        const file = document.getElementById('edit-asset-file-input').files[0] || null;
+        // determine meta (type/category) from displayed type
+        let meta = { asset_id: assetId, name };
+        const t = document.getElementById('edit-asset-type').value;
+        if (t === 'bgm' || t === 'sfx') { meta.type = 'audio'; meta.category = t; }
+        else if (t === 'video') { meta.type = 'video'; meta.category = 'video'; }
+        else if (t === 'image') { meta.type = 'image'; meta.category = 'thumbnail'; }
+        else if (t === 'gallery') { meta.type = 'image'; meta.category = 'gallery'; }
+        else if (t === 'background') { meta.type = 'image'; meta.category = 'background'; }
+
+        try {
+            await MockAssetAPI.updateAsset(meta, file);
+            modal.style.display = 'none';
+            AssetBrowser.renderCategoryGrid();
+            if (AssetBrowser.currentCategory) AssetBrowser.renderAssetList(AssetBrowser.currentCategory);
+        } catch (err) {
+            alert(err.message || 'Failed to update asset');
+        }
+    });
+}
+
+/* Helper to open edit modal with record */
+function openEditAssetEditor({ kind, record }) {
+    const modal = document.getElementById('edit-asset-modal');
+    const typeEl = document.getElementById('edit-asset-type');
+    const idEl = document.getElementById('edit-asset-id');
+    const nameEl = document.getElementById('edit-asset-name');
+    const descEl = document.getElementById('edit-asset-desc');
+    const charSection = document.getElementById('edit-asset-character-section');
+    const mediaSection = document.getElementById('edit-asset-media-section');
+    const fileInput = document.getElementById('edit-asset-file-input');
+    const fileName = document.getElementById('edit-asset-file-name');
+    const mediaPreview = document.getElementById('edit-media-preview');
+
+    // Reset
+    document.getElementById('edit-expressions-list').innerHTML = '';
+    fileInput.value = ''; fileName.textContent = ''; mediaPreview.style.display = 'none'; mediaPreview.innerHTML = '';
+
+    if (kind === 'asset') {
+        // map record to friendly type
+        let friendly = 'image';
+        if (record.type === 'audio') friendly = record.category === 'bgm' ? 'bgm' : 'sfx';
+        else if (record.type === 'video') friendly = 'video';
+        else if (record.type === 'image' && record.category === 'background') friendly = 'background';
+        else if (record.type === 'image' && record.category === 'gallery') friendly = 'gallery';
+        else if (record.type === 'image') friendly = 'image';
+
+        typeEl.value = friendly;
+        idEl.value = record.asset_id;
+        nameEl.value = record.name || '';
+        descEl.value = '';
+        charSection.style.display = 'none';
+        mediaSection.style.display = '';
+        // preview current file
+        mediaPreview.style.display = '';
+        if (record.type === 'audio') mediaPreview.innerHTML = `<audio controls src="${escapeHtml(record.url)}"></audio>`;
+        else if (record.type === 'video') mediaPreview.innerHTML = `<video controls src="${escapeHtml(record.url)}" style="max-width:100%;"></video>`;
+        else mediaPreview.innerHTML = `<img src="${escapeHtml(record.url)}" style="max-width:100%;">`;
+    } else if (kind === 'character') {
+        typeEl.value = 'character';
+        idEl.value = record.character_id;
+        nameEl.value = record.name || '';
+        descEl.value = record.description || '';
+        charSection.style.display = '';
+        mediaSection.style.display = 'none';
+        const exprs = mockExpressions.filter(e => e.character_id === record.character_id);
+        const list = document.getElementById('edit-expressions-list');
+        list.innerHTML = '';
+        for (const ex of exprs) {
+            const row = document.createElement('div');
+            row.className = 'form-group';
+            row.innerHTML = `
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" placeholder="expression name" class="editor-input expr-name" style="flex:1;" value="${escapeHtml(ex.name)}">
+                    <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
+                    <button type="button" class="btn-secondary expr-remove">Remove</button>
+                </div>
+            `;
+            list.appendChild(row);
+            row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
+        }
+    }
+
+    modal.style.display = 'flex';
 }
 
 /* ================================================================================================= */

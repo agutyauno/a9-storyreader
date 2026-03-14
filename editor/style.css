@@ -502,8 +502,12 @@ main {
 
 .tree-item-content.selected {
     background-color: var(--color-accent);
-    color: #2a2a2a;
+    color: #2a2a2a !important;
     font-weight: 600;
+}
+
+.tree-item-content.selected>.tree-item-label {
+    color: inherit;
 }
 
 /* Type-based color indicators */
@@ -813,6 +817,83 @@ main {
     box-shadow: var(--shadow-lg);
 }
 
+/* Add Asset Modal specific adjustments */
+#add-asset-modal .modal-content {
+    width: 720px;
+    max-width: calc(100% - 32px);
+}
+
+#add-asset-modal .form-group input[type="file"] {
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+#expressions-list .form-group { margin-bottom: 6px; }
+
+#media-preview img, #media-preview video { max-width: 100%; border-radius: 6px; border: 1px solid var(--color-border); }
+#media-preview audio { width: 100%; }
+
+/* Keep modal interactions simple — minimal hover styles, no animations */
+#add-asset-modal .modal-close:hover { background-color: rgba(255,107,107,0.08); }
+#add-asset-modal .btn-primary, #add-asset-modal .btn-secondary { border-radius: 6px; }
+
+/* Add asset modal - nicer buttons and slightly larger font */
+#add-asset-modal .btn-primary, #add-asset-modal .btn-secondary {
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+#add-asset-modal .btn-primary {
+    background-color: var(--color-accent);
+    color: #222;
+    border-color: var(--color-accent);
+}
+
+#add-asset-modal .btn-secondary {
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+#add-asset-modal .btn-secondary:hover { background-color: rgba(233,227,255,0.03); }
+
+/* Specific toolbar/file-button styling to match site theme */
+#add-asset-btn {
+    padding: 8px 12px;
+    margin-top: var(--spacing-sm);
+    font-size: 14px;
+    background-color: var(--color-accent);
+    color: #222;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+#add-asset-btn:hover {
+    background-color: var(--color-accent-light);
+}
+
+/* Style native file input button to match theme (minimal, no heavy animation) */
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+    padding: 8px 12px;
+    margin-right: 8px;
+    font-size: 14px;
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover,
+input[type="file"]::-webkit-file-upload-button:hover {
+    background-color: rgba(233,227,255,0.03);
+}
+
+/* Ensure file input itself is unobtrusive when present inline */
+input[type="file"].hidden-file-input { display: none; }
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1067,6 +1148,45 @@ main {
     gap: var(--spacing-sm);
 }
 
+/* Edit Asset Modal - mirror Add Asset Modal styles for consistent UI */
+#edit-asset-modal .modal-content {
+    width: 720px;
+    max-width: calc(100% - 32px);
+}
+
+#edit-asset-modal .form-group input[type="file"] {
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+#edit-expressions-list .form-group { margin-bottom: 6px; }
+
+#edit-media-preview img, #edit-media-preview video { max-width: 100%; border-radius: 6px; border: 1px solid var(--color-border); }
+#edit-media-preview audio { width: 100%; }
+
+#edit-asset-modal .modal-close:hover { background-color: rgba(255,107,107,0.08); }
+#edit-asset-modal .btn-primary, #edit-asset-modal .btn-secondary { border-radius: 6px; }
+
+/* Edit asset modal - match button sizing and font to add asset modal */
+#edit-asset-modal .btn-primary, #edit-asset-modal .btn-secondary {
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+#edit-asset-modal .btn-primary {
+    background-color: var(--color-accent);
+    color: #222;
+    border-color: var(--color-accent);
+}
+
+#edit-asset-modal .btn-secondary {
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+#edit-asset-modal .btn-secondary:hover { background-color: rgba(233,227,255,0.03); }
+
 /* ================================================================================================= */
 /* Story Editor (CodeMirror) */
 .story-editor-panel {
@@ -1159,4 +1279,61 @@ main {
 .cm-s-material-darker .cm-number { color: #f78c6c !important; }
 .cm-s-material-darker .cm-comment { color: #6a6a6a !important; font-style: italic; }
 .cm-s-material-darker .cm-operator { color: #89ddff !important; }
+
+/* Story editor metadata styles */
+.story-editor-meta {
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--color-border);
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+        "meta-name meta-order"
+        "meta-desc meta-desc";
+    gap: 12px;
+    align-items: start;
+}
+
+.story-editor-meta .meta-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.story-editor-meta .meta-name { grid-area: meta-name; }
+.story-editor-meta .meta-order { grid-area: meta-order; }
+.story-editor-meta .meta-desc { grid-area: meta-desc; }
+
+.story-editor-meta .meta-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.story-editor-meta .meta-input {
+    padding: 8px 10px;
+    background: var(--color-bg-dark);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-size: var(--font-size-sm);
+    resize: none;
+}
+
+.meta-toggle-btn {
+    margin-left: 12px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-accent);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+}
+
+.meta-toggle-btn:hover {
+    background: rgba(233,227,255,0.02);
+    border-color: var(--color-border);
+}
 

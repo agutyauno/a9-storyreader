@@ -492,7 +492,24 @@ const StoryEditor = {
                 <div class="editor-header-bar">
                     <h2 class="editor-title">${escapeHtml(item.name)}</h2>
                     <span class="editor-type-label">Story</span>
+                    <button type="button" id="story-meta-toggle" class="meta-toggle-btn" aria-expanded="true">Hide Meta ▾</button>
                 </div>
+
+                <div class="story-editor-meta">
+                    <div class="meta-row meta-name">
+                        <label class="meta-label">Name</label>
+                        <input type="text" id="story-editor-name" class="meta-input" value="${escapeHtml(item.name)}">
+                    </div>
+                    <div class="meta-row meta-order">
+                        <label class="meta-label">Display Order</label>
+                        <input type="number" id="story-editor-display-order" class="meta-input" value="${item.display_order ?? ''}" min="0">
+                    </div>
+                    <div class="meta-row meta-desc">
+                        <label class="meta-label">Description</label>
+                        <textarea id="story-editor-description" rows="3" class="meta-input">${escapeHtml(item.description || '')}</textarea>
+                    </div>
+                </div>
+
                 <div class="story-editor-toolbar">
                     <button type="button" class="se-toolbar-btn" data-insert="char" title="Insert character definition">
                         <span class="se-btn-icon">+</span> Char
@@ -523,6 +540,10 @@ const StoryEditor = {
                     <button type="button" class="se-toolbar-btn" data-insert="response" title="Insert choice response">
                         <span class="se-btn-icon">+</span> Response
                     </button>
+                    <span class="se-toolbar-sep"></span>
+                    <button type="button" class="se-toolbar-btn" id="story-editor-preview" title="Preview story">
+                        <span class="se-btn-icon">▶</span> Preview
+                    </button>
                 </div>
                 <div id="story-editor-cm-container">
                     <textarea id="story-script-textarea"></textarea>
@@ -549,16 +570,75 @@ const StoryEditor = {
         document.querySelectorAll('.se-toolbar-btn').forEach(btn => {
             btn.addEventListener('click', () => this.insertTemplate(btn.dataset.insert));
         });
+
+        // Preview button (open story page with sessionStorage preview data)
+        const previewBtn = document.getElementById('story-editor-preview');
+        if (previewBtn) previewBtn.addEventListener('click', () => this.preview());
+
+        // Meta toggle (collapse/expand metadata section)
+        const metaToggle = document.getElementById('story-meta-toggle');
+        if (metaToggle) {
+            metaToggle.addEventListener('click', () => {
+                const meta = document.querySelector('.story-editor-meta');
+                if (!meta) return;
+                const hidden = meta.style.display === 'none';
+                if (hidden) {
+                    meta.style.display = '';
+                    metaToggle.textContent = 'Hide Meta ▾';
+                    metaToggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    meta.style.display = 'none';
+                    metaToggle.textContent = 'Show Meta ▸';
+                    metaToggle.setAttribute('aria-expanded', 'false');
+                }
+                // Refresh editor layout after toggling
+                setTimeout(() => { if (this.editor) this.editor.refresh(); }, 60);
+            });
+        }
     },
 
     save() {
+        // Update metadata fields (name, description, display_order) if present
+        const nameInput = document.getElementById('story-editor-name');
+        const descInput = document.getElementById('story-editor-description');
+        const orderInput = document.getElementById('story-editor-display-order');
+        if (nameInput) {
+            const newName = nameInput.value.trim();
+            if (!newName) return; // require a name
+            this.currentItem.name = newName;
+            const titleEl = document.querySelector('#editor .editor-title');
+            if (titleEl) titleEl.textContent = newName;
+        }
+        if (descInput) this.currentItem.description = descInput.value.trim() || null;
+        if (orderInput) this.currentItem.display_order = orderInput.value !== '' ? parseInt(orderInput.value) : null;
+
+        // Update story content
         const scriptText = this.editor.getValue();
         const parsed = StoryScriptParser.parse(scriptText);
         this.currentItem.story_content = parsed;
+
+        // Re-render tree to reflect metadata changes (if available)
+        if (typeof renderStoryTree === 'function') renderStoryTree();
+
         showSaveNotification();
+
+        // Log only the current story item for debugging
+        try {
+            console.log('Exported story (current item):', JSON.stringify(this.currentItem, null, 2));
+        } catch (err) {
+            console.error('Failed to serialize story item to JSON', err);
+        }
     },
 
     reset() {
+        // Restore metadata fields
+        const nameInput = document.getElementById('story-editor-name');
+        const descInput = document.getElementById('story-editor-description');
+        const orderInput = document.getElementById('story-editor-display-order');
+        if (nameInput) nameInput.value = this.currentItem.name || '';
+        if (descInput) descInput.value = this.currentItem.description || '';
+        if (orderInput) orderInput.value = this.currentItem.display_order ?? '';
+
         const scriptText = StoryScriptSerializer.serialize(this.currentItem.story_content);
         this.editor.setValue(scriptText);
     },
@@ -584,6 +664,23 @@ const StoryEditor = {
         const prefix = lineContent.trim() ? '\n' : '';
         this.editor.replaceRange(prefix + template + '\n', cursor);
         this.editor.focus();
+    },
+
+    preview() {
+        // Prepare preview object (do not modify currentItem on disk)
+        const scriptText = this.editor.getValue();
+        const parsed = StoryScriptParser.parse(scriptText);
+        const previewObj = Object.assign({}, this.currentItem || {});
+        previewObj.story_content = parsed;
+
+        try {
+            sessionStorage.setItem('preview_story', JSON.stringify(previewObj));
+            const previewUrl = '../story_page/index.html?preview=1';
+            window.open(previewUrl, '_blank');
+        } catch (err) {
+            console.error('Failed to open preview', err);
+            alert('Không thể mở preview. Kiểm tra console để biết chi tiết.');
+        }
     },
 
     destroy() {
