@@ -12,7 +12,6 @@
 /* Layout - Main sections */
 main {
     display: flex;
-    height: 80vh;
     gap: var(--spacing-base);
     padding: var(--spacing-base);
     background-color: var(--color-bg-dark);
@@ -486,7 +485,7 @@ main {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-base);
+    padding: var(--spacing-xs);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     cursor: pointer;
@@ -528,9 +527,10 @@ main {
 }
 
 .tree-toggle {
-    width: 1.25rem;
-    height: 1.25rem;
-    padding: 0;
+    /* Larger clickable area for easier expand/collapse */
+    width: 2rem;
+    height: 2rem;
+    padding: 0.3rem;
     border: none;
     background: none;
     color: var(--color-text-secondary);
@@ -538,7 +538,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     transition: transform 0.2s ease;
     flex-shrink: 0;
 }
@@ -819,6 +819,12 @@ main {
 
 /* Add Asset Modal specific adjustments */
 #add-asset-modal .modal-content {
+    width: 720px;
+    max-width: calc(100% - 32px);
+}
+
+/* Add Item Modal: increase default width to match asset modals */
+#add-item-modal .modal-content {
     width: 720px;
     max-width: calc(100% - 32px);
 }

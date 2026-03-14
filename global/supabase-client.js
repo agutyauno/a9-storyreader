@@ -9,7 +9,12 @@ const SUPABASE_ANON_KEY = 'sb_publishable_bXR2KzMrDFAeIxr9d4BLlg_DDF2OkQv';
  * Supabase REST API client for browser
  * Provides methods to interact with Supabase database tables
  */
+let _authToken = null;
+
 const SupabaseClient = {
+	setAuthToken(token) {
+		_authToken = token;
+	},
 	/**
 	 * Make a GET request to Supabase REST API
 	 * @param {string} table - Table name
@@ -52,7 +57,7 @@ const SupabaseClient = {
 			method: 'GET',
 			headers: {
 				'apikey': SUPABASE_ANON_KEY,
-				'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+				'Authorization': _authToken ? `Bearer ${_authToken}` : `Bearer ${SUPABASE_ANON_KEY}`,
 				'Content-Type': 'application/json'
 			}
 		});

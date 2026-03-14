@@ -16,8 +16,10 @@
                 <img class="header-logo" src="../assets/images/icon/dreambind castle.png" alt="">
             </a>
             <p class="header-title">Story Editor</p>
+            <button id="logout-btn" class="btn-secondary">Sign out</button>
         </div>
     </header>
+    <!-- Authentication handled on separate login page -->
     <main>
         <section id="left-sidebar">
             <div id="sidebar-tabs">
@@ -92,27 +94,18 @@
                     
                     <div class="form-group" id="image-upload-group" style="display: none;">
                         <label>Image</label>
-                        <small style="color: var(--color-text-tertiary); font-size: var(--font-size-xs); display: block; margin-bottom: 8px;">For Region: icon image | For Event: banner image</small>
-                        
-                        <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
-                            <button type="button" class="image-option-btn active" data-option="file">Upload File</button>
-                            <button type="button" class="image-option-btn" data-option="url">Enter URL</button>
+                        <small style="color: var(--color-text-tertiary); font-size: var(--font-size-xs); display: block; margin-bottom: 8px;">Choose an image from your Assets (Region: icon | Event: banner)</small>
+
+                        <input type="hidden" id="item-image-asset-id" name="imageAssetId" value="">
+
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" id="choose-asset-btn" class="btn-secondary" style="flex:1;">Choose From Assets</button>
+                            <button type="button" id="clear-asset-btn" class="btn-secondary" style="display:none;">Remove</button>
                         </div>
-                        
-                        <div id="file-upload-section">
-                            <input type="file" id="item-image-file" accept="image/*" style="display: none;">
-                            <button type="button" id="choose-file-btn" class="btn-secondary" style="width: 100%;">
-                                Choose Image File
-                            </button>
-                            <div id="file-name-display" style="margin-top: 8px; font-size: var(--font-size-xs); color: var(--color-text-secondary);"></div>
-                        </div>
-                        
-                        <div id="url-input-section" style="display: none;">
-                            <input type="text" id="item-image-url" placeholder="Enter image URL">
-                        </div>
-                        
+
                         <div id="image-preview" style="margin-top: var(--spacing-sm); display: none;">
                             <img id="preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: var(--radius-base); border: 1px solid var(--color-border);">
+                            <div id="preview-asset-id" style="color: var(--color-text-secondary); font-size: var(--font-size-xs); margin-top:6px;"></div>
                         </div>
                     </div>
                     
@@ -201,7 +194,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="asset-name">Display Name</label>
+                        <label for="asset-name">Display Name <span style="color: #ff6b6b;">*</span></label>
                         <input type="text" id="asset-name" class="editor-input" placeholder="Human-friendly name">
                     </div>
 
@@ -258,7 +251,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="edit-asset-name">Display Name</label>
+                        <label for="edit-asset-name">Display Name <span style="color: #ff6b6b;">*</span></label>
                         <input type="text" id="edit-asset-name" class="editor-input">
                     </div>
 
@@ -295,10 +288,23 @@
     </div>
 
     <script src="../global/script.js"></script>
+    <script src="../global/supabase-client.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
     <script src="./story-editor.js"></script>
     <script src="./script.js"></script>
+
+    <style>
+        #login-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999}
+        .login-card{background:var(--color-surface, #0f1724);color:var(--color-text, #fff);padding:20px;border-radius:8px;min-width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+        .login-card h2{margin:0 0 12px 0;font-size:18px}
+        .login-card .form-row{margin-bottom:10px}
+        .login-card label{display:block;font-size:12px;margin-bottom:6px;color:var(--color-text-secondary)}
+        .login-card input{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:inherit}
+        /* Header and logout button positioning */
+        #editor-header{position:relative}
+        #logout-btn{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:5}
+    </style>
 </body>
 </html>

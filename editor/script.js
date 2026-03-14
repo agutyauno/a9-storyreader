@@ -2,6 +2,77 @@
 /* Story Editor - Tree Sidebar Manager */
 /* ================================================================================================= */
 
+/* ================================================================================================= */
+/* Supabase Auth - simple email/password sign-in using Supabase GoTrue endpoints                */
+/* ================================================================================================= */
+async function supabaseSignIn(email, password) {
+    const url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+        const msg = data?.error_description || data?.error || 'Sign in failed';
+        throw new Error(msg);
+    }
+
+    const token = data.access_token;
+    SupabaseClient.setAuthToken(token);
+    localStorage.setItem('supabase_access_token', token);
+    localStorage.setItem('supabase_refresh_token', data.refresh_token || '');
+    localStorage.setItem('supabase_user', JSON.stringify(data.user || {}));
+    return data;
+}
+
+function supabaseSignOut() {
+    SupabaseClient.setAuthToken(null);
+    localStorage.removeItem('supabase_access_token');
+    localStorage.removeItem('supabase_refresh_token');
+    localStorage.removeItem('supabase_user');
+    window.location.href = 'login.html';
+}
+function checkAuthRedirect() {
+    const existing = localStorage.getItem('supabase_access_token');
+    if (existing) {
+        SupabaseClient.setAuthToken(existing);
+    } else {
+        window.location.href = 'login.html';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    try { checkAuthRedirect(); initLogoutButton(); } catch (e) { console.error('auth check', e); }
+});
+
+function initLogoutButton() {
+    const btn = document.getElementById('logout-btn');
+    if (!btn) return;
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+            supabaseSignOut();
+        } catch (err) {
+            console.error('signout', err);
+            // fallback: clear tokens and redirect
+            localStorage.removeItem('supabase_access_token');
+            localStorage.removeItem('supabase_refresh_token');
+            localStorage.removeItem('supabase_user');
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Optionally hide the button if not logged in
+    const existing = localStorage.getItem('supabase_access_token');
+    btn.style.display = existing ? 'inline-flex' : 'none';
+}
+
+
 // Mock asset data matching Supabase assets table
 const mockAssets = [
     // Thumbnails (for region/event images)
@@ -1257,18 +1328,36 @@ function switchTab(tabName, clickedButton) {
 /* Tree Rendering */
 function renderStoryTree() {
     const treeContainer = document.getElementById('story-tree');
+    // Preserve expanded state and selection before re-rendering
+    const expandedNodes = Array.from(document.querySelectorAll('.tree-item.expanded')).map(el => el.getAttribute('data-id'));
+    const expandedSet = new Set(expandedNodes.filter(Boolean));
+    const selectedEl = document.querySelector('.tree-item-content.selected');
+    const selectedId = selectedEl ? selectedEl.closest('.tree-item').getAttribute('data-id') : null;
+
     treeContainer.innerHTML = '';
     
     // Sort regions by display_order before rendering
     const sortedRegions = sortByDisplayOrder([...mockStoryData]);
     
     sortedRegions.forEach(item => {
-        const treeItemElement = createTreeItemElement(item);
+        const treeItemElement = createTreeItemElement(item, 0, expandedSet);
         treeContainer.appendChild(treeItemElement);
     });
+
+    // Restore selection if present
+    if (selectedId) {
+        const newSelected = treeContainer.querySelector(`.tree-item[data-id="${selectedId}"] > .tree-item-content`);
+        if (newSelected) {
+            document.querySelectorAll('.tree-item-content.selected').forEach(el => el.classList.remove('selected'));
+            newSelected.classList.add('selected');
+            currentSelected = newSelected.closest('.tree-item');
+            // Update toolbar state to reflect current selection
+            updateToolbarState(currentSelected.getAttribute('data-type'));
+        }
+    }
 }
 
-function createTreeItemElement(item, depth = 0) {
+function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
     const li = document.createElement('li');
     li.className = 'tree-item';
     li.setAttribute('data-id', item.id);
@@ -1296,7 +1385,14 @@ function createTreeItemElement(item, depth = 0) {
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'tree-toggle';
         toggleBtn.innerHTML = '▶';
-        toggleBtn.setAttribute('aria-expanded', 'false');
+        // If this item's id was expanded before, restore it
+        const id = String(item.id);
+        if (expandedSet.has(id)) {
+            li.classList.add('expanded');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        } else {
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
         contentDiv.appendChild(toggleBtn);
     } else {
         const emptySpace = document.createElement('div');
@@ -1321,7 +1417,7 @@ function createTreeItemElement(item, depth = 0) {
         const sortedChildren = sortByDisplayOrder([...item.children]);
         
         sortedChildren.forEach(child => {
-            const childElement = createTreeItemElement(child, depth + 1);
+            const childElement = createTreeItemElement(child, depth + 1, expandedSet);
             ul.appendChild(childElement);
         });
         
@@ -1760,12 +1856,18 @@ function setupImagePickerModal() {
         const selected = document.querySelector('#image-picker-grid .image-picker-card.selected');
         if (!selected) return;
         const url = selected.getAttribute('data-url');
-        if (imagePickerCallback) imagePickerCallback(url);
+        const assetId = selected.getAttribute('data-asset-id');
+        const asset = mockAssets.find(a => (a.url === url) || (a.asset_id === assetId));
+        if (imagePickerCallback) imagePickerCallback(asset || url);
         hideImagePickerModal();
     });
 
-    // Upload button within picker
-    uploadBtn.addEventListener('click', () => fileInput.click());
+    // Upload button within picker now opens the Add Asset modal instead of direct file upload
+    uploadBtn.addEventListener('click', () => {
+        const addBtn = document.getElementById('add-asset-btn');
+        hideImagePickerModal();
+        if (addBtn) addBtn.click();
+    });
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1789,6 +1891,7 @@ function setupImagePickerModal() {
 /* Add Asset Modal (prototype)                                                */
 /* ================================================================================================= */
 function setupAssetModal() {
+    // Ensure modal elements exist and wire open/close handlers
     const openBtn = document.getElementById('add-asset-btn');
     const modal = document.getElementById('add-asset-modal');
     const closeBtn = document.getElementById('add-asset-modal-close');
@@ -1798,58 +1901,97 @@ function setupAssetModal() {
     const mediaSection = document.getElementById('asset-media-section');
     const fileInput = document.getElementById('asset-file-input');
     const fileName = document.getElementById('asset-file-name');
+    const mediaLabel = document.getElementById('media-label');
     const mediaPreview = document.getElementById('media-preview');
     const addExprBtn = document.getElementById('add-expression-btn');
 
-    openBtn.addEventListener('click', () => showAddAssetModal());
-    closeBtn.addEventListener('click', hideAddAssetModal);
-    cancelBtn.addEventListener('click', hideAddAssetModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) hideAddAssetModal(); });
+    const chooseBtn = document.getElementById('choose-asset-btn');
+    const clearBtn = document.getElementById('clear-asset-btn');
+    const assetIdInput = document.getElementById('item-image-asset-id');
+    const imagePreviewEl = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+    const previewAssetId = document.getElementById('preview-asset-id');
 
-    typeSelect.addEventListener('change', () => {
-        const val = typeSelect.value;
-        charSection.style.display = val === 'character' ? '' : 'none';
-        // media types: image, gallery, background, video, bgm, sfx
-        const mediaTypes = ['image','gallery','background','video','bgm','sfx'];
-        mediaSection.style.display = mediaTypes.includes(val) ? '' : 'none';
-        // adjust accept/label
-        const mediaLabel = document.getElementById('media-label');
-        if (val === 'video') {
-            fileInput.accept = 'video/*';
-            mediaLabel.textContent = 'Video File *';
-        } else if (val === 'bgm' || val === 'sfx') {
-            fileInput.accept = 'audio/*';
-            mediaLabel.textContent = 'Audio File *';
-        } else if (val === 'image' || val === 'gallery' || val === 'background') {
-            fileInput.accept = 'image/*';
-            mediaLabel.textContent = 'Image File *';
-        } else {
-            fileInput.accept = 'image/*,audio/*,video/*';
-            mediaLabel.textContent = 'Media File *';
-        }
-    });
+    if (openBtn) openBtn.addEventListener('click', () => showAddAssetModal());
+    if (closeBtn) closeBtn.addEventListener('click', () => hideAddAssetModal());
+    if (cancelBtn) cancelBtn.addEventListener('click', () => hideAddAssetModal());
+    if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) hideAddAssetModal(); });
+
+    if (chooseBtn) {
+        chooseBtn.addEventListener('click', () => {
+            console.log('Choose asset clicked');
+            const itemType = document.getElementById('item-type')?.value || 'region';
+            const category = itemType === 'event' ? 'background' : 'thumbnail';
+
+            showImagePickerModal((selected) => {
+                if (!selected) return;
+                if (assetIdInput) assetIdInput.value = selected.asset_id || selected.assetId || '';
+                if (previewImg) previewImg.src = selected.url || selected;
+                if (previewAssetId) previewAssetId.textContent = selected.asset_id || '';
+                if (imagePreviewEl) imagePreviewEl.style.display = 'block';
+                if (clearBtn) clearBtn.style.display = 'inline-block';
+            }, 'image', category);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (assetIdInput) assetIdInput.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewAssetId) previewAssetId.textContent = '';
+            if (imagePreviewEl) imagePreviewEl.style.display = 'none';
+            clearBtn.style.display = 'none';
+        });
+    }
+
+    // Toggle sections and file input accept based on selected asset type
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            const val = typeSelect.value;
+            if (val === 'character') {
+                if (charSection) charSection.style.display = '';
+                if (mediaSection) mediaSection.style.display = 'none';
+            } else {
+                if (charSection) charSection.style.display = 'none';
+                if (mediaSection) mediaSection.style.display = '';
+                // adjust file accept and label
+                if (fileInput) {
+                    if (val === 'video') fileInput.accept = 'video/*';
+                    else if (val === 'bgm' || val === 'sfx') fileInput.accept = 'audio/*';
+                    else fileInput.accept = 'image/*';
+                }
+                if (mediaLabel) {
+                    if (val === 'video') mediaLabel.textContent = 'Video File *';
+                    else if (val === 'bgm' || val === 'sfx') mediaLabel.textContent = 'Audio File *';
+                    else mediaLabel.textContent = 'Media File *';
+                }
+            }
+            // clear file preview when switching types
+            if (fileInput) { fileInput.value = ''; }
+            if (mediaPreview) { mediaPreview.style.display = 'none'; mediaPreview.innerHTML = ''; }
+        });
+    }
 
     function showAddAssetModal() {
         // Reset form
-        document.getElementById('add-asset-form').reset();
-        document.getElementById('expressions-list').innerHTML = '';
-        document.getElementById('asset-file-name').textContent = '';
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        charSection.style.display = 'none';
-        mediaSection.style.display = 'none';
+        const form = document.getElementById('add-asset-form');
+        if (form) form.reset();
+        const exprList = document.getElementById('expressions-list'); if (exprList) exprList.innerHTML = '';
+        if (fileName) fileName.textContent = '';
+        if (mediaPreview) { mediaPreview.style.display = 'none'; mediaPreview.innerHTML = ''; }
+        if (charSection) charSection.style.display = 'none';
+        if (mediaSection) mediaSection.style.display = 'none';
         // clear editing state
         formRemoveEditingFlag();
-        modal.style.display = 'flex';
+        if (modal) modal.style.display = 'flex';
     }
 
-    function hideAddAssetModal() {
-        modal.style.display = 'none';
-    }
+    function hideAddAssetModal() { if (modal) modal.style.display = 'none'; }
 
     // Editing helpers
     function setEditingState(kind, id) {
         const form = document.getElementById('add-asset-form');
+        if (!form) return;
         form.dataset.editing = '1';
         form.dataset.editKind = kind;
         form.dataset.editId = id;
@@ -1857,6 +1999,7 @@ function setupAssetModal() {
 
     function formRemoveEditingFlag() {
         const form = document.getElementById('add-asset-form');
+        if (!form) return;
         delete form.dataset.editing;
         delete form.dataset.editKind;
         delete form.dataset.editId;
@@ -1864,7 +2007,7 @@ function setupAssetModal() {
 
     function getEditingState() {
         const form = document.getElementById('add-asset-form');
-        if (!form.dataset.editing) return null;
+        if (!form || !form.dataset.editing) return null;
         return { kind: form.dataset.editKind, id: form.dataset.editId };
     }
 
@@ -1884,11 +2027,9 @@ function setupAssetModal() {
             if (record.type === 'image' && record.category === 'background') sel = 'background';
             if (record.type === 'image' && record.category === 'gallery') sel = 'gallery';
             if (record.type === 'image' && record.category === 'thumbnail') sel = 'image';
-            typeSelectEl.value = sel;
-            typeSelectEl.dispatchEvent(new Event('change'));
-            idEl.value = record.asset_id;
-            idEl.disabled = true;
-            nameEl.value = record.name || '';
+            if (typeSelectEl) { typeSelectEl.value = sel; typeSelectEl.dispatchEvent(new Event('change')); }
+            if (idEl) { idEl.value = record.asset_id; idEl.disabled = true; }
+            if (nameEl) nameEl.value = record.name || '';
             // preview
             const previewContainer = document.getElementById('media-preview');
             previewContainer.style.display = '';
@@ -1979,6 +2120,7 @@ function setupAssetModal() {
         const type = document.getElementById('asset-type').value;
         const assetId = document.getElementById('asset-id').value.trim();
         const name = document.getElementById('asset-name').value.trim();
+        if (!name) return alert('Display name is required');
         if (!type || !assetId) return alert('Type and Asset ID are required');
         // Duplicate checks across assets and characters
         if (mockAssets.find(a => a.asset_id === assetId) || mockCharacters.find(c => c.character_id === assetId)) {
@@ -2057,19 +2199,28 @@ function setupAssetModal() {
 
             // create character
             const desc = document.getElementById('asset-desc').value.trim();
+
+            // gather expressions and validate: at least one expression and each must have an image file
+            const exprRows = Array.from(document.querySelectorAll('#expressions-list .form-group'));
+            if (!exprRows.length) return alert('Please add at least one expression with an image for the character.');
+            for (const row of exprRows) {
+                const avatarInput = row.querySelector('.expr-avatar');
+                if (!avatarInput || !avatarInput.files || !avatarInput.files[0]) {
+                    return alert('Each expression must include an image file. Please choose an image for every expression.');
+                }
+            }
+
+            // create character record first
             await MockAssetAPI.createAsset({ asset_id: assetId, type: 'character', name, description: desc }, null);
 
-            // create expressions
-            const exprRows = Array.from(document.querySelectorAll('#expressions-list .form-group'));
+            // upload expressions (images are required per above validation)
             for (const row of exprRows) {
                 const exprName = row.querySelector('.expr-name').value.trim();
                 const avatarInput = row.querySelector('.expr-avatar');
                 let avatarUrl = '';
-                if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-                    const f = avatarInput.files[0];
-                    const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
-                    avatarUrl = uploaded.url;
-                }
+                const f = avatarInput.files[0];
+                const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
+                avatarUrl = uploaded.url;
                 mockExpressions.push({ character_id: assetId, name: exprName || 'default', avatar_url: avatarUrl, full_url: '' });
             }
 
@@ -2178,6 +2329,7 @@ function setupEditAssetModal() {
         const kind = document.getElementById('edit-asset-type').value;
         const assetId = document.getElementById('edit-asset-id').value.trim();
         const name = document.getElementById('edit-asset-name').value.trim();
+        if (!name) return alert('Display name is required');
 
         if (!assetId) return alert('Missing asset id');
 
@@ -2335,13 +2487,37 @@ function setupToolbarButtons() {
     
     addRegionBtn.addEventListener('click', () => showAddModal('region', null));
     addArcBtn.addEventListener('click', () => {
-        if (currentSelected && currentSelected.getAttribute('data-type') === 'region') {
+        if (!currentSelected) return;
+
+        const selType = currentSelected.getAttribute('data-type');
+        if (selType === 'region') {
+            // add child arc under selected region
             showAddModal('arc', currentSelected);
+            return;
+        }
+
+        if (selType === 'arc') {
+            // add sibling arc under the same parent region
+            const parentRegion = getParentTreeItemByType(currentSelected, 'region');
+            if (parentRegion) showAddModal('arc', parentRegion);
+            return;
         }
     });
     addEventBtn.addEventListener('click', () => {
-        if (currentSelected && currentSelected.getAttribute('data-type') === 'arc') {
+        if (!currentSelected) return;
+
+        const selType = currentSelected.getAttribute('data-type');
+        if (selType === 'arc') {
+            // add child event under selected arc
             showAddModal('event', currentSelected);
+            return;
+        }
+
+        if (selType === 'event') {
+            // add sibling event under the same parent arc
+            const parentArc = getParentTreeItemByType(currentSelected, 'arc');
+            if (parentArc) showAddModal('event', parentArc);
+            return;
         }
     });
     addStoryBtn.addEventListener('click', () => {
@@ -2364,22 +2540,49 @@ function setupToolbarButtons() {
 }
 
 function updateToolbarState(selectedType) {
+    const addRegionBtn = document.getElementById('add-region-btn');
     const addArcBtn = document.getElementById('add-arc-btn');
     const addEventBtn = document.getElementById('add-event-btn');
     const addStoryBtn = document.getElementById('add-story-btn');
-    
-    // Reset all
-    addArcBtn.disabled = true;
-    addEventBtn.disabled = true;
-    addStoryBtn.disabled = true;
-    
-    // Enable based on selection
+
+    // // Reset all
+    if (addRegionBtn) addRegionBtn.disabled = true;
+    if (addArcBtn) addArcBtn.disabled = true;
+    if (addEventBtn) addEventBtn.disabled = true;
+    if (addStoryBtn) addStoryBtn.disabled = true;
+
+    // Default: allow adding root regions when nothing selected
+    if (!selectedType) {
+        if (addRegionBtn) addRegionBtn.disabled = false;
+        return;
+    }
+
+    // Enable corresponding add (same level) and the add button for the child datatype
+    // region -> enable Add Region (sibling) and Add Arc (child)
     if (selectedType === 'region') {
-        addArcBtn.disabled = false;
-    } else if (selectedType === 'arc') {
-        addEventBtn.disabled = false;
-    } else if (selectedType === 'event' || selectedType === 'story') {
-        addStoryBtn.disabled = false;
+        if (addRegionBtn) addRegionBtn.disabled = false;
+        if (addArcBtn) addArcBtn.disabled = false;
+        return;
+    }
+
+    // arc -> enable Add Arc (sibling) and Add Event (child)
+    if (selectedType === 'arc') {
+        if (addArcBtn) addArcBtn.disabled = false;
+        if (addEventBtn) addEventBtn.disabled = false;
+        return;
+    }
+
+    // event -> enable Add Event (sibling) and Add Story (child)
+    if (selectedType === 'event') {
+        if (addEventBtn) addEventBtn.disabled = false;
+        if (addStoryBtn) addStoryBtn.disabled = false;
+        return;
+    }
+
+    // story -> enable Add Story (sibling); stories have no child type
+    if (selectedType === 'story') {
+        if (addStoryBtn) addStoryBtn.disabled = false;
+        return;
     }
 }
 
@@ -2432,19 +2635,17 @@ function showAddModal(itemType, parentElement) {
     const parentIdInput = document.getElementById('parent-id');
     const imageUploadGroup = document.getElementById('image-upload-group');
     const imagePreview = document.getElementById('image-preview');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    
+    const assetIdInput = document.getElementById('item-image-asset-id');
+    const previewImg = document.getElementById('preview-img');
+    const previewAssetId = document.getElementById('preview-asset-id');
+
     // Reset form
     form.reset();
-    fileNameDisplay.textContent = '';
-    imagePreview.style.display = 'none';
-    
-    // Reset to file upload option
-    document.querySelectorAll('.image-option-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.option === 'file');
-    });
-    document.getElementById('file-upload-section').style.display = 'block';
-    document.getElementById('url-input-section').style.display = 'none';
+    // Clear asset selection/preview
+    if (assetIdInput) assetIdInput.value = '';
+    if (previewImg) previewImg.src = '';
+    if (previewAssetId) previewAssetId.textContent = '';
+    if (imagePreview) imagePreview.style.display = 'none';
     
     // Set type and parent
     itemTypeInput.value = itemType;
@@ -2470,78 +2671,40 @@ function hideModal() {
 }
 
 function setupImageUploadHandlers() {
-    const imageOptionBtns = document.querySelectorAll('.image-option-btn');
-    const fileUploadSection = document.getElementById('file-upload-section');
-    const urlInputSection = document.getElementById('url-input-section');
-    const chooseFileBtn = document.getElementById('choose-file-btn');
-    const fileInput = document.getElementById('item-image-file');
-    const urlInput = document.getElementById('item-image-url');
+    // New asset-chooser handlers. Old file/URL upload UI may not exist anymore.
+    const chooseBtn = document.getElementById('choose-asset-btn');
+    const clearBtn = document.getElementById('clear-asset-btn');
+    const assetIdInput = document.getElementById('item-image-asset-id');
     const imagePreview = document.getElementById('image-preview');
     const previewImg = document.getElementById('preview-img');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    
-    // Toggle between file and URL options
-    imageOptionBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const option = btn.dataset.option;
-            
-            // Update button states
-            imageOptionBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Show/hide sections
-            if (option === 'file') {
-                fileUploadSection.style.display = 'block';
-                urlInputSection.style.display = 'none';
-                urlInput.value = '';
-            } else {
-                fileUploadSection.style.display = 'none';
-                urlInputSection.style.display = 'block';
-                fileInput.value = '';
-                fileNameDisplay.textContent = '';
-            }
-            
-            // Hide preview when switching
-            imagePreview.style.display = 'none';
+    const previewAssetId = document.getElementById('preview-asset-id');
+
+    if (chooseBtn) {
+        chooseBtn.addEventListener('click', () => {
+            console.log('Choose asset clicked (setupImageUploadHandlers)');
+            const itemType = document.getElementById('item-type')?.value || 'region';
+            const category = itemType === 'event' ? 'background' : 'thumbnail';
+
+            showImagePickerModal((selected) => {
+                if (!selected) return;
+                if (assetIdInput) assetIdInput.value = selected.asset_id || selected.assetId || '';
+                if (previewImg) previewImg.src = selected.url || selected;
+                if (previewAssetId) previewAssetId.textContent = selected.asset_id || '';
+                if (imagePreview) imagePreview.style.display = 'block';
+                if (clearBtn) clearBtn.style.display = 'inline-block';
+            }, 'image', category);
         });
-    });
-    
-    // File input handling
-    chooseFileBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-    
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Show file name
-            fileNameDisplay.textContent = `Selected: ${file.name}`;
-            
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                previewImg.src = event.target.result;
-                imagePreview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // URL input preview
-    urlInput.addEventListener('input', (e) => {
-        const url = e.target.value.trim();
-        if (url) {
-            previewImg.src = url;
-            imagePreview.style.display = 'block';
-            
-            // Handle image load error
-            previewImg.onerror = () => {
-                imagePreview.style.display = 'none';
-            };
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (assetIdInput) assetIdInput.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewAssetId) previewAssetId.textContent = '';
+            if (imagePreview) imagePreview.style.display = 'none';
+            clearBtn.style.display = 'none';
+        });
+    }
 }
 
 function handleAddItem(event) {
@@ -2563,43 +2726,18 @@ function handleAddItem(event) {
         displayOrder = parseInt(displayOrder);
     }
     
-    // Get image: either from file upload or URL input
-    const fileInput = document.getElementById('item-image-file');
-    const urlInput = document.getElementById('item-image-url');
-    const activeOption = document.querySelector('.image-option-btn.active');
-    
-    if (activeOption && activeOption.dataset.option === 'file' && fileInput.files[0]) {
-        // File upload: read as base64
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const imageData = e.target.result;
-            
-            // Generate new item with image data
-            const newItem = createNewItem(itemType, name, description, displayOrder, parentId, imageData);
-            
-            // Add to data structure
-            addItemToDataStructure(newItem, parentId);
-            
-            // Update UI
-            finalizeAddItem(newItem);
-        };
-        
-        reader.readAsDataURL(file);
-    } else {
-        // URL input or no image
-        const imageUrl = urlInput.value.trim() || null;
-        
-        // Generate new item
-        const newItem = createNewItem(itemType, name, description, displayOrder, parentId, imageUrl);
-        
-        // Add to data structure
-        addItemToDataStructure(newItem, parentId);
-        
-        // Update UI
-        finalizeAddItem(newItem);
-    }
+    // Get image asset id from picker (preferred) and resolve to URL, otherwise no image
+    const selectedAssetId = (document.getElementById('item-image-asset-id') || {}).value || null;
+    const imageUrl = selectedAssetId ? AssetResolver.toUrl(selectedAssetId) : null;
+
+    // Generate new item
+    const newItem = createNewItem(itemType, name, description, displayOrder, parentId, imageUrl);
+
+    // Add to data structure
+    addItemToDataStructure(newItem, parentId);
+
+    // Update UI
+    finalizeAddItem(newItem);
 }
 
 function addItemToDataStructure(newItem, parentId) {
