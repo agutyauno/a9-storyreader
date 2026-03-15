@@ -40,7 +40,28 @@ const SupabaseClient = {
 		// Add filters
 		filters.forEach(filter => {
 			const { column, operator, value } = filter;
-			url += `&${column}=${operator}.${encodeURIComponent(value)}`;
+			if (operator === 'in') {
+				// Accept value as array or comma/parentheses-delimited string
+				let items = value;
+				if (!Array.isArray(items)) {
+					if (typeof items === 'string') {
+						const trimmed = items.trim();
+						if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+							items = trimmed.slice(1, -1).split(',').map(s => s.trim());
+						} else {
+							items = trimmed.split(',').map(s => s.trim());
+						}
+					} else {
+						items = [String(items)];
+					}
+				}
+
+				// Quote each item for Supabase IN syntax and escape single quotes
+				const quoted = items.map(v => `'${String(v).replace(/'/g, "''")}'`).join(',');
+				url += `&${column}=in.(${encodeURIComponent(quoted)})`;
+			} else {
+				url += `&${column}=${operator}.${encodeURIComponent(value)}`;
+			}
 		});
 
 		// Add ordering

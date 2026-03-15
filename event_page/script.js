@@ -63,18 +63,19 @@ async function loadEventData() {
 		]);
 
 		// Store data for modal usage
+		const AVATAR_FALLBACK = '../assets/images/character/blank.png';
 		characterData = characters.map(c => ({
 			id: c.character_id,
 			name: c.name,
-			avatar: c.avatar_url,
-			fullImage: c.image_url,
+			avatar: c.avatar_url || AVATAR_FALLBACK,
+			fullImage: c.image_url || AVATAR_FALLBACK,
 			description: c.description
 		}));
 
 		galleryData = gallery.map(g => ({
 			id: g.gallery_id,
 			title: g.title,
-			image: g.image_url
+			image: g.image_url || '../assets/images/icon/default.png'
 		}));
 
 		// Render content

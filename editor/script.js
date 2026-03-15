@@ -624,8 +624,8 @@ const mockStoryData = [
                                 description: 'Meeting the operators',
                                 display_order: 2,
                                 story_content: {
-                                    scenes: [],
-                                    characters: ['char-amiya', 'char-doctor']
+                                    sections: [],
+                                    characters: {}
                                 }
                             }
                         ]
@@ -651,8 +651,8 @@ const mockStoryData = [
                                 description: 'Planning the escape from Chernobog',
                                 display_order: 1,
                                 story_content: {
-                                    scenes: [],
-                                    characters: []
+                                    sections: [],
+                                    characters: {}
                                 }
                             }
                         ]
@@ -691,8 +691,8 @@ const mockStoryData = [
                                 description: 'Amiya\'s path as a leader',
                                 display_order: 1,
                                 story_content: {
-                                    scenes: [],
-                                    characters: ['char-amiya']
+                                    sections: [],
+                                    characters: {}
                                 }
                             }
                         ]
@@ -743,8 +743,8 @@ const mockStoryData = [
                                 description: 'Rhodes Island arrives at Lungmen',
                                 display_order: 1,
                                 story_content: {
-                                    scenes: [],
-                                    characters: []
+                                    sections: [],
+                                    characters: {}
                                 }
                             },
                             {
@@ -757,8 +757,8 @@ const mockStoryData = [
                                 description: 'First encounter with the Chief of Police',
                                 display_order: 2,
                                 story_content: {
-                                    scenes: [],
-                                    characters: ['char-chen']
+                                    sections: [],
+                                    characters: {}
                                 }
                             }
                         ]
@@ -809,8 +809,8 @@ const mockStoryData = [
                                 description: 'Starting the investigation in Victoria',
                                 display_order: 1,
                                 story_content: {
-                                    scenes: [],
-                                    characters: []
+                                    sections: [],
+                                    characters: {}
                                 }
                             }
                         ]
@@ -2796,7 +2796,7 @@ function createNewItem(type, name, description, displayOrder, parentId, imageUrl
     } else if (type === 'story') {
         item.story_id = specificId;
         item.event_id = getParentSpecificId(parentId, 'event');
-        item.story_content = { scenes: [], characters: [] };
+        item.story_content = { sections: [], characters: {} };
     }
     
     return item;

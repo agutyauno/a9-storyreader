@@ -70,12 +70,31 @@ async function renderArcs(arcs) {
 	const regionId = getRegionIdFromURL();
 	let html = '';
 
-	for (const arc of arcs) {
-		// Fetch events for this arc
-		const events = await SupabaseAPI.getEventsByArc(arc.arc_id);
-		
-		// Fetch suggestion for this arc
-		const suggestions = await SupabaseAPI.getSuggestionsByArc(arc.arc_id);
+	// Batch fetch events and suggestions for all arcs in parallel to reduce sequential awaits
+	const eventsPromises = arcs.map(a => SupabaseAPI.getEventsByArc(a.arc_id));
+	const suggestionsPromises = arcs.map(a => SupabaseAPI.getSuggestionsByArc(a.arc_id));
+
+	let eventsResults = [];
+	let suggestionsResults = [];
+	try {
+		eventsResults = await Promise.all(eventsPromises);
+	} catch (err) {
+		// Fallback: if any fetch failed, normalize results to empty arrays and continue
+		console.error('Error fetching events for arcs:', err);
+		eventsResults = arcs.map(() => []);
+	}
+
+	try {
+		suggestionsResults = await Promise.all(suggestionsPromises);
+	} catch (err) {
+		console.error('Error fetching suggestions for arcs:', err);
+		suggestionsResults = arcs.map(() => []);
+	}
+
+	for (let i = 0; i < arcs.length; i++) {
+		const arc = arcs[i];
+		const events = eventsResults[i] || [];
+		const suggestions = suggestionsResults[i] || [];
 
 		html += `
 			<article class="arc-section">

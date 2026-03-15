@@ -127,17 +127,47 @@ const SupabaseAPI = {
 			filters: [{ column: 'event_id', operator: 'eq', value: eventId }]
 		});
 
-		if (eventCharacters.length === 0) {
-			return [];
-		}
+		if (!eventCharacters || eventCharacters.length === 0) return [];
 
-		// Then fetch the full character data
 		const characterIds = eventCharacters.map(ec => ec.character_id);
+
+		// Fetch base character rows
 		const characters = await SupabaseClient.get('characters', {
-			filters: [{ column: 'character_id', operator: 'in', value: `(${characterIds.join(',')})` }]
+			filters: [{ column: 'character_id', operator: 'in', value: characterIds }]
 		});
 
-		return characters;
+		// Fetch expressions for these characters
+		const expressions = await SupabaseClient.get('charater_expressions', {
+			filters: [{ column: 'character_id', operator: 'in', value: characterIds }]
+		});
+
+		// Build map of default expression (or first) per character_id
+		const exprMap = {};
+		if (expressions && expressions.length > 0) {
+			expressions.forEach(e => {
+				if (!exprMap[e.character_id]) exprMap[e.character_id] = [];
+				exprMap[e.character_id].push(e);
+			});
+
+			for (const cid of Object.keys(exprMap)) {
+				const list = exprMap[cid];
+				// prefer name === 'default'
+				let chosen = list.find(x => x.name === 'default') || list[0];
+				exprMap[cid] = chosen;
+			}
+		}
+
+		// Merge avatar/full into character objects for convenience
+		const merged = (characters || []).map(c => {
+			const e = exprMap[c.character_id];
+			return {
+				...c,
+				avatar_url: e ? (e.avatar_url || '') : '',
+				image_url: e ? (e.full_url || '') : ''
+			};
+		});
+
+		return merged;
 	},
 
 	// ============= Gallery =============

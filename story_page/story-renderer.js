@@ -79,8 +79,15 @@ const StoryRenderer = {
 	 * @returns {string} - HTML string
 	 */
 	render(storyContent) {
-		if (!storyContent || !storyContent.sections) {
+		// Normalize legacy data shapes before rendering:
+		// - ensure `sections` is an array and `characters` is an object
+		if (!storyContent) {
 			return '<p class="no-data">Không có nội dung truyện.</p>';
+		}
+
+		// Ensure sections exist and are an array
+		if (!Array.isArray(storyContent.sections)) {
+			storyContent.sections = [];
 		}
 
 		// Store character map for use in rendering
