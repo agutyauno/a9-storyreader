@@ -859,16 +859,15 @@ function initializeEditor() {
 /* Asset Browser                                                                                     */
 /* ================================================================================================= */
 const AssetBrowser = {
-    currentCategory: null,
-
+    // Categories shown in the asset browser grid
     categories: [
-        { key: 'bgm',        label: 'BGM',        type: 'audio', category: 'bgm' },
-        { key: 'sfx',        label: 'SFX',        type: 'audio', category: 'sfx' },
+        { key: 'character', label: 'Characters' },
         { key: 'background', label: 'Backgrounds', type: 'image', category: 'background' },
-        { key: 'image',      label: 'Images',      type: 'image', category: 'thumbnail' },
-        { key: 'video',      label: 'Videos',      type: 'video', category: null },
-        { key: 'character',  label: 'Characters',  type: null,    category: null },
-        { key: 'gallery',    label: 'Gallery',     type: null,    category: null },
+        { key: 'image', label: 'Images', type: 'image', category: 'thumbnail' },
+        { key: 'gallery', label: 'Gallery', type: 'image', category: 'gallery' },
+        { key: 'video', label: 'Videos', type: 'video' },
+        { key: 'bgm', label: 'BGM', type: 'audio', category: 'bgm' },
+        { key: 'sfx', label: 'SFX', type: 'audio', category: 'sfx' }
     ],
 
     init() {
@@ -1360,7 +1359,8 @@ function renderStoryTree() {
 function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
     const li = document.createElement('li');
     li.className = 'tree-item';
-    li.setAttribute('data-id', item.id);
+    // Use DB id if present, otherwise use temporary client_id
+    li.setAttribute('data-id', item.id ?? item.client_id ?? '');
     li.setAttribute('data-type', item.type);
     li.setAttribute('data-name', item.name);
     li.setAttribute('data-description', item.description || '');
@@ -1385,8 +1385,8 @@ function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'tree-toggle';
         toggleBtn.innerHTML = '▶';
-        // If this item's id was expanded before, restore it
-        const id = String(item.id);
+        // If this item's id or client_id was expanded before, restore it
+        const id = String(item.id ?? item.client_id ?? '');
         if (expandedSet.has(id)) {
             li.classList.add('expanded');
             toggleBtn.setAttribute('aria-expanded', 'true');
@@ -1488,7 +1488,7 @@ function handleTreeItemSelect(contentDiv) {
 function loadItemIntoEditor(treeItemElement) {
     const id = treeItemElement.getAttribute('data-id');
     const type = treeItemElement.getAttribute('data-type');
-    const item = findItemById(parseInt(id));
+    const item = findItemById(id);
     
     if (!item) return;
     
@@ -1671,7 +1671,7 @@ function saveEditorForm(item, type) {
     renderStoryTree();
     
     // Re-select the item in the tree
-    const treeItem = document.querySelector(`.tree-item[data-id="${item.id}"]`);
+    const treeItem = document.querySelector(`.tree-item[data-id="${item.id ?? item.client_id ?? ''}"]`);
     if (treeItem) {
         // Expand parents
         expandParents(treeItem);
@@ -2052,10 +2052,23 @@ function setupAssetModal() {
                 const row = document.createElement('div');
                 row.className = 'form-group';
                 row.innerHTML = `
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name" style="flex:1;" value="${escapeHtml(ex.name)}">
-                        <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
-                        <button type="button" class="btn-secondary expr-remove">Remove</button>
+                    <div class="expr-row">
+                        <div class="expr-col expr-col-name">
+                            <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name" value="${escapeHtml(ex.name)}">
+                        </div>
+                        <div class="expr-col expr-col-avatar">
+                            <label class="expr-label">Avatar</label>
+                            <input type="file" accept="image/*" class="expr-avatar">
+                            <div class="expr-preview avatar-preview">${ex.avatar_url ? `<img src="${escapeHtml(ex.avatar_url)}">` : ''}</div>
+                        </div>
+                        <div class="expr-col expr-col-full">
+                            <label class="expr-label">Full</label>
+                            <input type="file" accept="image/*" class="expr-full">
+                            <div class="expr-preview full-preview">${ex.full_url ? `<img src="${escapeHtml(ex.full_url)}">` : ''}</div>
+                        </div>
+                        <div class="expr-col expr-col-actions">
+                            <button type="button" class="btn-secondary expr-remove">Remove</button>
+                        </div>
                     </div>
                 `;
                 list.appendChild(row);
@@ -2105,15 +2118,55 @@ function setupAssetModal() {
         const row = document.createElement('div');
         row.className = 'form-group';
         row.innerHTML = `
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name" style="flex:1;">
-                <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
-                <button type="button" class="btn-secondary expr-remove">Remove</button>
+            <div class="expr-row">
+                <div class="expr-col expr-col-name">
+                    <input type="text" placeholder="expression name (e.g. default, happy)" class="editor-input expr-name">
+                </div>
+                <div class="expr-col expr-col-avatar">
+                    <label class="expr-label">Avatar</label>
+                    <input type="file" accept="image/*" class="expr-avatar">
+                    <div class="expr-preview avatar-preview"></div>
+                </div>
+                <div class="expr-col expr-col-full">
+                    <label class="expr-label">Full</label>
+                    <input type="file" accept="image/*" class="expr-full">
+                    <div class="expr-preview full-preview"></div>
+                </div>
+                <div class="expr-col expr-col-actions">
+                    <button type="button" class="btn-secondary expr-remove">Remove</button>
+                </div>
             </div>
         `;
         list.appendChild(row);
         // remove handler
         row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
+    }
+
+    // Live preview for newly added expression file inputs (add modal)
+    const expressionsListEl = document.getElementById('expressions-list');
+    if (expressionsListEl) {
+        expressionsListEl.addEventListener('change', (e) => {
+            const input = e.target;
+            if (!input) return;
+            const row = input.closest('.form-group');
+            if (!row) return;
+            if (input.classList.contains('expr-avatar')) {
+                const preview = row.querySelector('.avatar-preview');
+                if (input.files && input.files[0]) {
+                    preview.innerHTML = `<img src="${URL.createObjectURL(input.files[0])}">`;
+                } else {
+                    preview.innerHTML = '';
+                }
+            }
+            if (input.classList.contains('expr-full')) {
+                const preview = row.querySelector('.full-preview');
+                if (input.files && input.files[0]) {
+                    preview.innerHTML = `<img src="${URL.createObjectURL(input.files[0])}">`;
+                } else {
+                    preview.innerHTML = '';
+                }
+            }
+        });
     }
 
     async function submitAddAssetForm() {
@@ -2146,7 +2199,8 @@ function setupAssetModal() {
                 for (const row of submittedRows) {
                     const exprName = row.querySelector('.expr-name').value.trim() || 'default';
                     const avatarInput = row.querySelector('.expr-avatar');
-                    submitted.push({ name: exprName, fileInput: avatarInput });
+                    const fullInput = row.querySelector('.expr-full');
+                    submitted.push({ name: exprName, avatarInput, fullInput });
                 }
 
                 // Determine differences for confirmation message
@@ -2169,19 +2223,25 @@ function setupAssetModal() {
                 // Update or add
                 for (const s of submitted) {
                     const nameKey = s.name;
-                    const avatarInput = s.fileInput;
                     let avatarUrl = '';
-                    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-                        const f = avatarInput.files[0];
+                    let fullUrl = '';
+                    if (s.avatarInput && s.avatarInput.files && s.avatarInput.files[0]) {
+                        const f = s.avatarInput.files[0];
                         const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
                         avatarUrl = uploaded.url;
                     }
+                    if (s.fullInput && s.fullInput.files && s.fullInput.files[0]) {
+                        const f2 = s.fullInput.files[0];
+                        const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
+                        fullUrl = uploaded2.url;
+                    }
 
                     if (existing[nameKey]) {
-                        // update avatar only if new uploaded, otherwise keep existing
+                        // update avatar/full only if new uploaded, otherwise keep existing
                         if (avatarUrl) existing[nameKey].avatar_url = avatarUrl;
+                        if (fullUrl) existing[nameKey].full_url = fullUrl;
                     } else {
-                        mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: '' });
+                        mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: fullUrl });
                     }
                 }
 
@@ -2200,13 +2260,13 @@ function setupAssetModal() {
             // create character
             const desc = document.getElementById('asset-desc').value.trim();
 
-            // gather expressions and validate: at least one expression and each must have an image file
+            // gather expressions and validate: at least one expression and each must have an avatar image file
             const exprRows = Array.from(document.querySelectorAll('#expressions-list .form-group'));
-            if (!exprRows.length) return alert('Please add at least one expression with an image for the character.');
+            if (!exprRows.length) return alert('Please add at least one expression with an avatar image for the character.');
             for (const row of exprRows) {
                 const avatarInput = row.querySelector('.expr-avatar');
                 if (!avatarInput || !avatarInput.files || !avatarInput.files[0]) {
-                    return alert('Each expression must include an image file. Please choose an image for every expression.');
+                    return alert('Each expression must include an avatar image file. Please choose an avatar image for every expression.');
                 }
             }
 
@@ -2217,11 +2277,18 @@ function setupAssetModal() {
             for (const row of exprRows) {
                 const exprName = row.querySelector('.expr-name').value.trim();
                 const avatarInput = row.querySelector('.expr-avatar');
+                const fullInput = row.querySelector('.expr-full');
                 let avatarUrl = '';
+                let fullUrl = '';
                 const f = avatarInput.files[0];
                 const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
                 avatarUrl = uploaded.url;
-                mockExpressions.push({ character_id: assetId, name: exprName || 'default', avatar_url: avatarUrl, full_url: '' });
+                if (fullInput && fullInput.files && fullInput.files[0]) {
+                    const f2 = fullInput.files[0];
+                    const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
+                    fullUrl = uploaded2.url;
+                }
+                mockExpressions.push({ character_id: assetId, name: exprName || 'default', avatar_url: avatarUrl, full_url: fullUrl });
             }
 
             hideAddAssetModal();
@@ -2313,15 +2380,55 @@ function setupEditAssetModal() {
         const row = document.createElement('div');
         row.className = 'form-group';
         row.innerHTML = `
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" placeholder="expression name" class="editor-input expr-name" style="flex:1;">
-                <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
-                <button type="button" class="btn-secondary expr-remove">Remove</button>
+            <div class="expr-row">
+                <div class="expr-col expr-col-name">
+                    <input type="text" placeholder="expression name" class="editor-input expr-name">
+                </div>
+                <div class="expr-col expr-col-avatar">
+                    <label class="expr-label">Avatar</label>
+                    <input type="file" accept="image/*" class="expr-avatar">
+                    <div class="expr-preview avatar-preview"></div>
+                </div>
+                <div class="expr-col expr-col-full">
+                    <label class="expr-label">Full</label>
+                    <input type="file" accept="image/*" class="expr-full">
+                    <div class="expr-preview full-preview"></div>
+                </div>
+                <div class="expr-col expr-col-actions">
+                    <button type="button" class="btn-secondary expr-remove">Remove</button>
+                </div>
             </div>
         `;
         list.appendChild(row);
         row.querySelector('.expr-remove').addEventListener('click', () => row.remove());
     });
+
+    // Live preview for edit expressions file inputs (edit modal)
+    const editExpressionsListEl = document.getElementById('edit-expressions-list');
+    if (editExpressionsListEl) {
+        editExpressionsListEl.addEventListener('change', (e) => {
+            const input = e.target;
+            if (!input) return;
+            const row = input.closest('.form-group');
+            if (!row) return;
+            if (input.classList.contains('expr-avatar')) {
+                const preview = row.querySelector('.avatar-preview');
+                if (input.files && input.files[0]) {
+                    preview.innerHTML = `<img src="${URL.createObjectURL(input.files[0])}">`;
+                } else {
+                    preview.innerHTML = '';
+                }
+            }
+            if (input.classList.contains('expr-full')) {
+                const preview = row.querySelector('.full-preview');
+                if (input.files && input.files[0]) {
+                    preview.innerHTML = `<img src="${URL.createObjectURL(input.files[0])}">`;
+                } else {
+                    preview.innerHTML = '';
+                }
+            }
+        });
+    }
 
     const form = document.getElementById('edit-asset-form');
     form.addEventListener('submit', async (e) => {
@@ -2347,7 +2454,8 @@ function setupEditAssetModal() {
             for (const row of rows) {
                 const exprName = row.querySelector('.expr-name').value.trim() || 'default';
                 const avatarInput = row.querySelector('.expr-avatar');
-                submitted.push({ name: exprName, fileInput: avatarInput });
+                const fullInput = row.querySelector('.expr-full');
+                submitted.push({ name: exprName, avatarInput, fullInput });
             }
 
             const existingNames = Object.keys(existing);
@@ -2368,15 +2476,22 @@ function setupEditAssetModal() {
             for (const s of submitted) {
                 const nameKey = s.name;
                 let avatarUrl = '';
-                if (s.fileInput && s.fileInput.files && s.fileInput.files[0]) {
-                    const f = s.fileInput.files[0];
+                let fullUrl = '';
+                if (s.avatarInput && s.avatarInput.files && s.avatarInput.files[0]) {
+                    const f = s.avatarInput.files[0];
                     const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
                     avatarUrl = uploaded.url;
                 }
+                if (s.fullInput && s.fullInput.files && s.fullInput.files[0]) {
+                    const f2 = s.fullInput.files[0];
+                    const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
+                    fullUrl = uploaded2.url;
+                }
                 if (existing[nameKey]) {
                     if (avatarUrl) existing[nameKey].avatar_url = avatarUrl;
+                    if (fullUrl) existing[nameKey].full_url = fullUrl;
                 } else {
-                    mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: '' });
+                    mockExpressions.push({ character_id: assetId, name: nameKey, avatar_url: avatarUrl, full_url: fullUrl });
                 }
             }
             for (const rem of toRemove) {
@@ -2465,8 +2580,19 @@ function openEditAssetEditor({ kind, record }) {
             row.innerHTML = `
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input type="text" placeholder="expression name" class="editor-input expr-name" style="flex:1;" value="${escapeHtml(ex.name)}">
-                    <input type="file" accept="image/*" class="expr-avatar" style="width:220px;">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <label style="font-size:12px; color:var(--color-text-tertiary);">Avatar</label>
+                        <input type="file" accept="image/*" class="expr-avatar" style="width:160px;">
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <label style="font-size:12px; color:var(--color-text-tertiary);">Full</label>
+                        <input type="file" accept="image/*" class="expr-full" style="width:160px;">
+                    </div>
                     <button type="button" class="btn-secondary expr-remove">Remove</button>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                    ${ex.avatar_url ? `<img src="${escapeHtml(ex.avatar_url)}" style="height:40px; border-radius:4px; object-fit:cover;">` : ''}
+                    ${ex.full_url ? `<img src="${escapeHtml(ex.full_url)}" style="height:40px; border-radius:4px; object-fit:cover;">` : ''}
                 </div>
             `;
             list.appendChild(row);
@@ -2718,6 +2844,7 @@ function handleAddItem(event) {
     const name = formData.get('name');
     const description = formData.get('description');
     let displayOrder = formData.get('displayOrder');
+    const providedSpecificId = (formData.get('specificId') || '').trim();
     
     // Auto-calculate display_order if not provided
     if (!displayOrder || displayOrder === '') {
@@ -2730,8 +2857,20 @@ function handleAddItem(event) {
     const selectedAssetId = (document.getElementById('item-image-asset-id') || {}).value || null;
     const imageUrl = selectedAssetId ? AssetResolver.toUrl(selectedAssetId) : null;
 
-    // Generate new item
-    const newItem = createNewItem(itemType, name, description, displayOrder, parentId, imageUrl);
+    // Require specific ID (no auto-generation)
+    if (!providedSpecificId) {
+        alert('ID is required. Please enter a unique ID for the item.');
+        return;
+    }
+
+    // Validate uniqueness
+    if (!isSpecificIdUnique(providedSpecificId, itemType)) {
+        alert('Provided ID already exists. Please choose a unique ID.');
+        return;
+    }
+
+    // Create new item using the provided specific ID
+    const newItem = createNewItem(itemType, name, description, displayOrder, parentId, imageUrl, providedSpecificId);
 
     // Add to data structure
     addItemToDataStructure(newItem, parentId);
@@ -2767,13 +2906,15 @@ function finalizeAddItem(newItem) {
     console.log('Item added successfully:', newItem);
 }
 
-function createNewItem(type, name, description, displayOrder, parentId, imageUrl) {
-    // Generate IDs
-    const dbId = generateDbId(type);
-    const specificId = generateSpecificId(type);
+function createNewItem(type, name, description, displayOrder, parentId, imageUrl, providedSpecificId) {
+    // DB id will be assigned by server. Create a temporary client-side id for UI operations.
+    const dbId = null;
+    const clientId = generateClientId();
+    const specificId = (providedSpecificId && providedSpecificId.trim() !== '') ? providedSpecificId.trim() : (function(){ throw new Error('specificId required'); })();
     
     const item = {
         id: dbId,
+        client_id: clientId,
         name: name,
         type: type,
         description: description || null,
@@ -2802,44 +2943,25 @@ function createNewItem(type, name, description, displayOrder, parentId, imageUrl
     return item;
 }
 
-function generateDbId(type) {
-    // Get max ID from existing items of this type
-    let maxId = 0;
-    
-    if (type === 'region') {
-        maxId = Math.max(...mockStoryData.map(r => r.id), 0);
-        return maxId + 1;
-    } else if (type === 'arc') {
-        mockStoryData.forEach(region => {
-            region.children.forEach(arc => {
-                maxId = Math.max(maxId, arc.id);
-            });
-        });
-        return maxId + 1;
-    } else if (type === 'event') {
-        mockStoryData.forEach(region => {
-            region.children.forEach(arc => {
-                arc.children.forEach(event => {
-                    maxId = Math.max(maxId, event.id);
-                });
-            });
-        });
-        return maxId + 1;
-    } else if (type === 'story') {
-        mockStoryData.forEach(region => {
-            region.children.forEach(arc => {
-                arc.children.forEach(event => {
-                    event.children.forEach(story => {
-                        maxId = Math.max(maxId, story.id);
-                    });
-                });
-            });
-        });
-        return maxId + 1;
+function isSpecificIdUnique(specificId, type) {
+    if (!specificId) return true;
+    // Walk the data tree and check existing specific IDs
+    for (const region of mockStoryData) {
+        if (region.region_id === specificId) return false;
+        for (const arc of region.children || []) {
+            if (arc.arc_id === specificId) return false;
+            for (const event of arc.children || []) {
+                if (event.event_id === specificId) return false;
+                for (const story of event.children || []) {
+                    if (story.story_id === specificId) return false;
+                }
+            }
+        }
     }
-    
-    return maxId + 1;
+    return true;
 }
+
+// NOTE: DB ids are assigned by the server. Client no longer generates DB ids.
 
 function generateSpecificId(type) {
     // Generate a unique ID string
@@ -2848,9 +2970,13 @@ function generateSpecificId(type) {
     return `${type}-${timestamp}-${random}`;
 }
 
+function generateClientId() {
+    return `c-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
 function getParentSpecificId(parentDbId, expectedType) {
     // Find parent and return its specific ID
-    const parent = findItemById(parseInt(parentDbId));
+    const parent = findItemById(parentDbId);
     if (parent) {
         if (expectedType === 'region') return parent.region_id;
         if (expectedType === 'arc') return parent.arc_id;
@@ -2859,19 +2985,41 @@ function getParentSpecificId(parentDbId, expectedType) {
     return null;
 }
 
-function findItemById(dbId) {
-    // Recursively search for item by database ID
+function findItemById(idOrClientId) {
+    // Accept either numeric DB id or temporary client_id string
+    if (idOrClientId === null || idOrClientId === undefined) return null;
+
+    // Normalize: if it's a numeric-looking value (and not a client id starting with 'c-'), treat as DB id
+    const asNumber = Number(idOrClientId);
+    const useDbId = Number.isFinite(asNumber) && String(idOrClientId).trim() !== '' && !String(idOrClientId).startsWith('c-');
+
     for (const region of mockStoryData) {
-        if (region.id === dbId) return region;
-        
+        if (useDbId) {
+            if (region.id === asNumber) return region;
+        } else {
+            if (region.client_id === idOrClientId) return region;
+        }
+
         for (const arc of region.children || []) {
-            if (arc.id === dbId) return arc;
-            
+            if (useDbId) {
+                if (arc.id === asNumber) return arc;
+            } else {
+                if (arc.client_id === idOrClientId) return arc;
+            }
+
             for (const event of arc.children || []) {
-                if (event.id === dbId) return event;
-                
+                if (useDbId) {
+                    if (event.id === asNumber) return event;
+                } else {
+                    if (event.client_id === idOrClientId) return event;
+                }
+
                 for (const story of event.children || []) {
-                    if (story.id === dbId) return story;
+                    if (useDbId) {
+                        if (story.id === asNumber) return story;
+                    } else {
+                        if (story.client_id === idOrClientId) return story;
+                    }
                 }
             }
         }
@@ -2880,7 +3028,7 @@ function findItemById(dbId) {
 }
 
 function addItemToParent(newItem, parentDbId) {
-    const parent = findItemById(parseInt(parentDbId));
+    const parent = findItemById(parentDbId);
     if (parent && parent.children) {
         parent.children.push(newItem);
     }
@@ -2894,7 +3042,7 @@ function getNextDisplayOrder(itemType, parentId) {
         siblings = mockStoryData;
     } else {
         // Getting next display order for children
-        const parent = findItemById(parseInt(parentId));
+        const parent = findItemById(parentId);
         if (parent && parent.children) {
             siblings = parent.children;
         }

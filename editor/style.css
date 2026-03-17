@@ -836,6 +836,26 @@ main {
 
 #expressions-list .form-group { margin-bottom: 6px; }
 
+/* Expression row layout */
+#expressions-list .expr-row,
+#edit-expressions-list .expr-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.expr-col { display: flex; flex-direction: column; gap: 6px; }
+.expr-col-name { flex: 1; min-width: 160px; }
+.expr-col-avatar, .expr-col-full { width: 200px; }
+.expr-col-actions { width: 80px; display:flex; align-items:flex-start; }
+
+.expr-label { font-size: 12px; color: var(--color-text-tertiary); }
+.expr-preview { margin-top: 6px; display:flex; gap:6px; align-items:center; }
+.expr-preview img { height:48px; width:48px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border); }
+
+/* Make file inputs a bit smaller inside expression rows */
+.expr-avatar, .expr-full { width: 100%; }
+
 #media-preview img, #media-preview video { max-width: 100%; border-radius: 6px; border: 1px solid var(--color-border); }
 #media-preview audio { width: 100%; }
 
