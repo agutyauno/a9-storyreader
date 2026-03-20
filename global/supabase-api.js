@@ -13,10 +13,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getRegions() {
-		return SupabaseClient.get('regions', {
-			order: 'display_order',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('regions').select('*').order('display_order', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -25,7 +26,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getRegion(regionId) {
-		return SupabaseClient.getOne('regions', 'region_id', regionId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('regions').select('*').eq('region_id', regionId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	},
 
 	// ============= Arcs =============
@@ -35,11 +40,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getArcsByRegion(regionId) {
-		return SupabaseClient.get('arcs', {
-			filters: [{ column: 'region_id', operator: 'eq', value: regionId }],
-			order: 'display_order',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -48,7 +53,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getArc(arcId) {
-		return SupabaseClient.getOne('arcs', 'arc_id', arcId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('arcs').select('*').eq('arc_id', arcId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	},
 
 	// ============= Events =============
@@ -58,11 +67,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getEventsByArc(arcId) {
-		return SupabaseClient.get('events', {
-			filters: [{ column: 'arc_id', operator: 'eq', value: arcId }],
-			order: 'display_order',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -71,7 +80,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getEvent(eventId) {
-		return SupabaseClient.getOne('events', 'event_id', eventId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	},
 
 	// ============= Stories =============
@@ -81,11 +94,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getStoriesByEvent(eventId) {
-		return SupabaseClient.get('stories', {
-			filters: [{ column: 'event_id', operator: 'eq', value: eventId }],
-			order: 'display_order',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -94,7 +107,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getStory(storyId) {
-		return SupabaseClient.getOne('stories', 'story_id', storyId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	},
 
 	// ============= Characters =============
@@ -103,7 +120,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getCharacters() {
-		return SupabaseClient.get('characters');
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('characters').select('*');
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -112,7 +133,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getCharacter(characterId) {
-		return SupabaseClient.getOne('characters', 'character_id', characterId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('characters').select('*').eq('character_id', characterId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	},
 
 	/**
@@ -122,24 +147,22 @@ const SupabaseAPI = {
 	 */
 	async getCharactersByEvent(eventId) {
 		// First get the character IDs from event_characters
-		const eventCharacters = await SupabaseClient.get('event_characters', {
-			select: 'character_id',
-			filters: [{ column: 'event_id', operator: 'eq', value: eventId }]
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data: eventCharacters, error: evErr } = await supabase.from('event_characters').select('character_id').eq('event_id', eventId);
+		if (evErr) throw evErr;
 
 		if (!eventCharacters || eventCharacters.length === 0) return [];
 
 		const characterIds = eventCharacters.map(ec => ec.character_id);
 
 		// Fetch base character rows
-		const characters = await SupabaseClient.get('characters', {
-			filters: [{ column: 'character_id', operator: 'in', value: characterIds }]
-		});
+		const { data: characters, error: chErr } = await supabase.from('characters').select('*').in('character_id', characterIds);
+		if (chErr) throw chErr;
 
 		// Fetch expressions for these characters
-		const expressions = await SupabaseClient.get('charater_expressions', {
-			filters: [{ column: 'character_id', operator: 'in', value: characterIds }]
-		});
+		const { data: expressions, error: exprErr } = await supabase.from('charater_expressions').select('*').in('character_id', characterIds);
+		if (exprErr) throw exprErr;
 
 		// Build map of default expression (or first) per character_id
 		const exprMap = {};
@@ -177,11 +200,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getGalleryByEvent(eventId) {
-		return SupabaseClient.get('gallery', {
-			filters: [{ column: 'event_id', operator: 'eq', value: eventId }],
-			order: 'display_order',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('gallery').select('*').eq('event_id', eventId).order('display_order', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	// ============= Suggestions =============
@@ -191,11 +214,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getSuggestionsByArc(arcId) {
-		return SupabaseClient.get('suggestions', {
-			filters: [{ column: 'arc_id', operator: 'eq', value: arcId }],
-			order: 'position',
-			ascending: true
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('suggestions').select('*').eq('arc_id', arcId).order('position', { ascending: true });
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -224,9 +247,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getExpressionsByCharacter(characterId) {
-		return SupabaseClient.get('charater_expressions', {
-			filters: [{ column: 'character_id', operator: 'eq', value: characterId }]
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('charater_expressions').select('*').eq('character_id', characterId);
+		if (error) throw error;
+		return data || [];
 	},
 
 	// ============= Assets =============
@@ -235,7 +260,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getAssets() {
-		return SupabaseClient.get('assets');
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('assets').select('*');
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -244,9 +273,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getAssetsByType(type) {
-		return SupabaseClient.get('assets', {
-			filters: [{ column: 'type', operator: 'eq', value: type }]
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('assets').select('*').eq('type', type);
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -255,9 +286,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Array>}
 	 */
 	async getAssetsByCategory(category) {
-		return SupabaseClient.get('assets', {
-			filters: [{ column: 'category', operator: 'eq', value: category }]
-		});
+		const supabase = window.supabaseClient;
+		if (!supabase) return [];
+		const { data, error } = await supabase.from('assets').select('*').eq('category', category);
+		if (error) throw error;
+		return data || [];
 	},
 
 	/**
@@ -266,7 +299,11 @@ const SupabaseAPI = {
 	 * @returns {Promise<Object|null>}
 	 */
 	async getAsset(assetId) {
-		return SupabaseClient.getOne('assets', 'asset_id', assetId);
+		const supabase = window.supabaseClient;
+		if (!supabase) return null;
+		const { data, error } = await supabase.from('assets').select('*').eq('asset_id', assetId).limit(1);
+		if (error) throw error;
+		return Array.isArray(data) && data.length > 0 ? data[0] : null;
 	}
 };
 

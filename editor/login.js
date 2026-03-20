@@ -1,4 +1,30 @@
 async function supabaseSignInFromPage(email, password) {
+    // Prefer official supabase-js client if available (incremental migration)
+    if (window.supabaseClient && window.supabaseClient.auth) {
+        const resp = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (resp.error) throw resp.error;
+        const session = resp.data?.session;
+        const user = resp.data?.user;
+        const accessToken = session?.access_token || null;
+        if (accessToken) {
+            // set SDK session
+            try {
+                if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
+                    window.supabaseClient.auth.setSession({ access_token: accessToken });
+                }
+            } catch (e) { /* ignore */ }
+            localStorage.setItem('supabase_access_token', accessToken);
+            localStorage.setItem('supabase_refresh_token', session?.refresh_token || '');
+            localStorage.setItem('supabase_user', JSON.stringify(user || {}));
+            // sync legacy wrapper if present
+            if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+                try { SupabaseClient.setAuthToken(accessToken); } catch (e) { /* ignore */ }
+            }
+        }
+        return resp;
+    }
+
+    // Fallback: existing REST token flow
     const url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
     const res = await fetch(url, {
         method: 'POST',
@@ -16,10 +42,19 @@ async function supabaseSignInFromPage(email, password) {
     }
 
     const token = data.access_token;
-    SupabaseClient.setAuthToken(token);
+    // set SDK session when possible
+    try {
+        if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
+            window.supabaseClient.auth.setSession({ access_token: token });
+        }
+    } catch (e) { /* ignore */ }
     localStorage.setItem('supabase_access_token', token);
     localStorage.setItem('supabase_refresh_token', data.refresh_token || '');
     localStorage.setItem('supabase_user', JSON.stringify(data.user || {}));
+    // sync legacy wrapper if present
+    if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+        try { SupabaseClient.setAuthToken(token); } catch (e) { /* ignore */ }
+    }
     return data;
 }
 
@@ -43,7 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // If already logged in, go to editor
     const existing = localStorage.getItem('supabase_access_token');
     if (existing) {
-        SupabaseClient.setAuthToken(existing);
+        // set SDK session when possible
+        try {
+            if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
+                window.supabaseClient.auth.setSession({ access_token: existing });
+            }
+        } catch (e) { /* ignore */ }
+        // sync legacy wrapper if present
+        if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+            try { SupabaseClient.setAuthToken(existing); } catch (e) { /* ignore */ }
+        }
         window.location.href = 'index.html';
     }
     // Submit on Enter key anywhere (except inside textarea)

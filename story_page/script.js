@@ -12,6 +12,31 @@ function getStoryIdFromURL() {
 	return urlParams.get('story');
 }
 
+// ============= Direct Supabase helpers =============
+async function getStoryById(storyId) {
+	const supabase = window.supabaseClient;
+	if (!supabase) throw new Error('supabase client not initialized');
+	const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
+	if (error) throw error;
+	return Array.isArray(data) && data.length > 0 ? data[0] : null;
+}
+
+async function getStoriesByEvent(eventId) {
+	const supabase = window.supabaseClient;
+	if (!supabase) throw new Error('supabase client not initialized');
+	const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order', { ascending: true });
+	if (error) throw error;
+	return data || [];
+}
+
+async function getEventById(eventId) {
+	const supabase = window.supabaseClient;
+	if (!supabase) throw new Error('supabase client not initialized');
+	const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
+	if (error) throw error;
+	return Array.isArray(data) && data.length > 0 ? data[0] : null;
+}
+
 // ============= Load Story Data from Supabase =============
 async function loadStoryData() {
 	// Preview mode: load story JSON from sessionStorage (set by editor)
@@ -59,7 +84,7 @@ async function loadStoryData() {
 
 	try {
 		// Fetch story
-		const story = await SupabaseAPI.getStory(storyId);
+		const story = await getStoryById(storyId);
 		if (!story) {
 			const container = document.getElementById('story-content');
 			if (container) {
@@ -78,7 +103,7 @@ async function loadStoryData() {
 
 		// Fetch other stories in the same event for navigation
 		if (story.event_id) {
-			allStories = await SupabaseAPI.getStoriesByEvent(story.event_id);
+			allStories = await getStoriesByEvent(story.event_id);
 			updateChapterSidebar(allStories, story.story_id);
 			updateNavigationButtons(allStories, story.story_id);
 		}
@@ -115,7 +140,7 @@ async function updateStoryInfo(story) {
 	// Fetch event name and update header
 	if (story.event_id) {
 		try {
-			const event = await SupabaseAPI.getEvent(story.event_id);
+			const event = await getEventById(story.event_id);
 			if (event && headerName) {
 				headerName.textContent = event.name;
 			}

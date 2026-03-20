@@ -6,6 +6,32 @@
 /* Supabase Auth - simple email/password sign-in using Supabase GoTrue endpoints                */
 /* ================================================================================================= */
 async function supabaseSignIn(email, password) {
+    // Prefer supabase-js client when available
+    if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signInWithPassword === 'function') {
+        const resp = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (resp.error) throw resp.error;
+        const session = resp.data?.session || resp.data;
+        const user = resp.data?.user || null;
+        const token = session?.access_token || null;
+        if (token) {
+            // best-effort: set session on SDK
+            try {
+                if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
+                    window.supabaseClient.auth.setSession({ access_token: token });
+                }
+            } catch (e) { /* ignore */ }
+            localStorage.setItem('supabase_access_token', token);
+            localStorage.setItem('supabase_refresh_token', session?.refresh_token || '');
+            if (user) localStorage.setItem('supabase_user', JSON.stringify(user));
+            // keep legacy wrapper in sync if present
+            if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+                try { SupabaseClient.setAuthToken(token); } catch (e) { /* ignore */ }
+            }
+        }
+        return resp;
+    }
+
+    // Fallback: REST token flow
     const url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
     const res = await fetch(url, {
         method: 'POST',
@@ -23,15 +49,27 @@ async function supabaseSignIn(email, password) {
     }
 
     const token = data.access_token;
-    SupabaseClient.setAuthToken(token);
     localStorage.setItem('supabase_access_token', token);
     localStorage.setItem('supabase_refresh_token', data.refresh_token || '');
     localStorage.setItem('supabase_user', JSON.stringify(data.user || {}));
+    // sync legacy wrapper if present
+    if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+        try { SupabaseClient.setAuthToken(token); } catch (e) { /* ignore */ }
+    }
     return data;
 }
 
 function supabaseSignOut() {
-    SupabaseClient.setAuthToken(null);
+    // clear SDK session if available
+    try {
+        if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
+            window.supabaseClient.auth.signOut().catch(() => {});
+        }
+    } catch (e) { /* ignore */ }
+    // legacy wrapper sync
+    if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+        try { SupabaseClient.setAuthToken(null); } catch (e) { /* ignore */ }
+    }
     localStorage.removeItem('supabase_access_token');
     localStorage.removeItem('supabase_refresh_token');
     localStorage.removeItem('supabase_user');
@@ -40,7 +78,16 @@ function supabaseSignOut() {
 function checkAuthRedirect() {
     const existing = localStorage.getItem('supabase_access_token');
     if (existing) {
-        SupabaseClient.setAuthToken(existing);
+        // set SDK session when possible
+        try {
+            if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
+                window.supabaseClient.auth.setSession({ access_token: existing });
+            }
+        } catch (e) { /* ignore */ }
+        // keep legacy wrapper in sync if present
+        if (typeof SupabaseClient !== 'undefined' && typeof SupabaseClient.setAuthToken === 'function') {
+            try { SupabaseClient.setAuthToken(existing); } catch (e) { /* ignore */ }
+        }
     } else {
         window.location.href = 'login.html';
     }
@@ -501,15 +548,26 @@ const CharacterResolver = {
      * @param {Array} charDeclarations - [{name: "Amiya", character_id: "char-amiya"}, ...]
      * @returns {Object}
      */
-    buildCharacterMap(charDeclarations) {
+    async buildCharacterMap(charDeclarations) {
         const map = {};
         for (const decl of charDeclarations) {
-            const expressions = MockCharacterAPI.getExpressions(decl.character_id);
+            let expressions = [];
+            if (window.Services?.Characters?.listExpressions) {
+                try {
+                    expressions = await window.Services.Characters.listExpressions(decl.character_id);
+                } catch (err) {
+                    console.warn('Failed to load expressions from service for', decl.character_id, err);
+                    expressions = MockCharacterAPI.getExpressions(decl.character_id);
+                }
+            } else {
+                expressions = MockCharacterAPI.getExpressions(decl.character_id);
+            }
+
             for (const expr of expressions) {
                 const key = expr.name === 'default' ? decl.name : `${decl.name}.${expr.name}`;
                 map[key] = {
-                    avatar: expr.avatar_url || '',
-                    full_image: expr.full_url || ''
+                    avatar: expr.avatar_url || expr.avatar || '',
+                    full_image: expr.full_url || expr.full_image || ''
                 };
             }
         }
@@ -828,7 +886,7 @@ let currentSelected = null;
 /* Initialize on DOM load */
 document.addEventListener('DOMContentLoaded', initializeEditor);
 
-function initializeEditor() {
+async function initializeEditor() {
     // Setup tab switching
     setupTabSwitching();
     
@@ -852,6 +910,68 @@ function initializeEditor() {
     setupEditAssetModal();
     
     // Setup asset browser
+    // Load service stubs (Assets, Characters, Stories, ...)
+    try {
+        window.Services = (await import('./services/index.js')).default;
+    } catch (e) {
+        console.warn('Failed to load services index', e);
+        window.Services = null;
+    }
+
+    // If services are available, seed the in-memory mock arrays so existing code paths
+    // (which depend on mockAssets/mockCharacters/mockExpressions/mockStoryData) continue to work.
+        if (window.Services) {
+            try {
+                if (window.Services.Assets?.list) {
+                    const assets = await window.Services.Assets.list();
+                    if (Array.isArray(assets) && typeof mockAssets !== 'undefined') {
+                        mockAssets.length = 0;
+                        mockAssets.push(...assets);
+                    }
+                }
+
+                if (window.Services.Characters?.list) {
+                    const chars = await window.Services.Characters.list();
+                    if (Array.isArray(chars) && typeof mockCharacters !== 'undefined') {
+                        mockCharacters.length = 0;
+                        mockCharacters.push(...chars);
+                    }
+
+                    if (window.Services.Characters?.listExpressions && typeof mockExpressions !== 'undefined') {
+                        console.log('Seeding mockExpressions from Services.Characters.listExpressions for', mockCharacters.length, 'characters');
+                        mockExpressions.length = 0;
+                        for (const c of mockCharacters) {
+                            try {
+                                const exprs = await window.Services.Characters.listExpressions(c.character_id);
+                                console.log('Seed expressions for', c.character_id, exprs);
+                                if (Array.isArray(exprs)) {
+                                    for (const e of exprs) {
+                                        mockExpressions.push({ character_id: e.character_id || c.character_id, name: e.name, avatar_url: e.avatar_url || e.avatar || '', full_url: e.full_url || e.full_image || '' });
+                                    }
+                                }
+                            } catch (err) {
+                                console.warn('Failed to load expressions for', c.character_id, err);
+                            }
+                        }
+                    }
+                }
+
+                if (window.Services.Stories?.listRegions && typeof mockStoryData !== 'undefined') {
+                    try {
+                        const regions = await window.Services.Stories.listRegions();
+                        if (Array.isArray(regions)) {
+                            mockStoryData.length = 0;
+                            mockStoryData.push(...regions);
+                        }
+                    } catch (err) {
+                        console.warn('Failed to seed story data', err);
+                    }
+                }
+            } catch (err) {
+                console.warn('Seeding mock arrays from services failed', err);
+            }
+    }
+
     AssetBrowser.init();
 }
 
@@ -871,22 +991,25 @@ const AssetBrowser = {
     ],
 
     init() {
+        // renderCategoryGrid may be async now; call and ignore Promise
         this.renderCategoryGrid();
         this.setupSearch();
     },
 
     /* ---- Category Grid ---- */
-    renderCategoryGrid() {
+    async renderCategoryGrid() {
         const grid = document.getElementById('asset-category-grid');
-        grid.innerHTML = this.categories.map(cat => {
-            const count = this.getCategoryCount(cat);
+        // build cards asynchronously to support service-based counts
+        const parts = await Promise.all(this.categories.map(async (cat) => {
+            const count = await this.getCategoryCount(cat);
             return `
                 <div class="asset-cat-card" data-cat="${cat.key}">
                     <span class="asset-cat-label">${cat.label}</span>
                     <span class="asset-cat-count">${count}</span>
                 </div>
             `;
-        }).join('');
+        }));
+        grid.innerHTML = parts.join('');
 
         grid.addEventListener('click', (e) => {
             const card = e.target.closest('.asset-cat-card');
@@ -895,22 +1018,37 @@ const AssetBrowser = {
         });
     },
 
-    getCategoryCount(cat) {
-        if (cat.key === 'character') return mockCharacters.length;
-        if (cat.key === 'gallery') {
-            // Count unique gallery-like assets or placeholder
-            return mockAssets.filter(a => a.category === 'gallery').length;
+    async getCategoryCount(cat) {
+        try {
+            if (cat.key === 'character') {
+                if (window.Services?.Characters?.list) {
+                    const list = await window.Services.Characters.list();
+                    return Array.isArray(list) ? list.length : 0;
+                }
+                return (typeof mockCharacters !== 'undefined') ? mockCharacters.length : 0;
+            }
+
+            if (window.Services?.Assets?.list) {
+                const filter = {};
+                if (cat.type) filter.type = cat.type;
+                if (cat.category) filter.category = cat.category;
+                const assets = await window.Services.Assets.list(filter);
+                return Array.isArray(assets) ? assets.length : 0;
+            }
+
+            // Fallback to mock arrays
+            if (cat.key === 'gallery') return (mockAssets || []).filter(a => a.category === 'gallery').length;
+            if (cat.key === 'video') return (mockAssets || []).filter(a => a.type === 'video').length;
+            if (cat.key === 'image') return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'thumbnail').length;
+            return (mockAssets || []).filter(a => {
+                if (cat.type && a.type !== cat.type) return false;
+                if (cat.category && a.category !== cat.category) return false;
+                return true;
+            }).length;
+        } catch (err) {
+            console.warn('getCategoryCount failed', err);
+            return 0;
         }
-        if (cat.key === 'video') return mockAssets.filter(a => a.type === 'video').length;
-        if (cat.key === 'image') {
-            // "Images" = thumbnails + any image not in background/character/gallery
-            return mockAssets.filter(a => a.type === 'image' && a.category === 'thumbnail').length;
-        }
-        return mockAssets.filter(a => {
-            if (cat.type && a.type !== cat.type) return false;
-            if (cat.category && a.category !== cat.category) return false;
-            return true;
-        }).length;
     },
 
     /* ---- Open / Close Category ---- */
@@ -946,19 +1084,32 @@ const AssetBrowser = {
     },
 
     /* ---- Asset List per Category ---- */
-    getAssetsForCategory(key) {
+    async getAssetsForCategory(key) {
+        if (window.Services?.Assets?.list) {
+            switch (key) {
+                case 'bgm':        return await window.Services.Assets.list({ type: 'audio', category: 'bgm' });
+                case 'sfx':        return await window.Services.Assets.list({ type: 'audio', category: 'sfx' });
+                case 'background': return await window.Services.Assets.list({ type: 'image', category: 'background' });
+                case 'image':      return await window.Services.Assets.list({ type: 'image', category: 'thumbnail' });
+                case 'video':      return await window.Services.Assets.list({ type: 'video' });
+                case 'gallery':    return await window.Services.Assets.list({ category: 'gallery' });
+                default:           return [];
+            }
+        }
+
+        // Fallback to mock
         switch (key) {
-            case 'bgm':        return mockAssets.filter(a => a.type === 'audio' && a.category === 'bgm');
-            case 'sfx':        return mockAssets.filter(a => a.type === 'audio' && a.category === 'sfx');
-            case 'background': return mockAssets.filter(a => a.type === 'image' && a.category === 'background');
-            case 'image':      return mockAssets.filter(a => a.type === 'image' && a.category === 'thumbnail');
-            case 'video':      return mockAssets.filter(a => a.type === 'video');
-            case 'gallery':    return mockAssets.filter(a => a.category === 'gallery');
+            case 'bgm':        return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'bgm');
+            case 'sfx':        return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'sfx');
+            case 'background': return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'background');
+            case 'image':      return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'thumbnail');
+            case 'video':      return (mockAssets || []).filter(a => a.type === 'video');
+            case 'gallery':    return (mockAssets || []).filter(a => a.category === 'gallery');
             default:           return [];
         }
     },
 
-    renderAssetList(key, filter = '') {
+    async renderAssetList(key, filter = '') {
         const listContainer = document.getElementById('asset-list');
         const filterLower = filter.toLowerCase();
 
@@ -967,12 +1118,12 @@ const AssetBrowser = {
             return;
         }
 
-        const assets = this.getAssetsForCategory(key);
+        const assets = await this.getAssetsForCategory(key);
         const filtered = filterLower
-            ? assets.filter(a => a.asset_id.toLowerCase().includes(filterLower))
+            ? assets.filter(a => (a.asset_id || '').toLowerCase().includes(filterLower))
             : assets;
 
-        if (filtered.length === 0) {
+        if (!filtered || filtered.length === 0) {
             listContainer.innerHTML = '<div class="asset-list-empty">No assets found</div>';
             return;
         }
@@ -982,9 +1133,9 @@ const AssetBrowser = {
                 ? `<img class="asset-list-thumb" src="${escapeHtml(a.url)}" alt="">`
                 : '';
             return `
-                <div class="asset-list-item" data-asset-id="${escapeHtml(a.asset_id)}">
+                <div class="asset-list-item" data-asset-id="${escapeHtml(a.asset_id || '')}">
                     ${thumb}
-                    <span class="asset-item-name">${escapeHtml(a.asset_id)}</span>
+                    <span class="asset-item-name">${escapeHtml(a.asset_id || a.name || '')}</span>
                 </div>
             `;
         }).join('');
@@ -994,30 +1145,52 @@ const AssetBrowser = {
             const item = e.target.closest('.asset-list-item');
             if (!item) return;
             const assetId = item.dataset.assetId;
-            const asset = mockAssets.find(a => a.asset_id === assetId);
+            // Try resolving via services if available
+            let asset = null;
+            if (window.Services?.Assets?.get) {
+                asset = mockAssets.find(a => a.asset_id === assetId) || null;
+            } else {
+                asset = mockAssets.find(a => a.asset_id === assetId);
+            }
             if (asset) this.showAssetPreview(asset);
         };
     },
 
-    renderCharacterList(container, filter) {
-        const chars = filter
-            ? mockCharacters.filter(c =>
-                c.name.toLowerCase().includes(filter) ||
-                c.character_id.toLowerCase().includes(filter))
-            : mockCharacters;
+    async renderCharacterList(container, filter) {
+        // Load character list (from service or mock)
+        let chars = [];
+        try {
+            if (window.Services?.Characters?.list) chars = await window.Services.Characters.list();
+            else chars = (typeof mockCharacters !== 'undefined') ? mockCharacters : [];
+        } catch (err) {
+            console.warn('Failed to load characters from service', err);
+            chars = (typeof mockCharacters !== 'undefined') ? mockCharacters : [];
+        }
+
+        if (filter) {
+            const f = filter.toLowerCase();
+            chars = chars.filter(c => c.name.toLowerCase().includes(f) || c.character_id.toLowerCase().includes(f));
+        }
 
         if (chars.length === 0) {
             container.innerHTML = '<div class="asset-list-empty">No characters found</div>';
             return;
         }
 
-        container.innerHTML = chars.map(c => {
-            const exprs = mockExpressions.filter(e => e.character_id === c.character_id);
-            const defaultExpr = exprs.find(e => e.name === 'default') || exprs[0];
-            const avatarUrl = defaultExpr ? defaultExpr.avatar_url : '';
+        // Build groups asynchronously to fetch expressions per character when service available
+        const parts = await Promise.all(chars.map(async (c) => {
+            let exprs = [];
+            try {
+                if (window.Services?.Characters?.listExpressions) exprs = await window.Services.Characters.listExpressions(c.character_id);
+                else exprs = (typeof mockExpressions !== 'undefined') ? mockExpressions.filter(e => e.character_id === c.character_id) : [];
+            } catch (err) {
+                console.warn('Failed to load expressions for', c.character_id, err);
+                exprs = (typeof mockExpressions !== 'undefined') ? mockExpressions.filter(e => e.character_id === c.character_id) : [];
+            }
+
             const exprItems = exprs.map(ex => `
                 <div class="asset-list-subitem" data-char-id="${escapeHtml(c.character_id)}" data-expr="${escapeHtml(ex.name)}">
-                    <img class="asset-expr-thumb" src="${escapeHtml(ex.avatar_url)}" alt="">
+                    <img class="asset-expr-thumb" src="${escapeHtml(ex.avatar_url || ex.avatar || '')}" alt="">
                     <span>${escapeHtml(ex.name)}</span>
                 </div>
             `).join('');
@@ -1034,10 +1207,12 @@ const AssetBrowser = {
                     </div>
                 </div>
             `;
-        }).join('');
+        }));
 
-        // Toggle expressions
-        container.onclick = (e) => {
+        container.innerHTML = parts.join('');
+
+        // Toggle expressions and click handlers
+        container.onclick = async (e) => {
             const header = e.target.closest('.asset-char-header');
             if (header) {
                 const group = header.closest('.asset-char-group');
@@ -1053,8 +1228,22 @@ const AssetBrowser = {
             if (subitem) {
                 const charId = subitem.dataset.charId;
                 const exprName = subitem.dataset.expr;
-                const char = mockCharacters.find(c => c.character_id === charId);
-                const expr = mockExpressions.find(e => e.character_id === charId && e.name === exprName);
+                // Resolve char and expr from either service cache or mocks
+                let char = null;
+                try {
+                    if (window.Services?.Characters?.get) char = await window.Services.Characters.get(charId);
+                } catch (err) { /* ignore */ }
+                if (!char) char = (typeof mockCharacters !== 'undefined') ? mockCharacters.find(c => c.character_id === charId) : null;
+
+                let expr = null;
+                try {
+                    if (window.Services?.Characters?.listExpressions) {
+                        const exprs = await window.Services.Characters.listExpressions(charId);
+                        expr = (exprs || []).find(e => e.name === exprName) || null;
+                    }
+                } catch (err) { /* ignore */ }
+                if (!expr) expr = (typeof mockExpressions !== 'undefined') ? mockExpressions.find(e => e.character_id === charId && e.name === exprName) : null;
+
                 if (char && expr) this.showCharacterPreview(char, expr);
             }
         };
@@ -1185,7 +1374,11 @@ const AssetBrowser = {
         editBtn.onclick = () => openEditAssetEditor({ kind: 'asset', record: asset });
         deleteBtn.onclick = async () => {
             if (!confirm(`Delete asset ${asset.asset_id}? This cannot be undone in mock.`)) return;
-            await MockAssetAPI.deleteAsset(asset.id);
+            if (window.Services?.Assets?.delete) {
+                await window.Services.Assets.delete(asset.id || asset.asset_id);
+            } else {
+                await MockAssetAPI.deleteAsset(asset.id);
+            }
             this.closePreview();
             this.renderCategoryGrid();
             if (this.currentCategory) this.renderAssetList(this.currentCategory);
@@ -1616,8 +1809,8 @@ function setupEditorFormHandlers(item, type) {
             uploadFileBtn.disabled = true;
             uploadFileBtn.textContent = 'Uploading...';
             try {
-                const asset = await MockAssetAPI.uploadAndCreateAsset(file);
-                hiddenUrlInput.value = asset.url;
+                const asset = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, file) : MockAssetAPI.uploadAndCreateAsset(file));
+                hiddenUrlInput.value = asset?.url || asset?.url || '';
                 updateEditorImagePreview(hiddenUrlInput, asset.url);
             } finally {
                 uploadFileBtn.disabled = false;
@@ -1805,8 +1998,8 @@ async function showImagePickerModal(onSelect, type = 'image', category = 'thumbn
     grid.innerHTML = '<div class="image-picker-loading">Loading assets...</div>';
     modal.style.display = 'flex';
 
-    // Fetch assets from mock DB
-    const assets = await MockAssetAPI.getAssets(type, category);
+    // Fetch assets from services (or mock DB fallback)
+    const assets = await (window.Services?.Assets?.list ? window.Services.Assets.list({ type, category }) : MockAssetAPI.getAssets(type, category));
 
     if (assets.length === 0) {
         grid.innerHTML = '<div class="image-picker-empty">No images found. Upload one!</div>';
@@ -1852,12 +2045,16 @@ function setupImagePickerModal() {
     });
 
     // Select button
-    selectBtn.addEventListener('click', () => {
+    selectBtn.addEventListener('click', async () => {
         const selected = document.querySelector('#image-picker-grid .image-picker-card.selected');
         if (!selected) return;
         const url = selected.getAttribute('data-url');
         const assetId = selected.getAttribute('data-asset-id');
-        const asset = mockAssets.find(a => (a.url === url) || (a.asset_id === assetId));
+        let asset = null;
+        if (window.Services?.Assets?.get) {
+            asset = await window.Services.Assets.get(assetId);
+        }
+        if (!asset) asset = mockAssets.find(a => (a.url === url) || (a.asset_id === assetId));
         if (imagePickerCallback) imagePickerCallback(asset || url);
         hideImagePickerModal();
     });
@@ -1874,7 +2071,7 @@ function setupImagePickerModal() {
         uploadBtn.disabled = true;
         uploadBtn.textContent = 'Uploading...';
         try {
-            const asset = await MockAssetAPI.uploadAndCreateAsset(file);
+            const asset = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, file) : MockAssetAPI.uploadAndCreateAsset(file));
             // Refresh the grid
             if (imagePickerCallback) {
                 await showImagePickerModal(imagePickerCallback, imagePickerFilter.type, imagePickerFilter.category);
@@ -2227,13 +2424,13 @@ function setupAssetModal() {
                     let fullUrl = '';
                     if (s.avatarInput && s.avatarInput.files && s.avatarInput.files[0]) {
                         const f = s.avatarInput.files[0];
-                        const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
-                        avatarUrl = uploaded.url;
+                        const uploaded = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f) : MockAssetAPI.uploadAndCreateAsset(f));
+                        avatarUrl = uploaded?.url || '';
                     }
                     if (s.fullInput && s.fullInput.files && s.fullInput.files[0]) {
                         const f2 = s.fullInput.files[0];
-                        const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
-                        fullUrl = uploaded2.url;
+                        const uploaded2 = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f2) : MockAssetAPI.uploadAndCreateAsset(f2));
+                        fullUrl = uploaded2?.url || '';
                     }
 
                     if (existing[nameKey]) {
@@ -2271,7 +2468,7 @@ function setupAssetModal() {
             }
 
             // create character record first
-            await MockAssetAPI.createAsset({ asset_id: assetId, type: 'character', name, description: desc }, null);
+            await (window.Services?.Assets?.create ? window.Services.Assets.create({ asset_id: assetId, type: 'character', name, description: desc }, null) : MockAssetAPI.createAsset({ asset_id: assetId, type: 'character', name, description: desc }, null));
 
             // upload expressions (images are required per above validation)
             for (const row of exprRows) {
@@ -2281,12 +2478,12 @@ function setupAssetModal() {
                 let avatarUrl = '';
                 let fullUrl = '';
                 const f = avatarInput.files[0];
-                const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
-                avatarUrl = uploaded.url;
+                const uploaded = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f) : MockAssetAPI.uploadAndCreateAsset(f));
+                avatarUrl = uploaded?.url || '';
                 if (fullInput && fullInput.files && fullInput.files[0]) {
                     const f2 = fullInput.files[0];
-                    const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
-                    fullUrl = uploaded2.url;
+                    const uploaded2 = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f2) : MockAssetAPI.uploadAndCreateAsset(f2));
+                    fullUrl = uploaded2?.url || '';
                 }
                 mockExpressions.push({ character_id: assetId, name: exprName || 'default', avatar_url: avatarUrl, full_url: fullUrl });
             }
@@ -2323,15 +2520,19 @@ function setupAssetModal() {
 
         const editing = getEditingState();
         if (editing && editing.kind === 'asset' && editing.id === assetId) {
-            // update existing asset
-            await MockAssetAPI.updateAsset({ asset_id: assetId, type: meta.type, category: meta.category, name: name }, file);
+            // update existing asset (use service if available)
+            if (window.Services?.Assets?.update) {
+                await window.Services.Assets.update(assetId, { asset_id: assetId, type: meta.type, category: meta.category, name: name }, file);
+            } else {
+                await MockAssetAPI.updateAsset({ asset_id: assetId, type: meta.type, category: meta.category, name: name }, file);
+            }
             hideAddAssetModal();
             AssetBrowser.renderCategoryGrid();
             if (AssetBrowser.currentCategory) AssetBrowser.renderAssetList(AssetBrowser.currentCategory);
             return;
         }
 
-        const created = await MockAssetAPI.createAsset(meta, file);
+        const created = await (window.Services?.Assets?.create ? window.Services.Assets.create(meta, file) : MockAssetAPI.createAsset(meta, file));
         hideAddAssetModal();
         AssetBrowser.renderCategoryGrid();
         // open the correct category tab if applicable
@@ -2479,13 +2680,13 @@ function setupEditAssetModal() {
                 let fullUrl = '';
                 if (s.avatarInput && s.avatarInput.files && s.avatarInput.files[0]) {
                     const f = s.avatarInput.files[0];
-                    const uploaded = await MockAssetAPI.uploadAndCreateAsset(f);
-                    avatarUrl = uploaded.url;
+                    const uploaded = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f) : MockAssetAPI.uploadAndCreateAsset(f));
+                    avatarUrl = uploaded?.url || '';
                 }
                 if (s.fullInput && s.fullInput.files && s.fullInput.files[0]) {
                     const f2 = s.fullInput.files[0];
-                    const uploaded2 = await MockAssetAPI.uploadAndCreateAsset(f2);
-                    fullUrl = uploaded2.url;
+                    const uploaded2 = await (window.Services?.Assets?.create ? window.Services.Assets.create({}, f2) : MockAssetAPI.uploadAndCreateAsset(f2));
+                    fullUrl = uploaded2?.url || '';
                 }
                 if (existing[nameKey]) {
                     if (avatarUrl) existing[nameKey].avatar_url = avatarUrl;
@@ -2517,7 +2718,11 @@ function setupEditAssetModal() {
         else if (t === 'background') { meta.type = 'image'; meta.category = 'background'; }
 
         try {
-            await MockAssetAPI.updateAsset(meta, file);
+            if (window.Services?.Assets?.update) {
+                await window.Services.Assets.update(file ? (file.name || file) : meta.asset_id, meta, file);
+            } else {
+                await MockAssetAPI.updateAsset(meta, file);
+            }
             modal.style.display = 'none';
             AssetBrowser.renderCategoryGrid();
             if (AssetBrowser.currentCategory) AssetBrowser.renderAssetList(AssetBrowser.currentCategory);
@@ -2962,14 +3167,6 @@ function isSpecificIdUnique(specificId, type) {
 }
 
 // NOTE: DB ids are assigned by the server. Client no longer generates DB ids.
-
-function generateSpecificId(type) {
-    // Generate a unique ID string
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `${type}-${timestamp}-${random}`;
-}
-
 function generateClientId() {
     return `c-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }

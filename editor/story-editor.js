@@ -113,7 +113,7 @@ const StoryScriptParser = {
      * @param {string} scriptText
      * @returns {Object} story_content JSON
      */
-    parse(scriptText) {
+    async parse(scriptText) {
         const lines = scriptText.split('\n');
         const charDeclarations = [];
         const result = { characters: {}, sections: [] };
@@ -145,7 +145,8 @@ const StoryScriptParser = {
         // Build characters map from declarations
         for (const decl of charDeclarations) {
             if (decl.character_id) {
-                const exprMap = CharacterResolver.buildCharacterMap([decl]);
+                // CharacterResolver.buildCharacterMap is async now
+                const exprMap = await CharacterResolver.buildCharacterMap([decl]);
                 Object.assign(result.characters, exprMap);
             } else {
                 // Legacy manual avatar/full
@@ -597,7 +598,7 @@ const StoryEditor = {
         }
     },
 
-    save() {
+    async save() {
         // Update metadata fields (name, description, display_order) if present
         const nameInput = document.getElementById('story-editor-name');
         const descInput = document.getElementById('story-editor-description');
@@ -614,7 +615,7 @@ const StoryEditor = {
 
         // Update story content
         const scriptText = this.editor.getValue();
-        const parsed = StoryScriptParser.parse(scriptText);
+        const parsed = await StoryScriptParser.parse(scriptText);
         this.currentItem.story_content = parsed;
 
         // Re-render tree to reflect metadata changes (if available)
@@ -666,10 +667,10 @@ const StoryEditor = {
         this.editor.focus();
     },
 
-    preview() {
+    async preview() {
         // Prepare preview object (do not modify currentItem on disk)
         const scriptText = this.editor.getValue();
-        const parsed = StoryScriptParser.parse(scriptText);
+        const parsed = await StoryScriptParser.parse(scriptText);
         const previewObj = Object.assign({}, this.currentItem || {});
         previewObj.story_content = parsed;
 
