@@ -64,14 +64,23 @@ export class BGMManager {
     if (this.currentTrack && this.currentTrack.id === track.id) return;
     this.stop();
     this.currentTrack = track;
+
+    const resolvePath = (src) => {
+      if (!src) return '';
+      if (src.startsWith('http') || src.startsWith('../') || src.startsWith('/')) {
+        return src;
+      }
+      return this.basePath + src;
+    };
+
     if (track.intro) {
-      this.introAudio.src = this.basePath + track.intro;
+      this.introAudio.src = resolvePath(track.intro);
       this.introAudio.load();
     } else {
       this.introAudio.src = '';
     }
     if (track.loop) {
-      this.loopAudio.src = this.basePath + track.loop;
+      this.loopAudio.src = resolvePath(track.loop);
       this.loopAudio.load();
     } else {
       this.loopAudio.src = '';
@@ -198,27 +207,57 @@ export class BGMManager {
       this.scrollObserver.disconnect();
       this.scrollObserver = null;
     }
+    document.removeEventListener('click', this.handleFirstClick);
+  }
+
+  handleFirstClick = () => {
+    // Resume BGM on first interaction if blocked by autoplay policy
+    this.userInteracted = true;
+    if (this.currentTrack && !this.isPlaying && this.isEnabled) {
+      this.play();
+    }
   }
 
   setupScrollTriggers(options = {}) {
     const selector = options.selector || '[data-bgm-id]';
-    const threshold = options.threshold || 0.3;
-    const rootMargin = options.rootMargin || '0px 0px 0px 0px';
-    const triggerElements = document.querySelectorAll(selector);
+    const threshold = options.threshold || 0;
+    const rootMargin = options.rootMargin || '0px';
+    const triggerElements = Array.from(document.querySelectorAll(selector));
+
     if (triggerElements.length === 0) return;
+
+    // Autoplay policy unlocker
+    document.addEventListener('click', this.handleFirstClick, { once: true });
+
+    this.intersectingElements = new Set();
 
     this.scrollObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const el = entry.target;
-          const trackId = el.dataset.bgmId;
-          const intro = el.dataset.bgmIntro || null;
-          const loop = el.dataset.bgmLoop || null;
+          this.intersectingElements.add(entry.target);
+        } else {
+          this.intersectingElements.delete(entry.target);
+        }
+      });
+
+      // Determine active scene based on the lowest visible element in DOM
+      if (this.intersectingElements.size > 0) {
+        let activeElement = null;
+        for (const el of triggerElements) {
+          if (this.intersectingElements.has(el)) {
+            activeElement = el;
+          }
+        }
+
+        if (activeElement) {
+          const trackId = activeElement.dataset.bgmId || '';
+          const intro = activeElement.dataset.bgmIntro || null;
+          const loop = activeElement.dataset.bgmLoop || null;
           if (!this.currentTrack || this.currentTrack.id !== trackId) {
             this.changeTrack({ id: trackId, intro, loop }, true);
           }
         }
-      });
+      }
     }, { threshold, rootMargin });
 
     triggerElements.forEach(el => this.scrollObserver.observe(el));
@@ -230,7 +269,7 @@ export class SFXManager {
     this.basePath = options.basePath || '/assets/audio/sfx/';
     this.selector = options.selector || '.sfx_player';
     this.threshold = options.threshold || 0.5;
-    this.rootMargin = options.rootMargin || '0px 0px -50% 0px';
+    this.rootMargin = options.rootMargin || '0px 0px -30% 0px';
     this.volume = options.volume || 1;
     this.isEnabled = true;
     this.playedElements = new Set();
@@ -268,7 +307,7 @@ export class SFXManager {
   init() {
     const sfxElements = document.querySelectorAll(this.selector);
     if (sfxElements.length === 0) return;
-    
+
     sfxElements.forEach((el, index) => this.setupSFXElement(el, index));
     this.setupScrollObserver();
   }
@@ -278,22 +317,29 @@ export class SFXManager {
     let sfxName = element.dataset.sfxName || 'Sound Effect';
     let sfxAuto = element.dataset.sfxAuto !== 'false';
     const existingAudio = element.querySelector('audio');
-    
+
     if (existingAudio && existingAudio.src) {
       sfxSrc = sfxSrc || existingAudio.getAttribute('src');
       sfxName = existingAudio.textContent || sfxName;
       existingAudio.remove();
     }
-    
+
     if (!sfxSrc) return;
     element.dataset.sfxSrc = sfxSrc;
     element.dataset.sfxName = sfxName;
     element.dataset.sfxIndex = index;
     element.dataset.sfxAuto = sfxAuto;
-    
-    element.innerHTML = `<div class="sfx-content"><span class="sfx-name">${sfxName}</span></div>`;
-    element.addEventListener('click', () => this.playSFX(element));
-    
+
+    if (!element.innerHTML.includes('sfx-name')) {
+      element.innerHTML = `<div class="sfx-content"><span class="sfx-name">${sfxName}</span></div>`;
+    }
+
+    // Prevent multiple event attachments if init() runs twice
+    const handleClick = () => this.playSFX(element);
+    element.removeEventListener('click', element._sfxClickHandler);
+    element._sfxClickHandler = handleClick;
+    element.addEventListener('click', handleClick);
+
     if (this.scrollObserver) this.scrollObserver.observe(element);
   }
 
@@ -335,7 +381,18 @@ export class SFXManager {
     }
     this.isPlaying = true;
     element.classList.add('playing');
-    
+
+    let isCleanedUp = false;
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      this.currentAudio = null;
+      setTimeout(() => {
+        this.isPlaying = false;
+        this.processQueue();
+      }, 100);
+    };
+
     try {
       const audio = new Audio();
       if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('../') && !sfxSrc.startsWith('/')) {
@@ -345,28 +402,23 @@ export class SFXManager {
       }
       audio.volume = this.volume;
       this.currentAudio = audio;
-      
+
       audio.addEventListener('ended', () => {
         element.classList.remove('playing');
         element.classList.add('played');
-        this.currentAudio = null;
-        this.isPlaying = false;
-        this.processQueue();
+        cleanup();
       });
-      
+
       audio.addEventListener('error', (e) => {
         element.classList.remove('playing');
         element.classList.add('error');
-        this.currentAudio = null;
-        this.isPlaying = false;
-        this.processQueue();
+        cleanup();
       });
-      
+
       await audio.play();
     } catch (error) {
       element.classList.remove('playing');
-      this.isPlaying = false;
-      this.processQueue();
+      cleanup();
     }
   }
 

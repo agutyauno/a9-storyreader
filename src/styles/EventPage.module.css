@@ -1,10 +1,4 @@
 /* ================================================================================================= */
-/* Event Page Specific Styles */
-/* ================================================================================================= */
-
-
-
-/* ================================================================================================= */
 /* Back Button */
 /* ================================================================================================= */
 
@@ -38,11 +32,18 @@
 	padding: var(--spacing-base) 0;
 }
 
-#story_selection-panel{
-    background-color: var(--color-bg-dark);
-    padding: var(--spacing-base);
-    border-radius: var(--radius-base);
-    box-shadow: var(--shadow-sm);
+#story_selection-panel {
+	background-color: var(--color-bg-dark);
+	padding: var(--spacing-base);
+	border-radius: var(--radius-base);
+	box-shadow: var(--shadow-sm);
+}
+
+.selection-grid {
+	background-color: var(--color-bg-dark);
+	padding: var(--spacing-base);
+	margin-bottom: var(--spacing-base);
+	border-radius: var(--radius-base);
 }
 
 /* ================================================================================================= */
@@ -114,13 +115,13 @@
 	max-height: 0;
 	opacity: 0;
 	margin-top: 0;
-    transition: max-height 0.18s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+	transition: max-height 0.18s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
 }
 
 /* ================================================================================================= */
 /* Character List */
-#character-section{
-    margin-top: var(--spacing-sm);
+#character-section {
+	margin-top: var(--spacing-sm);
 }
 
 #character_list {

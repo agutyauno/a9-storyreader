@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
-import '../styles/EventPage.css';
+import styles from '../styles/EventPage.module.css';
+
+function cx(classNames) {
+  if (!classNames) return '';
+  return String(classNames).split(' ').filter(Boolean).map(c => `${c} ${styles[c] || ''}`.trim()).join(' ').trim();
+}
 
 export default function EventPage() {
   const { id } = useParams();
@@ -114,31 +119,31 @@ export default function EventPage() {
     document.body.style.overflow = '';
   };
 
-  if (loading) return <main><div className="container"><div className="loading-placeholder">Đang tải...</div></div></main>;
-  if (error) return <main><div className="container"><p className="error-message">{error}</p></div></main>;
-  if (!event) return <main><div className="container"><p className="no-data">Không tìm thấy sự kiện.</p></div></main>;
+  if (loading) return <main><div className={cx("container")}><div className={cx("loading-placeholder")}>Đang tải...</div></div></main>;
+  if (error) return <main><div className={cx("container")}><p className={cx("error-message")}>{error}</p></div></main>;
+  if (!event) return <main><div className={cx("container")}><p className={cx("no-data")}>Không tìm thấy sự kiện.</p></div></main>;
 
   return (
     <>
       <main>
-        <div className="container">
+        <div className={cx("container")}>
           {arcRegionId && (
-            <Link id="back-to-region-btn" className="back-to-region-btn" to={`/region/${arcRegionId}`} aria-label="Quay lại trang region">
+            <Link id="back-to-region-btn" className={cx("back-to-region-btn")} to={`/region/${arcRegionId}`} aria-label="Quay lại trang region">
               ← Quay lại Region
             </Link>
           )}
 
           <div id="info">
-            <h2 className="info-title">{event.name}</h2>
-            <p className="info-description">{event.description}</p>
+            <h2 className={cx("info-title")}>{event.name}</h2>
+            <p className={cx("info-description")}>{event.description}</p>
           </div>
 
-          <div id="story_selection-panel" className="selection-grid">
+          <div id="story_selection-panel" className={cx("selection-grid")}>
             {stories.length === 0 ? (
-              <p className="no-data">Chưa có truyện cho sự kiện này.</p>
+              <p className={cx("no-data")}>Chưa có truyện cho sự kiện này.</p>
             ) : (
               stories.map(story => (
-                <Link key={story.story_id} to={`/story/${story.story_id}`} className="selection-panel-item">
+                <Link key={story.story_id} to={`/story/${story.story_id}`} className={cx("selection-panel-item")}>
                   {story.name}
                 </Link>
               ))
@@ -146,36 +151,36 @@ export default function EventPage() {
           </div>
 
           {/* Characters Section */}
-          <section className="collapsible-section" id="character-section">
-            <div className="collapsible-header" onClick={() => setCharCollapsed(!charCollapsed)}>
-              <h3 className="section-title">Nhân Vật</h3>
-              <button className="toggle-btn" aria-expanded={!charCollapsed}>
-                <span className="toggle-icon">-</span>
+          <section className={cx("collapsible-section")} id="character-section">
+            <div className={cx("collapsible-header")} onClick={() => setCharCollapsed(!charCollapsed)}>
+              <h3 className={cx("section-title")}>Nhân Vật</h3>
+              <button className={cx("toggle-btn")} aria-expanded={!charCollapsed}>
+                <span className={cx("toggle-icon")}>-</span>
               </button>
             </div>
-            <div className={`collapsible-content ${charCollapsed ? 'collapsed' : ''}`} id="character_list">
+            <div className={cx(`collapsible-content ${charCollapsed ? 'collapsed' : ''}`)} id="character_list">
               {characters.map(char => (
-                <div key={char.id} className="character-card" onClick={() => openModal('character', char)}>
-                  <img src={char.avatar} alt={char.name} className="character-avatar" />
-                  <p className="character-name">{char.name}</p>
+                <div key={char.id} className={cx("character-card")} onClick={() => openModal('character', char)}>
+                  <img src={char.avatar} alt={char.name} className={cx("character-avatar")} />
+                  <p className={cx("character-name")}>{char.name}</p>
                 </div>
               ))}
             </div>
           </section>
 
           {/* Gallery Section */}
-          <section className="collapsible-section" id="gallery-section">
-            <div className="collapsible-header" onClick={() => setGalleryCollapsed(!galleryCollapsed)}>
-              <h3 className="section-title">Thư Viện</h3>
-              <button className="toggle-btn" aria-expanded={!galleryCollapsed}>
-                <span className="toggle-icon">-</span>
+          <section className={cx("collapsible-section")} id="gallery-section">
+            <div className={cx("collapsible-header")} onClick={() => setGalleryCollapsed(!galleryCollapsed)}>
+              <h3 className={cx("section-title")}>Thư Viện</h3>
+              <button className={cx("toggle-btn")} aria-expanded={!galleryCollapsed}>
+                <span className={cx("toggle-icon")}>-</span>
               </button>
             </div>
-            <div className={`collapsible-content ${galleryCollapsed ? 'collapsed' : ''}`} id="gallery">
+            <div className={cx(`collapsible-content ${galleryCollapsed ? 'collapsed' : ''}`)} id="gallery">
               {gallery.map(item => (
-                <div key={item.id} className="gallery-item" onClick={() => openModal('gallery', item)}>
-                  <img src={item.image} alt={item.title} className="gallery-image" />
-                  <div className="gallery-label">{item.title}</div>
+                <div key={item.id} className={cx("gallery-item")} onClick={() => openModal('gallery', item)}>
+                  <img src={item.image} alt={item.title} className={cx("gallery-image")} />
+                  <div className={cx("gallery-label")}>{item.title}</div>
                 </div>
               ))}
             </div>
@@ -184,26 +189,26 @@ export default function EventPage() {
       </main>
 
       {/* Character Modal */}
-      <div id="character-modal" className={`modal ${activeModal === 'character' ? 'active' : ''}`} aria-hidden={activeModal !== 'character'} role="dialog">
-        <div className="modal-overlay" onClick={closeModal}></div>
-        <div className="modal-container">
-          <button className="modal-close" onClick={closeModal} aria-label="Close">x</button>
-          <img className="modal-image" src={modalData.fullImage || ''} alt={modalData.name || ''} />
-          <div className="modal-info">
-            <h3 className="modal-title">{modalData.name}</h3>
-            <p className="modal-description">{modalData.description}</p>
+      <div id="character-modal" className={cx(`modal ${activeModal === 'character' ? 'active' : ''}`)} aria-hidden={activeModal !== 'character'} role="dialog">
+        <div className={cx("modal-overlay")} onClick={closeModal}></div>
+        <div className={cx("modal-container")}>
+          <button className={cx("modal-close")} onClick={closeModal} aria-label="Close">x</button>
+          <img className={cx("modal-image")} src={modalData.fullImage || ''} alt={modalData.name || ''} />
+          <div className={cx("modal-info")}>
+            <h3 className={cx("modal-title")}>{modalData.name}</h3>
+            <p className={cx("modal-description")}>{modalData.description}</p>
           </div>
         </div>
       </div>
 
       {/* Gallery Modal */}
-      <div id="gallery-modal" className={`modal ${activeModal === 'gallery' ? 'active' : ''}`} aria-hidden={activeModal !== 'gallery'} role="dialog">
-        <div className="modal-overlay" onClick={closeModal}></div>
-        <div className="modal-container">
-          <button className="modal-close" onClick={closeModal} aria-label="Close">x</button>
-          <img className="modal-image" src={modalData.image || ''} alt={modalData.title || ''} />
-          <div className="modal-info">
-            <h3 className="modal-title">{modalData.title}</h3>
+      <div id="gallery-modal" className={cx(`modal ${activeModal === 'gallery' ? 'active' : ''}`)} aria-hidden={activeModal !== 'gallery'} role="dialog">
+        <div className={cx("modal-overlay")} onClick={closeModal}></div>
+        <div className={cx("modal-container")}>
+          <button className={cx("modal-close")} onClick={closeModal} aria-label="Close">x</button>
+          <img className={cx("modal-image")} src={modalData.image || ''} alt={modalData.title || ''} />
+          <div className={cx("modal-info")}>
+            <h3 className={cx("modal-title")}>{modalData.title}</h3>
           </div>
         </div>
       </div>

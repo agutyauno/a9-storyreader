@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
 import { StoryRenderer } from '../utils/storyRenderer';
 import { BGMManager, SFXManager } from '../utils/audioManager';
-import '../styles/StoryPage.css';
+import { mockStoryData } from '../utils/mockStoryData';
+import styles from '../styles/StoryPage.module.css';
 
 export default function StoryPage() {
   const { id } = useParams();
@@ -35,7 +36,7 @@ export default function StoryPage() {
         if (raw) {
           const previewStory = JSON.parse(raw);
           setStory(previewStory);
-          setHtmlContent(StoryRenderer.render(previewStory.story_content));
+          setHtmlContent(StoryRenderer.render(previewStory.story_content, styles));
           setLoading(false);
           return;
         }
@@ -44,7 +45,10 @@ export default function StoryPage() {
       if (!id) return;
 
       try {
-        const fetchedStory = await SupabaseAPI.getStory(id);
+        // OVERRIDE FOR TESTING MOCK DATA
+        // const fetchedStory = await SupabaseAPI.getStory(id);
+        const fetchedStory = mockStoryData;
+
         if (!fetchedStory) {
           setError('Không tìm thấy truyện.');
           setLoading(false);
@@ -61,7 +65,7 @@ export default function StoryPage() {
           setAllStories(stories);
         }
 
-        setHtmlContent(StoryRenderer.render(fetchedStory.story_content));
+        setHtmlContent(StoryRenderer.render(fetchedStory.story_content, styles));
       } catch (err) {
         console.error(err);
         setError('Đã xảy ra lỗi khi tải dữ liệu.');
@@ -71,7 +75,7 @@ export default function StoryPage() {
     }
 
     fetchStoryData();
-    
+
     // Cleanup audio on unmount
     return () => {
       if (window.bgmManager) window.bgmManager.stop();
@@ -132,19 +136,19 @@ export default function StoryPage() {
     }
 
     // 2. Decision Choices
-    const decisionGroups = contentDiv.querySelectorAll('.decision-group');
+    const decisionGroups = contentDiv.querySelectorAll(`.${styles['decision-group'] || 'decision-group'}`);
     decisionGroups.forEach(group => {
       const groupId = group.getAttribute('data-choice-group');
-      const decisions = group.querySelectorAll('.decision');
-      const responses = contentDiv.querySelectorAll(`.choice-response[data-choice-group="${groupId}"]`);
+      const decisions = group.querySelectorAll(`.${styles['decision'] || 'decision'}`);
+      const responses = contentDiv.querySelectorAll(`.${styles['choice-response'] || 'choice-response'}[data-choice-group="${groupId}"]`);
       decisions.forEach(decision => {
         decision.addEventListener('click', () => {
           const choiceValue = decision.getAttribute('data-choice-value');
-          decisions.forEach(d => d.classList.remove('selected'));
-          decision.classList.add('selected');
+          decisions.forEach(d => d.classList.remove(styles['selected'] || 'selected'));
+          decision.classList.add(styles['selected'] || 'selected');
           responses.forEach(r => {
-            if (r.getAttribute('data-choice-response') === choiceValue) r.classList.add('active');
-            else r.classList.remove('active');
+            if (r.getAttribute('data-choice-response') === choiceValue) r.classList.add(styles['active'] || 'active');
+            else r.classList.remove(styles['active'] || 'active');
           });
         });
       });
@@ -152,7 +156,7 @@ export default function StoryPage() {
     });
 
     // 3. Modals for Character Avatar and Background Exapnds
-    const avatars = contentDiv.querySelectorAll('.character_avt');
+    const avatars = contentDiv.querySelectorAll(`.${styles['character_avt'] || 'character_avt'}`);
     avatars.forEach(av => {
       av.addEventListener('click', () => {
         let src = av.getAttribute('src');
@@ -162,10 +166,10 @@ export default function StoryPage() {
       });
     });
 
-    const expIcons = contentDiv.querySelectorAll('.background-wrapper .expand-icon');
+    const expIcons = contentDiv.querySelectorAll(`.${styles['background-wrapper'] || 'background-wrapper'} .${styles['expand-icon'] || 'expand-icon'}`);
     expIcons.forEach(icon => {
       icon.addEventListener('click', () => {
-        const bgImg = icon.closest('.background-wrapper').querySelector('.background-image');
+        const bgImg = icon.closest(`.${styles['background-wrapper'] || 'background-wrapper'}`).querySelector(`.${styles['background-image'] || 'background-image'}`);
         if (bgImg) {
           setModalData({ type: 'background', src: bgImg.getAttribute('src') });
         }
@@ -174,7 +178,7 @@ export default function StoryPage() {
 
     // 4. BGM & SFX scroll triggers
     if (window.bgmManager) {
-      window.bgmManager.setupScrollTriggers({ selector: '[data-bgm-id]', threshold: 0.5 });
+      window.bgmManager.setupScrollTriggers({ selector: '[data-bgm-id]', threshold: 0, rootMargin: '0px 0px -20% 0px' });
     }
     if (window.sfxManager) {
       window.sfxManager.init();
@@ -183,18 +187,18 @@ export default function StoryPage() {
     // 5. Header title changing dynamically based on scroll
     const updateHeaderTitle = () => {
       const infoSection = document.getElementById('info');
-      const headerName = document.querySelector('.header-name');
+      const headerName = document.querySelector(`.${styles['header-name'] || 'header-name'}`);
       const globalHeader = document.querySelector('header');
-      
+
       if (!infoSection || !headerName) return;
-      
+
       const originalTitle = eventData ? eventData.name : (story ? story.name : '');
       const storyTitle = story ? story.name : '';
-      
+
       const headerHeight = globalHeader ? globalHeader.offsetHeight : 0;
       const infoBottom = infoSection.offsetTop + infoSection.offsetHeight;
       const shouldShowStoryTitle = window.scrollY >= (infoBottom - headerHeight);
-      
+
       headerName.textContent = shouldShowStoryTitle ? storyTitle : originalTitle;
     };
     window.addEventListener('scroll', updateHeaderTitle);
@@ -210,9 +214,9 @@ export default function StoryPage() {
     let ticking = false;
     const updateBackgroundPosition = () => {
       if (!contentRef.current) return;
-      const dialogueSections = contentRef.current.querySelectorAll('.dialogue-section');
+      const dialogueSections = contentRef.current.querySelectorAll(`.${styles['dialogue-section'] || 'dialogue-section'}`);
       dialogueSections.forEach(section => {
-        const wrapper = section.querySelector('.background-wrapper');
+        const wrapper = section.querySelector(`.${styles['background-wrapper'] || 'background-wrapper'}`);
         if (!wrapper) return;
         const rect = section.getBoundingClientRect();
         const wrapperHeight = wrapper.offsetHeight;
@@ -259,40 +263,40 @@ export default function StoryPage() {
   const prevStory = currentIndex > 0 ? allStories[currentIndex - 1] : null;
   const nextStory = currentIndex >= 0 && currentIndex < allStories.length - 1 ? allStories[currentIndex + 1] : null;
 
-  if (loading) return <main><div className="container"><div className="loading-placeholder">Đang tải...</div></div></main>;
-  if (error) return <main><div className="container"><div className="error-message">{error}</div></div></main>;
+  if (loading) return <main><div className={styles['container']}><div className={styles['loading-placeholder']}>Đang tải...</div></div></main>;
+  if (error) return <main><div className={styles['container']}><div className={styles['error-message']}>{error}</div></div></main>;
   if (!story) return null;
 
   return (
     <>
       <header>
-        <div id="story_page-header">
+        <div id="story_page-header" className={styles['story_page-header']}>
           <Link to="/">
-            <img className="header-logo" src="/assets/images/icon/dreambind castle.png" alt="Home" />
+            <img className={styles['header-logo']} src="/assets/images/icon/dreambind castle.png" alt="Home" />
           </Link>
-          <Link id="header-event-link" to={story.event_id ? `/event/${story.event_id}` : '#'} className="header-name-link">
-            <h1 className="header-name">{eventData?.name || story.name}</h1>
+          <Link id="header-event-link" to={story.event_id ? `/event/${story.event_id}` : '#'} className={styles['header-name-link']}>
+            <h1 className={styles['header-name']}>{eventData?.name || story.name}</h1>
           </Link>
 
-          <div className="header-right-controls">
-            <div id="audio-controls" className="audio-controls">
-              <button id="audio-toggle" className={`audio-btn ${!audioEnabled ? 'muted' : ''}`} onClick={toggleAudio}>
-                <span id="audio-icon" className="audio-icon">{audioEnabled ? '🔊' : '🔇'}</span>
+          <div className={styles['header-right-controls']}>
+            <div id="audio-controls" className={styles['audio-controls']}>
+              <button id="audio-toggle" className={`${styles['audio-btn']} ${!audioEnabled ? styles['muted'] : ''}`} onClick={toggleAudio}>
+                <span id="audio-icon" className={styles['audio-icon']}>{audioEnabled ? '🔊' : '🔇'}</span>
               </button>
-              <div className="volume-slider-container">
-                <input 
-                  type="range" 
-                  id="volume-slider" 
-                  className="volume-slider" 
-                  min="0" 
-                  max="100" 
-                  value={audioVolume} 
-                  onChange={changeVolume} 
+              <div className={styles['volume-slider-container']}>
+                <input
+                  type="range"
+                  id="volume-slider"
+                  className={styles['volume-slider']}
+                  min="0"
+                  max="100"
+                  value={audioVolume}
+                  onChange={changeVolume}
                 />
               </div>
             </div>
 
-            <button id="sidebar-toggle" className="sidebar-toggle-btn" onClick={() => setSidebarActive(true)}>
+            <button id="sidebar-toggle" className={styles['sidebar-toggle-btn']} onClick={() => setSidebarActive(true)}>
               <img src="/assets/images/web icon/list.png" alt="List" />
             </button>
           </div>
@@ -300,15 +304,15 @@ export default function StoryPage() {
       </header>
 
       {/* Sidebar */}
-      <div id="chapter-sidebar" className={`chapter-sidebar ${sidebarActive ? 'active' : ''}`}>
-        <div className="sidebar-header">
+      <div id="chapter-sidebar" className={`${styles['chapter-sidebar']} ${sidebarActive ? styles['active'] : ''}`}>
+        <div className={styles['sidebar-header']}>
           <h2>Danh sách chương</h2>
         </div>
-        <div className="sidebar-content">
-          <ul className="chapter-list">
+        <div className={styles['sidebar-content']}>
+          <ul className={styles['chapter-list']}>
             {allStories.map(s => (
               <li key={s.story_id}>
-                <Link to={`/story/${s.story_id}`} className={`chapter-item ${s.story_id === id ? 'active' : ''}`}>
+                <Link to={`/story/${s.story_id}`} className={`${styles['chapter-item']} ${s.story_id === id ? styles['active'] : ''}`}>
                   {s.name}
                 </Link>
               </li>
@@ -316,44 +320,44 @@ export default function StoryPage() {
           </ul>
         </div>
       </div>
-      <div 
-        id="sidebar-overlay" 
-        className={`sidebar-overlay ${sidebarActive ? 'active' : ''}`} 
-        onClick={() => setSidebarActive(false)} 
+      <div
+        id="sidebar-overlay"
+        className={`${styles['sidebar-overlay']} ${sidebarActive ? styles['active'] : ''}`}
+        onClick={() => setSidebarActive(false)}
       />
 
       {/* Modals */}
       {modalData && (
-        <div id={`${modalData.type}-modal`} className="image-modal active" onClick={() => setModalData(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <img className="modal-image" src={modalData.src} alt={modalData.type} />
-            <button style={{position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor:'pointer'}} onClick={() => setModalData(null)}>x</button>
+        <div id={`${modalData.type}-modal`} className={`${styles['image-modal']} ${styles['active']}`} onClick={() => setModalData(null)}>
+          <div className={styles['modal-content']} onClick={e => e.stopPropagation()}>
+            <img className={styles['modal-image']} src={modalData.src} alt={modalData.type} />
+            <button style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer' }} onClick={() => setModalData(null)}>x</button>
           </div>
         </div>
       )}
 
       <main>
-        <div className="container">
-          <div id="info">
-            <div className="info-header">
-              <p id="dr-name">Dr. <input type="text" id="dr-nickname-input" placeholder="@nickname" /></p> 
-              <h2 className="info-title">{story.name}</h2>
+        <div className={styles['container']}>
+          <div id="info" className={styles['info']}>
+            <div className={styles['info-header']}>
+              <p id="dr-name" className={styles['dr-name']}>Dr. <input type="text" id="dr-nickname-input" placeholder="@nickname" /></p>
+              <h2 className={styles['info-title']}>{story.name}</h2>
             </div>
-            <p className="info-description">{story.description}</p>
+            <p className={styles['info-description']}>{story.description}</p>
           </div>
 
           <div id="story-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: htmlContent }} />
 
-          <div className="switch-chapter-button">
-            <button className="prevous" disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương trước</button>
-            <button className="next" disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương sau</button>
+          <div className={styles['switch-chapter-button']}>
+            <button className={styles['prevous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương trước</button>
+            <button className={styles['next']} disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương sau</button>
           </div>
         </div>
       </main>
 
-      <button 
-        id="back-to-top" 
-        className={`back-to-top ${showBackTop ? 'visible' : ''}`} 
+      <button
+        id="back-to-top"
+        className={`${styles['back-to-top']} ${showBackTop ? styles['visible'] : ''}`}
         onClick={scrollToTop}
       >
         <span style={{ fontSize: '24px', color: '#fff' }}>&#8593;</span>

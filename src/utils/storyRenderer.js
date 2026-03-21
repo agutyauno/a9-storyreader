@@ -1,15 +1,20 @@
+function cx(classNames, styles) {
+  if (!classNames) return '';
+  return String(classNames).split(' ').filter(Boolean).map(c => `${c} ${styles[c] || ''}`.trim()).join(' ').trim();
+}
+
 export const StoryRenderer = {
   characters: {},
 
-  render(storyContent) {
+  render(storyContent, styles = {}) {
     if (!storyContent) {
-      return '<p class="no-data">Không có nội dung truyện.</p>';
+      return `<p class="${cx('no-data', styles)}">Không có nội dung truyện.</p>`;
     }
     if (!Array.isArray(storyContent.sections)) {
       storyContent.sections = [];
     }
     this.characters = storyContent.characters || {};
-    return storyContent.sections.map((section) => this.renderSection(section)).join('');
+    return storyContent.sections.map((section) => this.renderSection(section, styles)).join('');
   },
 
   getAvatar(name) {
@@ -34,34 +39,34 @@ export const StoryRenderer = {
     return char?.full_image || '';
   },
 
-  renderSection(section) {
+  renderSection(section, styles) {
     if (section.type === 'dialogue_section') {
-      const elements = (section.elements || []).map((el) => this.renderElement(el)).join('');
-      return `<section class="dialogue-section">${elements}</section>`;
+      const elements = (section.elements || []).map((el) => this.renderElement(el, styles)).join('');
+      return `<section class="${cx('dialogue-section', styles)}">${elements}</section>`;
     }
     return '';
   },
 
-  renderElement(element) {
+  renderElement(element, styles) {
     switch (element.type) {
       case 'video':
-        return this.renderVideo(element);
+        return this.renderVideo(element, styles);
       case 'background':
-        return this.renderBackground(element);
+        return this.renderBackground(element, styles);
       default:
         return '';
     }
   },
 
-  renderVideo(element) {
+  renderVideo(element, styles) {
     return `
-      <div class="dialogue-video-box" data-bgm-id="">
+      <div class="${cx('dialogue-video-box', styles)}" data-bgm-id="">
         <video src="${element.src}" controls></video>
       </div>
     `;
   },
 
-  renderBackground(element) {
+  renderBackground(element, styles) {
     let bgmAttrs = '';
     if (element.bgm) {
       bgmAttrs = `data-bgm-id="${element.bgm.id || ''}"`;
@@ -69,95 +74,99 @@ export const StoryRenderer = {
       if (element.bgm.loop) bgmAttrs += ` data-bgm-loop="${element.bgm.loop}"`;
     }
 
-    const dialogues = (element.dialogues || []).map((d) => this.renderDialogue(d)).join('');
+    const dialogues = (element.dialogues || []).map((d) => this.renderDialogue(d, styles)).join('');
     return `
-      <section class="dialogue-background" ${bgmAttrs}>
-        <div class="background-wrapper">
-          <img class="background-image" src="${element.image}" alt="">
-          <img class="expand-icon" src="/assets/images/web icon/expand.png" alt="">
+      <section class="${cx('dialogue-background', styles)}" ${bgmAttrs}>
+        <div class="${cx('background-wrapper', styles)}">
+          <img class="${cx('background-blur', styles)}" src="${element.image}" alt="">
+          <img class="${cx('background-image', styles)}" src="${element.image}" alt="">
+          <img class="${cx('expand-icon', styles)}" src="/assets/images/web icon/expand.png" alt="">
         </div>
-        <div class="dialogue-container">
+        <div class="${cx('dialogue-container', styles)}">
           ${dialogues}
         </div>
       </section>
     `;
   },
 
-  renderDialogue(dialogue) {
+  renderDialogue(dialogue, styles) {
     switch (dialogue.type) {
       case 'dialogue':
-        return this.renderDialogueBox(dialogue);
+        return this.renderDialogueBox(dialogue, styles);
       case 'sfx':
-        return this.renderSFX(dialogue);
+        return this.renderSFX(dialogue, styles);
       case 'decision':
-        return this.renderDecision(dialogue);
+        return this.renderDecision(dialogue, styles);
       case 'choice_response':
-        return this.renderChoiceResponse(dialogue);
+        return this.renderChoiceResponse(dialogue, styles);
       default:
         return '';
     }
   },
 
-  renderDialogueBox(dialogue) {
+  renderDialogueBox(dialogue, styles) {
     const leftAvatar = this.getAvatar(dialogue.left);
     const rightAvatar = this.getAvatar(dialogue.right);
     const leftFull = this.getFullImage(dialogue.left);
     const rightFull = this.getFullImage(dialogue.right);
 
     return `
-      <div class="dialogue-box">
-        <img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
-        <div class="dialogue-content">
-          <p class="character_name">${dialogue.name || ''}</p>
-          <p class="dialogue">${dialogue.text || ''}</p>
+      <div class="${cx('dialogue-box', styles)}">
+        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
+        <div class="${cx('dialogue-content', styles)}">
+          <p class="${cx('character_name', styles)}">${dialogue.name || ''}</p>
+          <p class="${cx('dialogue', styles)}">${dialogue.text || ''}</p>
         </div>
-        <img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>
     `;
   },
 
-  renderSFX(sfx) {
+  renderSFX(sfx, styles) {
     return `
-      <div class="sfx_player" data-sfx-src="${sfx.src}" data-sfx-name="${sfx.name || ''}">
+      <div class="${cx('sfx_player', styles)}" data-sfx-src="${sfx.src}" data-sfx-name="${sfx.name || ''}">
+        <div class="${cx('sfx-content', styles)}">
+          <span class="${cx('sfx-name', styles)}">${sfx.name || 'Sound Effect'}</span>
+        </div>
       </div>
     `;
   },
 
-  renderDecision(decision) {
+  renderDecision(decision, styles) {
     const leftAvatar = this.getAvatar(decision.left || 'Doctor');
     const rightAvatar = this.getAvatar(decision.right);
     const leftFull = this.getFullImage(decision.left || 'Doctor');
     const rightFull = this.getFullImage(decision.right);
 
     const choices = (decision.choices || []).map((choice, index) => {
-      return `<p class="decision" data-choice-value="${index + 1}">${choice}</p>`;
+      return `<p class="${cx('decision', styles)}" data-choice-value="${index + 1}">${choice}</p>`;
     }).join('');
 
     return `
-      <div class="dialogue-box decision-group" data-choice-group="${decision.group_id}">
-        <img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
-        <div class="dialogue-content decision-choice">
+      <div class="${cx('dialogue-box decision-group', styles)}" data-choice-group="${decision.group_id}">
+        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
+        <div class="${cx('dialogue-content decision-choice', styles)}">
           ${choices}
         </div>
-        <img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>
     `;
   },
 
-  renderChoiceResponse(response) {
+  renderChoiceResponse(response, styles) {
     const leftAvatar = this.getAvatar(response.left);
     const rightAvatar = this.getAvatar(response.right);
     const leftFull = this.getFullImage(response.left);
     const rightFull = this.getFullImage(response.right);
 
     return `
-      <div class="dialogue-box choice-response" data-choice-response="${response.choice_value}" data-choice-group="${response.group_id}">
-        <img class="character_avt" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
-        <div class="dialogue-content">
-          <p class="character_name">${response.name || ''}</p>
-          <p class="dialogue">${response.text || ''}</p>
+      <div class="${cx('dialogue-box choice-response', styles)}" data-choice-response="${response.choice_value}" data-choice-group="${response.group_id}">
+        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
+        <div class="${cx('dialogue-content', styles)}">
+          <p class="${cx('character_name', styles)}">${response.name || ''}</p>
+          <p class="${cx('dialogue', styles)}">${response.text || ''}</p>
         </div>
-        <img class="character_avt" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>
     `;
   }

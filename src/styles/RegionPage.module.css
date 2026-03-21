@@ -1,7 +1,9 @@
 /* ================================================================================================= */
 /* Region Page Specific Styles */
 /* ================================================================================================= */
-
+.selection-panel-item {
+	background-color: var(--color-border);
+}
 
 
 /* ================================================================================================= */
@@ -27,15 +29,15 @@
 /* Arc Header */
 .arc-header {
 	display: flex;
-    flex-direction: column;
+	flex-direction: column;
 	padding: var(--spacing-sm);
 	background-color: var(--color-bg-primary);
 	border: 1px solid var(--color-border);
 	box-shadow: var(--shadow-md);
 	width: 100%;
 	box-sizing: border-box;
-    justify-content: center;
-    align-items: center;
+	justify-content: center;
+	align-items: center;
 }
 
 .arc-info {
@@ -55,7 +57,7 @@
 	font-size: var(--font-size-xs);
 	color: var(--color-text-secondary);
 	line-height: 1.6;
-    text-align: center;
+	text-align: center;
 }
 
 /* Arc Items */
@@ -88,4 +90,3 @@
 .suggestion-text:hover {
 	color: var(--color-accent);
 }
-

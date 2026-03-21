@@ -1,3 +1,6 @@
+// Global Styles
+import './styles/global.css';
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import EventPage from './pages/EventPage';
@@ -7,15 +10,13 @@ import EditorPage from './pages/EditorPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
-// Global Styles
-import './styles/global.css';
 
 function App() {
   return (
     <BrowserRouter>
       {/* We will load the common Header here if it exists on all pages */}
       <Header />
-      
+
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />

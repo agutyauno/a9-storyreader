@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
-import '../styles/RegionPage.css';
+import styles from '../styles/RegionPage.module.css';
+
+function cx(classNames) {
+  if (!classNames) return '';
+  return String(classNames).split(' ').filter(Boolean).map(c => `${c} ${styles[c] || ''}`.trim()).join(' ').trim();
+}
 
 export default function RegionPage() {
   const { id } = useParams();
@@ -91,7 +96,7 @@ export default function RegionPage() {
 
   const renderEventsWithSuggestions = (arc) => {
     if (!arc.events || arc.events.length === 0) {
-      return <p className="no-data">Chưa có sự kiện.</p>;
+      return <p className={cx("no-data")}>Chưa có sự kiện.</p>;
     }
 
     const elements = [];
@@ -104,8 +109,8 @@ export default function RegionPage() {
         if (!insertedPositions.has(pos) && pos <= index) {
           suggs.forEach((s, idx) => {
             elements.push(
-              <div key={`sug_before_${pos}_${idx}`} className="arc-suggestion">
-                <Link to={`/event/${s.target_event_id}${regionParam}`} className="suggestion-text">
+              <div key={`sug_before_${pos}_${idx}`} className={cx("arc-suggestion")}>
+                <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
                   Gợi ý: Đọc tiếp tại đây...
                 </Link>
               </div>
@@ -117,11 +122,11 @@ export default function RegionPage() {
 
       // Insert the actual event
       elements.push(
-        <Link key={event.event_id} className="selection-panel-item" to={`/event/${event.event_id}${regionParam}`}>
+        <Link key={event.event_id} className={cx("selection-panel-item")} to={`/event/${event.event_id}${regionParam}`}>
           <img src={event.image_url || '/assets/images/icon/default.png'} alt={event.name} />
-          <div className="selection-content">
-            <p className="event_name name">{event.name}</p>
-            <p className="event_description description">{event.description || ''}</p>
+          <div className={cx("selection-content")}>
+            <p className={cx("event_name name")}>{event.name}</p>
+            <p className={cx("event_description description")}>{event.description || ''}</p>
           </div>
         </Link>
       );
@@ -132,8 +137,8 @@ export default function RegionPage() {
       if (!insertedPositions.has(pos)) {
         suggs.forEach((s, idx) => {
           elements.push(
-            <div key={`sug_end_${pos}_${idx}`} className="arc-suggestion">
-              <Link to={`/event/${s.target_event_id}${regionParam}`} className="suggestion-text">
+            <div key={`sug_end_${pos}_${idx}`} className={cx("arc-suggestion")}>
+              <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
                 Gợi ý: Đọc tiếp tại đây...
               </Link>
             </div>
@@ -146,32 +151,32 @@ export default function RegionPage() {
     return elements;
   };
 
-  if (loading) return <main><div className="container"><div className="loading-placeholder">Đang tải...</div></div></main>;
-  if (error) return <main><div className="container"><p className="error-message">{error}</p></div></main>;
-  if (!region) return <main><div className="container"><p className="no-data">Không tìm thấy khu vực.</p></div></main>;
+  if (loading) return <main><div className={cx("container")}><div className={cx("loading-placeholder")}>Đang tải...</div></div></main>;
+  if (error) return <main><div className={cx("container")}><p className={cx("error-message")}>{error}</p></div></main>;
+  if (!region) return <main><div className={cx("container")}><p className={cx("no-data")}>Không tìm thấy khu vực.</p></div></main>;
 
   return (
     <>
       <main>
-        <div className="container">
+        <div className={cx("container")}>
           <div id="info">
-            <h2 className="info-title">{region.name}</h2>
-            <p className="info-description">{region.description}</p>
+            <h2 className={cx("info-title")}>{region.name}</h2>
+            <p className={cx("info-description")}>{region.description}</p>
           </div>
 
-          <div id="event_selection-panel" className="arc-sections-container">
+          <div id="event_selection-panel" className={cx("arc-sections-container")}>
             {arcsWithEvents.length === 0 ? (
-              <p className="no-data">Chưa có dữ liệu cho khu vực này.</p>
+              <p className={cx("no-data")}>Chưa có dữ liệu cho khu vực này.</p>
             ) : (
               arcsWithEvents.map(arc => (
-                <article key={arc.arc_id} className="arc-section">
-                  <div className="arc-header">
-                    <div className="arc-info">
-                      <h3 className="arc-name">{arc.name || ''}</h3>
+                <article key={arc.arc_id} className={cx("arc-section")}>
+                  <div className={cx("arc-header")}>
+                    <div className={cx("arc-info")}>
+                      <h3 className={cx("arc-name")}>{arc.name || ''}</h3>
                     </div>
-                    <p className="arc-description">{arc.description || ''}</p>
+                    <p className={cx("arc-description")}>{arc.description || ''}</p>
                   </div>
-                  <div className="arc-items">
+                  <div className={cx("arc-items")}>
                     {renderEventsWithSuggestions(arc)}
                   </div>
                 </article>
