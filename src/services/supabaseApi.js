@@ -1,145 +1,499 @@
 import { supabase } from './supabaseClient';
+import { mockDatabase } from '../utils/mockStoryData';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TODO: Set to false when Supabase is fully configured.
+// When false, every method calls Supabase directly.
+// ─────────────────────────────────────────────────────────────────────────────
+const USE_MOCK_DB = true;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/** Sort any array by display_order (ascending) */
+const sortByOrder = (arr) =>
+  [...arr].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+/** Generate a simple timestamp-based ID */
+const genId = (prefix) => `${prefix}_${Date.now()}`;
 
 export const SupabaseAPI = {
-	// ============= Regions =============
-	async getRegions() {
-		const { data, error } = await supabase.from('regions').select('*').order('display_order', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
-	async getRegion(regionId) {
-		const { data, error } = await supabase.from('regions').select('*').eq('region_id', regionId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	},
+  // ===========================================================================
+  // REGIONS
+  // ===========================================================================
+  async getRegions() {
+    if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
+    const { data, error } = await supabase.from('regions').select('*').order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
 
-	// ============= Arcs =============
-	async getArcsByRegion(regionId) {
-		const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
-	async getArc(arcId) {
-		const { data, error } = await supabase.from('arcs').select('*').eq('arc_id', arcId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	},
+  async getRegion(regionId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.regions.find(r => r.region_id === regionId) || null;
+    const { data, error } = await supabase.from('regions').select('*').eq('region_id', regionId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
 
-	// ============= Events =============
-	async getEventsByArc(arcId) {
-		const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
-	async getEvent(eventId) {
-		const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	},
+  async createRegion(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { region_id: genId('region'), display_order: 0, ...payload };
+      mockDatabase.regions.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('regions').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
 
-	// ============= Stories =============
-	async getStoriesByEvent(eventId) {
-		const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
-	async getStory(storyId) {
-		const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	},
+  async updateRegion(regionId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.regions.findIndex(r => r.region_id === regionId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.regions[idx], payload);
+      return mockDatabase.regions[idx];
+    }
+    const { data, error } = await supabase.from('regions').update(payload).eq('region_id', regionId).select().single();
+    if (error) throw error;
+    return data;
+  },
 
-	// ============= Characters =============
-	async getCharacters() {
-		const { data, error } = await supabase.from('characters').select('*');
-		if (error) throw error;
-		return data || [];
-	},
-	async getCharacter(characterId) {
-		const { data, error } = await supabase.from('characters').select('*').eq('character_id', characterId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	},
-	async getCharactersByEvent(eventId) {
-		const { data: eventCharacters, error: evErr } = await supabase.from('event_characters').select('character_id').eq('event_id', eventId);
-		if (evErr) throw evErr;
-		if (!eventCharacters || eventCharacters.length === 0) return [];
-		const characterIds = eventCharacters.map(ec => ec.character_id);
+  async deleteRegion(regionId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.regions = mockDatabase.regions.filter(r => r.region_id !== regionId);
+      return;
+    }
+    const { error } = await supabase.from('regions').delete().eq('region_id', regionId);
+    if (error) throw error;
+  },
 
-		const { data: characters, error: chErr } = await supabase.from('characters').select('*').in('character_id', characterIds);
-		if (chErr) throw chErr;
+  // ===========================================================================
+  // ARCS
+  // ===========================================================================
+  async getArcsByRegion(regionId) {
+    if (USE_MOCK_DB)
+      return sortByOrder(mockDatabase.arcs.filter(a => a.region_id === regionId));
+    const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
 
-		const { data: expressions, error: exprErr } = await supabase.from('charater_expressions').select('*').in('character_id', characterIds);
-		if (exprErr) throw exprErr;
+  async getArc(arcId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.arcs.find(a => a.arc_id === arcId) || null;
+    const { data, error } = await supabase.from('arcs').select('*').eq('arc_id', arcId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
 
-		const exprMap = {};
-		if (expressions && expressions.length > 0) {
-			expressions.forEach(e => {
-				if (!exprMap[e.character_id]) exprMap[e.character_id] = [];
-				exprMap[e.character_id].push(e);
-			});
-			for (const cid of Object.keys(exprMap)) {
-				const list = exprMap[cid];
-				exprMap[cid] = list.find(x => x.name === 'default') || list[0];
-			}
-		}
+  async createArc(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { arc_id: genId('arc'), display_order: 0, ...payload };
+      mockDatabase.arcs.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('arcs').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
 
-		return (characters || []).map(c => {
-			const e = exprMap[c.character_id];
-			return { ...c, avatar_url: e ? (e.avatar_url || '') : '', image_url: e ? (e.full_url || '') : '' };
-		});
-	},
+  async updateArc(arcId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.arcs.findIndex(a => a.arc_id === arcId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.arcs[idx], payload);
+      return mockDatabase.arcs[idx];
+    }
+    const { data, error } = await supabase.from('arcs').update(payload).eq('arc_id', arcId).select().single();
+    if (error) throw error;
+    return data;
+  },
 
-	// ============= Gallery =============
-	async getGalleryByEvent(eventId) {
-		const { data, error } = await supabase.from('gallery').select('*').eq('event_id', eventId).order('display_order', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
+  async deleteArc(arcId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.arcs = mockDatabase.arcs.filter(a => a.arc_id !== arcId);
+      return;
+    }
+    const { error } = await supabase.from('arcs').delete().eq('arc_id', arcId);
+    if (error) throw error;
+  },
 
-	// ============= Suggestions =============
-	async getSuggestionsByArc(arcId) {
-		const { data, error } = await supabase.from('suggestions').select('*').eq('arc_id', arcId).order('position', { ascending: true });
-		if (error) throw error;
-		return data || [];
-	},
-	async getSuggestedEvents(arcId) {
-		const suggestions = await this.getSuggestionsByArc(arcId);
-		if (suggestions.length === 0) return [];
-		const events = [];
-		for (const suggestion of suggestions) {
-			const event = await this.getEvent(suggestion.target_event_id);
-			if (event) events.push({ ...event, suggestion_position: suggestion.position });
-		}
-		return events;
-	},
+  // ===========================================================================
+  // EVENTS
+  // ===========================================================================
+  async getEventsByArc(arcId) {
+    if (USE_MOCK_DB)
+      return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId));
+    const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
 
-	// ============= Character Expressions =============
-	async getExpressionsByCharacter(characterId) {
-		const { data, error } = await supabase.from('charater_expressions').select('*').eq('character_id', characterId);
-		if (error) throw error;
-		return data || [];
-	},
+  async getEvent(eventId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.events.find(e => e.event_id === eventId) || null;
+    const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
 
-	// ============= Assets =============
-	async getAssets() {
-		const { data, error } = await supabase.from('assets').select('*');
-		if (error) throw error;
-		return data || [];
-	},
-	async getAssetsByType(type) {
-		const { data, error } = await supabase.from('assets').select('*').eq('type', type);
-		if (error) throw error;
-		return data || [];
-	},
-	async getAssetsByCategory(category) {
-		const { data, error } = await supabase.from('assets').select('*').eq('category', category);
-		if (error) throw error;
-		return data || [];
-	},
-	async getAsset(assetId) {
-		const { data, error } = await supabase.from('assets').select('*').eq('asset_id', assetId).limit(1);
-		if (error) throw error;
-		return Array.isArray(data) && data.length > 0 ? data[0] : null;
-	}
+  async createEvent(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { event_id: genId('event'), display_order: 0, ...payload };
+      mockDatabase.events.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('events').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateEvent(eventId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.events.findIndex(e => e.event_id === eventId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.events[idx], payload);
+      return mockDatabase.events[idx];
+    }
+    const { data, error } = await supabase.from('events').update(payload).eq('event_id', eventId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteEvent(eventId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.events = mockDatabase.events.filter(e => e.event_id !== eventId);
+      return;
+    }
+    const { error } = await supabase.from('events').delete().eq('event_id', eventId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // STORIES
+  // ===========================================================================
+  async getStoriesByEvent(eventId) {
+    if (USE_MOCK_DB)
+      return sortByOrder(mockDatabase.stories.filter(s => s.event_id === eventId));
+    const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getStory(storyId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.stories.find(s => s.story_id === storyId) || null;
+    const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
+
+  async createStory(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = {
+        story_id: genId('story'),
+        display_order: 0,
+        story_content: { characters: {}, sections: [] },
+        ...payload
+      };
+      mockDatabase.stories.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('stories').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateStory(storyId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.stories.findIndex(s => s.story_id === storyId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.stories[idx], payload);
+      return mockDatabase.stories[idx];
+    }
+    const { data, error } = await supabase.from('stories').update(payload).eq('story_id', storyId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteStory(storyId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.stories = mockDatabase.stories.filter(s => s.story_id !== storyId);
+      return;
+    }
+    const { error } = await supabase.from('stories').delete().eq('story_id', storyId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // CHARACTERS
+  // ===========================================================================
+  async getCharacters() {
+    if (USE_MOCK_DB) return [...mockDatabase.characters];
+    const { data, error } = await supabase.from('characters').select('*');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getCharacter(characterId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.characters.find(c => c.character_id === characterId) || null;
+    const { data, error } = await supabase.from('characters').select('*').eq('character_id', characterId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
+
+  async createCharacter(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { character_id: genId('char'), ...payload };
+      mockDatabase.characters.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('characters').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCharacter(characterId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.characters.findIndex(c => c.character_id === characterId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.characters[idx], payload);
+      return mockDatabase.characters[idx];
+    }
+    const { data, error } = await supabase.from('characters').update(payload).eq('character_id', characterId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCharacter(characterId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.characters = mockDatabase.characters.filter(c => c.character_id !== characterId);
+      return;
+    }
+    const { error } = await supabase.from('characters').delete().eq('character_id', characterId);
+    if (error) throw error;
+  },
+
+  /** Fetch characters for an event (via event_characters join table) */
+  async getCharactersByEvent(eventId) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.event_characters) return [];
+      const ec = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
+      return sortByOrder(ec);
+    }
+    const { data: ec, error: ecErr } = await supabase
+      .from('event_characters').select('character_id').eq('event_id', eventId);
+    if (ecErr) throw ecErr;
+    if (!ec?.length) return [];
+    const ids = ec.map(r => r.character_id);
+    const { data, error } = await supabase.from('characters').select('*').in('character_id', ids);
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ===========================================================================
+  // CHARACTER EXPRESSIONS
+  // ===========================================================================
+  async getExpressionsByCharacter(characterId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.charater_expressions.filter(e => e.character_id === characterId);
+    const { data, error } = await supabase.from('charater_expressions').select('*').eq('character_id', characterId);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createExpression(payload) {
+    if (USE_MOCK_DB) {
+      const maxId = Math.max(0, ...mockDatabase.charater_expressions.map(e => e.id));
+      const newItem = { id: maxId + 1, ...payload };
+      mockDatabase.charater_expressions.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('charater_expressions').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteExpression(id) {
+    if (USE_MOCK_DB) {
+      mockDatabase.charater_expressions = mockDatabase.charater_expressions.filter(e => e.id !== id);
+      return;
+    }
+    const { error } = await supabase.from('charater_expressions').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // ASSETS
+  // ===========================================================================
+  async getAssets() {
+    if (USE_MOCK_DB) return [...mockDatabase.assets];
+    const { data, error } = await supabase.from('assets').select('*');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAssetsByCategory(category) {
+    if (USE_MOCK_DB)
+      return mockDatabase.assets.filter(a => a.category === category);
+    const { data, error } = await supabase.from('assets').select('*').eq('category', category);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAssetsByType(type) {
+    if (USE_MOCK_DB)
+      return mockDatabase.assets.filter(a => a.type === type);
+    const { data, error } = await supabase.from('assets').select('*').eq('type', type);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAsset(assetId) {
+    if (USE_MOCK_DB)
+      return mockDatabase.assets.find(a => a.asset_id === assetId) || null;
+    const { data, error } = await supabase.from('assets').select('*').eq('asset_id', assetId).limit(1);
+    if (error) throw error;
+    return data?.[0] || null;
+  },
+
+  async createAsset(payload) {
+    if (USE_MOCK_DB) {
+      if (mockDatabase.assets.find(a => a.asset_id === payload.asset_id)) throw new Error('duplicate-asset');
+      const newItem = { ...payload };
+      mockDatabase.assets.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('assets').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateAsset(assetId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.assets.findIndex(a => a.asset_id === assetId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.assets[idx], payload);
+      return mockDatabase.assets[idx];
+    }
+    const { data, error } = await supabase.from('assets').update(payload).eq('asset_id', assetId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteAsset(assetId) {
+    if (USE_MOCK_DB) {
+      mockDatabase.assets = mockDatabase.assets.filter(a => a.asset_id !== assetId);
+      return;
+    }
+    const { error } = await supabase.from('assets').delete().eq('asset_id', assetId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // GALLERY
+  // ===========================================================================
+  async getGalleryByEvent(eventId) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.gallery) return [];
+      return sortByOrder(mockDatabase.gallery.filter(g => g.event_id === eventId));
+    }
+    const { data, error } = await supabase.from('gallery').select('*').eq('event_id', eventId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ===========================================================================
+  // SUGGESTIONS
+  // ===========================================================================
+  async getSuggestionsByArc(arcId) {
+    if (USE_MOCK_DB) return []; // no mock data for suggestions
+    const { data, error } = await supabase.from('suggestions').select('*').eq('arc_id', arcId).order('position');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getSuggestedEvents(arcId) {
+    const suggestions = await this.getSuggestionsByArc(arcId);
+    if (!suggestions.length) return [];
+    const events = [];
+    for (const s of suggestions) {
+      const ev = await this.getEvent(s.target_event_id);
+      if (ev) events.push({ ...ev, suggestion_position: s.position });
+    }
+    return events;
+  },
+
+  // ===========================================================================
+  // BATCH HELPERS  (used by storyParser.js for bulk ID→URL resolution)
+  // ===========================================================================
+  /**
+   * Fetch multiple assets by asset_id in one query.
+   * @param {string[]} assetIds
+   * @returns {Object} Map: asset_id → asset row
+   */
+  async getAssetsByIds(assetIds) {
+    if (!assetIds?.length) return {};
+    if (USE_MOCK_DB) {
+      return Object.fromEntries(
+        mockDatabase.assets
+          .filter(a => assetIds.includes(a.asset_id))
+          .map(a => [a.asset_id, a])
+      );
+    }
+    const unique = [...new Set(assetIds)];
+    const { data, error } = await supabase.from('assets').select('*').in('asset_id', unique);
+    if (error) throw error;
+    return Object.fromEntries((data || []).map(a => [a.asset_id, a]));
+  },
+
+  /**
+   * Fetch multiple characters + their default expression in one batch.
+   * @param {string[]} characterIds
+   * @returns {Object} Map: character_id → { character_id, name, avatar_url, full_url }
+   */
+  async getCharactersWithExpressionsByIds(characterIds) {
+    if (!characterIds?.length) return {};
+    if (USE_MOCK_DB) {
+      const map = {};
+      mockDatabase.characters
+        .filter(c => characterIds.includes(c.character_id))
+        .forEach(c => {
+          const exprs = mockDatabase.charater_expressions.filter(e => e.character_id === c.character_id);
+          const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+          map[c.character_id] = {
+            character_id: c.character_id,
+            name: c.name,
+            avatar_url: def.avatar_url || '',
+            full_url:   def.full_url   || '',
+          };
+        });
+      return map;
+    }
+    const unique = [...new Set(characterIds)];
+    const [charRes, exprRes] = await Promise.all([
+      supabase.from('characters').select('*').in('character_id', unique),
+      supabase.from('charater_expressions').select('*').in('character_id', unique),
+    ]);
+    if (charRes.error) throw charRes.error;
+    if (exprRes.error) throw exprRes.error;
+
+    const exprMap = {};
+    (exprRes.data || []).forEach(e => {
+      (exprMap[e.character_id] = exprMap[e.character_id] || []).push(e);
+    });
+
+    return Object.fromEntries(
+      (charRes.data || []).map(c => {
+        const exprs = exprMap[c.character_id] || [];
+        const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+        return [c.character_id, {
+          character_id: c.character_id,
+          name:       c.name,
+          avatar_url: def.avatar_url || '',
+          full_url:   def.full_url   || '',
+        }];
+      })
+    );
+  },
 };

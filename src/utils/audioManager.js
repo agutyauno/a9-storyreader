@@ -8,7 +8,9 @@ export class BGMManager {
     this.currentTrack = null;
     this.isPlaying = false;
     this.isEnabled = true;
+    this.isEnabled = true;
     this.isIntroPlaying = false;
+    this.playToken = 0;
     this.onIntroEnded = this.onIntroEnded.bind(this);
     this.setupAudioElements();
     this.loadState();
@@ -62,7 +64,7 @@ export class BGMManager {
 
   loadTrack(track) {
     if (this.currentTrack && this.currentTrack.id === track.id) return;
-    this.stop();
+    this.stop(false);
     this.currentTrack = track;
 
     const resolvePath = (src) => {
@@ -128,7 +130,8 @@ export class BGMManager {
     this.updateUI();
   }
 
-  stop() {
+  stop(cancelPending = true) {
+    if (cancelPending) this.playToken++;
     this.isPlaying = false;
     this.isIntroPlaying = false;
     this.introAudio.pause();
@@ -140,15 +143,35 @@ export class BGMManager {
 
   async changeTrack(track, fadeTransition = true) {
     if (!this.isEnabled) {
-      this.loadTrack(track);
+      if (track.id || track.intro || track.loop) this.loadTrack(track);
       return;
     }
-    if (fadeTransition && this.isPlaying) await this.fadeOut();
-    this.loadTrack(track);
-    if (this.isPlaying || fadeTransition) {
-      await this.play();
-      if (fadeTransition) await this.fadeIn();
+
+    const currentToken = ++this.playToken;
+
+    if (!track.id && !track.intro && !track.loop) {
+      // Stop audio if it's an empty track (e.g., video block or empty bgm)
+      if (fadeTransition && this.isPlaying) await this.fadeOut();
+      if (this.playToken === currentToken) {
+        this.stop();
+        this.currentTrack = null;
+      }
+      return;
     }
+
+    if (fadeTransition && this.isPlaying) await this.fadeOut();
+
+    if (this.playToken !== currentToken) return; // Abort if stopped or changed
+
+    this.loadTrack(track);
+    await this.play();
+
+    if (this.playToken !== currentToken) {
+      this.pause(); // Just in case it started playing, stop it again
+      return;
+    }
+
+    if (fadeTransition) await this.fadeIn();
   }
 
   fadeOut() {
@@ -219,12 +242,20 @@ export class BGMManager {
   }
 
   setupScrollTriggers(options = {}) {
+    if (this.scrollObserver) {
+      this.scrollObserver.disconnect();
+      this.scrollObserver = null;
+    }
+
     const selector = options.selector || '[data-bgm-id]';
     const threshold = options.threshold || 0;
-    const rootMargin = options.rootMargin || '0px';
+    const rootMargin = options.rootMargin || '0px 0px -50% 0px';
     const triggerElements = Array.from(document.querySelectorAll(selector));
 
-    if (triggerElements.length === 0) return;
+    if (triggerElements.length === 0) {
+      if (this.isPlaying) this.stop();
+      return;
+    }
 
     // Autoplay policy unlocker
     document.addEventListener('click', this.handleFirstClick, { once: true });
@@ -253,7 +284,7 @@ export class BGMManager {
           const trackId = activeElement.dataset.bgmId || '';
           const intro = activeElement.dataset.bgmIntro || null;
           const loop = activeElement.dataset.bgmLoop || null;
-          if (!this.currentTrack || this.currentTrack.id !== trackId) {
+          if (!this.currentTrack || this.currentTrack.id !== trackId || !this.isPlaying) {
             this.changeTrack({ id: trackId, intro, loop }, true);
           }
         }
@@ -269,7 +300,7 @@ export class SFXManager {
     this.basePath = options.basePath || '/assets/audio/sfx/';
     this.selector = options.selector || '.sfx_player';
     this.threshold = options.threshold || 0.5;
-    this.rootMargin = options.rootMargin || '0px 0px -30% 0px';
+    this.rootMargin = options.rootMargin || '0px 0px -50% 0px';
     this.volume = options.volume || 1;
     this.isEnabled = true;
     this.playedElements = new Set();
@@ -305,6 +336,7 @@ export class SFXManager {
   }
 
   init() {
+    this.playedElements.clear();
     const sfxElements = document.querySelectorAll(this.selector);
     if (sfxElements.length === 0) return;
 
@@ -344,6 +376,11 @@ export class SFXManager {
   }
 
   setupScrollObserver() {
+    if (this.scrollObserver) {
+      this.scrollObserver.disconnect();
+      this.scrollObserver = null;
+    }
+
     this.scrollObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {

@@ -60,7 +60,7 @@ export const StoryRenderer = {
 
   renderVideo(element, styles) {
     return `
-      <div class="${cx('dialogue-video-box', styles)}" data-bgm-id="">
+      <div class="${cx('dialogue-video-box', styles)}" data-bgm-id="" data-bgm-intro="" data-bgm-loop="">
         <video src="${element.src}" controls></video>
       </div>
     `;

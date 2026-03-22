@@ -32,7 +32,7 @@
 	padding: var(--spacing-base) 0;
 }
 
-#story_selection-panel {
+.story-selection-panel {
 	background-color: var(--color-bg-dark);
 	padding: var(--spacing-base);
 	border-radius: var(--radius-base);
@@ -120,11 +120,11 @@
 
 /* ================================================================================================= */
 /* Character List */
-#character-section {
+.character-section {
 	margin-top: var(--spacing-sm);
 }
 
-#character_list {
+.character-list {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 	gap: var(--spacing-lg);
@@ -168,9 +168,9 @@
 
 /* ================================================================================================= */
 /* Gallery */
-#gallery {
+.gallery {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 	gap: var(--spacing-lg);
 }
 

@@ -1,0 +1,115 @@
+/**
+ * Serializes `story_content` JSON back into VNScript text format.
+ * 
+ * When data comes from `parseWithDB()`, uses `_asset_id` fields to output IDs
+ * instead of resolved URLs. Falls back to the raw value if `_asset_id` is absent.
+ */
+export const StoryScriptSerializer = {
+    /**
+     * Convert story_content JSON into VN script text
+     * @param {Object} storyContent
+     * @returns {string}
+     */
+    serialize(storyContent) {
+        if (!storyContent) return '';
+        const lines = [];
+
+        // Characters
+        const characters = storyContent.characters;
+        if (characters && typeof characters === 'object' && !Array.isArray(characters)) {
+            const entries = Object.entries(characters);
+            if (entries.length > 0) {
+                lines.push('# Characters');
+                for (const [name, data] of entries) {
+                    if (name.includes('.')) continue; // skip expression variants
+
+                    let line = `@char ${name}`;
+                    // Always output character_id (the DB key)
+                    if (data.character_id) line += ` id="${data.character_id}"`;
+                    // avatar/full_image are resolved URLs — don't output them back to script
+                    // The parser will re-resolve from character_id when loading
+                    lines.push(line);
+                }
+                lines.push('');
+            }
+        }
+
+        // Sections
+        const sections = storyContent.sections || [];
+        sections.forEach((section) => {
+            lines.push('@section');
+            lines.push('');
+
+            (section.elements || []).forEach(element => {
+                if (element.type === 'video') {
+                    this.serializeVideo(element, lines);
+                } else if (element.type === 'background') {
+                    this.serializeBackground(element, lines);
+                }
+            });
+        });
+
+        // Cleanup extra newlines
+        return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    },
+
+    serializeVideo(el, lines) {
+        let line = '@video';
+        // Prefer _asset_id (original ID) over resolved src URL
+        const src = el._asset_id || el.src;
+        if (src) line += ` src="${src}"`;
+        lines.push(line);
+        lines.push('');
+    },
+
+    serializeBackground(el, lines) {
+        // Prefer _asset_id (original ID) over resolved image URL
+        const imageId = el._asset_id || el.image || '';
+        lines.push(`@bg "${imageId}"`);
+
+        if (el.bgm && (el.bgm.id || el.bgm._id || el.bgm.intro || el.bgm.loop)) {
+            let bgmLine = '@bgm';
+            // Prefer _id (original) for the bgm id field
+            const bgmId = el.bgm._id || el.bgm.id;
+            if (bgmId) bgmLine += ` id="${bgmId}"`;
+            if (el.bgm.intro) bgmLine += ` intro="${el.bgm.intro}"`;
+            if (el.bgm.loop) bgmLine += ` loop="${el.bgm.loop}"`;
+            lines.push(bgmLine);
+        }
+
+        (el.dialogues || []).forEach(d => {
+            switch (d.type) {
+                case 'dialogue':
+                    lines.push(this.formatDialogueLine(d.name, d.left, d.right, d.text));
+                    break;
+                case 'sfx': {
+                    const sfxSrc = d._asset_id || d.src || '';
+                    lines.push(`@sfx "${d.name || ''}" src="${sfxSrc}"`);
+                    break;
+                }
+                case 'decision':
+                    this.serializeDecision(d, lines);
+                    break;
+                case 'choice_response':
+                    lines.push(`@response "${d.group_id || ''}" ${d.choice_value || 0}`);
+                    lines.push(this.formatDialogueLine(d.name, d.left, d.right, d.text));
+                    break;
+            }
+        });
+        lines.push('');
+    },
+
+    serializeDecision(d, lines) {
+        let line = `@decision "${d.group_id || ''}"`;
+        if (d.left || d.right) {
+            line += ` [${d.left || ''}, ${d.right || ''}]`;
+        }
+        lines.push(line);
+        (d.choices || []).forEach(choice => lines.push(`- ${choice}`));
+    },
+
+    formatDialogueLine(name, left, right, text) {
+        const charPart = (left || right) ? ` [${left || ''}, ${right || ''}]` : '';
+        return `${name || '???'}${charPart}: ${text || ''}`;
+    }
+};

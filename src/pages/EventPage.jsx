@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
 import styles from '../styles/EventPage.module.css';
@@ -28,6 +28,7 @@ export default function EventPage() {
   // Modals state
   const [activeModal, setActiveModal] = useState(null); // 'character' | 'gallery' | null
   const [modalData, setModalData] = useState({});
+  const infoRef = useRef(null);
 
   useEffect(() => {
     async function loadData() {
@@ -48,16 +49,16 @@ export default function EventPage() {
         ]);
 
         const AVATAR_FALLBACK = '/assets/images/character/blank.png';
-        const formattedCharacters = ch.map(c => ({
-          id: c.character_id,
+        const formattedCharacters = ch.map((c, index) => ({
+          id: c.character_id || `char-${index}`,
           name: c.name,
           avatar: c.avatar_url || AVATAR_FALLBACK,
           fullImage: c.image_url || AVATAR_FALLBACK,
           description: c.description
         }));
 
-        const formattedGallery = ga.map(g => ({
-          id: g.gallery_id,
+        const formattedGallery = ga.map((g, index) => ({
+          id: g.gallery_id || `img-${index}`,
           title: g.title,
           image: g.image_url || '/assets/images/icon/default.png'
         }));
@@ -81,7 +82,7 @@ export default function EventPage() {
     if (!event) return;
 
     const updateStickyState = () => {
-      const infoSection = document.getElementById('info');
+      const infoSection = infoRef.current;
       if (!infoSection) return;
       const globalHeader = document.querySelector('header');
       const headerHeight = globalHeader ? globalHeader.offsetHeight : 0;
@@ -128,17 +129,17 @@ export default function EventPage() {
       <main>
         <div className={cx("container")}>
           {arcRegionId && (
-            <Link id="back-to-region-btn" className={cx("back-to-region-btn")} to={`/region/${arcRegionId}`} aria-label="Quay lại trang region">
+            <Link className={cx("back-to-region-btn")} to={`/region/${arcRegionId}`} aria-label="Quay lại trang region">
               ← Quay lại Region
             </Link>
           )}
 
-          <div id="info">
+          <div id="info" ref={infoRef}>
             <h2 className={cx("info-title")}>{event.name}</h2>
             <p className={cx("info-description")}>{event.description}</p>
           </div>
 
-          <div id="story_selection-panel" className={cx("selection-grid")}>
+          <div className={cx("story-selection-panel selection-grid")}>
             {stories.length === 0 ? (
               <p className={cx("no-data")}>Chưa có truyện cho sự kiện này.</p>
             ) : (
@@ -151,14 +152,14 @@ export default function EventPage() {
           </div>
 
           {/* Characters Section */}
-          <section className={cx("collapsible-section")} id="character-section">
+          <section className={cx("collapsible-section character-section")}>
             <div className={cx("collapsible-header")} onClick={() => setCharCollapsed(!charCollapsed)}>
               <h3 className={cx("section-title")}>Nhân Vật</h3>
               <button className={cx("toggle-btn")} aria-expanded={!charCollapsed}>
                 <span className={cx("toggle-icon")}>-</span>
               </button>
             </div>
-            <div className={cx(`collapsible-content ${charCollapsed ? 'collapsed' : ''}`)} id="character_list">
+            <div className={cx(`collapsible-content character-list ${charCollapsed ? 'collapsed' : ''}`)}>
               {characters.map(char => (
                 <div key={char.id} className={cx("character-card")} onClick={() => openModal('character', char)}>
                   <img src={char.avatar} alt={char.name} className={cx("character-avatar")} />
@@ -169,14 +170,14 @@ export default function EventPage() {
           </section>
 
           {/* Gallery Section */}
-          <section className={cx("collapsible-section")} id="gallery-section">
+          <section className={cx("collapsible-section gallery-section")}>
             <div className={cx("collapsible-header")} onClick={() => setGalleryCollapsed(!galleryCollapsed)}>
               <h3 className={cx("section-title")}>Thư Viện</h3>
               <button className={cx("toggle-btn")} aria-expanded={!galleryCollapsed}>
                 <span className={cx("toggle-icon")}>-</span>
               </button>
             </div>
-            <div className={cx(`collapsible-content ${galleryCollapsed ? 'collapsed' : ''}`)} id="gallery">
+            <div className={cx(`collapsible-content gallery ${galleryCollapsed ? 'collapsed' : ''}`)}>
               {gallery.map(item => (
                 <div key={item.id} className={cx("gallery-item")} onClick={() => openModal('gallery', item)}>
                   <img src={item.image} alt={item.title} className={cx("gallery-image")} />
@@ -189,7 +190,7 @@ export default function EventPage() {
       </main>
 
       {/* Character Modal */}
-      <div id="character-modal" className={cx(`modal ${activeModal === 'character' ? 'active' : ''}`)} aria-hidden={activeModal !== 'character'} role="dialog">
+      <div className={cx(`modal character-modal ${activeModal === 'character' ? 'active' : ''}`)} aria-hidden={activeModal !== 'character'} role="dialog">
         <div className={cx("modal-overlay")} onClick={closeModal}></div>
         <div className={cx("modal-container")}>
           <button className={cx("modal-close")} onClick={closeModal} aria-label="Close">x</button>
@@ -202,7 +203,7 @@ export default function EventPage() {
       </div>
 
       {/* Gallery Modal */}
-      <div id="gallery-modal" className={cx(`modal ${activeModal === 'gallery' ? 'active' : ''}`)} aria-hidden={activeModal !== 'gallery'} role="dialog">
+      <div className={cx(`modal gallery-modal ${activeModal === 'gallery' ? 'active' : ''}`)} aria-hidden={activeModal !== 'gallery'} role="dialog">
         <div className={cx("modal-overlay")} onClick={closeModal}></div>
         <div className={cx("modal-container")}>
           <button className={cx("modal-close")} onClick={closeModal} aria-label="Close">x</button>

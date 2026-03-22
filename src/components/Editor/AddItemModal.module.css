@@ -1,0 +1,138 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    min-width: 380px;
+    max-width: 460px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    color: var(--color-text-primary);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    transition: color 0.2s;
+}
+
+.closeBtn:hover {
+    color: var(--color-text-primary);
+}
+
+.modalBody {
+    padding: 16px 20px;
+}
+
+.formGroup {
+    margin-bottom: 14px;
+}
+
+.formGroup label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #ff6b6b;
+}
+
+.formGroup input,
+.formGroup textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    transition: var(--transition-base);
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: var(--color-accent-light);
+    box-shadow: 0 0 0 2px rgba(184, 169, 255, 0.15);
+}
+
+.formGroup textarea {
+    resize: none;
+}
+
+.formGroup small {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.cancelBtn {
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.cancelBtn:hover {
+    background: var(--color-bg-secondary);
+}
+
+.submitBtn {
+    padding: 7px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-bg-dark);
+    background: var(--color-accent-light);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.submitBtn:hover {
+    background: var(--color-accent);
+}

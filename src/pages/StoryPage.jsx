@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
 import { StoryRenderer } from '../utils/storyRenderer';
 import { BGMManager, SFXManager } from '../utils/audioManager';
-import { mockStoryData } from '../utils/mockStoryData';
+import { StoryScriptParser } from '../utils/storyParser';
 import styles from '../styles/StoryPage.module.css';
 
 export default function StoryPage() {
@@ -45,15 +45,16 @@ export default function StoryPage() {
       if (!id) return;
 
       try {
-        // OVERRIDE FOR TESTING MOCK DATA
-        // const fetchedStory = await SupabaseAPI.getStory(id);
-        const fetchedStory = mockStoryData;
+        // Fetch from API (mock or real Supabase based on USE_MOCK_DB flag)
+        const fetchedStory = await SupabaseAPI.getStory(id);
 
         if (!fetchedStory) {
           setError('Không tìm thấy truyện.');
           setLoading(false);
           return;
         }
+
+
 
         setStory(fetchedStory);
         document.title = `${fetchedStory.name} - Arknights Story Reader`;
@@ -75,6 +76,7 @@ export default function StoryPage() {
     }
 
     fetchStoryData();
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     // Cleanup audio on unmount
     return () => {
