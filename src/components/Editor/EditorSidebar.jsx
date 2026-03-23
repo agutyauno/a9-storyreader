@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SidebarTabs from './SidebarTabs';
 import StoryTreePanel from './StoryTreePanel';
@@ -8,7 +8,7 @@ import AddAssetModal from './AddAssetModal';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import pageStyles from '../../pages/EditorPage.module.css';
 
-export default function EditorSidebar({ metadata, onMetadataChange, onStorySelect, currentStoryId }) {
+export default function EditorSidebar({ metadata, onMetadataChange, onStorySelect, currentStoryId, reloadRef, onPickAsset }) {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('story');
 
@@ -22,14 +22,12 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
     const [assetModalOpen, setAssetModalOpen] = useState(false);
     const assetReloadRef = useRef(null);
 
-    // ─── Metadata form ─────────────────────────────────────────────────────────
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        onMetadataChange(prev => ({
-            ...prev,
-            [name]: name === 'display_order' ? (value ? parseInt(value) : null) : value
-        }));
-    };
+    // Expose tree reload to parent
+    useEffect(() => {
+        if (reloadRef) {
+            reloadRef.current = () => reloadTreeRef.current?.();
+        }
+    }, [reloadRef]);
 
     // ─── Story tree CRUD ───────────────────────────────────────────────────────
     const handleAddItem = (type, parentNode, reloadFn) => {
@@ -68,12 +66,28 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 created = await SupabaseAPI.createStory({
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.display_order ?? 0,
+                    display_order: formData.displayOrder ?? 0,
                     event_id: modalParent?.event_id || modalParent?.id,
                     story_content: { characters: {}, sections: [] },
                 });
+            } else if (modalType === 'character') {
+                created = await SupabaseAPI.createCharacter({
+                    id: formData.id,
+                    name: formData.name,
+                    description: formData.description,
+                    expressions: formData.expressions
+                });
+            } else if (modalType === 'gallery') {
+                created = await SupabaseAPI.createGallery({
+                    id: formData.id,
+                    name: formData.name,
+                    description: formData.description,
+                    displayOrder: formData.displayOrder ?? 0,
+                    event_id: modalParent?.event_id || modalParent?.id || null, // Optional FK
+                    imageUrl: formData.imageUrl
+                });
             }
-            // Reload tree
+            // Reload tree or asset list
             reloadTreeRef.current?.();
             setModalOpen(false);
 
@@ -90,24 +104,39 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
     // ─── Asset CRUD ────────────────────────────────────────────────────────────
     const handleAssetSubmit = async (formData) => {
         try {
-            await SupabaseAPI.createAsset({
-                asset_id: formData.asset_id,
-                name: formData.name,
-                type: formData.type,
-                category: formData.category,
-                url: formData.url || '',
-            });
+            if (formData.type === 'character') {
+                await SupabaseAPI.createCharacter({
+                    id: formData.asset_id,
+                    name: formData.name,
+                    description: '',
+                }, formData.expressions || []);
+            } else {
+                await SupabaseAPI.createAsset({
+                    asset_id: formData.asset_id,
+                    name: formData.name,
+                    type: formData.type,
+                    category: formData.category,
+                    url: formData.url || '',
+                });
+            }
             assetReloadRef.current?.();
             setAssetModalOpen(false);
         } catch (err) {
-            console.error('Create asset failed:', err);
-            alert(`Lỗi tạo asset: ${err.message}`);
+            console.error('Create asset/character failed:', err);
+            alert(`Lỗi tạo: ${err.message}`);
         }
     };
 
-    const handleAddAsset = (reloadFn) => {
+    const handleAddAsset = (type, reloadFn) => {
         assetReloadRef.current = reloadFn;
-        setAssetModalOpen(true);
+        if (type === 'character' || type === 'gallery') {
+            setModalType(type);
+            setModalParent(null);
+            reloadTreeRef.current = reloadFn;
+            setModalOpen(true);
+        } else {
+            setAssetModalOpen(true);
+        }
     };
 
     return (
@@ -117,58 +146,11 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
             {/* Story Tab */}
             {activeTab === 'story' && (
-                <>
-                    <StoryTreePanel
-                        onStorySelect={onStorySelect}
-                        onAddItem={handleAddItem}
-                        currentStoryId={currentStoryId}
-                    />
-
-                    {/* Metadata for currently loaded story */}
-                    <div className={pageStyles.sidebarContent} style={{ borderTop: '1px solid var(--color-border)', flexShrink: 0 }}>
-                        <h2 className={pageStyles.sidebarTitle}>Properties</h2>
-
-                        <div className={pageStyles.formGroup}>
-                            <label htmlFor="sidebar-name" className={pageStyles.formLabel}>Name</label>
-                            <input
-                                id="sidebar-name"
-                                name="name"
-                                type="text"
-                                value={metadata.name || ''}
-                                onChange={handleChange}
-                                className={pageStyles.formInput}
-                                placeholder="Story Title"
-                            />
-                        </div>
-
-                        <div className={pageStyles.formGroup}>
-                            <label htmlFor="sidebar-order" className={pageStyles.formLabel}>Display Order</label>
-                            <input
-                                id="sidebar-order"
-                                name="display_order"
-                                type="number"
-                                min="0"
-                                value={metadata.display_order ?? ''}
-                                onChange={handleChange}
-                                className={pageStyles.formInput}
-                                placeholder="e.g. 1"
-                            />
-                        </div>
-
-                        <div className={pageStyles.formGroup}>
-                            <label htmlFor="sidebar-desc" className={pageStyles.formLabel}>Description</label>
-                            <textarea
-                                id="sidebar-desc"
-                                name="description"
-                                rows="3"
-                                value={metadata.description || ''}
-                                onChange={handleChange}
-                                className={pageStyles.formTextarea}
-                                placeholder="Brief summary..."
-                            />
-                        </div>
-                    </div>
-                </>
+                <StoryTreePanel
+                    onStorySelect={onStorySelect}
+                    onAddItem={handleAddItem}
+                    currentStoryId={currentStoryId}
+                />
             )}
 
             {/* Asset Tab */}

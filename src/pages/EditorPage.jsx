@@ -5,6 +5,8 @@ import { ArrowLeft, ExternalLink, Save, Loader } from 'lucide-react';
 import EditorSidebar from '../components/Editor/EditorSidebar';
 import EditorToolbar from '../components/Editor/EditorToolbar';
 import CodeEditor from '../components/Editor/CodeEditor';
+import MetadataForm from '../components/Editor/MetadataForm';
+import AssetPickerModal from '../components/Editor/AssetPickerModal';
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
 
 import { StoryScriptParser } from '../utils/storyParser';
@@ -34,12 +36,36 @@ export default function EditorPage() {
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
 
+    // ─── Entity selection (Region/Arc/Event clicked in tree) ───────────────────
+    const [selectedEntity, setSelectedEntity] = useState(null);
+    // 'story' = code editor, 'entity' = metadata form, null = blank
+    const [editorMode, setEditorMode] = useState(storyId ? 'story' : null);
+
+    // ─── Asset Picker Modal ────────────────────────────────────────────────────
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const pickerCallbackRef = useRef(null);
+
+    const openPicker = (callback) => {
+        pickerCallbackRef.current = callback;
+        setPickerOpen(true);
+    };
+
+    const handlePickerSelect = (url) => {
+        pickerCallbackRef.current?.(url);
+        pickerCallbackRef.current = null;
+        setPickerOpen(false);
+    };
+
+    // ─── Sidebar reload ref ────────────────────────────────────────────────────
+    const sidebarReloadRef = useRef(null);
+
     // ─── Initial Load ──────────────────────────────────────────────────────────
     useEffect(() => {
         async function loadStory() {
             if (!storyId) {
                 // New story — start with blank template
                 setScriptText(`# Characters\n@char Doctor id="char_doctor"\n\n@section\n\n@bg "bg_amiya_awake"\nDoctor [doctor, ]: Welcome to the editor!`);
+                setEditorMode('story');
                 return;
             }
 
@@ -62,6 +88,7 @@ export default function EditorPage() {
                     ? StoryScriptSerializer.serialize(item.story_content)
                     : '';
                 setScriptText(text);
+                setEditorMode('story');
             } catch (err) {
                 console.error('Failed to load story:', err);
                 setError('Không thể tải dữ liệu story.');
@@ -74,6 +101,7 @@ export default function EditorPage() {
 
     // ─── Debounced Async Live Preview ─────────────────────────────────────────
     useEffect(() => {
+        if (editorMode !== 'story') return;
         const timerId = setTimeout(async () => {
             if (!scriptText) return;
             setPreviewLoading(true);
@@ -92,7 +120,7 @@ export default function EditorPage() {
             }
         }, 600);
         return () => clearTimeout(timerId);
-    }, [scriptText, metadata.name]);
+    }, [scriptText, metadata.name, editorMode]);
 
     // ─── Handlers ─────────────────────────────────────────────────────────────
     const handleInsertTemplate = (template) => {
@@ -117,7 +145,6 @@ export default function EditorPage() {
             } else {
                 const created = await SupabaseAPI.createStory(payload);
                 setMetadata(prev => ({ ...prev, story_id: created.story_id }));
-                // Update URL to reflect the new story ID
                 navigate(`/editor/${created.story_id}`, { replace: true });
                 alert('Story đã được tạo!');
             }
@@ -134,6 +161,23 @@ export default function EditorPage() {
         const previewObj = { ...metadata, story_content: parsed };
         sessionStorage.setItem('preview_story', JSON.stringify(previewObj));
         window.open('/?preview=1', '_blank');
+    };
+
+    // ─── Entity selection from sidebar tree ───────────────────────────────────
+    const handleEntitySelect = (node) => {
+        if (node.type === 'story') {
+            // Navigate to story editor
+            navigate(`/editor/${node.story_id || node.id}`);
+            setEditorMode('story');
+            setSelectedEntity(null);
+        } else {
+            setSelectedEntity(node);
+            setEditorMode('entity');
+        }
+    };
+
+    const handleEntitySaved = () => {
+        sidebarReloadRef.current?.();
     };
 
     // ─── Loading / Error states ────────────────────────────────────────────────
@@ -166,23 +210,33 @@ export default function EditorPage() {
                         <ArrowLeft size={20} />
                     </button>
                     <h1 className={styles.headerTitle}>
-                        {metadata.story_id ? metadata.name : 'New Story'}
-                        <span>{metadata.story_id ? 'Edit' : 'Draft'}</span>
+                        {editorMode === 'entity' && selectedEntity
+                            ? selectedEntity.name
+                            : (metadata.story_id ? metadata.name : 'New Story')}
+                        <span>
+                            {editorMode === 'entity'
+                                ? selectedEntity?.type?.charAt(0).toUpperCase() + selectedEntity?.type?.slice(1)
+                                : (metadata.story_id ? 'Edit' : 'Draft')}
+                        </span>
                     </h1>
                 </div>
 
                 <div className={styles.headerRight}>
-                    <button onClick={handleOpenStandalonePreview} className={styles.btnSecondary}>
-                        <ExternalLink size={16} />
-                        Full Preview
-                    </button>
-                    <button onClick={handleSave} className={styles.btnPrimary} disabled={saving}>
-                        {saving
-                            ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                            : <Save size={16} />
-                        }
-                        {saving ? 'Đang lưu...' : 'Lưu'}
-                    </button>
+                    {editorMode === 'story' && (
+                        <>
+                            <button onClick={handleOpenStandalonePreview} className={styles.btnSecondary}>
+                                <ExternalLink size={16} />
+                                Full Preview
+                            </button>
+                            <button onClick={handleSave} className={styles.btnPrimary} disabled={saving}>
+                                {saving
+                                    ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                    : <Save size={16} />
+                                }
+                                {saving ? 'Đang lưu...' : 'Lưu'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -192,40 +246,66 @@ export default function EditorPage() {
                 <EditorSidebar
                     metadata={metadata}
                     onMetadataChange={setMetadata}
+                    onStorySelect={handleEntitySelect}
                     currentStoryId={metadata.story_id}
+                    reloadRef={sidebarReloadRef}
+                    onPickAsset={openPicker}
                 />
 
-                {/* Center - Code Editor */}
-                <div className={styles.editorColumn}>
-                    <EditorToolbar onInsert={handleInsertTemplate} />
-                    <div className={styles.editorArea}>
-                        <CodeEditor
-                            ref={editorRef}
-                            value={scriptText}
-                            onChange={(val) => setScriptText(val)}
-                        />
-                    </div>
-                </div>
-
-                {/* Right - Live Preview */}
-                <div className={styles.previewColumn}>
-                    <div className={styles.previewHeader}>
-                        <span className={styles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
-                        <span className={styles.previewLabel}>
-                            {previewLoading ? 'Parsing...' : 'Live Preview'}
-                        </span>
-                    </div>
-                    <div className={styles.previewBody}>
-                        {previewData?.story_content ? (
-                            <StoryRenderer previewData={previewData} isPreviewMode={true} />
-                        ) : (
-                            <div className={styles.previewPlaceholder}>
-                                Bắt đầu viết script để xem preview...
+                {/* Center - Conditional: Code Editor or Metadata Form */}
+                {editorMode === 'story' ? (
+                    <>
+                        <div className={styles.editorColumn}>
+                            <EditorToolbar onInsert={handleInsertTemplate} />
+                            <div className={styles.editorArea}>
+                                <CodeEditor
+                                    ref={editorRef}
+                                    value={scriptText}
+                                    onChange={(val) => setScriptText(val)}
+                                />
                             </div>
-                        )}
+                        </div>
+
+                        {/* Right - Live Preview */}
+                        <div className={styles.previewColumn}>
+                            <div className={styles.previewHeader}>
+                                <span className={styles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
+                                <span className={styles.previewLabel}>
+                                    {previewLoading ? 'Parsing...' : 'Live Preview'}
+                                </span>
+                            </div>
+                            <div className={styles.previewBody}>
+                                {previewData?.story_content ? (
+                                    <StoryRenderer previewData={previewData} isPreviewMode={true} />
+                                ) : (
+                                    <div className={styles.previewPlaceholder}>
+                                        Bắt đầu viết script để xem preview...
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                ) : editorMode === 'entity' ? (
+                    <MetadataForm
+                        entity={selectedEntity}
+                        onSaved={handleEntitySaved}
+                        onPickAsset={openPicker}
+                    />
+                ) : (
+                    <div className={styles.editorColumn}>
+                        <div className={styles.previewPlaceholder} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            Chọn một item từ Story Tree để bắt đầu...
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
+
+            {/* Asset Picker Modal */}
+            <AssetPickerModal
+                isOpen={pickerOpen}
+                onClose={() => setPickerOpen(false)}
+                onSelect={handlePickerSelect}
+            />
         </div>
     );
 }

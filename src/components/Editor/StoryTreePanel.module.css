@@ -17,7 +17,7 @@
 }
 
 .panelTitle {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -29,7 +29,7 @@
     align-items: center;
     gap: 4px;
     padding: 3px 8px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-accent);
     background: transparent;
@@ -58,7 +58,7 @@
     padding: 32px 16px;
     gap: 8px;
     color: var(--color-text-tertiary);
-    font-size: 12px;
+    font-size: 14px;
     text-align: center;
 }
 
@@ -95,7 +95,7 @@
     align-items: center;
     gap: 5px;
     flex: 1;
-    font-size: 13px;
+    font-size: 15px;
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -135,8 +135,8 @@
 .nodeActions {
     display: flex;
     align-items: center;
-    gap: 2px;
-    opacity: 0;
+    gap: 4px;
+    opacity: 0.3; /* Partially visible by default */
     transition: opacity 0.15s;
     flex-shrink: 0;
 }
@@ -149,19 +149,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    background: transparent;
-    border: none;
-    border-radius: 3px;
+    width: 26px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
     cursor: pointer;
     color: var(--color-text-tertiary);
-    transition: background 0.12s, color 0.12s;
+    transition: all 0.12s;
 }
 
 .actionBtn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.15);
     color: var(--color-text-primary);
+    border-color: var(--color-accent);
 }
 
 .actionBtn.danger:hover {

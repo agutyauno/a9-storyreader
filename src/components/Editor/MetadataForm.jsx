@@ -1,0 +1,159 @@
+import React, { useState, useEffect } from 'react';
+import { Save, Loader, Image as ImageIcon } from 'lucide-react';
+import { SupabaseAPI } from '../../services/supabaseApi';
+import styles from './MetadataForm.module.css';
+
+/**
+ * Metadata editor form for Region, Arc, Event entities.
+ * Props:
+ *   entity    — the selected tree node object
+ *   onSaved() — callback after successful save (to reload tree)
+ *   onPickAsset(callback) — opens AssetPickerModal, calls callback(url) on select
+ */
+export default function MetadataForm({ entity, onSaved, onPickAsset }) {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [displayOrder, setDisplayOrder] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    // Sync form when entity changes
+    useEffect(() => {
+        if (!entity) return;
+        setName(entity.name || '');
+        setDescription(entity.description || '');
+        setDisplayOrder(entity.display_order ?? '');
+        if (entity.type === 'region') setImageUrl(entity.icon_url || '');
+        else if (entity.type === 'event') setImageUrl(entity.image_url || '');
+        else setImageUrl('');
+    }, [entity]);
+
+    if (!entity) return null;
+
+    const typeLabel = entity.type.charAt(0).toUpperCase() + entity.type.slice(1);
+    const showImage = entity.type === 'region' || entity.type === 'event';
+    const imageLabel = entity.type === 'region' ? 'Icon URL' : 'Banner Image URL';
+
+    const handleSave = async () => {
+        if (!name.trim()) return;
+        setSaving(true);
+        try {
+            const payload = {
+                name: name.trim(),
+                description: description.trim() || null,
+                display_order: displayOrder !== '' ? parseInt(displayOrder) : null,
+            };
+            if (entity.type === 'region') {
+                payload.icon_url = imageUrl.trim() || null;
+                await SupabaseAPI.updateRegion(entity.region_id || entity.id, payload);
+            } else if (entity.type === 'arc') {
+                await SupabaseAPI.updateArc(entity.arc_id || entity.id, payload);
+            } else if (entity.type === 'event') {
+                payload.image_url = imageUrl.trim() || null;
+                await SupabaseAPI.updateEvent(entity.event_id || entity.id, payload);
+            }
+            onSaved?.();
+        } catch (err) {
+            console.error('Save metadata failed:', err);
+            alert(`Lưu thất bại: ${err.message}`);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleBrowse = () => {
+        onPickAsset?.((selectedUrl) => {
+            setImageUrl(selectedUrl);
+        });
+    };
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h2 className={styles.title}>{name || typeLabel}</h2>
+                <span className={styles.typeBadge}>{typeLabel}</span>
+            </div>
+
+            <div className={styles.form}>
+                {/* Name + Display Order row */}
+                <div className={styles.grid}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Name *</label>
+                        <input
+                            className={styles.input}
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Enter name"
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Display Order</label>
+                        <input
+                            className={styles.input}
+                            type="number"
+                            min="0"
+                            value={displayOrder}
+                            onChange={e => setDisplayOrder(e.target.value)}
+                            placeholder="0"
+                        />
+                    </div>
+                </div>
+
+                {/* Description */}
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Description</label>
+                    <textarea
+                        className={styles.textarea}
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Enter description (optional)"
+                    />
+                </div>
+
+                {/* Image URL (Region icon / Event banner) */}
+                {showImage && (
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>{imageLabel}</label>
+                        <div className={styles.imageInputRow}>
+                            <input
+                                className={styles.input}
+                                type="text"
+                                value={imageUrl}
+                                onChange={e => setImageUrl(e.target.value)}
+                                placeholder="Asset URL or paste link"
+                            />
+                            <button
+                                type="button"
+                                className={styles.browseBtn}
+                                title="Browse Assets"
+                                onClick={handleBrowse}
+                            >
+                                <ImageIcon size={16} />
+                            </button>
+                        </div>
+                        {imageUrl && (
+                            <div className={styles.imagePreview}>
+                                <img src={imageUrl} alt="Preview" />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Save */}
+                <div className={styles.actions}>
+                    <button
+                        className={styles.saveBtn}
+                        onClick={handleSave}
+                        disabled={saving || !name.trim()}
+                    >
+                        {saving
+                            ? <Loader size={16} className={styles.spinner} />
+                            : <Save size={16} />}
+                        {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

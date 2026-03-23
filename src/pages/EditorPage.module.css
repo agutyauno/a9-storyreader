@@ -10,8 +10,33 @@
     color: var(--color-text-primary);
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
+
+    /* Overall font size increase for children using variables */
+    --font-size-xs: 0.95rem;
+    /* ~15px */
+    --font-size-sm: 1.05rem;
+    /* ~17px */
+    --font-size-base: 1.1rem;
+    /* ~18px */
+    --font-size-lg: 1.25rem;
+    /* ~20px */
+    --font-size-xl: 1.5rem;
+    /* ~24px */
+
     /* Override the body padding-top from global.css */
     margin-top: -6rem;
+}
+
+/* ---- Hide scrollbars globally within the editor ---- */
+.editorPage *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.editorPage * {
+    scrollbar-width: none;
+    /* Firefox */
 }
 
 /* ---- Top Header Bar ---- */
@@ -128,6 +153,8 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    -ms-overflow-style: none;
+    /* IE/Edge */
 }
 
 /* -- Center Editor Column -- */
@@ -186,12 +213,19 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .previewLabel {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
@@ -246,7 +280,7 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--color-text-secondary);
     background-color: var(--color-bg-secondary);
@@ -288,7 +322,7 @@
 }
 
 .formLabel {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
@@ -344,7 +378,7 @@
 }
 
 .hintsBox h3 {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
@@ -359,7 +393,7 @@
 }
 
 .hintsBox li {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--color-text-tertiary);
     margin-bottom: 4px;
     line-height: 1.5;
@@ -370,4 +404,8 @@
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 11px;
+}
+
+.addBtn {
+    background-color: var(--color-bg-dark);
 }

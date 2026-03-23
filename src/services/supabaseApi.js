@@ -243,14 +243,52 @@ export const SupabaseAPI = {
   },
 
   async createCharacter(payload) {
+    const { expressions, ...charData } = payload;
     if (USE_MOCK_DB) {
-      const newItem = { character_id: genId('char'), ...payload };
+      const newItem = { 
+        id: Math.max(0, ...mockDatabase.characters.map(c => c.id || 0)) + 1,
+        character_id: charData.id || genId('char'), 
+        name: charData.name,
+        description: charData.description 
+      };
       mockDatabase.characters.push(newItem);
+      
+      if (expressions?.length) {
+        expressions.forEach(e => {
+          mockDatabase.charater_expressions.push({
+            id: Math.max(0, ...mockDatabase.charater_expressions.map(ex => ex.id || 0)) + 1,
+            character_id: newItem.character_id,
+            name: e.name,
+            avatar_url: e.avatar_url,
+            full_url: e.full_url
+          });
+        });
+      }
       return newItem;
     }
-    const { data, error } = await supabase.from('characters').insert(payload).select().single();
+    
+    // For real Supabase, we transform 'id' from formData to 'character_id'
+    const dbPayload = {
+      character_id: charData.id,
+      name: charData.name,
+      description: charData.description
+    };
+    
+    const { data: char, error } = await supabase.from('characters').insert(dbPayload).select().single();
     if (error) throw error;
-    return data;
+    
+    if (expressions?.length) {
+      const exprData = expressions.map(e => ({ 
+        character_id: char.character_id,
+        name: e.name,
+        avatar_url: e.avatar_url,
+        full_url: e.full_url
+      }));
+      const { error: exprErr } = await supabase.from('charater_expressions').insert(exprData);
+      if (exprErr) throw exprErr;
+    }
+    
+    return char;
   },
 
   async updateCharacter(characterId, payload) {
@@ -401,6 +439,34 @@ export const SupabaseAPI = {
     const { data, error } = await supabase.from('gallery').select('*').eq('event_id', eventId).order('display_order');
     if (error) throw error;
     return data || [];
+  },
+
+  async createGallery(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { 
+        id: Math.max(0, ...mockDatabase.gallery.map(g => g.id || 0)) + 1,
+        gallery_id: payload.id || genId('gallery'), 
+        display_order: payload.displayOrder || 0,
+        event_id: payload.event_id || null,
+        title: payload.name,
+        image_url: payload.imageUrl || '',
+        description: payload.description || '' // Note: schema says title, maybe add description to DB later?
+      };
+      mockDatabase.gallery.push(newItem);
+      return newItem;
+    }
+    
+    const dbPayload = {
+      gallery_id: payload.id,
+      event_id: payload.event_id,
+      title: payload.name,
+      image_url: payload.imageUrl,
+      display_order: payload.displayOrder || 0
+    };
+    
+    const { data, error } = await supabase.from('gallery').insert(dbPayload).select().single();
+    if (error) throw error;
+    return data;
   },
 
   // ===========================================================================

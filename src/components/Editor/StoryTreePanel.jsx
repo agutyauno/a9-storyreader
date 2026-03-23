@@ -53,7 +53,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
                             title={`Thêm ${{ region: 'Arc', arc: 'Event', event: 'Story' }[node.type]}`}
                             onClick={(e) => { e.stopPropagation(); onAdd(node); }}
                         >
-                            <Plus size={11} />
+                            <Plus size={15} />
                         </button>
                     )}
                     {/* Delete */}
@@ -62,7 +62,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
                         title="Xoá"
                         onClick={(e) => { e.stopPropagation(); onDelete(node); }}
                     >
-                        <Trash2 size={11} />
+                        <Trash2 size={15} />
                     </button>
                 </span>
             </div>
@@ -157,7 +157,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
     // ─── Node selection ───────────────────────────────────────────────────────
     const handleSelect = (node) => {
         setSelectedId(node.id);
-        if (node.type === 'story' && onStorySelect) {
+        if (onStorySelect) {
             onStorySelect(node);
         }
     };

@@ -63,7 +63,7 @@ function supabaseSignOut() {
     // clear SDK session if available
     try {
         if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
-            window.supabaseClient.auth.signOut().catch(() => {});
+            window.supabaseClient.auth.signOut().catch(() => { });
         }
     } catch (e) { /* ignore */ }
     // legacy wrapper sync
@@ -77,7 +77,7 @@ function supabaseSignOut() {
 }
 function checkAuthRedirect() {
     const existing = localStorage.getItem('supabase_access_token');
-    if (existing) {
+    if (true) {
         // set SDK session when possible
         try {
             if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
@@ -889,26 +889,26 @@ document.addEventListener('DOMContentLoaded', initializeEditor);
 async function initializeEditor() {
     // Setup tab switching
     setupTabSwitching();
-    
+
     // Render the story tree
     renderStoryTree();
-    
+
     // Setup tree interactions
     setupTreeInteractions();
-    
+
     // Setup toolbar buttons
     setupToolbarButtons();
-    
+
     // Setup modal
     setupModal();
-    
+
     // Setup image picker modal
     setupImagePickerModal();
     // Setup add-asset modal
     setupAssetModal();
     // Setup edit-asset modal
     setupEditAssetModal();
-    
+
     // Setup asset browser
     // Load service stubs (Assets, Characters, Stories, ...)
     try {
@@ -920,56 +920,56 @@ async function initializeEditor() {
 
     // If services are available, seed the in-memory mock arrays so existing code paths
     // (which depend on mockAssets/mockCharacters/mockExpressions/mockStoryData) continue to work.
-        if (window.Services) {
-            try {
-                if (window.Services.Assets?.list) {
-                    const assets = await window.Services.Assets.list();
-                    if (Array.isArray(assets) && typeof mockAssets !== 'undefined') {
-                        mockAssets.length = 0;
-                        mockAssets.push(...assets);
-                    }
+    if (window.Services) {
+        try {
+            if (window.Services.Assets?.list) {
+                const assets = await window.Services.Assets.list();
+                if (Array.isArray(assets) && typeof mockAssets !== 'undefined') {
+                    mockAssets.length = 0;
+                    mockAssets.push(...assets);
                 }
-
-                if (window.Services.Characters?.list) {
-                    const chars = await window.Services.Characters.list();
-                    if (Array.isArray(chars) && typeof mockCharacters !== 'undefined') {
-                        mockCharacters.length = 0;
-                        mockCharacters.push(...chars);
-                    }
-
-                    if (window.Services.Characters?.listExpressions && typeof mockExpressions !== 'undefined') {
-                        console.log('Seeding mockExpressions from Services.Characters.listExpressions for', mockCharacters.length, 'characters');
-                        mockExpressions.length = 0;
-                        for (const c of mockCharacters) {
-                            try {
-                                const exprs = await window.Services.Characters.listExpressions(c.character_id);
-                                console.log('Seed expressions for', c.character_id, exprs);
-                                if (Array.isArray(exprs)) {
-                                    for (const e of exprs) {
-                                        mockExpressions.push({ character_id: e.character_id || c.character_id, name: e.name, avatar_url: e.avatar_url || e.avatar || '', full_url: e.full_url || e.full_image || '' });
-                                    }
-                                }
-                            } catch (err) {
-                                console.warn('Failed to load expressions for', c.character_id, err);
-                            }
-                        }
-                    }
-                }
-
-                if (window.Services.Stories?.listRegions && typeof mockStoryData !== 'undefined') {
-                    try {
-                        const regions = await window.Services.Stories.listRegions();
-                        if (Array.isArray(regions)) {
-                            mockStoryData.length = 0;
-                            mockStoryData.push(...regions);
-                        }
-                    } catch (err) {
-                        console.warn('Failed to seed story data', err);
-                    }
-                }
-            } catch (err) {
-                console.warn('Seeding mock arrays from services failed', err);
             }
+
+            if (window.Services.Characters?.list) {
+                const chars = await window.Services.Characters.list();
+                if (Array.isArray(chars) && typeof mockCharacters !== 'undefined') {
+                    mockCharacters.length = 0;
+                    mockCharacters.push(...chars);
+                }
+
+                if (window.Services.Characters?.listExpressions && typeof mockExpressions !== 'undefined') {
+                    console.log('Seeding mockExpressions from Services.Characters.listExpressions for', mockCharacters.length, 'characters');
+                    mockExpressions.length = 0;
+                    for (const c of mockCharacters) {
+                        try {
+                            const exprs = await window.Services.Characters.listExpressions(c.character_id);
+                            console.log('Seed expressions for', c.character_id, exprs);
+                            if (Array.isArray(exprs)) {
+                                for (const e of exprs) {
+                                    mockExpressions.push({ character_id: e.character_id || c.character_id, name: e.name, avatar_url: e.avatar_url || e.avatar || '', full_url: e.full_url || e.full_image || '' });
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('Failed to load expressions for', c.character_id, err);
+                        }
+                    }
+                }
+            }
+
+            if (window.Services.Stories?.listRegions && typeof mockStoryData !== 'undefined') {
+                try {
+                    const regions = await window.Services.Stories.listRegions();
+                    if (Array.isArray(regions)) {
+                        mockStoryData.length = 0;
+                        mockStoryData.push(...regions);
+                    }
+                } catch (err) {
+                    console.warn('Failed to seed story data', err);
+                }
+            }
+        } catch (err) {
+            console.warn('Seeding mock arrays from services failed', err);
+        }
     }
 
     AssetBrowser.init();
@@ -1087,25 +1087,25 @@ const AssetBrowser = {
     async getAssetsForCategory(key) {
         if (window.Services?.Assets?.list) {
             switch (key) {
-                case 'bgm':        return await window.Services.Assets.list({ type: 'audio', category: 'bgm' });
-                case 'sfx':        return await window.Services.Assets.list({ type: 'audio', category: 'sfx' });
+                case 'bgm': return await window.Services.Assets.list({ type: 'audio', category: 'bgm' });
+                case 'sfx': return await window.Services.Assets.list({ type: 'audio', category: 'sfx' });
                 case 'background': return await window.Services.Assets.list({ type: 'image', category: 'background' });
-                case 'image':      return await window.Services.Assets.list({ type: 'image', category: 'thumbnail' });
-                case 'video':      return await window.Services.Assets.list({ type: 'video' });
-                case 'gallery':    return await window.Services.Assets.list({ category: 'gallery' });
-                default:           return [];
+                case 'image': return await window.Services.Assets.list({ type: 'image', category: 'thumbnail' });
+                case 'video': return await window.Services.Assets.list({ type: 'video' });
+                case 'gallery': return await window.Services.Assets.list({ category: 'gallery' });
+                default: return [];
             }
         }
 
         // Fallback to mock
         switch (key) {
-            case 'bgm':        return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'bgm');
-            case 'sfx':        return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'sfx');
+            case 'bgm': return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'bgm');
+            case 'sfx': return (mockAssets || []).filter(a => a.type === 'audio' && a.category === 'sfx');
             case 'background': return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'background');
-            case 'image':      return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'thumbnail');
-            case 'video':      return (mockAssets || []).filter(a => a.type === 'video');
-            case 'gallery':    return (mockAssets || []).filter(a => a.category === 'gallery');
-            default:           return [];
+            case 'image': return (mockAssets || []).filter(a => a.type === 'image' && a.category === 'thumbnail');
+            case 'video': return (mockAssets || []).filter(a => a.type === 'video');
+            case 'gallery': return (mockAssets || []).filter(a => a.category === 'gallery');
+            default: return [];
         }
     },
 
@@ -1489,7 +1489,7 @@ const AssetBrowser = {
 /* Tab Switching */
 function setupTabSwitching() {
     const tabButtons = document.querySelectorAll('.sidebar-tab-btn');
-    
+
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabName = button.getAttribute('data-tab');
@@ -1504,12 +1504,12 @@ function switchTab(tabName, clickedButton) {
         btn.classList.remove('active');
     });
     clickedButton.classList.add('active');
-    
+
     // Update tab content visibility
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
-    
+
     const tabContent = document.querySelector(`.${tabName}_tab`);
     if (tabContent) {
         tabContent.classList.add('active');
@@ -1527,10 +1527,10 @@ function renderStoryTree() {
     const selectedId = selectedEl ? selectedEl.closest('.tree-item').getAttribute('data-id') : null;
 
     treeContainer.innerHTML = '';
-    
+
     // Sort regions by display_order before rendering
     const sortedRegions = sortByDisplayOrder([...mockStoryData]);
-    
+
     sortedRegions.forEach(item => {
         const treeItemElement = createTreeItemElement(item, 0, expandedSet);
         treeContainer.appendChild(treeItemElement);
@@ -1557,22 +1557,22 @@ function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
     li.setAttribute('data-type', item.type);
     li.setAttribute('data-name', item.name);
     li.setAttribute('data-description', item.description || '');
-    
+
     // Store the appropriate ID field based on type
     if (item.type === 'region') li.setAttribute('data-region-id', item.region_id || '');
     if (item.type === 'arc') li.setAttribute('data-arc-id', item.arc_id || '');
     if (item.type === 'event') li.setAttribute('data-event-id', item.event_id || '');
     if (item.type === 'story') li.setAttribute('data-story-id', item.story_id || '');
-    
+
     // Store display order and image URLs
     if (item.display_order) li.setAttribute('data-display-order', item.display_order);
     if (item.image_url) li.setAttribute('data-image-url', item.image_url);
     if (item.icon_url) li.setAttribute('data-icon-url', item.icon_url);
-    
+
     // Create content wrapper
     const contentDiv = document.createElement('div');
     contentDiv.className = 'tree-item-content';
-    
+
     // Create toggle button (only if has children)
     if (item.children && item.children.length > 0) {
         const toggleBtn = document.createElement('button');
@@ -1592,31 +1592,31 @@ function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
         emptySpace.className = 'tree-toggle hidden';
         contentDiv.appendChild(emptySpace);
     }
-    
+
     // Create label
     const labelSpan = document.createElement('span');
     labelSpan.className = 'tree-item-label';
     labelSpan.textContent = item.name;
     contentDiv.appendChild(labelSpan);
-    
+
     li.appendChild(contentDiv);
-    
+
     // Create children container if has children
     if (item.children && item.children.length > 0) {
         const ul = document.createElement('ul');
         ul.className = 'tree-children';
-        
+
         // Sort children by display_order before rendering
         const sortedChildren = sortByDisplayOrder([...item.children]);
-        
+
         sortedChildren.forEach(child => {
             const childElement = createTreeItemElement(child, depth + 1, expandedSet);
             ul.appendChild(childElement);
         });
-        
+
         li.appendChild(ul);
     }
-    
+
     return li;
 }
 
@@ -1624,12 +1624,12 @@ function createTreeItemElement(item, depth = 0, expandedSet = new Set()) {
 /* Tree Interactions */
 function setupTreeInteractions() {
     const sidebar = document.getElementById('left-sidebar');
-    
+
     // Event delegation for tree toggle buttons
     sidebar.addEventListener('click', (event) => {
         const toggleBtn = event.target.closest('.tree-toggle');
         const contentDiv = event.target.closest('.tree-item-content');
-        
+
         if (toggleBtn) {
             event.stopPropagation();
             handleTreeToggle(toggleBtn);
@@ -1642,11 +1642,11 @@ function setupTreeInteractions() {
 
 function handleTreeToggle(toggleBtn) {
     const li = toggleBtn.closest('.tree-item');
-    
+
     if (!li) return;
-    
+
     const isExpanded = li.classList.contains('expanded');
-    
+
     if (isExpanded) {
         li.classList.remove('expanded');
         toggleBtn.setAttribute('aria-expanded', 'false');
@@ -1658,22 +1658,22 @@ function handleTreeToggle(toggleBtn) {
 
 function handleTreeItemSelect(contentDiv) {
     const li = contentDiv.closest('.tree-item');
-    
+
     if (!li) return;
-    
+
     // Remove previous selection
     document.querySelectorAll('.tree-item-content.selected').forEach(el => {
         el.classList.remove('selected');
     });
-    
+
     // Add selection to clicked item
     contentDiv.classList.add('selected');
     currentSelected = li;
-    
+
     // Update toolbar state based on selected type
     const selectedType = li.getAttribute('data-type');
     updateToolbarState(selectedType);
-    
+
     // Load into editor (placeholder for future implementation)
     loadItemIntoEditor(li);
 }
@@ -1682,16 +1682,16 @@ function loadItemIntoEditor(treeItemElement) {
     const id = treeItemElement.getAttribute('data-id');
     const type = treeItemElement.getAttribute('data-type');
     const item = findItemById(id);
-    
+
     if (!item) return;
-    
+
     const editorSection = document.getElementById('editor');
-    
+
     if (type === 'story') {
         StoryEditor.init(editorSection, item);
         return;
     }
-    
+
     editorSection.innerHTML = buildEditorForm(item, type);
     setupEditorFormHandlers(item, type);
 }
@@ -1700,7 +1700,7 @@ function loadItemIntoEditor(treeItemElement) {
 /* Editor Form Builder */
 function buildEditorForm(item, type) {
     const specificId = getSpecificId(item, type);
-    
+
     let imageField = '';
     if (type === 'region') {
         const currentUrl = item.icon_url || '';
@@ -1784,7 +1784,7 @@ function getSpecificId(item, type) {
 function setupEditorFormHandlers(item, type) {
     const form = document.getElementById('editor-form');
     const resetBtn = document.getElementById('editor-reset-btn');
-    
+
     // Image picker handlers (Browse Assets / Upload from Device / Clear)
     const hiddenUrlInput = document.getElementById('editor-icon-url') || document.getElementById('editor-image-url');
     const pickFromDbBtn = document.getElementById('editor-pick-from-db');
@@ -1826,12 +1826,12 @@ function setupEditorFormHandlers(item, type) {
             updateEditorImagePreview(hiddenUrlInput, '');
         });
     }
-    
+
     // Reset button
     resetBtn.addEventListener('click', () => {
         loadItemIntoEditor(currentSelected);
     });
-    
+
     // Save
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -1842,15 +1842,15 @@ function setupEditorFormHandlers(item, type) {
 function saveEditorForm(item, type) {
     const name = document.getElementById('editor-name').value.trim();
     if (!name) return;
-    
+
     const description = document.getElementById('editor-description').value.trim();
     const displayOrder = document.getElementById('editor-display-order').value;
-    
+
     // Update item data
     item.name = name;
     item.description = description || null;
     item.display_order = displayOrder !== '' ? parseInt(displayOrder) : null;
-    
+
     // Update type-specific image fields
     if (type === 'region') {
         const iconUrl = document.getElementById('editor-icon-url');
@@ -1859,27 +1859,27 @@ function saveEditorForm(item, type) {
         const imageUrl = document.getElementById('editor-image-url');
         if (imageUrl) item.image_url = imageUrl.value.trim() || null;
     }
-    
+
     // Re-render tree to reflect changes
     renderStoryTree();
-    
+
     // Re-select the item in the tree
     const treeItem = document.querySelector(`.tree-item[data-id="${item.id ?? item.client_id ?? ''}"]`);
     if (treeItem) {
         // Expand parents
         expandParents(treeItem);
-        
+
         const content = treeItem.querySelector(':scope > .tree-item-content');
         if (content) {
             content.classList.add('selected');
         }
         currentSelected = treeItem;
         updateToolbarState(type);
-        
+
         // Reload editor with updated data
         loadItemIntoEditor(treeItem);
     }
-    
+
     showSaveNotification();
 
     // Export current story data as JSON and log it for debugging/inspection
@@ -1905,15 +1905,15 @@ function showSaveNotification() {
     // Remove existing notification
     const existing = document.querySelector('.save-notification');
     if (existing) existing.remove();
-    
+
     const notification = document.createElement('div');
     notification.className = 'save-notification';
     notification.textContent = 'Changes saved successfully';
     document.body.appendChild(notification);
-    
+
     // Trigger animation
     requestAnimationFrame(() => notification.classList.add('show'));
-    
+
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
@@ -1925,7 +1925,7 @@ function showSaveNotification() {
 function sortByDisplayOrder(items) {
     return items.sort((a, b) => {
         // If both have display_order, sort by it
-        if (a.display_order !== null && a.display_order !== undefined && 
+        if (a.display_order !== null && a.display_order !== undefined &&
             b.display_order !== null && b.display_order !== undefined) {
             return a.display_order - b.display_order;
         }
@@ -2296,7 +2296,7 @@ function setupAssetModal() {
             mediaPreview.innerHTML = '';
             return;
         }
-        fileName.textContent = `${f.name} (${Math.round(f.size/1024)} KB)`;
+        fileName.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
         // preview depending on type
         const val = typeSelect.value;
         mediaPreview.style.display = '';
@@ -2568,7 +2568,7 @@ function setupEditAssetModal() {
     fileInput.addEventListener('change', (e) => {
         const f = e.target.files[0];
         if (!f) { fileName.textContent = ''; mediaPreview.style.display = 'none'; mediaPreview.innerHTML = ''; return; }
-        fileName.textContent = `${f.name} (${Math.round(f.size/1024)} KB)`;
+        fileName.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
         // preview
         if (f.type.startsWith('image/')) mediaPreview.innerHTML = `<img src="${URL.createObjectURL(f)}" style="max-width:100%;">`;
         else if (f.type.startsWith('audio/')) mediaPreview.innerHTML = `<audio controls src="${URL.createObjectURL(f)}"></audio>`;
@@ -2815,7 +2815,7 @@ function setupToolbarButtons() {
     const addArcBtn = document.getElementById('add-arc-btn');
     const addEventBtn = document.getElementById('add-event-btn');
     const addStoryBtn = document.getElementById('add-story-btn');
-    
+
     addRegionBtn.addEventListener('click', () => showAddModal('region', null));
     addArcBtn.addEventListener('click', () => {
         if (!currentSelected) return;
@@ -2940,20 +2940,20 @@ function setupModal() {
     const closeBtn = document.getElementById('modal-close-btn');
     const cancelBtn = document.getElementById('cancel-btn');
     const form = document.getElementById('add-item-form');
-    
+
     closeBtn.addEventListener('click', hideModal);
     cancelBtn.addEventListener('click', hideModal);
-    
+
     // Close modal when clicking outside
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             hideModal();
         }
     });
-    
+
     // Handle form submission
     form.addEventListener('submit', handleAddItem);
-    
+
     // Setup image upload handlers
     setupImageUploadHandlers();
 }
@@ -2977,21 +2977,21 @@ function showAddModal(itemType, parentElement) {
     if (previewImg) previewImg.src = '';
     if (previewAssetId) previewAssetId.textContent = '';
     if (imagePreview) imagePreview.style.display = 'none';
-    
+
     // Set type and parent
     itemTypeInput.value = itemType;
     parentIdInput.value = parentElement ? parentElement.getAttribute('data-id') : '';
-    
+
     // Show/hide image upload field based on item type
     if (itemType === 'region' || itemType === 'event') {
         imageUploadGroup.style.display = 'block';
     } else {
         imageUploadGroup.style.display = 'none';
     }
-    
+
     // Update title
     modalTitle.textContent = `Add New ${capitalizeType(itemType)}`;
-    
+
     // Show modal
     modal.style.display = 'flex';
 }
@@ -3040,24 +3040,24 @@ function setupImageUploadHandlers() {
 
 function handleAddItem(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const formData = new FormData(form);
-    
+
     const itemType = formData.get('type');
     const parentId = formData.get('parentId');
     const name = formData.get('name');
     const description = formData.get('description');
     let displayOrder = formData.get('displayOrder');
     const providedSpecificId = (formData.get('specificId') || '').trim();
-    
+
     // Auto-calculate display_order if not provided
     if (!displayOrder || displayOrder === '') {
         displayOrder = getNextDisplayOrder(itemType, parentId);
     } else {
         displayOrder = parseInt(displayOrder);
     }
-    
+
     // Get image asset id from picker (preferred) and resolve to URL, otherwise no image
     const selectedAssetId = (document.getElementById('item-image-asset-id') || {}).value || null;
     const imageUrl = selectedAssetId ? AssetResolver.toUrl(selectedAssetId) : null;
@@ -3096,17 +3096,17 @@ function addItemToDataStructure(newItem, parentId) {
 function finalizeAddItem(newItem) {
     // Re-render tree (event listeners already exist via delegation, no need to re-setup)
     renderStoryTree();
-    
+
     // Clear selection and reset toolbar
     currentSelected = null;
     updateToolbarState(null);
     document.querySelectorAll('.tree-item-content.selected').forEach(el => {
         el.classList.remove('selected');
     });
-    
+
     // Hide modal
     hideModal();
-    
+
     // Show success message (you can implement a toast notification here)
     console.log('Item added successfully:', newItem);
 }
@@ -3115,8 +3115,8 @@ function createNewItem(type, name, description, displayOrder, parentId, imageUrl
     // DB id will be assigned by server. Create a temporary client-side id for UI operations.
     const dbId = null;
     const clientId = generateClientId();
-    const specificId = (providedSpecificId && providedSpecificId.trim() !== '') ? providedSpecificId.trim() : (function(){ throw new Error('specificId required'); })();
-    
+    const specificId = (providedSpecificId && providedSpecificId.trim() !== '') ? providedSpecificId.trim() : (function () { throw new Error('specificId required'); })();
+
     const item = {
         id: dbId,
         client_id: clientId,
@@ -3126,7 +3126,7 @@ function createNewItem(type, name, description, displayOrder, parentId, imageUrl
         display_order: displayOrder,
         children: []
     };
-    
+
     // Add type-specific fields
     if (type === 'region') {
         item.region_id = specificId;
@@ -3144,7 +3144,7 @@ function createNewItem(type, name, description, displayOrder, parentId, imageUrl
         item.event_id = getParentSpecificId(parentId, 'event');
         item.story_content = { sections: [], characters: {} };
     }
-    
+
     return item;
 }
 
@@ -3233,7 +3233,7 @@ function addItemToParent(newItem, parentDbId) {
 
 function getNextDisplayOrder(itemType, parentId) {
     let siblings = [];
-    
+
     if (!parentId) {
         // Getting next display order for regions (root level)
         siblings = mockStoryData;
@@ -3244,7 +3244,7 @@ function getNextDisplayOrder(itemType, parentId) {
             siblings = parent.children;
         }
     }
-    
+
     // Find max display_order among siblings
     const maxOrder = siblings.reduce((max, item) => {
         const order = item.display_order;
@@ -3253,7 +3253,7 @@ function getNextDisplayOrder(itemType, parentId) {
         }
         return max;
     }, 0);
-    
+
     return maxOrder + 1;
 }
 

@@ -41,7 +41,7 @@ const editorTheme = createTheme({
 /** font & line height customization */
 const fontExtension = EditorView.theme({
     '&': {
-        fontSize: '14px',
+        fontSize: '16px',
     },
     '.cm-content': {
         fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
@@ -49,7 +49,7 @@ const fontExtension = EditorView.theme({
     },
     '.cm-gutters': {
         fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-        fontSize: '12px',
+        fontSize: '14px',
     },
 });
 

@@ -1,32 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Loader, Trash2, Copy, Music, Image, Video, Film, UserSquare2, LayoutDashboard } from 'lucide-react';
+import { Plus, Search, Loader, Trash2, Copy, Edit2, Music, Image, Video, Film, UserSquare2, LayoutDashboard } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
+import AssetDetailModal from './AssetDetailModal';
 import styles from './AssetPanel.module.css';
 
-// ─── Category config ──────────────────────────────────────────────────────────
+// ─── Category config (matches legacy) ─────────────────────────────────────────
 const CATEGORIES = [
-    { key: 'all',        label: 'Tất cả', Icon: LayoutDashboard },
-    { key: 'background', label: 'Background', Icon: Image },
-    { key: 'gallery',    label: 'Gallery',    Icon: Film },
-    { key: 'character',  label: 'Character',  Icon: UserSquare2 },
-    { key: 'bgm',        label: 'BGM',        Icon: Music },
-    { key: 'sfx',        label: 'SFX',        Icon: Music },
-    { key: 'video',      label: 'Video',      Icon: Video },
+    { key: 'all',        label: 'Tất cả',     Icon: LayoutDashboard },
+    { key: 'character',  label: 'Characters',  Icon: UserSquare2 },
+    { key: 'background', label: 'Background',  Icon: Image },
+    { key: 'gallery',    label: 'Gallery',     Icon: Film },
+    { key: 'image',      label: 'Images',      Icon: Image },
+    { key: 'video',      label: 'Video',       Icon: Video },
+    { key: 'bgm',        label: 'BGM',         Icon: Music },
+    { key: 'sfx',        label: 'SFX',         Icon: Music },
 ];
 
 // ─── Asset Card ───────────────────────────────────────────────────────────────
-function AssetCard({ asset, onDelete }) {
+function AssetCard({ asset, onDelete, onDetail }) {
     const [copied, setCopied] = useState(false);
     const audioRef = useRef(null);
     const [playing, setPlaying] = useState(false);
 
-    const copyId = () => {
+    const copyId = (e) => {
+        e.stopPropagation();
         navigator.clipboard?.writeText(asset.asset_id).catch(() => {});
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
 
-    const toggleAudio = () => {
+    const toggleAudio = (e) => {
+        e.stopPropagation();
         if (!audioRef.current) return;
         if (playing) { audioRef.current.pause(); setPlaying(false); }
         else          { audioRef.current.play();  setPlaying(true); }
@@ -37,7 +41,7 @@ function AssetCard({ asset, onDelete }) {
     const isVideo = asset.type === 'video';
 
     return (
-        <div className={styles.card}>
+        <div className={styles.card} onClick={() => onDetail?.(asset)}>
             {/* Preview area */}
             <div className={styles.cardPreview} onClick={isAudio ? toggleAudio : undefined}>
                 {isImage && <img src={asset.url} alt={asset.name} loading="lazy" />}
@@ -66,8 +70,37 @@ function AssetCard({ asset, onDelete }) {
                 <button className={styles.cardBtn} title="Copy ID" onClick={copyId}>
                     {copied ? '✓' : <Copy size={12} />}
                 </button>
-                <button className={`${styles.cardBtn} ${styles.danger}`} title="Xoá" onClick={() => onDelete(asset)}>
+                <button className={`${styles.cardBtn} ${styles.danger}`} title="Xoá" onClick={(e) => { e.stopPropagation(); onDelete(asset); }}>
                     <Trash2 size={12} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Character Card (for character category) ─────────────────────────────────
+function CharacterCard({ character, onDetail }) {
+    const [copied, setCopied] = useState(false);
+
+    const copyId = (e) => {
+        e.stopPropagation();
+        navigator.clipboard?.writeText(character.character_id).catch(() => {});
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+
+    return (
+        <div className={styles.card} onClick={() => onDetail?.(character)}>
+            <div className={styles.cardPreview}>
+                <UserSquare2 size={24} />
+            </div>
+            <div className={styles.cardInfo}>
+                <span className={styles.cardName} title={character.name}>{character.name}</span>
+                <span className={styles.cardId}>{character.character_id}</span>
+            </div>
+            <div className={styles.cardActions}>
+                <button className={styles.cardBtn} title="Copy ID" onClick={copyId}>
+                    {copied ? '✓' : <Copy size={12} />}
                 </button>
             </div>
         </div>
@@ -77,23 +110,33 @@ function AssetCard({ asset, onDelete }) {
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 export default function AssetPanel({ onAddAsset }) {
     const [assets, setAssets] = useState([]);
+    const [characters, setCharacters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('all');
     const [search, setSearch] = useState('');
 
-    const loadAssets = async () => {
+    // Detail modal
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailTarget, setDetailTarget] = useState(null);
+    const [detailKind, setDetailKind] = useState('asset');
+
+    const loadAll = async () => {
         setLoading(true);
         try {
-            const data = await SupabaseAPI.getAssets();
-            setAssets(data);
+            const [assetData, charData] = await Promise.all([
+                SupabaseAPI.getAssets(),
+                SupabaseAPI.getCharacters(),
+            ]);
+            setAssets(assetData);
+            setCharacters(charData);
         } catch (err) {
-            console.error('Failed to load assets:', err);
+            console.error('Failed to load assets/characters:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { loadAssets(); }, []);
+    useEffect(() => { loadAll(); }, []);
 
     const handleDelete = async (asset) => {
         if (!window.confirm(`Xoá asset "${asset.name || asset.asset_id}"?`)) return;
@@ -105,12 +148,39 @@ export default function AssetPanel({ onAddAsset }) {
         }
     };
 
+    const openAssetDetail = (asset) => {
+        setDetailTarget(asset);
+        setDetailKind('asset');
+        setDetailOpen(true);
+    };
+
+    const openCharacterDetail = (character) => {
+        setDetailTarget(character);
+        setDetailKind('character');
+        setDetailOpen(true);
+    };
+
     // ─── Filtering ─────────────────────────────────────────────────────────────
-    const filtered = assets.filter(a => {
-        const matchCat = activeCategory === 'all' || a.category === activeCategory;
+    const isCharacterView = activeCategory === 'character';
+
+    const filteredAssets = assets.filter(a => {
         const q = search.toLowerCase();
         const matchSearch = !q || a.name?.toLowerCase().includes(q) || a.asset_id.toLowerCase().includes(q);
-        return matchCat && matchSearch;
+        if (!matchSearch) return false;
+
+        if (activeCategory === 'all') return true;
+        if (activeCategory === 'background') return a.type === 'image' && a.category === 'background';
+        if (activeCategory === 'gallery') return a.category === 'gallery';
+        if (activeCategory === 'image') return a.type === 'image' && a.category === 'thumbnail';
+        if (activeCategory === 'video') return a.type === 'video';
+        if (activeCategory === 'bgm') return a.type === 'audio' && a.category === 'bgm';
+        if (activeCategory === 'sfx') return a.type === 'audio' && a.category === 'sfx';
+        return false;
+    });
+
+    const filteredChars = characters.filter(c => {
+        const q = search.toLowerCase();
+        return !q || c.name?.toLowerCase().includes(q) || c.character_id?.toLowerCase().includes(q);
     });
 
     return (
@@ -126,7 +196,7 @@ export default function AssetPanel({ onAddAsset }) {
                         onChange={e => setSearch(e.target.value)}
                     />
                 </div>
-                <button className={styles.addBtn} onClick={onAddAsset} title="Thêm asset mới">
+                <button className={styles.addBtn} onClick={() => onAddAsset?.(activeCategory === 'all' ? 'image' : activeCategory, () => loadAll())} title="Thêm asset mới">
                     <Plus size={14} />
                 </button>
             </div>
@@ -151,16 +221,37 @@ export default function AssetPanel({ onAddAsset }) {
                     <div className={styles.centerState}>
                         <Loader size={20} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-accent)' }} />
                     </div>
-                ) : filtered.length === 0 ? (
-                    <div className={styles.centerState}>
-                        <p>Không tìm thấy asset nào.</p>
-                    </div>
+                ) : isCharacterView ? (
+                    filteredChars.length === 0 ? (
+                        <div className={styles.centerState}>
+                            <p>Không tìm thấy character nào.</p>
+                        </div>
+                    ) : (
+                        filteredChars.map(char => (
+                            <CharacterCard key={char.character_id} character={char} onDetail={openCharacterDetail} />
+                        ))
+                    )
                 ) : (
-                    filtered.map(asset => (
-                        <AssetCard key={asset.asset_id} asset={asset} onDelete={handleDelete} />
-                    ))
+                    filteredAssets.length === 0 ? (
+                        <div className={styles.centerState}>
+                            <p>Không tìm thấy asset nào.</p>
+                        </div>
+                    ) : (
+                        filteredAssets.map(asset => (
+                            <AssetCard key={asset.asset_id} asset={asset} onDelete={handleDelete} onDetail={openAssetDetail} />
+                        ))
+                    )
                 )}
             </div>
+
+            {/* Detail Modal */}
+            <AssetDetailModal
+                isOpen={detailOpen}
+                asset={detailTarget}
+                kind={detailKind}
+                onClose={() => setDetailOpen(false)}
+                onUpdated={() => { loadAll(); setDetailOpen(false); }}
+            />
         </div>
     );
 }

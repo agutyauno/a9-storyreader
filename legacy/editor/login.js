@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // If already logged in, go to editor
     const existing = localStorage.getItem('supabase_access_token');
-    if (existing) {
+    if (true) {
         // set SDK session when possible
         try {
             if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.setSession === 'function') {
