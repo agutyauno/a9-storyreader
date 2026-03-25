@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Save, Loader } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight } from 'lucide-react';
 
 import EditorSidebar from '../components/Editor/EditorSidebar';
 import EditorToolbar from '../components/Editor/EditorToolbar';
@@ -23,6 +23,16 @@ export default function EditorPage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+
+    // Sidebar & Preview visibility & width
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+    const [isPreviewVisible, setIsPreviewVisible] = useState(true);
+    const [sidebarWidth, setSidebarWidth] = useState(280);
+    const [previewWidth, setPreviewWidth] = useState(420);
+
+    // Resizing state
+    const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+    const [isResizingPreview, setIsResizingPreview] = useState(false);
 
     const [metadata, setMetadata] = useState({
         name: 'Untitled Draft',
@@ -64,7 +74,7 @@ export default function EditorPage() {
         async function loadStory() {
             if (!storyId) {
                 // New story — start with blank template
-                setScriptText(`# Characters\n@char Doctor id="char_doctor"\n\n@section\n\n@bg "bg_amiya_awake"\nDoctor [doctor, ]: Welcome to the editor!`);
+                setScriptText(`# Characters\n@char Doctor id="char_doctor"\n\n@bg "bg_amiya_awake"\nDoctor [doctor, ]: Welcome to the editor!`);
                 setEditorMode('story');
                 return;
             }
@@ -122,6 +132,39 @@ export default function EditorPage() {
         return () => clearTimeout(timerId);
     }, [scriptText, metadata.name, editorMode]);
 
+    // ─── Resizing Handlers ────────────────────────────────────────────────────
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (isResizingSidebar) {
+                const newWidth = Math.max(180, Math.min(600, e.clientX));
+                setSidebarWidth(newWidth);
+            } else if (isResizingPreview) {
+                const windowWidth = window.innerWidth;
+                const newWidth = Math.max(250, Math.min(800, windowWidth - e.clientX));
+                setPreviewWidth(newWidth);
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsResizingSidebar(false);
+            setIsResizingPreview(false);
+            document.body.style.cursor = 'default';
+        };
+
+        if (isResizingSidebar || isResizingPreview) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.userSelect = 'auto';
+        };
+    }, [isResizingSidebar, isResizingPreview]);
+
     // ─── Handlers ─────────────────────────────────────────────────────────────
     const handleInsertTemplate = (template) => {
         editorRef.current?.insertText(template);
@@ -160,7 +203,7 @@ export default function EditorPage() {
         const parsed = StoryScriptParser.parse(scriptText);
         const previewObj = { ...metadata, story_content: parsed };
         sessionStorage.setItem('preview_story', JSON.stringify(previewObj));
-        window.open('/?preview=1', '_blank');
+        window.open('/story/preview?preview=1', '_blank');
     };
 
     // ─── Entity selection from sidebar tree ───────────────────────────────────
@@ -209,6 +252,13 @@ export default function EditorPage() {
                     <button onClick={() => navigate(-1)} className={styles.backBtn} title="Back">
                         <ArrowLeft size={20} />
                     </button>
+                    <button 
+                        onClick={() => setIsSidebarVisible(!isSidebarVisible)} 
+                        className={`${styles.toggleBtn} ${isSidebarVisible ? styles.active : ''}`} 
+                        title={isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
+                    >
+                        <PanelLeft size={20} />
+                    </button>
                     <h1 className={styles.headerTitle}>
                         {editorMode === 'entity' && selectedEntity
                             ? selectedEntity.name
@@ -235,6 +285,13 @@ export default function EditorPage() {
                                 }
                                 {saving ? 'Đang lưu...' : 'Lưu'}
                             </button>
+                            <button 
+                                onClick={() => setIsPreviewVisible(!isPreviewVisible)} 
+                                className={`${styles.toggleBtn} ${isPreviewVisible ? styles.active : ''}`} 
+                                title={isPreviewVisible ? "Hide Preview" : "Show Preview"}
+                            >
+                                <PanelRight size={20} />
+                            </button>
                         </>
                     )}
                 </div>
@@ -243,14 +300,22 @@ export default function EditorPage() {
             {/* Main Workspace */}
             <div className={styles.workspace}>
                 {/* Left Sidebar */}
-                <EditorSidebar
-                    metadata={metadata}
-                    onMetadataChange={setMetadata}
-                    onStorySelect={handleEntitySelect}
-                    currentStoryId={metadata.story_id}
-                    reloadRef={sidebarReloadRef}
-                    onPickAsset={openPicker}
-                />
+                {isSidebarVisible && (
+                    <div className={styles.sidebarWrapper} style={{ width: sidebarWidth }}>
+                        <EditorSidebar
+                            metadata={metadata}
+                            onMetadataChange={setMetadata}
+                            onStorySelect={handleEntitySelect}
+                            currentStoryId={metadata.story_id}
+                            reloadRef={sidebarReloadRef}
+                            onPickAsset={openPicker}
+                        />
+                        <div 
+                            className={styles.resizer} 
+                            onMouseDown={() => setIsResizingSidebar(true)}
+                        />
+                    </div>
+                )}
 
                 {/* Center - Conditional: Code Editor or Metadata Form */}
                 {editorMode === 'story' ? (
@@ -267,23 +332,31 @@ export default function EditorPage() {
                         </div>
 
                         {/* Right - Live Preview */}
-                        <div className={styles.previewColumn}>
-                            <div className={styles.previewHeader}>
-                                <span className={styles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
-                                <span className={styles.previewLabel}>
-                                    {previewLoading ? 'Parsing...' : 'Live Preview'}
-                                </span>
-                            </div>
-                            <div className={styles.previewBody}>
-                                {previewData?.story_content ? (
-                                    <StoryRenderer previewData={previewData} isPreviewMode={true} />
-                                ) : (
-                                    <div className={styles.previewPlaceholder}>
-                                        Bắt đầu viết script để xem preview...
+                        {isPreviewVisible && (
+                            <div className={styles.previewWrapper} style={{ width: previewWidth }}>
+                                <div 
+                                    className={`${styles.resizer} ${styles.resizerLeft}`} 
+                                    onMouseDown={() => setIsResizingPreview(true)}
+                                />
+                                <div className={styles.previewColumn} style={{ width: '100%' }}>
+                                    <div className={styles.previewHeader}>
+                                        <span className={styles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
+                                        <span className={styles.previewLabel}>
+                                            {previewLoading ? 'Parsing...' : 'Live Preview'}
+                                        </span>
                                     </div>
-                                )}
+                                    <div className={styles.previewBody}>
+                                        {previewData?.story_content ? (
+                                            <StoryRenderer previewData={previewData} isPreviewMode={true} />
+                                        ) : (
+                                            <div className={styles.previewPlaceholder}>
+                                                Bắt đầu viết script để xem preview...
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </>
                 ) : editorMode === 'entity' ? (
                     <MetadataForm

@@ -23,6 +23,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
     const [assetValue, setAssetValue] = useState('');
     const [assetId, setAssetId] = useState('');
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
 
     // Main file (for non-character assets)
     const [file, setFile] = useState(null);
@@ -130,6 +131,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                         category: selectedType.category,
                         asset_id: assetId.trim(),
                         name: name.trim(),
+                        description: description.trim(),
                         url: uploadResult.url,
                     });
                 }
@@ -139,6 +141,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
             setAssetValue('');
             setAssetId('');
             setName('');
+            setDescription('');
             setFile(null);
             setPreviewUrl('');
             setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
@@ -196,6 +199,17 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={isCharacter ? "e.g. Amiya" : "e.g. Lungmen Sunset"}
+                            disabled={isUploading}
+                        />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label>Description</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Optional description"
+                            rows="2"
                             disabled={isUploading}
                         />
                     </div>
@@ -289,61 +303,61 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                                                 </button>
                                             )}
                                         </div>
-                                        <div className={styles.exprUploads}>
-                                            {/* Avatar Upload */}
-                                            <div className={styles.miniUploadGroup}>
-                                                <div
-                                                    className={`${styles.miniDropZone} ${uploadingFields[`${index}-avatarUrl`] ? styles.uploading : ''}`}
-                                                    onClick={() => !uploadingFields[`${index}-avatarUrl`] && document.getElementById(`avatar-file-${index}`).click()}
-                                                    title="Upload Avatar (Square)"
-                                                >
-                                                    <input
-                                                        id={`avatar-file-${index}`}
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => handleExprFileUpload(index, 'avatarUrl', e.target.files[0])}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {uploadingFields[`${index}-avatarUrl`] ? (
-                                                        <Loader2 size={14} className={styles.spinner} />
-                                                    ) : expr.avatarUrl ? (
-                                                        <Check size={14} color="var(--color-accent-light)" />
-                                                    ) : (
-                                                        <ImageIcon size={14} />
-                                                    )}
+                                            <div className={styles.miniUploadGrid}>
+                                                {/* Avatar Upload */}
+                                                <div className={styles.miniUploadGroup}>
+                                                    <div
+                                                        className={`${styles.miniDropZone} ${uploadingFields[`${index}-avatarUrl`] ? styles.uploading : ''}`}
+                                                        onClick={() => !uploadingFields[`${index}-avatarUrl`] && document.getElementById(`avatar-file-${index}`).click()}
+                                                        title="Upload Avatar (Square)"
+                                                    >
+                                                        <input
+                                                            id={`avatar-file-${index}`}
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleExprFileUpload(index, 'avatarUrl', e.target.files[0])}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {uploadingFields[`${index}-avatarUrl`] ? (
+                                                            <Loader2 size={14} className={styles.spinner} />
+                                                        ) : expr.avatarUrl ? (
+                                                            <img src={expr.avatarUrl} alt="avatar" className={styles.miniPreview} />
+                                                        ) : (
+                                                            <ImageIcon size={14} />
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.miniLabel}>
+                                                        {expr.avatarUrl ? 'Avatar' : 'Avatar *'}
+                                                    </span>
                                                 </div>
-                                                <span className={styles.exprUrlText}>
-                                                    {expr.avatarUrl ? 'Avatar uploaded' : 'Avatar *'}
-                                                </span>
-                                            </div>
 
-                                            {/* Full Body Upload */}
-                                            <div className={styles.miniUploadGroup}>
-                                                <div
-                                                    className={`${styles.miniDropZone} ${uploadingFields[`${index}-fullUrl`] ? styles.uploading : ''}`}
-                                                    onClick={() => !uploadingFields[`${index}-fullUrl`] && document.getElementById(`full-file-${index}`).click()}
-                                                    title="Upload Full Body"
-                                                >
-                                                    <input
-                                                        id={`full-file-${index}`}
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => handleExprFileUpload(index, 'fullUrl', e.target.files[0])}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {uploadingFields[`${index}-fullUrl`] ? (
-                                                        <Loader2 size={14} className={styles.spinner} />
-                                                    ) : expr.fullUrl ? (
-                                                        <Check size={14} color="var(--color-accent-light)" />
-                                                    ) : (
-                                                        <Upload size={14} />
-                                                    )}
+                                                {/* Full Body Upload */}
+                                                <div className={styles.miniUploadGroup}>
+                                                    <div
+                                                        className={`${styles.miniDropZone} ${uploadingFields[`${index}-fullUrl`] ? styles.uploading : ''}`}
+                                                        onClick={() => !uploadingFields[`${index}-fullUrl`] && document.getElementById(`full-file-${index}`).click()}
+                                                        title="Upload Full Body"
+                                                    >
+                                                        <input
+                                                            id={`full-file-${index}`}
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleExprFileUpload(index, 'fullUrl', e.target.files[0])}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {uploadingFields[`${index}-fullUrl`] ? (
+                                                            <Loader2 size={14} className={styles.spinner} />
+                                                        ) : expr.fullUrl ? (
+                                                            <img src={expr.fullUrl} alt="full" className={styles.miniPreview} />
+                                                        ) : (
+                                                            <Upload size={14} />
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.miniLabel}>
+                                                        {expr.fullUrl ? 'Full body' : 'Full body image *'}
+                                                    </span>
                                                 </div>
-                                                <span className={styles.exprUrlText}>
-                                                    {expr.fullUrl ? 'Full body uploaded' : 'Full body image *'}
-                                                </span>
                                             </div>
-                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -391,12 +405,6 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                     </div>
                 </form>
             </div>
-            <style jsx>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     );
 }

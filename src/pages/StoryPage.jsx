@@ -216,11 +216,11 @@ export default function StoryPage() {
     let ticking = false;
     const updateBackgroundPosition = () => {
       if (!contentRef.current) return;
-      const dialogueSections = contentRef.current.querySelectorAll(`.${styles['dialogue-section'] || 'dialogue-section'}`);
-      dialogueSections.forEach(section => {
-        const wrapper = section.querySelector(`.${styles['background-wrapper'] || 'background-wrapper'}`);
+      const backgrounds = contentRef.current.querySelectorAll(`.${styles['dialogue-background'] || 'dialogue-background'}`);
+      backgrounds.forEach(bgElement => {
+        const wrapper = bgElement.querySelector(`.${styles['background-wrapper'] || 'background-wrapper'}`);
         if (!wrapper) return;
-        const rect = section.getBoundingClientRect();
+        const rect = bgElement.getBoundingClientRect();
         const wrapperHeight = wrapper.offsetHeight;
         const viewportHeight = window.innerHeight;
         const maxTop = Math.max(0, (viewportHeight - wrapperHeight) / 2);

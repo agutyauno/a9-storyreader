@@ -37,9 +37,6 @@ export const StoryScriptSerializer = {
         // Sections
         const sections = storyContent.sections || [];
         sections.forEach((section) => {
-            lines.push('@section');
-            lines.push('');
-
             (section.elements || []).forEach(element => {
                 if (element.type === 'video') {
                     this.serializeVideo(element, lines);

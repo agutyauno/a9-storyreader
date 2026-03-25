@@ -4,13 +4,13 @@ import { SupabaseAPI } from '../../services/supabaseApi';
 import styles from './AssetPickerModal.module.css';
 
 const CATEGORIES = [
-    { key: 'all',        label: 'Tất cả' },
+    { key: 'all', label: 'Tất cả' },
     { key: 'background', label: 'Background' },
-    { key: 'gallery',    label: 'Gallery' },
-    { key: 'image',      label: 'Images' },
-    { key: 'video',      label: 'Video' },
-    { key: 'bgm',        label: 'BGM' },
-    { key: 'sfx',        label: 'SFX' },
+    { key: 'gallery', label: 'Gallery' },
+    { key: 'thumbnail', label: 'Thumnails' },
+    { key: 'video', label: 'Video' },
+    { key: 'bgm', label: 'BGM' },
+    { key: 'sfx', label: 'SFX' },
 ];
 
 /**

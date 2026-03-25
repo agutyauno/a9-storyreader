@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    overflow: hidden;
+    overflow: auto; /* allow scrolling when content exceeds height */
     min-height: 0;
 }
 
@@ -66,27 +66,32 @@
 
 /* ─── Category tabs ──────────────────────────────────────────────────────── */
 .categoryTabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 10px;
+    display: grid; /* switch to grid layout */
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
+    align-items: center;
+    justify-items: stretch;
 }
 
 .catBtn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
     font-size: 13px;
-    border-radius: 4px;
+    border-radius: 8px;
     border: 1px solid transparent;
     background: var(--color-bg-secondary);
     color: var(--color-text-tertiary);
     cursor: pointer;
     transition: var(--transition-base);
     white-space: nowrap;
+    width: 100%; /* fill grid cell */
+    box-sizing: border-box;
 }
 
 .catBtn:hover {
@@ -102,7 +107,6 @@
 /* ─── Grid ───────────────────────────────────────────────────────────────── */
 .grid {
     flex: 1;
-    overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
@@ -138,9 +142,13 @@
 }
 
 /* Preview */
+.card {
+    height: 150px; 
+}
+
 .cardPreview {
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 16 / 9; 
     background: var(--color-bg-primary);
     display: flex;
     align-items: center;
@@ -199,16 +207,16 @@
 
 /* Info */
 .cardInfo {
-    padding: 5px 7px 2px;
+    padding: 10px 12px 8px;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 4px;
     min-width: 0;
 }
 
 .cardName {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -216,7 +224,7 @@
 }
 
 .cardId {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-text-tertiary);
     white-space: nowrap;
     overflow: hidden;

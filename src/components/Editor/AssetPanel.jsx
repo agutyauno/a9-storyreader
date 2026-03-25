@@ -6,14 +6,14 @@ import styles from './AssetPanel.module.css';
 
 // ─── Category config (matches legacy) ─────────────────────────────────────────
 const CATEGORIES = [
-    { key: 'all',        label: 'Tất cả',     Icon: LayoutDashboard },
-    { key: 'character',  label: 'Characters',  Icon: UserSquare2 },
-    { key: 'background', label: 'Background',  Icon: Image },
-    { key: 'gallery',    label: 'Gallery',     Icon: Film },
-    { key: 'image',      label: 'Images',      Icon: Image },
-    { key: 'video',      label: 'Video',       Icon: Video },
-    { key: 'bgm',        label: 'BGM',         Icon: Music },
-    { key: 'sfx',        label: 'SFX',         Icon: Music },
+    { key: 'all', label: 'Tất cả', Icon: LayoutDashboard },
+    { key: 'character', label: 'Characters', Icon: UserSquare2 },
+    { key: 'background', label: 'Background', Icon: Image },
+    { key: 'gallery', label: 'Gallery', Icon: Film },
+    { key: 'thumbnail', label: 'Thumnails', Icon: Image },
+    { key: 'video', label: 'Video', Icon: Video },
+    { key: 'bgm', label: 'BGM', Icon: Music },
+    { key: 'sfx', label: 'SFX', Icon: Music },
 ];
 
 // ─── Asset Card ───────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
 
     const copyId = (e) => {
         e.stopPropagation();
-        navigator.clipboard?.writeText(asset.asset_id).catch(() => {});
+        navigator.clipboard?.writeText(asset.asset_id).catch(() => { });
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
@@ -33,7 +33,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
         e.stopPropagation();
         if (!audioRef.current) return;
         if (playing) { audioRef.current.pause(); setPlaying(false); }
-        else          { audioRef.current.play();  setPlaying(true); }
+        else { audioRef.current.play(); setPlaying(true); }
     };
 
     const isImage = asset.type === 'image';
@@ -79,12 +79,12 @@ function AssetCard({ asset, onDelete, onDetail }) {
 }
 
 // ─── Character Card (for character category) ─────────────────────────────────
-function CharacterCard({ character, onDetail }) {
+function CharacterCard({ character, onDetail, avatarUrl }) {
     const [copied, setCopied] = useState(false);
 
     const copyId = (e) => {
         e.stopPropagation();
-        navigator.clipboard?.writeText(character.character_id).catch(() => {});
+        navigator.clipboard?.writeText(character.character_id).catch(() => { });
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
@@ -92,7 +92,11 @@ function CharacterCard({ character, onDetail }) {
     return (
         <div className={styles.card} onClick={() => onDetail?.(character)}>
             <div className={styles.cardPreview}>
-                <UserSquare2 size={24} />
+                {avatarUrl ? (
+                    <img src={avatarUrl} alt={character.name} loading="lazy" />
+                ) : (
+                    <UserSquare2 size={24} />
+                )}
             </div>
             <div className={styles.cardInfo}>
                 <span className={styles.cardName} title={character.name}>{character.name}</span>
@@ -111,6 +115,7 @@ function CharacterCard({ character, onDetail }) {
 export default function AssetPanel({ onAddAsset }) {
     const [assets, setAssets] = useState([]);
     const [characters, setCharacters] = useState([]);
+    const [avatarMap, setAvatarMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('all');
     const [search, setSearch] = useState('');
@@ -129,6 +134,22 @@ export default function AssetPanel({ onAddAsset }) {
             ]);
             setAssets(assetData);
             setCharacters(charData);
+
+            // Batch load expressions for characters to get avatar previews
+            try {
+                const charIds = (charData || []).map(c => c.character_id).filter(Boolean);
+                if (charIds.length) {
+                    const exprMap = await SupabaseAPI.getExpressionsByCharacters(charIds);
+                    const map = {};
+                    for (const id of Object.keys(exprMap)) {
+                        const arr = exprMap[id] || [];
+                        if (arr.length) map[id] = arr[0].avatar_url || arr[0].full_url || null;
+                    }
+                    setAvatarMap(map);
+                }
+            } catch (err) {
+                console.warn('Batch expressions load failed:', err);
+            }
         } catch (err) {
             console.error('Failed to load assets/characters:', err);
         } finally {
@@ -170,8 +191,8 @@ export default function AssetPanel({ onAddAsset }) {
 
         if (activeCategory === 'all') return true;
         if (activeCategory === 'background') return a.type === 'image' && a.category === 'background';
-        if (activeCategory === 'gallery') return a.category === 'gallery';
-        if (activeCategory === 'image') return a.type === 'image' && a.category === 'thumbnail';
+        if (activeCategory === 'gallery') return a.type === 'image' && a.category === 'gallery';
+        if (activeCategory === 'thumbnail') return a.type === 'image' && a.category === 'thumbnail';
         if (activeCategory === 'video') return a.type === 'video';
         if (activeCategory === 'bgm') return a.type === 'audio' && a.category === 'bgm';
         if (activeCategory === 'sfx') return a.type === 'audio' && a.category === 'sfx';
@@ -228,7 +249,7 @@ export default function AssetPanel({ onAddAsset }) {
                         </div>
                     ) : (
                         filteredChars.map(char => (
-                            <CharacterCard key={char.character_id} character={char} onDetail={openCharacterDetail} />
+                            <CharacterCard key={char.character_id} character={char} onDetail={openCharacterDetail} avatarUrl={avatarMap[char.character_id]} />
                         ))
                     )
                 ) : (

@@ -108,12 +108,13 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 await SupabaseAPI.createCharacter({
                     id: formData.asset_id,
                     name: formData.name,
-                    description: '',
+                    description: formData.description || '',
                 }, formData.expressions || []);
             } else {
                 await SupabaseAPI.createAsset({
                     asset_id: formData.asset_id,
                     name: formData.name,
+                    description: formData.description || '',
                     type: formData.type,
                     category: formData.category,
                     url: formData.url || '',
@@ -129,14 +130,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
     const handleAddAsset = (type, reloadFn) => {
         assetReloadRef.current = reloadFn;
-        if (type === 'character' || type === 'gallery') {
-            setModalType(type);
-            setModalParent(null);
-            reloadTreeRef.current = reloadFn;
-            setModalOpen(true);
-        } else {
-            setAssetModalOpen(true);
-        }
+        setAssetModalOpen(true);
     };
 
     return (

@@ -340,6 +340,33 @@ export const SupabaseAPI = {
     return data || [];
   },
 
+  /**
+   * Batch fetch expressions for multiple characters.
+   * Returns a map: character_id -> array of expressions
+   * @param {string[]} characterIds
+   */
+  async getExpressionsByCharacters(characterIds) {
+    if (!characterIds?.length) return {};
+    if (USE_MOCK_DB) {
+      const rows = mockDatabase.charater_expressions.filter(e => characterIds.includes(e.character_id));
+      const map = {};
+      for (const r of rows) {
+        map[r.character_id] = map[r.character_id] || [];
+        map[r.character_id].push(r);
+      }
+      return map;
+    }
+    const unique = [...new Set(characterIds)];
+    const { data, error } = await supabase.from('charater_expressions').select('*').in('character_id', unique);
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(r => {
+      map[r.character_id] = map[r.character_id] || [];
+      map[r.character_id].push(r);
+    });
+    return map;
+  },
+
   async createExpression(payload) {
     if (USE_MOCK_DB) {
       const maxId = Math.max(0, ...mockDatabase.charater_expressions.map(e => e.id));
@@ -348,6 +375,18 @@ export const SupabaseAPI = {
       return newItem;
     }
     const { data, error } = await supabase.from('charater_expressions').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateExpression(id, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.charater_expressions.findIndex(e => e.id === id);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.charater_expressions[idx], payload);
+      return mockDatabase.charater_expressions[idx];
+    }
+    const { data, error } = await supabase.from('charater_expressions').update(payload).eq('id', id).select().single();
     if (error) throw error;
     return data;
   },

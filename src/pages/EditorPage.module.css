@@ -137,6 +137,31 @@
     transform: scale(0.96);
 }
 
+.toggleBtn {
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+}
+
+.toggleBtn.active {
+    color: var(--color-accent-light);
+}
+
+.toggleBtn.active:hover {
+    background-color: rgba(184, 169, 255, 0.1);
+}
+
 /* ---- Main Workspace (3-column layout) ---- */
 .workspace {
     flex: 1;
@@ -144,10 +169,47 @@
     overflow: hidden;
 }
 
+/* -- Wrappers for Resizing -- */
+.sidebarWrapper {
+    display: flex;
+    position: relative;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.previewWrapper {
+    display: flex;
+    position: relative;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.resizer {
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    z-index: 10;
+    position: absolute;
+    right: 0px;
+    top: 0;
+}
+
+.resizerLeft {
+    right: auto;
+    left: 0px;
+}
+
+.resizer:hover, .resizer:active {
+    background-color: var(--color-accent-light);
+    opacity: 0.5;
+}
+
 /* -- Left Sidebar -- */
 .sidebar {
-    width: 280px;
-    flex-shrink: 0;
+    width: 100%;
+    flex: 1;
     background-color: var(--color-bg-dark);
     border-right: 1px solid var(--color-border);
     overflow-y: auto;
@@ -175,19 +237,14 @@
 
 /* -- Right Preview Column -- */
 .previewColumn {
-    width: 420px;
-    flex-shrink: 0;
+    flex: 1;
     background-color: #000;
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
-@media (min-width: 1440px) {
-    .previewColumn {
-        width: 560px;
-    }
-}
+
 
 .previewHeader {
     height: 36px;

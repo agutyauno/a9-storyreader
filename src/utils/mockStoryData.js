@@ -323,11 +323,6 @@ export const mockDatabase = {
     // Gallery
     { asset_id: 'gallery_amiya', type: 'image', category: 'gallery', name: 'Amiya Art', url: '/assets/images/art gallery/Amiya_Awakening.png' },
 
-    // Character images (registered as assets too for convenience)
-    { asset_id: 'char_img_doctor', type: 'image', category: 'character', name: 'Doctor', url: '/assets/images/character/doctor/doctor.png' },
-    { asset_id: 'char_img_hibiscus', type: 'image', category: 'character', name: 'Hibiscus', url: '/assets/images/character/hibiscus/hibiscus.png' },
-    { asset_id: 'char_img_amiya', type: 'image', category: 'character', name: 'Amiya', url: '/assets/images/character/avg_npc_417/avg_npc_417.png' },
-
     // BGM
     { asset_id: 'bgm_tense', type: 'audio', category: 'bgm', name: 'Tense Loop', url: '/assets/audio/bgm/m_avg_tense_loop.wav' },
     { asset_id: 'bgm_intro', type: 'audio', category: 'bgm', name: 'Tense Intro', url: '/assets/audio/bgm/music_act15d0d0_m_avg_tense_intro.wav' },

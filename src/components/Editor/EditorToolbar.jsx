@@ -16,7 +16,6 @@ const TOOL_GROUPS = [
     {
         label: 'Scene',
         tools: [
-            { id: 'section', label: 'Section', icon: LayoutList, template: '\n@section\n' },
             { id: 'bg', label: 'BG', icon: ImageIcon, template: '@bg ""' },
             { id: 'video', label: 'Video', icon: Video, template: '@video src=""' },
         ]

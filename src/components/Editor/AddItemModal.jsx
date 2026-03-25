@@ -18,11 +18,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
     const [displayOrder, setDisplayOrder] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     
-    const [expressions, setExpressions] = useState([
-        { name: 'default', avatar_url: '', full_url: '' }
-    ]);
-
-    // Tracking upload status for expression fields: { '0-avatar': true, '1-full': false }
+    // Tracking upload status for image fields
     const [uploadingFields, setUploadingFields] = useState({});
 
     if (!isOpen) return null;
@@ -40,7 +36,6 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
             description: description.trim(),
             displayOrder: displayOrder ? parseInt(displayOrder) : null,
             imageUrl: imageUrl.trim() || null,
-            expressions: type === 'character' ? expressions.filter(e => e.name.trim()) : null,
         });
 
         // Reset
@@ -49,48 +44,20 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
         setDescription('');
         setDisplayOrder('');
         setImageUrl('');
-        setExpressions([{ name: 'default', avatar_url: '', full_url: '' }]);
-    };
-
-    const addExpression = () => {
-        setExpressions([...expressions, { name: '', avatar_url: '', full_url: '' }]);
-    };
-
-    const removeExpression = (index) => {
-        setExpressions(expressions.filter((_, i) => i !== index));
-    };
-
-    const updateExpression = (index, field, value) => {
-        const newExprs = [...expressions];
-        newExprs[index][field] = value;
-        setExpressions(newExprs);
     };
 
     const handleFileUpload = async (index, field, file) => {
         if (!file) return;
         
-        const fieldKey = index === 'gallery' ? 'gallery' : `${index}-${field}`;
+        const fieldKey = 'imageUrl';
         setUploadingFields(prev => ({ ...prev, [fieldKey]: true }));
         
         try {
-            let category = '';
-            let typeStr = 'image';
-            
-            if (index === 'gallery') {
-                category = 'gallery';
-            } else {
-                category = field === 'avatar_url' ? 'char_avatar' : 'character';
-            }
-            
-            const folderPath = getFolderPath(typeStr, category);
+            const folderPath = getFolderPath('image', 'misc');
             const result = await uploadFileToGithub(file, folderPath);
             
             if (result.success) {
-                if (index === 'gallery') {
-                    setImageUrl(result.url);
-                } else {
-                    updateExpression(index, field, result.url);
-                }
+                setImageUrl(result.url);
             }
         } catch (err) {
             console.error('File upload failed:', err);
@@ -156,141 +123,15 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
                         />
                     </div>
 
-                    {(type === 'region' || type === 'event' || type === 'gallery') && (
+                    {(type === 'region' || type === 'event' || type === 'story') && (
                         <div className={styles.formGroup}>
-                            <label>{type === 'region' ? 'Icon URL' : (type === 'gallery' ? 'Image Upload' : 'Image URL')}</label>
-                            
-                            {type === 'gallery' ? (
-                                <div className={styles.imageUploadArea}>
-                                    <div className={styles.miniUploadRow}>
-                                        <div 
-                                            className={`${styles.miniDropZone} ${uploadingFields['gallery'] ? styles.uploading : ''}`}
-                                            onClick={() => !uploadingFields['gallery'] && document.getElementById('gallery-file-input').click()}
-                                        >
-                                            <input 
-                                                id="gallery-file-input"
-                                                type="file" 
-                                                accept="image/*"
-                                                onChange={(e) => handleFileUpload('gallery', 'imageUrl', e.target.files[0])}
-                                                style={{ display: 'none' }}
-                                            />
-                                            {uploadingFields['gallery'] ? (
-                                                <Loader2 size={16} className={styles.spinner} />
-                                            ) : imageUrl ? (
-                                                <Check size={16} color="var(--color-accent-light)" />
-                                            ) : (
-                                                <Upload size={16} />
-                                            )}
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={imageUrl}
-                                            onChange={(e) => setImageUrl(e.target.value)}
-                                            placeholder="URL or Upload image"
-                                            className={styles.urlInput}
-                                        />
-                                    </div>
-                                    {imageUrl && (
-                                        <div className={styles.imagePreviewMini}>
-                                            <img src={imageUrl} alt="preview" />
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={imageUrl}
-                                    onChange={(e) => setImageUrl(e.target.value)}
-                                    placeholder="Enter asset URL (optional)"
-                                />
-                            )}
-                        </div>
-                    )}
-
-                    {type === 'character' && (
-                        <div className={styles.expressionsSection}>
-                            <div className={styles.sectionHeader}>
-                                <label>Expressions</label>
-                                <button type="button" className={styles.addExprBtn} onClick={addExpression}>
-                                    + Add Expression
-                                </button>
-                            </div>
-                            
-                            <div className={styles.expressionsList}>
-                                {expressions.map((expr, index) => (
-                                    <div key={index} className={styles.expressionItem}>
-                                        <div className={styles.exprRow}>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Name (e.g. smile)" 
-                                                value={expr.name}
-                                                onChange={(e) => updateExpression(index, 'name', e.target.value)}
-                                                className={styles.exprNameInput}
-                                            />
-                                            {expressions.length > 1 && (
-                                                <button type="button" className={styles.removeExprBtn} onClick={() => removeExpression(index)}>
-                                                    <X size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className={styles.exprUploads}>
-                                            {/* Avatar Upload */}
-                                            <div className={styles.miniUploadGroup}>
-                                                <div 
-                                                    className={`${styles.miniDropZone} ${uploadingFields[`${index}-avatar_url`] ? styles.uploading : ''}`}
-                                                    onClick={() => !uploadingFields[`${index}-avatar_url`] && document.getElementById(`avatar-file-${index}`).click()}
-                                                    title="Upload Avatar"
-                                                >
-                                                    <input 
-                                                        id={`avatar-file-${index}`}
-                                                        type="file" 
-                                                        accept="image/*"
-                                                        onChange={(e) => handleFileUpload(index, 'avatar_url', e.target.files[0])}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {uploadingFields[`${index}-avatar_url`] ? (
-                                                        <Loader2 size={14} className={styles.spinner} />
-                                                    ) : expr.avatar_url ? (
-                                                        <Check size={14} color="var(--color-accent-light)" />
-                                                    ) : (
-                                                        <ImageIcon size={14} />
-                                                    )}
-                                                </div>
-                                                <span className={styles.exprUrlText}>
-                                                    {expr.avatar_url ? 'Avatar uploaded' : 'Avatar (Square) *'}
-                                                </span>
-                                            </div>
-
-                                            {/* Full Body Upload */}
-                                            <div className={styles.miniUploadGroup}>
-                                                <div 
-                                                    className={`${styles.miniDropZone} ${uploadingFields[`${index}-full_url`] ? styles.uploading : ''}`}
-                                                    onClick={() => !uploadingFields[`${index}-full_url`] && document.getElementById(`full-file-${index}`).click()}
-                                                    title="Upload Full Body"
-                                                >
-                                                    <input 
-                                                        id={`full-file-${index}`}
-                                                        type="file" 
-                                                        accept="image/*"
-                                                        onChange={(e) => handleFileUpload(index, 'full_url', e.target.files[0])}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {uploadingFields[`${index}-full_url`] ? (
-                                                        <Loader2 size={14} className={styles.spinner} />
-                                                    ) : expr.full_url ? (
-                                                        <Check size={14} color="var(--color-accent-light)" />
-                                                    ) : (
-                                                        <Upload size={14} />
-                                                    )}
-                                                </div>
-                                                <span className={styles.exprUrlText}>
-                                                    {expr.full_url ? 'Full body uploaded' : 'Full body image *'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <label>{type === 'region' ? 'Icon URL' : 'Image URL'}</label>
+                            <input
+                                type="text"
+                                value={imageUrl}
+                                onChange={(e) => setImageUrl(e.target.value)}
+                                placeholder="Enter asset URL (optional)"
+                            />
                         </div>
                     )}
 

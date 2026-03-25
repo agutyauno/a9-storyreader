@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Loader, Save } from 'lucide-react';
+import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, Check, AlertCircle } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
+import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
 import styles from './AssetDetailModal.module.css';
 
 /**
@@ -18,10 +19,16 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const [expressions, setExpressions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [file, setFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadingFields, setUploadingFields] = useState({}); // { 'exprId-avatarUrl': true }
+    const [deletedExprIds, setDeletedExprIds] = useState(new Set());
+    const [category, setCategory] = useState('');
 
     useEffect(() => {
         if (!isOpen || !asset) return;
         setName(asset.name || '');
+        setCategory(asset.category || asset.type || '');
         if (kind === 'character') loadExpressions();
     }, [isOpen, asset, kind]);
 
@@ -47,52 +54,129 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const handleSave = async () => {
         setSaving(true);
         try {
+            const charId = asset.character_id || asset.asset_id;
             if (isCharacter) {
-                const charId = asset.character_id || asset.asset_id;
+                // 1. Update character name
                 await SupabaseAPI.updateCharacter(charId, { name: name.trim() });
+                
+                // 2. Sync expressions: Upsert current list
+                for (const expr of expressions) {
+                    const exprData = {
+                        name: expr.name,
+                        avatar_url: expr.avatar_url,
+                        full_url: expr.full_url
+                    };
+                    if (expr.id && !expr.isNew) {
+                        await SupabaseAPI.updateExpression(expr.id, exprData);
+                    } else {
+                        await SupabaseAPI.createExpression({
+                            character_id: charId,
+                            ...exprData
+                        });
+                    }
+                }
+
+                // 3. Delete removed ones
+                for (const id of deletedExprIds) {
+                    await SupabaseAPI.deleteExpression(id);
+                }
+                setDeletedExprIds(new Set());
             } else {
-                await SupabaseAPI.updateAsset(asset.asset_id, { name: name.trim() });
+                // Update name and category (if changed)
+                const payload = { name: name.trim() };
+                if (category && category !== asset.category) payload.category = category;
+                await SupabaseAPI.updateAsset(asset.asset_id, payload);
             }
             onUpdated?.();
         } catch (err) {
+            console.error('Save failed:', err);
             alert(`Lưu thất bại: ${err.message}`);
         } finally {
             setSaving(false);
         }
     };
 
-    // ─── Expression CRUD ────────────────────────────────────────────────────────
-    const handleAddExpression = async () => {
-        const exprName = prompt('Tên expression mới (e.g. happy, angry):');
-        if (!exprName?.trim()) return;
+    // Upload replacement file for asset (image/video/audio)
+    const handleFileChange = async (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        setFile(f);
+    };
+
+    const handleUploadAndReplace = async () => {
+        if (!file) return alert('Chưa chọn file để upload');
+        setUploading(true);
         try {
-            const charId = asset.character_id || asset.asset_id;
-            await SupabaseAPI.createExpression({
-                character_id: charId,
-                name: exprName.trim(),
-                avatar_url: '',
-                full_url: '',
-            });
-            loadExpressions();
+            // Choose folder path based on type/category
+            const folder = getFolderPath(asset.type || (category === 'background' ? 'image' : 'image'), category);
+            const res = await uploadFileToGithub(file, folder);
+            if (res?.success) {
+                await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
+                onUpdated?.();
+            }
         } catch (err) {
-            alert(`Tạo expression thất bại: ${err.message}`);
+            alert(`Upload thất bại: ${err.message}`);
+        } finally {
+            setUploading(false);
+            setFile(null);
         }
     };
 
-    const handleDeleteExpression = async (expr) => {
-        if (!window.confirm(`Xoá expression "${expr.name}"?`)) return;
+    const handleDeleteAsset = async () => {
+        if (!window.confirm(`Xoá asset "${asset.name || asset.asset_id}"?`)) return;
         try {
-            await SupabaseAPI.deleteExpression(expr.id);
-            setExpressions(prev => prev.filter(e => e.id !== expr.id));
+            await SupabaseAPI.deleteAsset(asset.asset_id);
+            onUpdated?.();
+            onClose?.();
         } catch (err) {
             alert(`Xoá thất bại: ${err.message}`);
         }
     };
 
+    // ─── Expression CRUD ────────────────────────────────────────────────────────
     const handleExpressionChange = (exprId, field, value) => {
         setExpressions(prev => prev.map(e =>
             e.id === exprId ? { ...e, [field]: value } : e
         ));
+    };
+
+    const handleExprFileUpload = async (exprId, field, file) => {
+        if (!file) return;
+        const fieldKey = `${exprId}-${field}`;
+        setUploadingFields(prev => ({ ...prev, [fieldKey]: true }));
+        try {
+            const category = field === 'avatar_url' ? 'char_avatar' : 'character';
+            const folderPath = getFolderPath('image', category);
+            const result = await uploadFileToGithub(file, folderPath);
+            if (result.success) {
+                handleExpressionChange(exprId, field, result.url);
+            }
+        } catch (err) {
+            console.error('Expr upload failed:', err);
+            alert(`Upload failed: ${err.message}`);
+        } finally {
+            setUploadingFields(prev => ({ ...prev, [fieldKey]: false }));
+        }
+    };
+
+    const handleAddExpression = () => {
+        // Just add a local item with a temporary ID
+        const tempId = `temp-${Date.now()}`;
+        setExpressions([...expressions, {
+            id: tempId,
+            isNew: true,
+            name: 'New Expression',
+            avatar_url: '',
+            full_url: ''
+        }]);
+    };
+
+    const handleDeleteExpression = (expr) => {
+        if (!window.confirm(`Xoá expression "${expr.name}"?`)) return;
+        setExpressions(prev => prev.filter(e => e.id !== expr.id));
+        if (!expr.isNew) {
+            setDeletedExprIds(prev => new Set(prev).add(expr.id));
+        }
     };
 
     return (
@@ -118,7 +202,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                             </div>
                             <div className={styles.formGroup}>
                                 <label>{isCharacter ? 'Type' : 'Category'}</label>
-                                <input value={isCharacter ? 'character' : (asset.category || asset.type || '')} readOnly />
+                                <input value={category} readOnly />
                             </div>
                         </div>
                         <div className={styles.formGroup}>
@@ -129,10 +213,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 placeholder="Enter name"
                             />
                         </div>
-                        <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                            {saving ? <Loader size={14} className={styles.spinner} /> : <Save size={14} />}
-                            {saving ? 'Đang lưu...' : 'Lưu'}
-                        </button>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                                {saving ? <Loader size={14} className={styles.spinner} /> : <Save size={14} />}
+                                {saving ? 'Đang lưu...' : 'Lưu'}
+                            </button>
+                            {!isCharacter && (
+                                <button className={styles.deleteBtn} onClick={handleDeleteAsset} title="Xoá asset">
+                                    <Trash2 size={14} /> Xoá
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Preview (for non-character assets) */}
@@ -143,6 +234,28 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 {asset.type === 'image' && <img src={asset.url} alt={asset.name} />}
                                 {asset.type === 'video' && <video src={asset.url} controls />}
                                 {asset.type === 'audio' && <audio src={asset.url} controls style={{ width: '100%' }} />}
+                            </div>
+                            <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <input 
+                                    id="replace-file-input" 
+                                    type="file" 
+                                    style={{ display: 'none' }} 
+                                    onChange={handleFileChange} 
+                                    accept={asset.type === 'image' ? 'image/*' : 
+                                            asset.type === 'audio' ? 'audio/*' : 
+                                            asset.type === 'video' ? 'video/*' : '*'}
+                                />
+                                <label htmlFor="replace-file-input" className={styles.saveBtn} style={{ cursor: 'pointer', backgroundColor: file ? 'rgba(184, 169, 255, 0.1)' : '' }}>
+                                    <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
+                                </label>
+                                
+                                {file && (
+                                    <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
+                                        {uploading ? <Loader size={14} className={styles.spinner} /> : <Check size={14} />}
+                                        {uploading ? 'Đang upload...' : 'Upload & Thay thế'}
+                                    </button>
+                                )}
+                                {file && !uploading && <span className={styles.fileName}>{file.name}</span>}
                             </div>
                         </div>
                     )}
@@ -166,7 +279,12 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                     {expressions.map(expr => (
                                         <div key={expr.id} className={styles.expressionCard}>
                                             <div className={styles.expHeader}>
-                                                <span className={styles.expName}>{expr.name}</span>
+                                                <input
+                                                    className={styles.expNameInput}
+                                                    value={expr.name}
+                                                    onChange={e => handleExpressionChange(expr.id, 'name', e.target.value)}
+                                                    placeholder="Expression Name"
+                                                />
                                                 <button
                                                     className={styles.deleteBtn}
                                                     onClick={() => handleDeleteExpression(expr)}
@@ -175,30 +293,56 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
-                                            <div className={styles.expGrid}>
-                                                <div className={styles.expInputGroup}>
-                                                    <label>Avatar URL</label>
-                                                    <input
-                                                        value={expr.avatar_url || ''}
-                                                        onChange={e => handleExpressionChange(expr.id, 'avatar_url', e.target.value)}
-                                                        placeholder="Avatar URL"
-                                                    />
+                                            
+                                            <div className={styles.miniUploadGrid}>
+                                                {/* Avatar Upload */}
+                                                <div className={styles.miniUploadGroup}>
+                                                    <div
+                                                        className={`${styles.miniDropZone} ${uploadingFields[`${expr.id}-avatar_url`] ? styles.uploading : ''}`}
+                                                        onClick={() => !uploadingFields[`${expr.id}-avatar_url`] && document.getElementById(`avatar-file-${expr.id}`).click()}
+                                                    >
+                                                        <input
+                                                            id={`avatar-file-${expr.id}`}
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleExprFileUpload(expr.id, 'avatar_url', e.target.files[0])}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {uploadingFields[`${expr.id}-avatar_url`] ? (
+                                                            <Loader size={12} className={styles.spinner} />
+                                                        ) : expr.avatar_url ? (
+                                                            <img src={expr.avatar_url} alt="avatar" className={styles.miniPreview} />
+                                                        ) : (
+                                                            <ImageIcon size={14} />
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Add Avatar'}</span>
                                                 </div>
-                                                <div className={styles.expInputGroup}>
-                                                    <label>Full Image URL</label>
-                                                    <input
-                                                        value={expr.full_url || ''}
-                                                        onChange={e => handleExpressionChange(expr.id, 'full_url', e.target.value)}
-                                                        placeholder="Full image URL"
-                                                    />
+
+                                                {/* Full Body Upload */}
+                                                <div className={styles.miniUploadGroup}>
+                                                    <div
+                                                        className={`${styles.miniDropZone} ${uploadingFields[`${expr.id}-full_url`] ? styles.uploading : ''}`}
+                                                        onClick={() => !uploadingFields[`${expr.id}-full_url`] && document.getElementById(`full-file-${expr.id}`).click()}
+                                                    >
+                                                        <input
+                                                            id={`full-file-${expr.id}`}
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => handleExprFileUpload(expr.id, 'full_url', e.target.files[0])}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {uploadingFields[`${expr.id}-full_url`] ? (
+                                                            <Loader size={12} className={styles.spinner} />
+                                                        ) : expr.full_url ? (
+                                                            <img src={expr.full_url} alt="full" className={styles.miniPreview} />
+                                                        ) : (
+                                                            <Upload size={14} />
+                                                        )}
+                                                    </div>
+                                                    <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Add Full Body'}</span>
                                                 </div>
                                             </div>
-                                            {(expr.avatar_url || expr.full_url) && (
-                                                <div className={styles.expPreview}>
-                                                    {expr.avatar_url && <img className={styles.miniAvatar} src={expr.avatar_url} alt="avatar" />}
-                                                    {expr.full_url && <img className={styles.miniFull} src={expr.full_url} alt="full" />}
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
