@@ -10,9 +10,9 @@
 }
 
 .modal {
-    width: 90%;
-    max-width: 900px;
-    height: 80vh;
+    width: 95%;
+    max-width: 1000px;
+    height: 85vh;
     background-color: var(--color-bg-dark);
     border: 1px solid var(--color-border);
     border-radius: 12px;
@@ -20,6 +20,32 @@
     flex-direction: column;
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.addBtn {
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: var(--color-accent-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+}
+
+.addBtn:hover {
+    background: var(--color-accent-light);
+    color: white;
 }
 
 .header {
@@ -123,8 +149,8 @@
     overflow-y: auto;
     padding: var(--spacing-xl);
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: var(--spacing-base);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--spacing-lg);
     align-content: start;
     scrollbar-width: none;
 }
@@ -151,7 +177,7 @@
 }
 
 .card {
-    height: 100px;
+    height: auto;
 }
 
 .cardPreview {

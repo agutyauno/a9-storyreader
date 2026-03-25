@@ -11,7 +11,7 @@ import { uploadFileToGithub, getFolderPath } from '../../services/githubService'
  *   onClose() — close modal
  *   onSubmit({ type, name, id, description, displayOrder }) — submit form
  */
-export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
+export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAsset }) {
     const [name, setName] = useState('');
     const [itemId, setItemId] = useState('');
     const [description, setDescription] = useState('');
@@ -125,13 +125,23 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit }) {
 
                     {(type === 'region' || type === 'event' || type === 'story') && (
                         <div className={styles.formGroup}>
-                            <label>{type === 'region' ? 'Icon URL' : 'Image URL'}</label>
-                            <input
-                                type="text"
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="Enter asset URL (optional)"
-                            />
+                            <label>{type === 'region' ? 'Icon' : 'Image'}</label>
+                            <div className={styles.imageInputRow}>
+                                <button
+                                    type="button"
+                                    className={`${styles.browseBtn} ${imageUrl ? styles.hasImage : ''}`}
+                                    title="Chọn ảnh từ Asset"
+                                    onClick={() => onPickAsset?.((url) => setImageUrl(url), 'image')}
+                                >
+                                    <ImageIcon size={18} />
+                                    {imageUrl ? 'Thay đổi ảnh' : 'Chọn ảnh'}
+                                </button>
+                            </div>
+                            {imageUrl && (
+                                <div className={styles.imagePreview}>
+                                    <img src={imageUrl} alt="Preview" />
+                                </div>
+                            )}
                         </div>
                     )}
 

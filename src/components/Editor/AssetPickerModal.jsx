@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader, Image as ImageIcon, Music, Video } from 'lucide-react';
+import { X, Search, Loader, Image as ImageIcon, Music, Video, Plus } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import styles from './AssetPickerModal.module.css';
+import AddAssetModal from './AddAssetModal';
 
 const CATEGORIES = [
     { key: 'all', label: 'Tất cả' },
@@ -24,8 +25,17 @@ const CATEGORIES = [
 export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType }) {
     const [assets, setAssets] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeCat, setActiveCat] = useState(filterType || 'all');
+    const [activeCat, setActiveCat] = useState('all');
     const [search, setSearch] = useState('');
+    const [showAddModal, setShowAddModal] = useState(false);
+
+    useEffect(() => {
+        if (filterType) {
+            setActiveCat(filterType);
+        } else {
+            setActiveCat('all');
+        }
+    }, [filterType, isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -41,6 +51,17 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
             console.error('AssetPicker load failed:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddAsset = async (newAssetData) => {
+        try {
+            await SupabaseAPI.createAsset(newAssetData);
+            await loadAssets(); // Refresh list
+            setShowAddModal(false);
+        } catch (err) {
+            console.error('Failed to create asset from picker:', err);
+            alert(`Lỗi khi tạo asset: ${err.message}`);
         }
     };
 
@@ -80,8 +101,17 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
                 {/* Header */}
-                <div className={styles.header}>
-                    <h3>Chọn Asset</h3>
+                <div className={styles.modalHeader}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h3>Chọn Asset</h3>
+                        <button 
+                            className={styles.addBtn}
+                            onClick={() => setShowAddModal(true)}
+                            title="Thêm Asset mới"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
                     <button className={styles.closeBtn} onClick={onClose}>
                         <X size={18} />
                     </button>
@@ -144,6 +174,12 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                     )}
                 </div>
             </div>
+
+            <AddAssetModal 
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onSubmit={handleAddAsset}
+            />
         </div>
     );
 }

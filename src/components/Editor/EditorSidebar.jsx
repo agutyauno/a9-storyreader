@@ -149,7 +149,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
             {/* Asset Tab */}
             {activeTab === 'asset' && (
-                <AssetPanel onAddAsset={handleAddAsset} />
+                <AssetPanel onAddAsset={handleAddAsset} onPickAsset={onPickAsset} />
             )}
 
             {/* Modals */}
@@ -158,6 +158,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 type={modalType}
                 onClose={() => setModalOpen(false)}
                 onSubmit={handleModalSubmit}
+                onPickAsset={onPickAsset}
             />
             <AddAssetModal
                 isOpen={assetModalOpen}

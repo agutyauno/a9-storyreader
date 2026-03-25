@@ -17,26 +17,36 @@ export const StoryRenderer = {
     return storyContent.sections.map((section) => this.renderSection(section, styles)).join('');
   },
 
-  getAvatar(name) {
-    if (!name) return '/assets/images/character/blank.png';
-    if (name.includes('/')) return name;
-    if (this.characters[name]) {
-      return this.characters[name].avatar || '/assets/images/character/blank.png';
+  getAvatar(nameWithExpr) {
+    if (!nameWithExpr) return '/assets/images/character/blank.png';
+    if (nameWithExpr.includes('/')) return nameWithExpr;
+
+    const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
+    const char = this.characters[name];
+    
+    if (char) {
+      if (expr && char.expressions?.[expr]) {
+        return char.expressions[expr].avatar_url || char.avatar || '/assets/images/character/blank.png';
+      }
+      return char.avatar || '/assets/images/character/blank.png';
     }
-    const baseName = name.includes('.') ? name.split('.')[0] : name;
-    const char = this.characters[baseName];
-    return char?.avatar || '/assets/images/character/blank.png';
+    return '/assets/images/character/blank.png';
   },
 
-  getFullImage(name) {
-    if (!name) return '';
-    if (name.includes('/')) return name;
-    if (this.characters[name]) {
-      return this.characters[name].full_image || '';
+  getFullImage(nameWithExpr) {
+    if (!nameWithExpr) return '';
+    if (nameWithExpr.includes('/')) return nameWithExpr;
+
+    const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
+    const char = this.characters[name];
+
+    if (char) {
+      if (expr && char.expressions?.[expr]) {
+        return char.expressions[expr].full_url || char.full_image || '';
+      }
+      return char.full_image || '';
     }
-    const baseName = name.includes('.') ? name.split('.')[0] : name;
-    const char = this.characters[baseName];
-    return char?.full_image || '';
+    return '';
   },
 
   renderSection(section, styles) {

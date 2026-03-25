@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { LogOut, ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight } from 'lucide-react';
 
 import EditorSidebar from '../components/Editor/EditorSidebar';
 import EditorToolbar from '../components/Editor/EditorToolbar';
@@ -14,15 +15,26 @@ import { StoryScriptSerializer } from '../utils/storySerializer';
 import { SupabaseAPI } from '../services/supabaseApi';
 
 import styles from './EditorPage.module.css';
+const editorStyles = styles;
 
 export default function EditorPage() {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const { storyId } = useParams();  // undefined when creating a new story
     const editorRef = useRef(null);
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (err) {
+            console.error('Logout failed:', err);
+        }
+    };
 
     // Sidebar & Preview visibility & width
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -46,36 +58,39 @@ export default function EditorPage() {
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
 
-    // ─── Entity selection (Region/Arc/Event clicked in tree) ───────────────────
+    // Entity selection (Region/Arc/Event clicked in tree)
     const [selectedEntity, setSelectedEntity] = useState(null);
     // 'story' = code editor, 'entity' = metadata form, null = blank
     const [editorMode, setEditorMode] = useState(storyId ? 'story' : null);
 
-    // ─── Asset Picker Modal ────────────────────────────────────────────────────
+    // Asset Picker Modal
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [pickerFilter, setPickerFilter] = useState(null);
     const pickerCallbackRef = useRef(null);
 
-    const openPicker = (callback) => {
+    const openPicker = (callback, filter = null) => {
         pickerCallbackRef.current = callback;
+        setPickerFilter(filter);
         setPickerOpen(true);
     };
 
     const handlePickerSelect = (url) => {
         pickerCallbackRef.current?.(url);
         pickerCallbackRef.current = null;
+        setPickerFilter(null);
         setPickerOpen(false);
     };
 
-    // ─── Sidebar reload ref ────────────────────────────────────────────────────
+    // Sidebar reload ref
     const sidebarReloadRef = useRef(null);
 
-    // ─── Initial Load ──────────────────────────────────────────────────────────
+    // Initial Load
     useEffect(() => {
         async function loadStory() {
             if (!storyId) {
-                // New story — start with blank template
-                setScriptText(`# Characters\n@char Doctor id="char_doctor"\n\n@bg "bg_amiya_awake"\nDoctor [doctor, ]: Welcome to the editor!`);
-                setEditorMode('story');
+                // New/Blank state — start with empty script and no active editor
+                setScriptText('');
+                setEditorMode(null);
                 return;
             }
 
@@ -109,7 +124,7 @@ export default function EditorPage() {
         loadStory();
     }, [storyId]);
 
-    // ─── Debounced Async Live Preview ─────────────────────────────────────────
+    // Live Preview
     useEffect(() => {
         if (editorMode !== 'story') return;
         const timerId = setTimeout(async () => {
@@ -132,7 +147,7 @@ export default function EditorPage() {
         return () => clearTimeout(timerId);
     }, [scriptText, metadata.name, editorMode]);
 
-    // ─── Resizing Handlers ────────────────────────────────────────────────────
+    // Resizing
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (isResizingSidebar) {
@@ -165,7 +180,6 @@ export default function EditorPage() {
         };
     }, [isResizingSidebar, isResizingPreview]);
 
-    // ─── Handlers ─────────────────────────────────────────────────────────────
     const handleInsertTemplate = (template) => {
         editorRef.current?.insertText(template);
     };
@@ -206,10 +220,8 @@ export default function EditorPage() {
         window.open('/story/preview?preview=1', '_blank');
     };
 
-    // ─── Entity selection from sidebar tree ───────────────────────────────────
     const handleEntitySelect = (node) => {
         if (node.type === 'story') {
-            // Navigate to story editor
             navigate(`/editor/${node.story_id || node.id}`);
             setEditorMode('story');
             setSelectedEntity(null);
@@ -223,10 +235,9 @@ export default function EditorPage() {
         sidebarReloadRef.current?.();
     };
 
-    // ─── Loading / Error states ────────────────────────────────────────────────
     if (loading) {
         return (
-            <div className={styles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <div className={editorStyles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <Loader size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-accent)' }} />
                 <p style={{ color: 'var(--color-text-tertiary)', marginTop: 12 }}>Đang tải story...</p>
             </div>
@@ -235,9 +246,9 @@ export default function EditorPage() {
 
     if (error) {
         return (
-            <div className={styles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <div className={editorStyles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--color-error, #f87171)', fontSize: 16 }}>{error}</p>
-                <button className={styles.backBtn} onClick={() => navigate(-1)} style={{ marginTop: 16 }}>
+                <button className={editorStyles.backBtn} onClick={() => navigate(-1)} style={{ marginTop: 16 }}>
                     <ArrowLeft size={18} /> Quay lại
                 </button>
             </div>
@@ -245,21 +256,20 @@ export default function EditorPage() {
     }
 
     return (
-        <div className={styles.editorPage}>
-            {/* Top Navigation Bar */}
-            <div className={styles.editorHeader}>
-                <div className={styles.headerLeft}>
-                    <button onClick={() => navigate(-1)} className={styles.backBtn} title="Back">
+        <div className={editorStyles.editorPage}>
+            <div className={editorStyles.editorHeader}>
+                <div className={editorStyles.headerLeft}>
+                    <button onClick={() => navigate(-1)} className={editorStyles.backBtn} title="Back">
                         <ArrowLeft size={20} />
                     </button>
                     <button 
                         onClick={() => setIsSidebarVisible(!isSidebarVisible)} 
-                        className={`${styles.toggleBtn} ${isSidebarVisible ? styles.active : ''}`} 
+                        className={`${editorStyles.toggleBtn} ${isSidebarVisible ? editorStyles.active : ''}`} 
                         title={isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
                     >
                         <PanelLeft size={20} />
                     </button>
-                    <h1 className={styles.headerTitle}>
+                    <h1 className={editorStyles.headerTitle}>
                         {editorMode === 'entity' && selectedEntity
                             ? selectedEntity.name
                             : (metadata.story_id ? metadata.name : 'New Story')}
@@ -271,23 +281,26 @@ export default function EditorPage() {
                     </h1>
                 </div>
 
-                <div className={styles.headerRight}>
+                <div className={editorStyles.headerRight}>
                     {editorMode === 'story' && (
                         <>
-                            <button onClick={handleOpenStandalonePreview} className={styles.btnSecondary}>
+                            <button onClick={handleOpenStandalonePreview} className={editorStyles.btnSecondary}>
                                 <ExternalLink size={16} />
                                 Full Preview
                             </button>
-                            <button onClick={handleSave} className={styles.btnPrimary} disabled={saving}>
+                            <button onClick={handleSave} className={editorStyles.btnPrimary} disabled={saving}>
                                 {saving
                                     ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
                                     : <Save size={16} />
                                 }
                                 {saving ? 'Đang lưu...' : 'Lưu'}
                             </button>
+                            <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
+                                <LogOut size={16} />
+                            </button>
                             <button 
                                 onClick={() => setIsPreviewVisible(!isPreviewVisible)} 
-                                className={`${styles.toggleBtn} ${isPreviewVisible ? styles.active : ''}`} 
+                                className={`${editorStyles.toggleBtn} ${isPreviewVisible ? editorStyles.active : ''}`} 
                                 title={isPreviewVisible ? "Hide Preview" : "Show Preview"}
                             >
                                 <PanelRight size={20} />
@@ -297,11 +310,9 @@ export default function EditorPage() {
                 </div>
             </div>
 
-            {/* Main Workspace */}
-            <div className={styles.workspace}>
-                {/* Left Sidebar */}
+            <div className={editorStyles.workspace}>
                 {isSidebarVisible && (
-                    <div className={styles.sidebarWrapper} style={{ width: sidebarWidth }}>
+                    <div className={editorStyles.sidebarWrapper} style={{ width: sidebarWidth }}>
                         <EditorSidebar
                             metadata={metadata}
                             onMetadataChange={setMetadata}
@@ -311,18 +322,17 @@ export default function EditorPage() {
                             onPickAsset={openPicker}
                         />
                         <div 
-                            className={styles.resizer} 
+                            className={editorStyles.resizer} 
                             onMouseDown={() => setIsResizingSidebar(true)}
                         />
                     </div>
                 )}
 
-                {/* Center - Conditional: Code Editor or Metadata Form */}
                 {editorMode === 'story' ? (
                     <>
-                        <div className={styles.editorColumn}>
+                        <div className={editorStyles.editorColumn}>
                             <EditorToolbar onInsert={handleInsertTemplate} />
-                            <div className={styles.editorArea}>
+                            <div className={editorStyles.editorArea}>
                                 <CodeEditor
                                     ref={editorRef}
                                     value={scriptText}
@@ -331,25 +341,24 @@ export default function EditorPage() {
                             </div>
                         </div>
 
-                        {/* Right - Live Preview */}
                         {isPreviewVisible && (
-                            <div className={styles.previewWrapper} style={{ width: previewWidth }}>
+                            <div className={editorStyles.previewWrapper} style={{ width: previewWidth }}>
                                 <div 
-                                    className={`${styles.resizer} ${styles.resizerLeft}`} 
+                                    className={`${editorStyles.resizer} ${editorStyles.resizerLeft}`} 
                                     onMouseDown={() => setIsResizingPreview(true)}
                                 />
-                                <div className={styles.previewColumn} style={{ width: '100%' }}>
-                                    <div className={styles.previewHeader}>
-                                        <span className={styles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
-                                        <span className={styles.previewLabel}>
+                                <div className={editorStyles.previewColumn} style={{ width: '100%' }}>
+                                    <div className={editorStyles.previewHeader}>
+                                        <span className={editorStyles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
+                                        <span className={editorStyles.previewLabel}>
                                             {previewLoading ? 'Parsing...' : 'Live Preview'}
                                         </span>
                                     </div>
-                                    <div className={styles.previewBody}>
+                                    <div className={editorStyles.previewBody}>
                                         {previewData?.story_content ? (
                                             <StoryRenderer previewData={previewData} isPreviewMode={true} />
                                         ) : (
-                                            <div className={styles.previewPlaceholder}>
+                                            <div className={editorStyles.previewPlaceholder}>
                                                 Bắt đầu viết script để xem preview...
                                             </div>
                                         )}
@@ -365,17 +374,17 @@ export default function EditorPage() {
                         onPickAsset={openPicker}
                     />
                 ) : (
-                    <div className={styles.editorColumn}>
-                        <div className={styles.previewPlaceholder} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className={editorStyles.editorColumn}>
+                        <div className={editorStyles.previewPlaceholder} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             Chọn một item từ Story Tree để bắt đầu...
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Asset Picker Modal */}
             <AssetPickerModal
                 isOpen={pickerOpen}
+                filterType={pickerFilter}
                 onClose={() => setPickerOpen(false)}
                 onSelect={handlePickerSelect}
             />

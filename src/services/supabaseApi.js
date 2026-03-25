@@ -566,11 +566,19 @@ export const SupabaseAPI = {
         .forEach(c => {
           const exprs = mockDatabase.charater_expressions.filter(e => e.character_id === c.character_id);
           const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+          
+          // Build expressions map
+          const expressions = {};
+          exprs.forEach(e => {
+            expressions[e.name] = { avatar_url: e.avatar_url, full_url: e.full_url };
+          });
+
           map[c.character_id] = {
             character_id: c.character_id,
             name: c.name,
             avatar_url: def.avatar_url || '',
             full_url:   def.full_url   || '',
+            expressions
           };
         });
       return map;
@@ -592,11 +600,18 @@ export const SupabaseAPI = {
       (charRes.data || []).map(c => {
         const exprs = exprMap[c.character_id] || [];
         const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+        
+        const expressions = {};
+        exprs.forEach(e => {
+          expressions[e.name] = { avatar_url: e.avatar_url, full_url: e.full_url };
+        });
+
         return [c.character_id, {
           character_id: c.character_id,
           name:       c.name,
           avatar_url: def.avatar_url || '',
           full_url:   def.full_url   || '',
+          expressions
         }];
       })
     );

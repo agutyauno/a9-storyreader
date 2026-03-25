@@ -112,7 +112,7 @@ function CharacterCard({ character, onDetail, avatarUrl }) {
 }
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
-export default function AssetPanel({ onAddAsset }) {
+export default function AssetPanel({ onAddAsset, onPickAsset }) {
     const [assets, setAssets] = useState([]);
     const [characters, setCharacters] = useState([]);
     const [avatarMap, setAvatarMap] = useState({});
@@ -272,6 +272,7 @@ export default function AssetPanel({ onAddAsset }) {
                 kind={detailKind}
                 onClose={() => setDetailOpen(false)}
                 onUpdated={() => { loadAll(); setDetailOpen(false); }}
+                onPickAsset={onPickAsset}
             />
         </div>
     );

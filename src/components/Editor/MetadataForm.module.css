@@ -93,18 +93,19 @@
 }
 
 .browseBtn {
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    width: 42px;
-    height: 42px;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-tertiary);
+    gap: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
     cursor: pointer;
-    transition: var(--transition-base);
-    flex-shrink: 0;
+    transition: all 0.2s;
 }
 
 .browseBtn:hover {

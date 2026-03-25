@@ -14,7 +14,7 @@ import styles from './AssetDetailModal.module.css';
  *   onClose()
  *   onUpdated() — callback after updates
  */
-export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated }) {
+export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset }) {
     const [name, setName] = useState('');
     const [expressions, setExpressions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -249,6 +249,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                     <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
                                 </label>
                                 
+                                <button 
+                                    className={styles.saveBtn} 
+                                    style={{ cursor: 'pointer', backgroundColor: 'transparent', border: '1px solid var(--color-border)' }}
+                                    onClick={() => onPickAsset?.(async (url) => {
+                                        await SupabaseAPI.updateAsset(asset.asset_id, { url });
+                                        onUpdated?.();
+                                    })}
+                                >
+                                    <ImageIcon size={14} /> Duyệt asset
+                                </button>
+                                
                                 {file && (
                                     <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
                                         {uploading ? <Loader size={14} className={styles.spinner} /> : <Check size={14} />}
@@ -316,7 +327,16 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                             <ImageIcon size={14} />
                                                         )}
                                                     </div>
-                                                    <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Add Avatar'}</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Add Avatar'}</span>
+                                                        <button 
+                                                            className={styles.miniBrowseBtn} 
+                                                            onClick={() => onPickAsset?.((url) => handleExpressionChange(expr.id, 'avatar_url', url))}
+                                                            title="Duyệt asset"
+                                                        >
+                                                            <ImageIcon size={10} />
+                                                        </button>
+                                                    </div>
                                                 </div>
 
                                                 {/* Full Body Upload */}
@@ -340,7 +360,16 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                             <Upload size={14} />
                                                         )}
                                                     </div>
-                                                    <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Add Full Body'}</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Add Full Body'}</span>
+                                                        <button 
+                                                            className={styles.miniBrowseBtn} 
+                                                            onClick={() => onPickAsset?.((url) => handleExpressionChange(expr.id, 'full_url', url))}
+                                                            title="Duyệt asset"
+                                                        >
+                                                            <ImageIcon size={10} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

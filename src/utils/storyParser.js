@@ -103,6 +103,7 @@ export const StoryScriptParser = {
                     character_id: data.character_id,
                     avatar: dbChar.avatar_url || data.avatar,
                     full_image: dbChar.full_url || data.full_image,
+                    expressions: dbChar.expressions || {}
                 };
             }
         }

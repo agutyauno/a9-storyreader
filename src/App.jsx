@@ -6,9 +6,26 @@ import HomePage from './pages/HomePage';
 import EventPage from './pages/EventPage';
 import StoryPage from './pages/StoryPage';
 import RegionPage from './pages/RegionPage';
-import EditorPage from './pages/EditorPage';
+import EditorPage from './pages/Editor.jsx';
 import Header from './components/Header';
 import Footer from './components/Footer';
+
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginPage from './pages/LoginPage';
+import { Navigate } from 'react-router-dom';
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return null; // Or a loading spinner
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
 
 function AppLayout() {
   const location = useLocation();
@@ -24,7 +41,15 @@ function AppLayout() {
           <Route path="/event/:id" element={<EventPage />} />
           <Route path="/story/:id" element={<StoryPage />} />
           <Route path="/region/:id" element={<RegionPage />} />
-          <Route path="/editor/:storyId?" element={<EditorPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route 
+            path="/editor/:storyId?" 
+            element={
+              <ProtectedRoute>
+                <EditorPage />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </main>
 
@@ -36,7 +61,9 @@ function AppLayout() {
 function App() {
   return (
     <BrowserRouter>
-      <AppLayout />
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

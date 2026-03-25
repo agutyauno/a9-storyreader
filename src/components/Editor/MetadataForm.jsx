@@ -32,7 +32,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
 
     const typeLabel = entity.type.charAt(0).toUpperCase() + entity.type.slice(1);
     const showImage = entity.type === 'region' || entity.type === 'event';
-    const imageLabel = entity.type === 'region' ? 'Icon URL' : 'Banner Image URL';
+    const imageLabel = entity.type === 'region' ? 'Icon' : 'Banner Image';
 
     const handleSave = async () => {
         if (!name.trim()) return;
@@ -116,20 +116,14 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
                     <div className={styles.formGroup}>
                         <label className={styles.label}>{imageLabel}</label>
                         <div className={styles.imageInputRow}>
-                            <input
-                                className={styles.input}
-                                type="text"
-                                value={imageUrl}
-                                onChange={e => setImageUrl(e.target.value)}
-                                placeholder="Asset URL or paste link"
-                            />
                             <button
                                 type="button"
-                                className={styles.browseBtn}
-                                title="Browse Assets"
-                                onClick={handleBrowse}
+                                className={`${styles.browseBtn} ${imageUrl ? styles.hasImage : ''}`}
+                                title="Chọn ảnh từ Asset"
+                                onClick={() => onPickAsset?.((url) => setImageUrl(url), 'image')}
                             >
-                                <ImageIcon size={16} />
+                                <ImageIcon size={18} />
+                                {imageUrl ? 'Thay đổi ảnh' : 'Chọn ảnh'}
                             </button>
                         </div>
                         {imageUrl && (
