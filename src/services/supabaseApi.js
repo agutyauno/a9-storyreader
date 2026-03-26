@@ -5,7 +5,7 @@ import { mockDatabase } from '../utils/mockStoryData';
 // TODO: Set to false when Supabase is fully configured.
 // When false, every method calls Supabase directly.
 // ─────────────────────────────────────────────────────────────────────────────
-const USE_MOCK_DB = true;
+const USE_MOCK_DB = false;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 /** Sort any array by display_order (ascending) */
