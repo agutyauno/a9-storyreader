@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { mockDatabase } from '../utils/mockStoryData';
+import { deleteFileFromGithub } from './githubService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TODO: Set to false when Supabase is fully configured.
@@ -280,7 +281,7 @@ const SupabaseAPI_Raw = {
     if (USE_MOCK_DB) {
       const newItem = { 
         id: Math.max(0, ...mockDatabase.characters.map(c => c.id || 0)) + 1,
-        character_id: charData.id || genId('char'), 
+        character_id: payload.id || genId('char'), 
         name: charData.name,
         description: charData.description 
       };
@@ -288,8 +289,8 @@ const SupabaseAPI_Raw = {
       
       if (expressions?.length) {
         expressions.forEach(e => {
-          mockDatabase.charater_expressions.push({
-            id: Math.max(0, ...mockDatabase.charater_expressions.map(ex => ex.id || 0)) + 1,
+          mockDatabase.character_expressions.push({
+            id: Math.max(0, ...mockDatabase.character_expressions.map(ex => ex.id || 0)) + 1,
             character_id: newItem.character_id,
             name: e.name,
             avatar_url: e.avatar_url,
@@ -300,9 +301,9 @@ const SupabaseAPI_Raw = {
       return newItem;
     }
     
-    // For real Supabase, we transform 'id' from formData to 'character_id'
+    // For real Supabase, we map the custom ID
     const dbPayload = {
-      character_id: charData.id,
+      character_id: payload.id,
       name: charData.name,
       description: charData.description
     };
@@ -317,7 +318,7 @@ const SupabaseAPI_Raw = {
         avatar_url: e.avatar_url,
         full_url: e.full_url
       }));
-      const { error: exprErr } = await supabase.from('charater_expressions').insert(exprData);
+      const { error: exprErr } = await supabase.from('character_expressions').insert(exprData);
       if (exprErr) throw exprErr;
     }
     
@@ -341,6 +342,12 @@ const SupabaseAPI_Raw = {
       mockDatabase.characters = mockDatabase.characters.filter(c => c.character_id !== characterId);
       return;
     }
+    // 1. Delete associated expressions and their files
+    const expressions = await this.getExpressionsByCharacter(characterId);
+    for (const expr of expressions) {
+      await this.deleteExpression(expr.id);
+    }
+    // 2. Delete character
     const { error } = await supabase.from('characters').delete().eq('character_id', characterId);
     if (error) throw error;
   },
@@ -367,8 +374,8 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   async getExpressionsByCharacter(characterId) {
     if (USE_MOCK_DB)
-      return mockDatabase.charater_expressions.filter(e => e.character_id === characterId);
-    const { data, error } = await supabase.from('charater_expressions').select('*').eq('character_id', characterId);
+      return mockDatabase.character_expressions.filter(e => e.character_id === characterId);
+    const { data, error } = await supabase.from('character_expressions').select('*').eq('character_id', characterId);
     if (error) throw error;
     return data || [];
   },
@@ -381,7 +388,7 @@ const SupabaseAPI_Raw = {
   async getExpressionsByCharacters(characterIds) {
     if (!characterIds?.length) return {};
     if (USE_MOCK_DB) {
-      const rows = mockDatabase.charater_expressions.filter(e => characterIds.includes(e.character_id));
+      const rows = mockDatabase.character_expressions.filter(e => characterIds.includes(e.character_id));
       const map = {};
       for (const r of rows) {
         map[r.character_id] = map[r.character_id] || [];
@@ -390,7 +397,7 @@ const SupabaseAPI_Raw = {
       return map;
     }
     const unique = [...new Set(characterIds)];
-    const { data, error } = await supabase.from('charater_expressions').select('*').in('character_id', unique);
+    const { data, error } = await supabase.from('character_expressions').select('*').in('character_id', unique);
     if (error) throw error;
     const map = {};
     (data || []).forEach(r => {
@@ -402,34 +409,47 @@ const SupabaseAPI_Raw = {
 
   async createExpression(payload) {
     if (USE_MOCK_DB) {
-      const maxId = Math.max(0, ...mockDatabase.charater_expressions.map(e => e.id));
+      const maxId = Math.max(0, ...mockDatabase.character_expressions.map(e => e.id));
       const newItem = { id: maxId + 1, ...payload };
-      mockDatabase.charater_expressions.push(newItem);
+      mockDatabase.character_expressions.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('charater_expressions').insert(payload).select().single();
+    const { data, error } = await supabase.from('character_expressions').insert(payload).select().single();
     if (error) throw error;
     return data;
   },
 
   async updateExpression(id, payload) {
     if (USE_MOCK_DB) {
-      const idx = mockDatabase.charater_expressions.findIndex(e => e.id === id);
+      const idx = mockDatabase.character_expressions.findIndex(e => e.id === id);
       if (idx < 0) throw new Error('not-found');
-      Object.assign(mockDatabase.charater_expressions[idx], payload);
-      return mockDatabase.charater_expressions[idx];
+      Object.assign(mockDatabase.character_expressions[idx], payload);
+      return mockDatabase.character_expressions[idx];
     }
-    const { data, error } = await supabase.from('charater_expressions').update(payload).eq('id', id).select().single();
+    const { data, error } = await supabase.from('character_expressions').update(payload).eq('id', id).select().single();
     if (error) throw error;
     return data;
   },
 
   async deleteExpression(id) {
     if (USE_MOCK_DB) {
-      mockDatabase.charater_expressions = mockDatabase.charater_expressions.filter(e => e.id !== id);
+      mockDatabase.character_expressions = mockDatabase.character_expressions.filter(e => e.id !== id);
       return;
     }
-    const { error } = await supabase.from('charater_expressions').delete().eq('id', id);
+    // 1. Fetch URLs for GitHub deletion
+    const { data: expr } = await supabase.from('character_expressions').select('*').eq('id', id).single();
+    if (expr) {
+      if (expr.avatar_url) {
+        const res = await deleteFileFromGithub(expr.avatar_url);
+        if (!res.success) throw new Error(`GitHub delete failed (avatar): ${res.error}`);
+      }
+      if (expr.full_url) {
+        const res = await deleteFileFromGithub(expr.full_url);
+        if (!res.success) throw new Error(`GitHub delete failed (full body): ${res.error}`);
+      }
+    }
+    // 2. Delete from DB
+    const { error } = await supabase.from('character_expressions').delete().eq('id', id);
     if (error) throw error;
   },
 
@@ -496,6 +516,13 @@ const SupabaseAPI_Raw = {
       mockDatabase.assets = mockDatabase.assets.filter(a => a.asset_id !== assetId);
       return;
     }
+    // 1. Fetch asset to get URL for GitHub deletion
+    const { data: asset } = await supabase.from('assets').select('url').eq('asset_id', assetId).single();
+    if (asset?.url) {
+      const res = await deleteFileFromGithub(asset.url);
+      if (!res.success) throw new Error(`GitHub delete failed: ${res.error}`);
+    }
+    // 2. Delete from DB
     const { error } = await supabase.from('assets').delete().eq('asset_id', assetId);
     if (error) throw error;
   },
@@ -518,11 +545,10 @@ const SupabaseAPI_Raw = {
       const newItem = { 
         id: Math.max(0, ...mockDatabase.gallery.map(g => g.id || 0)) + 1,
         gallery_id: payload.id || genId('gallery'), 
-        display_order: payload.displayOrder || 0,
+        display_order: payload.display_order || 0,
         event_id: payload.event_id || null,
-        title: payload.name,
-        image_url: payload.imageUrl || '',
-        description: payload.description || '' // Note: schema says title, maybe add description to DB later?
+        title: payload.title,
+        image_url: payload.image_url || '',
       };
       mockDatabase.gallery.push(newItem);
       return newItem;
@@ -531,9 +557,9 @@ const SupabaseAPI_Raw = {
     const dbPayload = {
       gallery_id: payload.id,
       event_id: payload.event_id,
-      title: payload.name,
-      image_url: payload.imageUrl,
-      display_order: payload.displayOrder || 0
+      title: payload.title,
+      image_url: payload.image_url,
+      display_order: payload.display_order || 0
     };
     
     const { data, error } = await supabase.from('gallery').insert(dbPayload).select().single();

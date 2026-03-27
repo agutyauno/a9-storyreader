@@ -20,8 +20,8 @@ const ASSET_TYPES = [
 ];
 
 export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
-    const [assetValue, setAssetValue] = useState('');
     const [assetId, setAssetId] = useState('');
+    const [assetValue, setAssetValue] = useState('');
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
 
@@ -92,7 +92,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!assetValue || !assetId.trim()) {
+        if (!assetValue || !assetId) {
             setError('Missing required fields');
             return;
         }
@@ -127,11 +127,11 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
 
                 // 2. Submit character with expressions
                 await onSubmit({
-                    type: 'character',
-                    category: 'character',
-                    asset_id: assetId.trim(),
+                    type: selectedType.type,
+                    category: selectedType.category,
                     name: name.trim(),
                     description: description.trim(),
+                    id: assetId.trim(),
                     expressions: filteredExprs.map(e => ({
                         name: e.name.trim(),
                         avatar_url: e.avatarUrl,
@@ -148,11 +148,13 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                 }
 
                 // 2. ONLY if upload succeeded, submit to DB
+                const finalName = name.trim() || assetId.trim();
                 await onSubmit({
                     type: selectedType.type,
                     category: selectedType.category,
-                    asset_id: assetId.trim(),
-                    name: name.trim(),
+                    name: finalName,
+                    description: description.trim(),
+                    id: assetId.trim(),
                     url: uploadResult.url,
                 });
             }
@@ -206,34 +208,36 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                         </select>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Asset ID <span className={styles.required}>*</span></label>
-                        <input
-                            type="text"
-                            value={assetId}
-                            onChange={(e) => setAssetId(e.target.value)}
-                            placeholder={isCharacter ? "e.g. char_amiya" : "e.g. bg_lungmen_sunset"}
-                            required
-                            disabled={isUploading}
-                        />
-                        <small>{isCharacter ? "Character identifier." : "Internal ID used in scripts."}</small>
-                    </div>
-
-                    {(isCharacter || assetValue === 'gallery') && (
+                    {assetValue && (
                         <div className={styles.formGroup}>
-                            <label>{isCharacter ? 'Display Name' : 'Title'}</label>
+                            <label>{isCharacter ? 'Character ID' : 'Asset ID'} <span className={styles.required}>*</span></label>
+                            <input
+                                type="text"
+                                value={assetId}
+                                onChange={(e) => setAssetId(e.target.value)}
+                                placeholder={isCharacter ? "e.g. char_amiya" : "e.g. bg_forest"}
+                                disabled={isUploading}
+                                required
+                            />
+                        </div>
+                    )}
+
+
+                    {assetValue && (isCharacter || assetValue === 'gallery') && (
+                        <div className={styles.formGroup}>
+                            <label>{isCharacter ? 'Display Name' : 'Title'} <span className={styles.required}>*</span></label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder={isCharacter ? "e.g. Amiya" : "e.g. Illustration Title"}
                                 disabled={isUploading}
-                                required={assetValue === 'gallery'}
+                                required
                             />
                         </div>
                     )}
 
-                    {isCharacter && (
+                    {assetValue && isCharacter && (
                         <div className={styles.formGroup}>
                             <label>Description</label>
                             <textarea
@@ -425,7 +429,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                         <button
                             type="submit"
                             className={styles.submitBtn}
-                            disabled={isUploading || (!isCharacter && !file) || !assetId || !assetValue}
+                            disabled={isUploading || (!isCharacter && !file) || !assetValue}
                         >
                             {isUploading ? (
                                 <>

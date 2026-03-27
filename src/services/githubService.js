@@ -78,3 +78,57 @@ export const uploadFileToGithub = async (file, folderPath) => {
         };
     }
 };
+/**
+ * Deletes a file from GitHub via Supabase Edge Function 'github-manager'.
+ * @param {string} url - The full URL of the asset to delete.
+ */
+export const deleteFileFromGithub = async (url) => {
+    if (!url) return { success: true };
+    
+    // Extract path from URL: https://raw.githubusercontent.com/agutyauno/a9sr-data/main/path/to/file
+    let fullPath = url;
+    if (url.includes('/main/')) {
+        fullPath = url.split('/main/')[1];
+    } else if (url.includes('githubusercontent.com')) {
+        const parts = url.split('/');
+        const mainIndex = parts.indexOf('main');
+        if (mainIndex !== -1) {
+            fullPath = parts.slice(mainIndex + 1).join('/');
+        }
+    }
+
+    // Split fullPath into folderPath and fileName as required by github-manager edge function
+    const pathParts = fullPath.split('/');
+    const fileName = pathParts.pop();
+    const folderPath = pathParts.join('/');
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Unauthorized');
+
+        const { data, error } = await supabase.functions.invoke('github-manager', {
+            body: {
+                action: 'delete',
+                folderPath: folderPath,
+                fileName: fileName,
+                // The edge function has a strict check: if (!action || !fileName || !rawBase64) return 400
+                // We must provide a dummy contentBase64 even for delete action.
+                contentBase64: 'ZGVsZXRl', 
+                branch: 'main'
+            }
+        });
+
+        if (error || !data?.success) {
+            console.error('GitHub delete failed:', error || data?.error);
+            return {
+                success: false,
+                error: (error?.message || data?.error || 'GitHub delete failed')
+            };
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error('Error in deleteFileFromGithub:', err);
+        return { success: false, error: err.message };
+    }
+};

@@ -215,6 +215,15 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
         return !q || c.name?.toLowerCase().includes(q) || c.character_id?.toLowerCase().includes(q);
     });
 
+    const allItems = activeCategory === 'all'
+        ? [
+            ...filteredAssets.map(a => ({ ...a, gridKind: 'asset' })),
+            ...filteredChars.map(c => ({ ...c, gridKind: 'character' }))
+        ]
+        : isCharacterView
+            ? filteredChars.map(c => ({ ...c, gridKind: 'character' }))
+            : filteredAssets.map(a => ({ ...a, gridKind: 'asset' }));
+
     return (
         <div className={styles.panel}>
             {/* Search bar + add button */}
@@ -253,30 +262,29 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                     <div className={styles.centerState}>
                         <Loader size={20} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-accent)' }} />
                     </div>
-                ) : isCharacterView ? (
-                    filteredChars.length === 0 ? (
-                        <div className={styles.centerState}>
-                            <p>Không tìm thấy character nào.</p>
-                        </div>
-                    ) : (
-                        filteredChars.map(char => (
-                            <CharacterCard 
-                                key={char.character_id} 
-                                character={char} 
-                                onDetail={openCharacterDetail} 
-                                onDelete={handleDelete}
-                                avatarUrl={avatarMap[char.character_id]} 
-                            />
-                        ))
-                    )
                 ) : (
-                    filteredAssets.length === 0 ? (
+                    allItems.length === 0 ? (
                         <div className={styles.centerState}>
-                            <p>Không tìm thấy asset nào.</p>
+                            <p>Không tìm thấy mục nào.</p>
                         </div>
                     ) : (
-                        filteredAssets.map(asset => (
-                            <AssetCard key={asset.asset_id} asset={asset} onDelete={handleDelete} onDetail={openAssetDetail} />
+                        allItems.map(item => (
+                            item.gridKind === 'character' ? (
+                                <CharacterCard 
+                                    key={item.character_id} 
+                                    character={item} 
+                                    onDetail={openCharacterDetail} 
+                                    onDelete={handleDelete}
+                                    avatarUrl={avatarMap[item.character_id]} 
+                                />
+                            ) : (
+                                <AssetCard 
+                                    key={item.asset_id} 
+                                    asset={item} 
+                                    onDelete={handleDelete} 
+                                    onDetail={openAssetDetail} 
+                                />
+                            )
                         ))
                     )
                 )}

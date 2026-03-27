@@ -112,11 +112,11 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             type="text"
                             value={itemId}
                             onChange={(e) => setItemId(e.target.value)}
-                            placeholder={`e.g. ${type}-new`}
+                            placeholder={`e.g. ${type}_01`}
                             required
                         />
-                        <small>Provide a unique ID ({type}_id). This field is required.</small>
                     </div>
+
 
                     <div className={styles.formGroup}>
                         <label>Description</label>

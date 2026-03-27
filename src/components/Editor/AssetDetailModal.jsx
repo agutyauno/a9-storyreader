@@ -61,20 +61,23 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 // 1. Update character name
                 await SupabaseAPI.updateCharacter(charId, { name: name.trim() });
                 
-                // 2. Sync expressions: Upsert current list
+                // 2. Sync expressions: Update existing or create new
                 for (const expr of expressions) {
                     const exprData = {
                         name: expr.name,
                         avatar_url: expr.avatar_url,
                         full_url: expr.full_url
                     };
-                    if (expr.id && !expr.isNew) {
-                        await SupabaseAPI.updateExpression(expr.id, exprData);
-                    } else {
+                    
+                    // isNew is set in handleAddExpression for new local items
+                    if (expr.isNew) {
                         await SupabaseAPI.createExpression({
                             character_id: charId,
                             ...exprData
                         });
+                    } else if (expr.id) {
+                        // Existing in DB
+                        await SupabaseAPI.updateExpression(expr.id, exprData);
                     }
                 }
 
@@ -243,14 +246,16 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 <input value={category} readOnly />
                             </div>
                         </div>
-                        <div className={styles.formGroup}>
-                            <label>Display Name</label>
-                            <input
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                placeholder="Enter name"
-                            />
-                        </div>
+                        {(isCharacter || asset.category === 'gallery') && (
+                            <div className={styles.formGroup}>
+                                <label>{isCharacter ? 'Display Name' : 'Title'}</label>
+                                <input
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="Enter name"
+                                />
+                            </div>
+                        )}
                         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                             <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
                                 {saving ? <Loader size={14} className={styles.spinner} /> : <Save size={14} />}
@@ -290,17 +295,6 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 <label htmlFor="replace-file-input" className={styles.saveBtn} style={{ cursor: 'pointer', backgroundColor: file ? 'rgba(184, 169, 255, 0.1)' : '' }}>
                                     <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
                                 </label>
-                                
-                                <button 
-                                    className={styles.saveBtn} 
-                                    style={{ cursor: 'pointer', backgroundColor: 'transparent', border: '1px solid var(--color-border)' }}
-                                    onClick={() => onPickAsset?.(async (url) => {
-                                        await SupabaseAPI.updateAsset(asset.asset_id, { url });
-                                        onUpdated?.();
-                                    })}
-                                >
-                                    <ImageIcon size={14} /> Duyệt asset
-                                </button>
                                 
                                 {file && (
                                     <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
@@ -371,13 +365,6 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                     </div>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                         <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Add Avatar'}</span>
-                                                        <button 
-                                                            className={styles.miniBrowseBtn} 
-                                                            onClick={() => onPickAsset?.((url) => handleExpressionChange(expr.id, 'avatar_url', url))}
-                                                            title="Duyệt asset"
-                                                        >
-                                                            <ImageIcon size={10} />
-                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -404,13 +391,6 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                     </div>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                         <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Add Full Body'}</span>
-                                                        <button 
-                                                            className={styles.miniBrowseBtn} 
-                                                            onClick={() => onPickAsset?.((url) => handleExpressionChange(expr.id, 'full_url', url))}
-                                                            title="Duyệt asset"
-                                                        >
-                                                            <ImageIcon size={10} />
-                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>

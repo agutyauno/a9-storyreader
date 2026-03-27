@@ -45,7 +45,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     region_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.displayOrder ?? 0,
+                    display_order: formData.displayOrder,
                     icon_url: formData.imageUrl,
                 });
             } else if (modalType === 'arc') {
@@ -53,7 +53,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     arc_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.displayOrder ?? 0,
+                    display_order: formData.displayOrder,
                     region_id: modalParent?.region_id || modalParent?.id,
                 });
             } else if (modalType === 'event') {
@@ -61,7 +61,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     event_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.displayOrder ?? 0,
+                    display_order: formData.displayOrder,
                     arc_id: modalParent?.arc_id || modalParent?.id,
                     image_url: formData.imageUrl,
                 });
@@ -70,13 +70,13 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     story_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.displayOrder ?? 0,
+                    display_order: formData.displayOrder,
                     event_id: modalParent?.event_id || modalParent?.id,
                     story_content: { characters: {}, sections: [] },
                 });
             } else if (modalType === 'character') {
                 created = await SupabaseAPI.createCharacter({
-                    id: formData.id,
+                    character_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     expressions: formData.expressions
@@ -85,7 +85,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 created = await SupabaseAPI.createGallery({
                     gallery_id: formData.id,
                     title: formData.name,
-                    display_order: formData.displayOrder ?? 0,
+                    display_order: formData.displayOrder,
                     event_id: modalParent?.event_id || modalParent?.id || null, // Optional FK
                     image_url: formData.imageUrl
                 });
@@ -108,26 +108,29 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
     // ─── Asset CRUD ────────────────────────────────────────────────────────────
     const handleAssetSubmit = async (formData) => {
         try {
+            let created;
             if (formData.type === 'character') {
-                await SupabaseAPI.createCharacter({
-                    id: formData.asset_id,
+                created = await SupabaseAPI.createCharacter({
+                    character_id: formData.id,
                     name: formData.name,
                     description: formData.description || '',
                     expressions: formData.expressions || []
                 });
             } else if (formData.category === 'gallery') {
-                await SupabaseAPI.createGallery({
-                    id: formData.asset_id,
-                    name: formData.name,
-                    imageUrl: formData.url || '',
-                    displayOrder: 0
+                created = await SupabaseAPI.createGallery({
+                    gallery_id: formData.id,
+                    title: formData.name,
+                    image_url: formData.url || '',
+                    display_order: 0
                 });
             } else {
-                await SupabaseAPI.createAsset({
-                    asset_id: formData.asset_id,
+                created = await SupabaseAPI.createAsset({
+                    asset_id: formData.id,
                     type: formData.type,
                     category: formData.category,
                     url: formData.url || '',
+                    name: formData.name,
+                    description: formData.description || ''
                 });
             }
             assetReloadRef.current?.();

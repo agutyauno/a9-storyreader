@@ -303,8 +303,8 @@ export const mockDatabase = {
     { character_id: 'char_w', name: 'W', description: 'Sarkaz Mercenary' }
   ],
 
-  // ─── charater_expressions (note: intentional typo from DB) ──────────────────
-  charater_expressions: [
+  // ─── character_expressions (note: intentional typo from DB) ──────────────────
+  character_expressions: [
     // Doctor
     { id: 1, character_id: 'char_doctor', name: 'default', avatar_url: '/assets/images/character/doctor/doctor_avatar.png', full_url: '/assets/images/character/doctor/doctor.png' },
     // Hibiscus
