@@ -131,6 +131,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                     category: selectedType.category,
                     name: name.trim(),
                     description: description.trim(),
+                    asset_id: assetId.trim(),
                     id: assetId.trim(),
                     expressions: filteredExprs.map(e => ({
                         name: e.name.trim(),
@@ -154,6 +155,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                     category: selectedType.category,
                     name: finalName,
                     description: description.trim(),
+                    asset_id: assetId.trim(),
                     id: assetId.trim(),
                     url: uploadResult.url,
                 });

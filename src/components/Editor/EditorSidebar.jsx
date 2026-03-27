@@ -126,7 +126,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
             } else {
                 // Table 'assets' only has: asset_id, type, category, url
                 created = await SupabaseAPI.createAsset({
-                    asset_id: formData.id,
+                    asset_id: formData.asset_id || formData.id,
                     type: formData.type,
                     category: formData.category,
                     url: formData.url || '',
