@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Check, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Check, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import styles from './AddItemModal.module.css';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
 
@@ -20,30 +20,46 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
     
     // Tracking upload status for image fields
     const [uploadingFields, setUploadingFields] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
 
     if (!isOpen) return null;
 
     const typeLabel = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Item';
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!name.trim() || !itemId.trim()) return;
+        if (!name.trim() || !itemId.trim()) {
+            setError('Please fill in Name and ID');
+            return;
+        }
 
-        onSubmit({
-            type,
-            name: name.trim(),
-            id: itemId.trim(),
-            description: description.trim(),
-            displayOrder: displayOrder ? parseInt(displayOrder) : null,
-            imageUrl: imageUrl.trim() || null,
-        });
+        setIsSubmitting(true);
+        setError(null);
 
-        // Reset
-        setName('');
-        setItemId('');
-        setDescription('');
-        setDisplayOrder('');
-        setImageUrl('');
+        try {
+            await onSubmit({
+                type,
+                name: name.trim(),
+                id: itemId.trim(),
+                description: description.trim(),
+                displayOrder: displayOrder ? parseInt(displayOrder) : null,
+                imageUrl: imageUrl.trim() || null,
+            });
+
+            // Reset
+            setName('');
+            setItemId('');
+            setDescription('');
+            setDisplayOrder('');
+            setImageUrl('');
+            onClose();
+        } catch (err) {
+            console.error('Submit item failed:', err);
+            setError(err.message || 'Failed to create item');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleFileUpload = async (index, field, file) => {
@@ -123,7 +139,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                         />
                     </div>
 
-                    {(type === 'region' || type === 'event' || type === 'story') && (
+                    {(type === 'region' || type === 'event') && (
                         <div className={styles.formGroup}>
                             <label>{type === 'region' ? 'Icon' : 'Image'}</label>
                             <div className={styles.imageInputRow}>
@@ -145,12 +161,44 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                         </div>
                     )}
 
+                    {error && (
+                        <div style={{
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 107, 107, 0.1)',
+                            color: '#ff6b6b',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginBottom: '16px',
+                            border: '1px solid rgba(255, 107, 107, 0.2)'
+                        }}>
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
+
                     <div className={styles.formActions}>
-                        <button type="button" className={styles.cancelBtn} onClick={onClose}>
+                        <button 
+                            type="button" 
+                            className={styles.cancelBtn} 
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                        >
                             Cancel
                         </button>
-                        <button type="submit" className={styles.submitBtn}>
-                            Add {typeLabel}
+                        <button 
+                            type="submit" 
+                            className={styles.submitBtn}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 size={16} className={styles.spinner} style={{ marginRight: '8px' }} />
+                                    Creating...
+                                </>
+                            ) : `Add ${typeLabel}`}
                         </button>
                     </div>
                 </form>

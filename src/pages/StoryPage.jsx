@@ -119,13 +119,13 @@ export default function StoryPage() {
       let node;
       const nodesToUpdate = [];
       while (node = walker.nextNode()) {
-        if (node.textContent.includes('Dr.@nickname') || node.originalText) {
+        if (node.textContent.includes('@nickname') || node.originalText) {
           if (!node.originalText) node.originalText = node.textContent;
           nodesToUpdate.push(node);
         }
       }
       nodesToUpdate.forEach(n => {
-        n.textContent = nickname ? n.originalText.replace(/Dr\.@nickname/g, `Dr. ${nickname}`) : n.originalText;
+        n.textContent = nickname ? n.originalText.replace(/@nickname/g, nickname) : n.originalText;
       });
     };
     if (docInput) {

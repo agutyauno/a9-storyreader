@@ -106,13 +106,16 @@ function CharacterCard({ character, onDetail, avatarUrl }) {
                 <button className={styles.cardBtn} title="Copy ID" onClick={copyId}>
                     {copied ? '✓' : <Copy size={12} />}
                 </button>
+                <button className={`${styles.cardBtn} ${styles.danger}`} title="Xoá" onClick={(e) => { e.stopPropagation(); onDelete(character); }}>
+                    <Trash2 size={12} />
+                </button>
             </div>
         </div>
     );
 }
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
-export default function AssetPanel({ onAddAsset, onPickAsset }) {
+export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }) {
     const [assets, setAssets] = useState([]);
     const [characters, setCharacters] = useState([]);
     const [avatarMap, setAvatarMap] = useState({});
@@ -159,13 +162,21 @@ export default function AssetPanel({ onAddAsset, onPickAsset }) {
 
     useEffect(() => { loadAll(); }, []);
 
-    const handleDelete = async (asset) => {
-        if (!window.confirm(`Xoá asset "${asset.name || asset.asset_id}"?`)) return;
+    const handleDelete = async (item) => {
+        const isChar = !!item.character_id;
+        const id = isChar ? item.character_id : item.asset_id;
+        const name = item.name || id;
+
+        if (!window.confirm(`Xoá ${isChar ? 'nhân vật' : 'asset'} "${name}"?`)) return;
         try {
-            await SupabaseAPI.deleteAsset(asset.asset_id);
-            setAssets(prev => prev.filter(a => a.asset_id !== asset.asset_id));
+            if (isChar) await SupabaseAPI.deleteCharacter(id);
+            else await SupabaseAPI.deleteAsset(id);
+            
+            showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
+            loadAll(); // Reload everything to ensure UI is in sync
         } catch (err) {
-            alert(`Xoá thất bại: ${err.message}`);
+            console.error('Delete failed:', err);
+            showNotification(`${isChar ? 'Xoá nhân vật' : 'Xoá asset'} thất bại: ${err.message}`, 'error');
         }
     };
 
@@ -249,7 +260,13 @@ export default function AssetPanel({ onAddAsset, onPickAsset }) {
                         </div>
                     ) : (
                         filteredChars.map(char => (
-                            <CharacterCard key={char.character_id} character={char} onDetail={openCharacterDetail} avatarUrl={avatarMap[char.character_id]} />
+                            <CharacterCard 
+                                key={char.character_id} 
+                                character={char} 
+                                onDetail={openCharacterDetail} 
+                                onDelete={handleDelete}
+                                avatarUrl={avatarMap[char.character_id]} 
+                            />
                         ))
                     )
                 ) : (
@@ -273,6 +290,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset }) {
                 onClose={() => setDetailOpen(false)}
                 onUpdated={() => { loadAll(); setDetailOpen(false); }}
                 onPickAsset={onPickAsset}
+                showNotification={showNotification}
             />
         </div>
     );

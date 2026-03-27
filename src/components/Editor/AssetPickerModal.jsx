@@ -56,12 +56,33 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
 
     const handleAddAsset = async (newAssetData) => {
         try {
-            await SupabaseAPI.createAsset(newAssetData);
+            if (newAssetData.type === 'character') {
+                await SupabaseAPI.createCharacter({
+                    id: newAssetData.asset_id,
+                    name: newAssetData.name,
+                    description: newAssetData.description || '',
+                    expressions: newAssetData.expressions || []
+                });
+            } else if (newAssetData.category === 'gallery') {
+                await SupabaseAPI.createGallery({
+                    id: newAssetData.asset_id,
+                    name: newAssetData.name,
+                    imageUrl: newAssetData.url || '',
+                    displayOrder: 0
+                });
+            } else {
+                await SupabaseAPI.createAsset({
+                    asset_id: newAssetData.asset_id,
+                    type: newAssetData.type,
+                    category: newAssetData.category,
+                    url: newAssetData.url || '',
+                });
+            }
             await loadAssets(); // Refresh list
             setShowAddModal(false);
         } catch (err) {
             console.error('Failed to create asset from picker:', err);
-            alert(`Lỗi khi tạo asset: ${err.message}`);
+            throw err;
         }
     };
 

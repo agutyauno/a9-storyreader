@@ -5,6 +5,7 @@ import { EditorView } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { createTheme } from '@uiw/codemirror-themes';
+import { autocompletion } from '@codemirror/autocomplete';
 
 /**
  * Custom CodeMirror 6 theme to match the global CSS variables (dark gray palette).
@@ -79,6 +80,91 @@ const CodeEditor = forwardRef(({ value, onChange }, ref) => {
         }
     }));
 
+    const vnscriptCompletionSource = (context) => {
+        const word = context.matchBefore(/[@\w]*/);
+        if (!word || (word.from === word.to && !context.explicit)) return null;
+
+        const line = context.state.doc.lineAt(context.pos);
+        const lineText = line.text;
+        const textBefore = lineText.slice(0, context.pos - line.from);
+
+        // 1. Directive suggestions (starts with @)
+        if (word.text.startsWith('@')) {
+            const snippet = (text, offset = 0) => (view, completion, from, to) => {
+                const insert = typeof text === 'function' ? text(completion) : text;
+                view.dispatch({
+                    changes: { from, to, insert },
+                    selection: { anchor: from + insert.length + offset },
+                    scrollIntoView: true
+                });
+            };
+
+            const options = [
+                { label: '@char', type: 'keyword', apply: snippet('@char ', 0), detail: 'Declare character' },
+                { label: '@bg', type: 'keyword', apply: snippet('@bg ""', -1), detail: 'Change background' },
+                { label: '@bgm', type: 'keyword', apply: snippet('@bgm id=""', -1), detail: 'Play background music' },
+                { label: '@sfx', type: 'keyword', apply: snippet('@sfx ""', -1), detail: 'Play sound effect' },
+                { label: '@video', type: 'keyword', apply: snippet('@video src=""', -1), detail: 'Play video' },
+                { label: '@decision', type: 'keyword', apply: snippet('@decision ""', -1), detail: 'Choice menu' },
+                { label: '@response', type: 'keyword', apply: snippet('@response ', 0), detail: 'Choice response' },
+                { label: '@section', type: 'keyword', detail: 'Break into chunks' },
+                { label: '@nickname', type: 'variable', detail: 'Shorthand for player name' },
+            ];
+            return {
+                from: word.from,
+                options: options.filter(o => o.label.startsWith(word.text))
+            };
+        }
+
+        // 2. Asset ID suggestions (inside quotes after specific params)
+        const assetMatch = textBefore.match(/(?:id|src|image|loop|intro|at)\s*=\s*"([^"]*)$/);
+        const bgRawMatch = textBefore.match(/@bg\s+"([^"]*)$/);
+        const sfxRawMatch = textBefore.match(/@sfx\s+"([^"]*)"\s+src="([^"]*)$/);
+
+        if (assetMatch || bgRawMatch || sfxRawMatch) {
+            const currentWord = context.matchBefore(/[\w]*/);
+            return {
+                from: currentWord.from,
+                options: (assets || []).map(a => ({
+                    label: a.asset_id,
+                    type: 'constant',
+                    detail: a.category || a.type
+                }))
+            };
+        }
+
+        // 3. Expressions (inside brackets)
+        if (textBefore.match(/\[\s*[\w, ]*$/)) {
+            const currentWord = context.matchBefore(/[\w]*/);
+            return {
+                from: currentWord.from,
+                options: [
+                    { label: 'default', type: 'property' },
+                    { label: 'smile', type: 'property' },
+                    { label: 'angry', type: 'property' },
+                    { label: 'serious', type: 'property' },
+                    { label: 'sad', type: 'property' },
+                    { label: 'happy', type: 'property' },
+                    { label: 'surprised', type: 'property' },
+                ]
+            };
+        }
+
+        // 4. Character IDs (after @char or at start of line for dialogue)
+        if (textBefore.match(/^@char\s+\S+\s+id\s*=\s*"/) || textBefore.match(/^[^:]*$/)) {
+             return {
+                from: word.from,
+                options: (characters || []).map(c => ({
+                    label: c.character_id,
+                    type: 'variable',
+                    detail: c.name
+                }))
+            };
+        }
+
+        return null;
+    };
+
     return (
         <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
             <CodeMirror
@@ -86,7 +172,11 @@ const CodeEditor = forwardRef(({ value, onChange }, ref) => {
                 value={value}
                 height="100%"
                 theme={editorTheme}
-                extensions={[vnscriptLanguage, fontExtension]}
+                extensions={[
+                    vnscriptLanguage, 
+                    fontExtension,
+                    autocompletion({ override: [vnscriptCompletionSource] })
+                ]}
                 onChange={onChange}
                 basicSetup={{
                     lineNumbers: true,

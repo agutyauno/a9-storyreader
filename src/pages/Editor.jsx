@@ -8,6 +8,7 @@ import EditorToolbar from '../components/Editor/EditorToolbar';
 import CodeEditor from '../components/Editor/CodeEditor';
 import MetadataForm from '../components/Editor/MetadataForm';
 import AssetPickerModal from '../components/Editor/AssetPickerModal';
+import NotificationToast from '../components/Editor/NotificationToast'; // New
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
 
 import { StoryScriptParser } from '../utils/storyParser';
@@ -42,6 +43,12 @@ export default function EditorPage() {
     const [sidebarWidth, setSidebarWidth] = useState(280);
     const [previewWidth, setPreviewWidth] = useState(420);
 
+    // Notification State
+    const [notification, setNotification] = useState({ message: '', type: 'success' });
+    const showNotification = (message, type = 'success') => {
+        setNotification({ message, type });
+    };
+
     // Resizing state
     const [isResizingSidebar, setIsResizingSidebar] = useState(false);
     const [isResizingPreview, setIsResizingPreview] = useState(false);
@@ -57,6 +64,9 @@ export default function EditorPage() {
     const [scriptText, setScriptText] = useState('');
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [doctorNickname, setDoctorNickname] = useState(localStorage.getItem('doctor_nickname') || '');
+    const [allCharacters, setAllCharacters] = useState([]);
+    const [allAssets, setAllAssets] = useState([]);
 
     // Entity selection (Region/Arc/Event clicked in tree)
     const [selectedEntity, setSelectedEntity] = useState(null);
@@ -123,6 +133,53 @@ export default function EditorPage() {
         }
         loadStory();
     }, [storyId]);
+    
+    // Load metadata for editor suggestions and parser cache (run once)
+    useEffect(() => {
+        async function loadMetadata() {
+            try {
+                const [chars, assets] = await Promise.all([
+                    SupabaseAPI.getCharacters(),
+                    SupabaseAPI.getAssets()
+                ]);
+                
+                // Fetch expressions for all characters to build the cache
+                const charIds = chars.filter(c => c.character_id).map(c => c.character_id);
+                const exprMap = charIds.length > 0 
+                  ? await SupabaseAPI.getExpressionsByCharacters(charIds)
+                  : {};
+                
+                const charactersWithExprs = chars.map(c => {
+                    const exprs = exprMap[c.character_id] || [];
+                    const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+                    const expressions = {};
+                    exprs.forEach(e => {
+                        expressions[e.name] = { avatar_url: e.avatar_url, full_url: e.full_url };
+                    });
+                    return {
+                        ...c,
+                        avatar_url: def.avatar_url || '',
+                        full_url: def.full_url || '',
+                        expressions
+                    };
+                });
+
+                setAllCharacters(charactersWithExprs);
+                setAllAssets(assets);
+            } catch (err) {
+                console.error('Failed to load character/asset metadata:', err);
+            }
+        }
+        loadMetadata();
+    }, []);
+
+    const charCacheMap = React.useMemo(() => {
+        return Object.fromEntries(allCharacters.map(c => [c.character_id, c]));
+    }, [allCharacters]);
+
+    const assetCacheMap = React.useMemo(() => {
+        return Object.fromEntries(allAssets.map(a => [a.asset_id, a]));
+    }, [allAssets]);
 
     // Live Preview
     useEffect(() => {
@@ -131,9 +188,9 @@ export default function EditorPage() {
             if (!scriptText) return;
             setPreviewLoading(true);
             try {
-                const parsed = await StoryScriptParser.parseWithDB(scriptText);
+                const parsed = await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
                 setPreviewData({ name: metadata.name, story_content: parsed });
-            } catch {
+            } catch (err) {
                 try {
                     const parsed = StoryScriptParser.parse(scriptText);
                     setPreviewData({ name: metadata.name, story_content: parsed });
@@ -145,7 +202,12 @@ export default function EditorPage() {
             }
         }, 600);
         return () => clearTimeout(timerId);
-    }, [scriptText, metadata.name, editorMode]);
+    }, [scriptText, metadata.name, editorMode, charCacheMap, assetCacheMap]);
+
+    // Persist Nickname
+    useEffect(() => {
+        localStorage.setItem('doctor_nickname', doctorNickname);
+    }, [doctorNickname]);
 
     // Resizing
     useEffect(() => {
@@ -184,30 +246,31 @@ export default function EditorPage() {
         editorRef.current?.insertText(template);
     };
 
+
     const handleSave = async () => {
         setSaving(true);
         try {
-            const parsed = await StoryScriptParser.parseWithDB(scriptText);
+            const parsed = await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
             const payload = {
                 name: metadata.name,
                 description: metadata.description,
                 display_order: metadata.display_order,
                 event_id: metadata.event_id,
-                story_content: parsed,
+                story_content: parsed, 
             };
 
             if (metadata.story_id) {
                 await SupabaseAPI.updateStory(metadata.story_id, payload);
-                alert('Đã lưu thay đổi!');
+                showNotification('Đã lưu thay đổi!', 'success');
             } else {
                 const created = await SupabaseAPI.createStory(payload);
                 setMetadata(prev => ({ ...prev, story_id: created.story_id }));
                 navigate(`/editor/${created.story_id}`, { replace: true });
-                alert('Story đã được tạo!');
+                showNotification('Story đã được tạo!', 'success');
             }
         } catch (err) {
             console.error('Save failed:', err);
-            alert('Lưu thất bại. Xem console để biết chi tiết.');
+            showNotification('Lưu thất bại: ' + (err.message || 'Lỗi hệ thống'), 'error');
         } finally {
             setSaving(false);
         }
@@ -234,15 +297,6 @@ export default function EditorPage() {
     const handleEntitySaved = () => {
         sidebarReloadRef.current?.();
     };
-
-    if (loading) {
-        return (
-            <div className={editorStyles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Loader size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-accent)' }} />
-                <p style={{ color: 'var(--color-text-tertiary)', marginTop: 12 }}>Đang tải story...</p>
-            </div>
-        );
-    }
 
     if (error) {
         return (
@@ -295,17 +349,21 @@ export default function EditorPage() {
                                 }
                                 {saving ? 'Đang lưu...' : 'Lưu'}
                             </button>
-                            <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
-                                <LogOut size={16} />
-                            </button>
-                            <button 
-                                onClick={() => setIsPreviewVisible(!isPreviewVisible)} 
-                                className={`${editorStyles.toggleBtn} ${isPreviewVisible ? editorStyles.active : ''}`} 
-                                title={isPreviewVisible ? "Hide Preview" : "Show Preview"}
-                            >
-                                <PanelRight size={20} />
-                            </button>
                         </>
+                    )}
+                    
+                    <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
+                        <LogOut size={16} />
+                    </button>
+
+                    {editorMode === 'story' && (
+                        <button 
+                            onClick={() => setIsPreviewVisible(!isPreviewVisible)} 
+                            className={`${editorStyles.toggleBtn} ${isPreviewVisible ? editorStyles.active : ''}`} 
+                            title={isPreviewVisible ? "Hide Preview" : "Show Preview"}
+                        >
+                            <PanelRight size={20} />
+                        </button>
                     )}
                 </div>
             </div>
@@ -320,6 +378,7 @@ export default function EditorPage() {
                             currentStoryId={metadata.story_id}
                             reloadRef={sidebarReloadRef}
                             onPickAsset={openPicker}
+                            showNotification={showNotification}
                         />
                         <div 
                             className={editorStyles.resizer} 
@@ -328,55 +387,74 @@ export default function EditorPage() {
                     </div>
                 )}
 
-                {editorMode === 'story' ? (
-                    <>
-                        <div className={editorStyles.editorColumn}>
+                <div className={editorStyles.editorColumn}>
+                    {loading ? (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e2128' }}>
+                            <Loader size={48} className={editorStyles.spinner} />
+                        </div>
+                    ) : editorMode === 'story' ? (
+                        <>
                             <EditorToolbar onInsert={handleInsertTemplate} />
                             <div className={editorStyles.editorArea}>
                                 <CodeEditor
                                     ref={editorRef}
                                     value={scriptText}
-                                    onChange={(val) => setScriptText(val)}
+                                    onChange={setScriptText}
+                                    characters={allCharacters}
+                                    assets={allAssets}
                                 />
                             </div>
+                        </>
+                    ) : editorMode === 'entity' ? (
+                        <MetadataForm
+                            entity={selectedEntity}
+                            onSaved={handleEntitySaved}
+                            onPickAsset={openPicker}
+                            showNotification={showNotification}
+                        />
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-tertiary)' }}>
+                            Chọn một item từ Story Tree để bắt đầu...
                         </div>
+                    )}
+                </div>
 
-                        {isPreviewVisible && (
-                            <div className={editorStyles.previewWrapper} style={{ width: previewWidth }}>
-                                <div 
-                                    className={`${editorStyles.resizer} ${editorStyles.resizerLeft}`} 
-                                    onMouseDown={() => setIsResizingPreview(true)}
-                                />
-                                <div className={editorStyles.previewColumn} style={{ width: '100%' }}>
-                                    <div className={editorStyles.previewHeader}>
-                                        <span className={editorStyles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
-                                        <span className={editorStyles.previewLabel}>
-                                            {previewLoading ? 'Parsing...' : 'Live Preview'}
-                                        </span>
-                                    </div>
-                                    <div className={editorStyles.previewBody}>
-                                        {previewData?.story_content ? (
-                                            <StoryRenderer previewData={previewData} isPreviewMode={true} />
-                                        ) : (
-                                            <div className={editorStyles.previewPlaceholder}>
-                                                Bắt đầu viết script để xem preview...
-                                            </div>
-                                        )}
-                                    </div>
+                {isPreviewVisible && editorMode === 'story' && !loading && (
+                    <div className={editorStyles.previewWrapper} style={{ width: previewWidth }}>
+                        <div 
+                            className={`${editorStyles.resizer} ${editorStyles.resizerLeft}`} 
+                            onMouseDown={() => setIsResizingPreview(true)}
+                        />
+                        <div className={editorStyles.previewColumn} style={{ width: '100%' }}>
+                            <div className={editorStyles.previewHeader}>
+                                <div className={editorStyles.previewHeaderLeft}>
+                                    <span className={editorStyles.previewDot} style={previewLoading ? { background: 'var(--color-warning, #f59e0b)' } : {}} />
+                                    <span className={editorStyles.previewLabel}>
+                                        {previewLoading ? 'Parsing...' : 'Live Preview'}
+                                    </span>
+                                </div>
+                                <div className={editorStyles.nicknameInputWrapper}>
+                                    <span className={editorStyles.nicknamePrefix}>Dr.</span>
+                                    <input 
+                                        type="text" 
+                                        className={editorStyles.nicknameInput} 
+                                        value={doctorNickname}
+                                        onChange={(e) => setDoctorNickname(e.target.value)}
+                                        placeholder="@nickname"
+                                    />
                                 </div>
                             </div>
-                        )}
-                    </>
-                ) : editorMode === 'entity' ? (
-                    <MetadataForm
-                        entity={selectedEntity}
-                        onSaved={handleEntitySaved}
-                        onPickAsset={openPicker}
-                    />
-                ) : (
-                    <div className={editorStyles.editorColumn}>
-                        <div className={editorStyles.previewPlaceholder} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            Chọn một item từ Story Tree để bắt đầu...
+                            <div className={editorStyles.previewBody}>
+                                {previewData?.story_content ? (
+                                    <StoryRenderer 
+                                        previewData={previewData} 
+                                        isPreviewMode={true} 
+                                        doctorNickname={doctorNickname}
+                                    />
+                                ) : (
+                                    <div className={editorStyles.previewPlaceholder} style={{ background: '#000' }} />
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -387,6 +465,12 @@ export default function EditorPage() {
                 filterType={pickerFilter}
                 onClose={() => setPickerOpen(false)}
                 onSelect={handlePickerSelect}
+            />
+
+            <NotificationToast
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: '', type: 'success' })}
             />
         </div>
     );

@@ -87,7 +87,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
 }
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
-export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryId }) {
+export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryId, showNotification }) {
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(currentStoryId || null);
@@ -101,47 +101,64 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
     const loadTree = async () => {
         setLoading(true);
         try {
-            const regions = await SupabaseAPI.getRegions();
+            // Parallel fetch all layers in one go
+            const [regions, arcs, events, stories] = await Promise.all([
+                SupabaseAPI.getRegions(),
+                SupabaseAPI.getArcs(),
+                SupabaseAPI.getEvents(),
+                SupabaseAPI.getStories(),
+            ]);
 
-            const built = await Promise.all(regions.map(async (region) => {
-                const arcs = await SupabaseAPI.getArcsByRegion(region.region_id);
-                const arcNodes = await Promise.all(arcs.map(async (arc) => {
-                    const events = await SupabaseAPI.getEventsByArc(arc.arc_id);
-                    const eventNodes = await Promise.all(events.map(async (event) => {
-                        const stories = await SupabaseAPI.getStoriesByEvent(event.event_id);
-                        return {
-                            id: event.event_id,
-                            type: 'event',
-                            parentId: arc.arc_id,
-                            parentType: 'arc',
-                            ...event,
-                            children: stories.map(s => ({
-                                id: s.story_id,
-                                type: 'story',
-                                parentId: event.event_id,
-                                parentType: 'event',
-                                ...s,
-                                children: []
-                            }))
-                        };
-                    }));
-                    return {
-                        id: arc.arc_id,
-                        type: 'arc',
-                        parentId: region.region_id,
-                        parentType: 'region',
-                        ...arc,
-                        children: eventNodes
-                    };
-                }));
-                return {
-                    id: region.region_id,
-                    type: 'region',
-                    parentId: null,
-                    parentType: null,
-                    ...region,
-                    children: arcNodes
-                };
+            // Create maps for efficient building
+            const storiesByEvent = {};
+            stories.forEach(s => {
+                const eid = s.event_id;
+                if (!storiesByEvent[eid]) storiesByEvent[eid] = [];
+                storiesByEvent[eid].push({
+                    id: s.story_id,
+                    type: 'story',
+                    parentId: eid,
+                    parentType: 'event',
+                    ...s,
+                    children: []
+                });
+            });
+
+            const eventsByArc = {};
+            events.forEach(e => {
+                const aid = e.arc_id;
+                if (!eventsByArc[aid]) eventsByArc[aid] = [];
+                eventsByArc[aid].push({
+                    id: e.event_id,
+                    type: 'event',
+                    parentId: aid,
+                    parentType: 'arc',
+                    ...e,
+                    children: storiesByEvent[e.event_id] || []
+                });
+            });
+
+            const arcsByRegion = {};
+            arcs.forEach(a => {
+                const rid = a.region_id;
+                if (!arcsByRegion[rid]) arcsByRegion[rid] = [];
+                arcsByRegion[rid].push({
+                    id: a.arc_id,
+                    type: 'arc',
+                    parentId: rid,
+                    parentType: 'region',
+                    ...a,
+                    children: eventsByArc[a.arc_id] || []
+                });
+            });
+
+            const built = regions.map(r => ({
+                id: r.region_id,
+                type: 'region',
+                parentId: null,
+                parentType: null,
+                ...r,
+                children: arcsByRegion[r.region_id] || []
             }));
 
             setTree(built);
@@ -181,7 +198,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
             await loadTree();
         } catch (err) {
             console.error('Delete failed:', err);
-            alert(`Xoá thất bại: ${err.message}`);
+            showNotification(`Xoá thất bại: ${err.message}`, 'error');
         }
     };
 

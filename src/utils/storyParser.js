@@ -45,48 +45,63 @@ export const StoryScriptParser = {
      * Async parse — resolves all character_id and asset_id to real URLs from Supabase.
      * Used for live preview and final save output.
      * @param {string} scriptText
+     * @param {Object} [cachedChars] - optional map: character_id -> { avatar_url, full_url, expressions }
+     * @param {Object} [cachedAssets] - optional map: asset_id -> { url }
      * @returns {Promise<Object>} story_content JSON with real URLs
      */
-    async parseWithDB(scriptText) {
+    async parseWithDB(scriptText, cachedChars, cachedAssets) {
         if (!scriptText) return { characters: {}, sections: [] };
 
         // Step 1: Build the raw structure (sync)
         const result = this._buildStructure(scriptText);
 
-        // Step 2: Collect all IDs that need resolving
-        const characterIds = new Set();
-        const assetIds = new Set();
+        // Step 2: Collect all IDs that need resolving, filtering out already cached ones
+        const characterIdsToFetch = new Set();
+        const assetIdsToFetch = new Set();
+        
+        const characterIdsNeeded = new Set();
+        const assetIdsNeeded = new Set();
 
         // From @char declarations
         for (const [, data] of Object.entries(result.characters)) {
-            if (data.character_id) characterIds.add(data.character_id);
+            if (data.character_id) characterIdsNeeded.add(data.character_id);
         }
 
         // From sections
         for (const section of result.sections) {
             for (const el of (section.elements || [])) {
-                if (el.type === 'background' && el.image) assetIds.add(el.image);
-                if (el.type === 'video' && el.src) assetIds.add(el.src);
+                if (el.type === 'background' && el.image) assetIdsNeeded.add(el.image);
+                if (el.type === 'video' && el.src) assetIdsNeeded.add(el.src);
                 if (el.bgm) {
-                    if (el.bgm.id) assetIds.add(el.bgm.id);
-                    if (el.bgm.intro) assetIds.add(el.bgm.intro);
-                    if (el.bgm.loop) assetIds.add(el.bgm.loop);
+                    if (el.bgm.id) assetIdsNeeded.add(el.bgm.id);
+                    if (el.bgm.intro) assetIdsNeeded.add(el.bgm.intro);
+                    if (el.bgm.loop) assetIdsNeeded.add(el.bgm.loop);
                 }
                 for (const d of (el.dialogues || [])) {
-                    if (d.type === 'sfx' && d.src) assetIds.add(d.src);
+                    if (d.type === 'sfx' && d.src) assetIdsNeeded.add(d.src);
                 }
             }
         }
 
-        // Step 3: Batch fetch from DB
-        let charMap = {};
-        let assetMap = {};
+        // Check cache
+        for (const id of characterIdsNeeded) if (!cachedChars?.[id]) characterIdsToFetch.add(id);
+        for (const id of assetIdsNeeded) if (!cachedAssets?.[id]) assetIdsToFetch.add(id);
+
+        // Step 3: Batch fetch from DB (only what's missing)
+        let charMap = { ...cachedChars };
+        let assetMap = { ...cachedAssets };
 
         try {
-            [charMap, assetMap] = await Promise.all([
-                SupabaseAPI.getCharactersWithExpressionsByIds([...characterIds]),
-                SupabaseAPI.getAssetsByIds([...assetIds]),
-            ]);
+            const fetches = [];
+            if (characterIdsToFetch.size > 0) fetches.push(SupabaseAPI.getCharactersWithExpressionsByIds([...characterIdsToFetch]));
+            else fetches.push(Promise.resolve({}));
+
+            if (assetIdsToFetch.size > 0) fetches.push(SupabaseAPI.getAssetsByIds([...assetIdsToFetch]));
+            else fetches.push(Promise.resolve({}));
+
+            const [newChars, newAssets] = await Promise.all(fetches);
+            charMap = { ...charMap, ...newChars };
+            assetMap = { ...assetMap, ...newAssets };
         } catch (err) {
             console.warn('StoryParser: DB fetch failed, using raw IDs as fallback.', err);
             return result; // Return unresolved result as fallback

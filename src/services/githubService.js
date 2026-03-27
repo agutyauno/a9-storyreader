@@ -36,7 +36,13 @@ export const getFolderPath = (type, category) => {
 export const uploadFileToGithub = async (file, folderPath) => {
     try {
         const contentBase64 = await fileToBase64(file);
-        
+
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            throw new Error('Phiên làm việc không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
+        }
+
         const { data, error } = await supabase.functions.invoke('github-manager', {
             body: {
                 action: 'save',
@@ -47,14 +53,12 @@ export const uploadFileToGithub = async (file, folderPath) => {
             }
         });
 
-        // If specifically an auth or network error, we might want to fall back to local test mode
+        // Remove local fallback to enforce strict GitHub uploads as per user requirement.
         if (error || !data?.success) {
-            console.warn('GitHub upload failed, falling back to local blob URL for testing:', error || data?.error);
+            console.error('GitHub upload failed:', error || data?.error);
             return {
-                success: true,
-                path: `local/${file.name}`,
-                url: URL.createObjectURL(file), // Local preview URL
-                isLocal: true
+                success: false,
+                error: (error?.message || data?.error || 'GitHub upload failed')
             };
         }
 
@@ -68,12 +72,9 @@ export const uploadFileToGithub = async (file, folderPath) => {
         };
     } catch (err) {
         console.error('Error in uploadFileToGithub:', err);
-        // Fallback for any error to allow local testing
         return {
-            success: true,
-            path: `local/${file.name}`,
-            url: URL.createObjectURL(file),
-            isLocal: true
+            success: false,
+            error: err.message || 'Error connecting to upload service'
         };
     }
 };

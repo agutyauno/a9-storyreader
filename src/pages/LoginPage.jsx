@@ -13,6 +13,8 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const isExpired = queryParams.get('expired') === 'true';
 
   // Redirect to the page they were trying to access, or to /editor
   const from = location.state?.from?.pathname || '/editor';
@@ -43,6 +45,13 @@ const LoginPage = () => {
           <h1>Editor Login</h1>
           <p>Truy cập vào trang quản lý nội dung</p>
         </div>
+
+        {isExpired && (
+          <div className={styles.errorAlert} style={{ background: 'rgba(255, 107, 107, 0.1)', color: '#ff6b6b' }}>
+            <AlertCircle size={20} />
+            <span>Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.</span>
+          </div>
+        )}
 
         {error && (
           <div className={styles.errorAlert}>

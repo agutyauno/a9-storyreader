@@ -14,7 +14,7 @@ import styles from './AssetDetailModal.module.css';
  *   onClose()
  *   onUpdated() — callback after updates
  */
-export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset }) {
+export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset, showNotification }) {
     const [name, setName] = useState('');
     const [expressions, setExpressions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -24,11 +24,13 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const [uploadingFields, setUploadingFields] = useState({}); // { 'exprId-avatarUrl': true }
     const [deletedExprIds, setDeletedExprIds] = useState(new Set());
     const [category, setCategory] = useState('');
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         if (!isOpen || !asset) return;
         setName(asset.name || '');
         setCategory(asset.category || asset.type || '');
+        setError(null);
         if (kind === 'character') loadExpressions();
     }, [isOpen, asset, kind]);
 
@@ -88,9 +90,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 await SupabaseAPI.updateAsset(asset.asset_id, payload);
             }
             onUpdated?.();
+            showNotification('Đã lưu thay đổi!', 'success');
         } catch (err) {
             console.error('Save failed:', err);
-            alert(`Lưu thất bại: ${err.message}`);
+            setError(err.message || 'Lưu thất bại');
         } finally {
             setSaving(false);
         }
@@ -104,7 +107,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     };
 
     const handleUploadAndReplace = async () => {
-        if (!file) return alert('Chưa chọn file để upload');
+        if (!file) {
+            setError('Chưa chọn file để upload');
+            return;
+        }
         setUploading(true);
         try {
             // Choose folder path based on type/category
@@ -113,9 +119,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             if (res?.success) {
                 await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
                 onUpdated?.();
+                showNotification('Upload và thay thế thành công!', 'success');
             }
         } catch (err) {
-            alert(`Upload thất bại: ${err.message}`);
+            setError(`Upload thất bại: ${err.message}`);
         } finally {
             setUploading(false);
             setFile(null);
@@ -126,10 +133,24 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         if (!window.confirm(`Xoá asset "${asset.name || asset.asset_id}"?`)) return;
         try {
             await SupabaseAPI.deleteAsset(asset.asset_id);
+            showNotification('Đã xoá asset!', 'success');
             onUpdated?.();
             onClose?.();
         } catch (err) {
-            alert(`Xoá thất bại: ${err.message}`);
+            setError(`Xoá thất bại: ${err.message}`);
+        }
+    };
+
+    const handleDeleteCharacter = async () => {
+        const charId = asset.character_id || asset.asset_id;
+        if (!window.confirm(`Xoá nhân vật "${asset.name}"?`)) return;
+        try {
+            await SupabaseAPI.deleteCharacter(charId);
+            showNotification('Đã xoá nhân vật!', 'success');
+            onUpdated?.();
+            onClose?.();
+        } catch (err) {
+            setError(`Xoá thất bại: ${err.message}`);
         }
     };
 
@@ -153,7 +174,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             }
         } catch (err) {
             console.error('Expr upload failed:', err);
-            alert(`Upload failed: ${err.message}`);
+            setError(`Upload failed: ${err.message}`);
         } finally {
             setUploadingFields(prev => ({ ...prev, [fieldKey]: false }));
         }
@@ -192,6 +213,23 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
 
                 {/* Body */}
                 <div className={styles.body}>
+                    {error && (
+                        <div style={{
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 107, 107, 0.1)',
+                            color: '#ff6b6b',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginBottom: '16px',
+                            border: '1px solid rgba(255, 107, 107, 0.2)'
+                        }}>
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
                     {/* Basic info */}
                     <div className={styles.section}>
                         <h4>Thông tin</h4>
@@ -213,14 +251,18 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 placeholder="Enter name"
                             />
                         </div>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                             <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
                                 {saving ? <Loader size={14} className={styles.spinner} /> : <Save size={14} />}
                                 {saving ? 'Đang lưu...' : 'Lưu'}
                             </button>
-                            {!isCharacter && (
+                            {isCharacter ? (
+                                <button className={styles.deleteBtn} onClick={handleDeleteCharacter} title="Xoá nhân vật">
+                                    <Trash2 size={14} /> Xoá nhân vật
+                                </button>
+                            ) : (
                                 <button className={styles.deleteBtn} onClick={handleDeleteAsset} title="Xoá asset">
-                                    <Trash2 size={14} /> Xoá
+                                    <Trash2 size={14} /> Xoá asset
                                 </button>
                             )}
                         </div>

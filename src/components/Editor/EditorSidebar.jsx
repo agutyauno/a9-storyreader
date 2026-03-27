@@ -8,7 +8,7 @@ import AddAssetModal from './AddAssetModal';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import pageStyles from '../../pages/EditorPage.module.css';
 
-export default function EditorSidebar({ metadata, onMetadataChange, onStorySelect, currentStoryId, reloadRef, onPickAsset }) {
+export default function EditorSidebar({ metadata, onMetadataChange, onStorySelect, currentStoryId, reloadRef, onPickAsset, showNotification }) {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('story');
 
@@ -42,28 +42,32 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
             let created;
             if (modalType === 'region') {
                 created = await SupabaseAPI.createRegion({
+                    region_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.display_order ?? 0,
+                    display_order: formData.displayOrder ?? 0,
                     icon_url: formData.imageUrl,
                 });
             } else if (modalType === 'arc') {
                 created = await SupabaseAPI.createArc({
+                    arc_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.display_order ?? 0,
+                    display_order: formData.displayOrder ?? 0,
                     region_id: modalParent?.region_id || modalParent?.id,
                 });
             } else if (modalType === 'event') {
                 created = await SupabaseAPI.createEvent({
+                    event_id: formData.id,
                     name: formData.name,
                     description: formData.description,
-                    display_order: formData.display_order ?? 0,
+                    display_order: formData.displayOrder ?? 0,
                     arc_id: modalParent?.arc_id || modalParent?.id,
                     image_url: formData.imageUrl,
                 });
             } else if (modalType === 'story') {
                 created = await SupabaseAPI.createStory({
+                    story_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder ?? 0,
@@ -79,12 +83,11 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 });
             } else if (modalType === 'gallery') {
                 created = await SupabaseAPI.createGallery({
-                    id: formData.id,
-                    name: formData.name,
-                    description: formData.description,
-                    displayOrder: formData.displayOrder ?? 0,
+                    gallery_id: formData.id,
+                    title: formData.name,
+                    display_order: formData.displayOrder ?? 0,
                     event_id: modalParent?.event_id || modalParent?.id || null, // Optional FK
-                    imageUrl: formData.imageUrl
+                    image_url: formData.imageUrl
                 });
             }
             // Reload tree or asset list
@@ -97,7 +100,8 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
             }
         } catch (err) {
             console.error('Create item failed:', err);
-            alert(`Tạo thất bại: ${err.message}`);
+            // Re-throw so the modal can show the error
+            throw err;
         }
     };
 
@@ -109,12 +113,18 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     id: formData.asset_id,
                     name: formData.name,
                     description: formData.description || '',
-                }, formData.expressions || []);
+                    expressions: formData.expressions || []
+                });
+            } else if (formData.category === 'gallery') {
+                await SupabaseAPI.createGallery({
+                    id: formData.asset_id,
+                    name: formData.name,
+                    imageUrl: formData.url || '',
+                    displayOrder: 0
+                });
             } else {
                 await SupabaseAPI.createAsset({
                     asset_id: formData.asset_id,
-                    name: formData.name,
-                    description: formData.description || '',
                     type: formData.type,
                     category: formData.category,
                     url: formData.url || '',
@@ -124,7 +134,8 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
             setAssetModalOpen(false);
         } catch (err) {
             console.error('Create asset/character failed:', err);
-            alert(`Lỗi tạo: ${err.message}`);
+            // Re-throw so the modal can show the error
+            throw err;
         }
     };
 
@@ -144,12 +155,13 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     onStorySelect={onStorySelect}
                     onAddItem={handleAddItem}
                     currentStoryId={currentStoryId}
+                    showNotification={showNotification}
                 />
             )}
 
             {/* Asset Tab */}
             {activeTab === 'asset' && (
-                <AssetPanel onAddAsset={handleAddAsset} onPickAsset={onPickAsset} />
+                <AssetPanel onAddAsset={handleAddAsset} onPickAsset={onPickAsset} showNotification={showNotification} />
             )}
 
             {/* Modals */}

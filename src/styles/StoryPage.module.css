@@ -669,3 +669,39 @@ header {
     min-width: 1rem;
     text-align: center;
 }
+
+/* ---- Preview Mode Overrides ---- */
+.isPreviewMode {
+    --font-size-2xl: 1.25rem;
+    --font-size-xl: 1.1rem;
+    --font-size-lg: 1rem;
+    --font-size-base: 0.95rem;
+    --font-size-sm: 0.85rem;
+    --font-size-xs: 0.75rem;
+}
+
+.isPreviewMode .character_avt {
+    width: 3.5rem;
+    height: 3.5rem;
+}
+
+.isPreviewMode .dialogue-content {
+    padding: 0.5rem 0.8rem;
+}
+
+.isPreviewMode .dialogue {
+    font-size: var(--font-size-base);
+}
+
+.isPreviewMode .character_name {
+    font-size: var(--font-size-sm);
+}
+
+.isPreviewMode .expand-icon {
+    display: none !important;
+}
+
+.isPreviewMode .dialogue-container {
+    padding: var(--spacing-sm) 0;
+    gap: 4px;
+}

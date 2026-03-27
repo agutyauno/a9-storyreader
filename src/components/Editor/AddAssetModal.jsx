@@ -108,36 +108,56 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
 
         try {
             if (isCharacter) {
-                // Submit character with expressions
-                onSubmit({
+                // 1. Validate expressions
+                const filteredExprs = expressions.filter(e => e.name.trim());
+                if (filteredExprs.length === 0) {
+                    setError('Character must have at least one named expression');
+                    setIsUploading(false);
+                    return;
+                }
+
+                // Check for missing uploads
+                for (const expr of filteredExprs) {
+                    if (!expr.avatarUrl || !expr.fullUrl) {
+                        setError(`Expression "${expr.name}" is missing images. Please ensure both avatar and full body are uploaded.`);
+                        setIsUploading(false);
+                        return;
+                    }
+                }
+
+                // 2. Submit character with expressions
+                await onSubmit({
                     type: 'character',
                     category: 'character',
                     asset_id: assetId.trim(),
                     name: name.trim(),
-                    expressions: expressions.filter(e => e.name.trim()).map(e => ({
+                    description: description.trim(),
+                    expressions: filteredExprs.map(e => ({
                         name: e.name.trim(),
                         avatar_url: e.avatarUrl,
                         full_url: e.fullUrl
                     })),
                 });
             } else {
-                // Submit regular asset
+                // 1. Upload regular asset to GitHub first
                 const folderPath = getFolderPath(selectedType.type, selectedType.category);
                 const uploadResult = await uploadFileToGithub(file, folderPath);
 
-                if (uploadResult.success) {
-                    onSubmit({
-                        type: selectedType.type,
-                        category: selectedType.category,
-                        asset_id: assetId.trim(),
-                        name: name.trim(),
-                        description: description.trim(),
-                        url: uploadResult.url,
-                    });
+                if (!uploadResult.success) {
+                    throw new Error(uploadResult.error || 'GitHub upload failed');
                 }
+
+                // 2. ONLY if upload succeeded, submit to DB
+                await onSubmit({
+                    type: selectedType.type,
+                    category: selectedType.category,
+                    asset_id: assetId.trim(),
+                    name: name.trim(),
+                    url: uploadResult.url,
+                });
             }
 
-            // Reset
+            // Successful completion
             setAssetValue('');
             setAssetId('');
             setName('');
@@ -147,7 +167,8 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
             setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
             onClose();
         } catch (err) {
-            setError(err.message || 'Failed to upload/create');
+            console.error('Final submission failed:', err);
+            setError(err.message || 'Failed to upload or create record');
         } finally {
             setIsUploading(false);
         }
@@ -168,7 +189,13 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                         <label>Asset Purpose <span className={styles.required}>*</span></label>
                         <select
                             value={assetValue}
-                            onChange={(e) => setAssetValue(e.target.value)}
+                            onChange={(e) => {
+                                setAssetValue(e.target.value);
+                                setError(null);
+                                setFile(null);
+                                setPreviewUrl('');
+                                setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
+                            }}
                             required
                             disabled={isUploading}
                         >
@@ -192,27 +219,32 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
                         <small>{isCharacter ? "Character identifier." : "Internal ID used in scripts."}</small>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Display Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder={isCharacter ? "e.g. Amiya" : "e.g. Lungmen Sunset"}
-                            disabled={isUploading}
-                        />
-                    </div>
+                    {(isCharacter || assetValue === 'gallery') && (
+                        <div className={styles.formGroup}>
+                            <label>{isCharacter ? 'Display Name' : 'Title'}</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={isCharacter ? "e.g. Amiya" : "e.g. Illustration Title"}
+                                disabled={isUploading}
+                                required={assetValue === 'gallery'}
+                            />
+                        </div>
+                    )}
 
-                    <div className={styles.formGroup}>
-                        <label>Description</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Optional description"
-                            rows="2"
-                            disabled={isUploading}
-                        />
-                    </div>
+                    {isCharacter && (
+                        <div className={styles.formGroup}>
+                            <label>Description</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Character description (optional)"
+                                rows="2"
+                                disabled={isUploading}
+                            />
+                        </div>
+                    )}
 
                     {!isCharacter && assetValue && (
                         <div className={styles.formGroup}>

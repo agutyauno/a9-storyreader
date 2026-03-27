@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Loader, Image as ImageIcon } from 'lucide-react';
+import { Save, Loader, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import styles from './MetadataForm.module.css';
 
@@ -10,12 +10,13 @@ import styles from './MetadataForm.module.css';
  *   onSaved() — callback after successful save (to reload tree)
  *   onPickAsset(callback) — opens AssetPickerModal, calls callback(url) on select
  */
-export default function MetadataForm({ entity, onSaved, onPickAsset }) {
+export default function MetadataForm({ entity, onSaved, onPickAsset, showNotification }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [displayOrder, setDisplayOrder] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
 
     // Sync form when entity changes
     useEffect(() => {
@@ -26,6 +27,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
         if (entity.type === 'region') setImageUrl(entity.icon_url || '');
         else if (entity.type === 'event') setImageUrl(entity.image_url || '');
         else setImageUrl('');
+        setError(null);
     }, [entity]);
 
     if (!entity) return null;
@@ -37,6 +39,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
     const handleSave = async () => {
         if (!name.trim()) return;
         setSaving(true);
+        setError(null);
         try {
             const payload = {
                 name: name.trim(),
@@ -53,9 +56,13 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
                 await SupabaseAPI.updateEvent(entity.event_id || entity.id, payload);
             }
             onSaved?.();
+            // showNotification provided by parent
+            if (typeof window !== 'undefined') {
+                // If we have access to context or props
+            }
         } catch (err) {
             console.error('Save metadata failed:', err);
-            alert(`Lưu thất bại: ${err.message}`);
+            setError(err.message || 'Lưu thất bại');
         } finally {
             setSaving(false);
         }
@@ -131,6 +138,24 @@ export default function MetadataForm({ entity, onSaved, onPickAsset }) {
                                 <img src={imageUrl} alt="Preview" />
                             </div>
                         )}
+                    </div>
+                )}
+
+                {error && (
+                    <div style={{
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        background: 'rgba(255, 107, 107, 0.1)',
+                        color: '#ff6b6b',
+                        fontSize: '13px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '16px',
+                        border: '1px solid rgba(255, 107, 107, 0.2)'
+                    }}>
+                        <AlertCircle size={16} />
+                        {error}
                     </div>
                 )}
 

@@ -7,7 +7,7 @@ import styles from '../../styles/StoryPage.module.css';
  * A wrapper component that safely renders the converted HTML script.
  * Suitable for both the Live Preview and the main StoryPage. 
  */
-export default function StoryRenderer({ previewData, isPreviewMode }) {
+export default function StoryRenderer({ previewData, isPreviewMode, doctorNickname }) {
     const contentRef = useRef(null);
     const [htmlContent, setHtmlContent] = useState('');
 
@@ -72,8 +72,26 @@ export default function StoryRenderer({ previewData, isPreviewMode }) {
         if (isPreviewMode) {
             contentDiv.scrollTop = contentDiv.scrollHeight;
         }
+
+        // Nickname substitution for preview
+        const updateNickname = () => {
+            const nickname = doctorNickname || '';
+            const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, null);
+            let node;
+            const nodesToUpdate = [];
+            while (node = walker.nextNode()) {
+                if (node.textContent.includes('@nickname') || node.originalText) {
+                    if (!node.originalText) node.originalText = node.textContent;
+                    nodesToUpdate.push(node);
+                }
+            }
+            nodesToUpdate.forEach(n => {
+                n.textContent = nickname ? n.originalText.replace(/@nickname/g, nickname) : n.originalText;
+            });
+        };
+        updateNickname();
         
-    }, [htmlContent, isPreviewMode]);
+    }, [htmlContent, isPreviewMode, doctorNickname]);
 
     return (
         <div 
@@ -88,7 +106,7 @@ export default function StoryRenderer({ previewData, isPreviewMode }) {
             <div 
                 ref={contentRef} 
                 dangerouslySetInnerHTML={{ __html: htmlContent }} 
-                className={styles['container'] || ''}
+                className={`${styles['container'] || ''} ${isPreviewMode ? styles['isPreviewMode'] : ''}`}
                 style={isPreviewMode ? {
                     transformOrigin: 'top center',
                     /* Scale down slightly if the preview area is narrow */

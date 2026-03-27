@@ -15,7 +15,19 @@ const sortByOrder = (arr) =>
 /** Generate a simple timestamp-based ID */
 const genId = (prefix) => `${prefix}_${Date.now()}`;
 
-export const SupabaseAPI = {
+/** Handle common Supabase errors, especially 401 Unauthorized */
+const handleAuthError = (error) => {
+  if (error?.status === 401 || error?.code === '401' || error?.message?.includes('JWT expired')) {
+    console.error('Session expired or unauthorized. Redirecting to login...');
+    // Sign out to clear any stale local state
+    supabase.auth.signOut().then(() => {
+      window.location.href = '/login?expired=true';
+    });
+  }
+  throw error;
+};
+
+const SupabaseAPI_Raw = {
   // ===========================================================================
   // REGIONS
   // ===========================================================================
@@ -77,6 +89,13 @@ export const SupabaseAPI = {
     return data || [];
   },
 
+  async getArcs() {
+    if (USE_MOCK_DB) return sortByOrder(mockDatabase.arcs);
+    const { data, error } = await supabase.from('arcs').select('*').order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
   async getArc(arcId) {
     if (USE_MOCK_DB)
       return mockDatabase.arcs.find(a => a.arc_id === arcId) || null;
@@ -128,6 +147,13 @@ export const SupabaseAPI = {
     return data || [];
   },
 
+  async getEvents() {
+    if (USE_MOCK_DB) return sortByOrder(mockDatabase.events);
+    const { data, error } = await supabase.from('events').select('*').order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
   async getEvent(eventId) {
     if (USE_MOCK_DB)
       return mockDatabase.events.find(e => e.event_id === eventId) || null;
@@ -175,6 +201,13 @@ export const SupabaseAPI = {
     if (USE_MOCK_DB)
       return sortByOrder(mockDatabase.stories.filter(s => s.event_id === eventId));
     const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getStories() {
+    if (USE_MOCK_DB) return sortByOrder(mockDatabase.stories);
+    const { data, error } = await supabase.from('stories').select('*').order('display_order');
     if (error) throw error;
     return data || [];
   },
@@ -617,3 +650,20 @@ export const SupabaseAPI = {
     );
   },
 };
+
+// Proxy to wrap all SupabaseAPI methods with auth error handling
+export const SupabaseAPI = new Proxy(SupabaseAPI_Raw, {
+  get(target, prop) {
+    const original = target[prop];
+    if (typeof original === 'function') {
+      return async (...args) => {
+        try {
+          return await original.apply(target, args);
+        } catch (err) {
+          return handleAuthError(err);
+        }
+      };
+    }
+    return original;
+  }
+});
