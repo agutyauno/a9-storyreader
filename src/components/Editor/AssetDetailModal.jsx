@@ -60,7 +60,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             if (isCharacter) {
                 // 1. Update character name
                 await SupabaseAPI.updateCharacter(charId, { name: name.trim() });
-                
+
                 // 2. Sync expressions: Update existing or create new
                 for (const expr of expressions) {
                     const exprData = {
@@ -68,7 +68,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                         avatar_url: expr.avatar_url,
                         full_url: expr.full_url
                     };
-                    
+
                     // isNew is set in handleAddExpression for new local items
                     if (expr.isNew) {
                         await SupabaseAPI.createExpression({
@@ -283,19 +283,19 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 {asset.type === 'audio' && <audio src={asset.url} controls style={{ width: '100%' }} />}
                             </div>
                             <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                                <input 
-                                    id="replace-file-input" 
-                                    type="file" 
-                                    style={{ display: 'none' }} 
-                                    onChange={handleFileChange} 
-                                    accept={asset.type === 'image' ? 'image/*' : 
-                                            asset.type === 'audio' ? 'audio/*' : 
+                                <input
+                                    id="replace-file-input"
+                                    type="file"
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileChange}
+                                    accept={asset.type === 'image' ? 'image/*' :
+                                        asset.type === 'audio' ? 'audio/*' :
                                             asset.type === 'video' ? 'video/*' : '*'}
                                 />
                                 <label htmlFor="replace-file-input" className={styles.saveBtn} style={{ cursor: 'pointer', backgroundColor: file ? 'rgba(184, 169, 255, 0.1)' : '' }}>
                                     <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
                                 </label>
-                                
+
                                 {file && (
                                     <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
                                         {uploading ? <Loader size={14} className={styles.spinner} /> : <Check size={14} />}
@@ -340,7 +340,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
-                                            
+
                                             <div className={styles.miniUploadGrid}>
                                                 {/* Avatar Upload */}
                                                 <div className={styles.miniUploadGroup}>
