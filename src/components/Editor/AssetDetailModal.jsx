@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, Check, AlertCircle } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
+import ConfirmModal from './ConfirmModal';
 import styles from './AssetDetailModal.module.css';
 
 /**
@@ -25,6 +26,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const [deletedExprIds, setDeletedExprIds] = useState(new Set());
     const [category, setCategory] = useState('');
     const [error, setError] = useState(null);
+
+    // Confirm Modal
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
 
     useEffect(() => {
         if (!isOpen || !asset) return;
@@ -87,10 +92,13 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 }
                 setDeletedExprIds(new Set());
             } else {
-                // Update name and category (if changed)
-                const payload = { name: name.trim() };
+                // Table 'assets' only has: asset_id, type, category, url. 'name' is NOT a column.
+                const payload = {};
                 if (category && category !== asset.category) payload.category = category;
-                await SupabaseAPI.updateAsset(asset.asset_id, payload);
+                
+                if (Object.keys(payload).length > 0) {
+                    await SupabaseAPI.updateAsset(asset.asset_id, payload);
+                }
             }
             onUpdated?.();
             showNotification('Đã lưu thay đổi!', 'success');
@@ -118,7 +126,9 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         try {
             // Choose folder path based on type/category
             const folder = getFolderPath(asset.type || (category === 'background' ? 'image' : 'image'), category);
-            const res = await uploadFileToGithub(file, folder);
+            // Use asset_id as the filename to ensure overwrite/update on GitHub
+            const targetFileName = asset.asset_id;
+            const res = await uploadFileToGithub(file, folder, targetFileName);
             if (res?.success) {
                 await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
                 onUpdated?.();
@@ -133,28 +143,40 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     };
 
     const handleDeleteAsset = async () => {
-        if (!window.confirm(`Xoá asset "${asset.name || asset.asset_id}"?`)) return;
-        try {
-            await SupabaseAPI.deleteAsset(asset.asset_id);
-            showNotification('Đã xoá asset!', 'success');
-            onUpdated?.();
-            onClose?.();
-        } catch (err) {
-            setError(`Xoá thất bại: ${err.message}`);
-        }
+        setConfirmData({
+            title: `Xoá asset`,
+            message: `Bạn có chắc chắn muốn xoá asset "${asset.name || asset.asset_id}"? Hành động này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    await SupabaseAPI.deleteAsset(asset.asset_id);
+                    showNotification('Đã xoá asset!', 'success');
+                    onUpdated?.();
+                    onClose?.();
+                } catch (err) {
+                    setError(`Xoá thất bại: ${err.message}`);
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     const handleDeleteCharacter = async () => {
         const charId = asset.character_id || asset.asset_id;
-        if (!window.confirm(`Xoá nhân vật "${asset.name}"?`)) return;
-        try {
-            await SupabaseAPI.deleteCharacter(charId);
-            showNotification('Đã xoá nhân vật!', 'success');
-            onUpdated?.();
-            onClose?.();
-        } catch (err) {
-            setError(`Xoá thất bại: ${err.message}`);
-        }
+        setConfirmData({
+            title: `Xoá nhân vật`,
+            message: `Bạn có chắc chắn muốn xoá nhân vật "${asset.name}"? Hành động này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    await SupabaseAPI.deleteCharacter(charId);
+                    showNotification('Đã xoá nhân vật!', 'success');
+                    onUpdated?.();
+                    onClose?.();
+                } catch (err) {
+                    setError(`Xoá thất bại: ${err.message}`);
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     // ─── Expression CRUD ────────────────────────────────────────────────────────
@@ -171,7 +193,12 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         try {
             const category = field === 'avatar_url' ? 'char_avatar' : 'character';
             const folderPath = getFolderPath('image', category);
-            const result = await uploadFileToGithub(file, folderPath);
+            
+            // Use character_id + exprId + field as identifier for overwrite
+            const charId = asset.character_id || asset.asset_id;
+            const customName = `${charId}_${exprId}_${field === 'avatar_url' ? 'avatar' : 'full'}`;
+            
+            const result = await uploadFileToGithub(file, folderPath, customName);
             if (result.success) {
                 handleExpressionChange(exprId, field, result.url);
             }
@@ -196,11 +223,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     };
 
     const handleDeleteExpression = (expr) => {
-        if (!window.confirm(`Xoá expression "${expr.name}"?`)) return;
-        setExpressions(prev => prev.filter(e => e.id !== expr.id));
-        if (!expr.isNew) {
-            setDeletedExprIds(prev => new Set(prev).add(expr.id));
-        }
+        setConfirmData({
+            title: `Xoá biểu cảm`,
+            message: `Bạn có chắc chắn muốn xoá biểu cảm "${expr.name}"?`,
+            onConfirm: () => {
+                setExpressions(prev => prev.filter(e => e.id !== expr.id));
+                if (!expr.isNew) {
+                    setDeletedExprIds(prev => new Set(prev).add(expr.id));
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     return (
@@ -402,6 +435,15 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                     )}
                 </div>
             </div>
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmOpen}
+                title={confirmData.title}
+                message={confirmData.message}
+                onConfirm={confirmData.onConfirm}
+                onClose={() => setConfirmOpen(false)}
+            />
         </div>
     );
 }

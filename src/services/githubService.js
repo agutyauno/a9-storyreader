@@ -33,7 +33,7 @@ export const getFolderPath = (type, category) => {
  * @param {string} folderPath 
  * @returns {Promise<{success: boolean, path: string, url: string}>}
  */
-export const uploadFileToGithub = async (file, folderPath) => {
+export const uploadFileToGithub = async (file, folderPath, customFileName = null) => {
     try {
         const contentBase64 = await fileToBase64(file);
 
@@ -43,11 +43,18 @@ export const uploadFileToGithub = async (file, folderPath) => {
             throw new Error('Phiên làm việc không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
         }
 
+        // Determine final filename: custom (if provided) + its detected extension
+        let finalFileName = file.name;
+        if (customFileName) {
+            const ext = file.name.split('.').pop();
+            finalFileName = `${customFileName}.${ext}`;
+        }
+
         const { data, error } = await supabase.functions.invoke('github-manager', {
             body: {
                 action: 'save',
                 folderPath: folderPath,
-                fileName: file.name,
+                fileName: finalFileName,
                 contentBase64: contentBase64,
                 branch: 'main'
             }

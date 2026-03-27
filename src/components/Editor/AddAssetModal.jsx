@@ -141,7 +141,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
             } else {
                 // 1. Upload regular asset to GitHub first
                 const folderPath = getFolderPath(selectedType.type, selectedType.category);
-                const uploadResult = await uploadFileToGithub(file, folderPath);
+                const uploadResult = await uploadFileToGithub(file, folderPath, assetId.trim());
 
                 if (!uploadResult.success) {
                     throw new Error(uploadResult.error || 'GitHub upload failed');

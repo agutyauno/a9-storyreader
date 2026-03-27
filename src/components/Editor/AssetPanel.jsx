@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Loader, Trash2, Copy, Edit2, Music, Image, Video, Film, UserSquare2, LayoutDashboard } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import AssetDetailModal from './AssetDetailModal';
+import ConfirmModal from './ConfirmModal';
 import styles from './AssetPanel.module.css';
 
 // ─── Category config (matches legacy) ─────────────────────────────────────────
@@ -128,6 +129,10 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
     const [detailTarget, setDetailTarget] = useState(null);
     const [detailKind, setDetailKind] = useState('asset');
 
+    // Confirm modal
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
+
     const loadAll = async () => {
         setLoading(true);
         try {
@@ -167,17 +172,23 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
         const id = isChar ? item.character_id : item.asset_id;
         const name = item.name || id;
 
-        if (!window.confirm(`Xoá ${isChar ? 'nhân vật' : 'asset'} "${name}"?`)) return;
-        try {
-            if (isChar) await SupabaseAPI.deleteCharacter(id);
-            else await SupabaseAPI.deleteAsset(id);
-            
-            showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
-            loadAll(); // Reload everything to ensure UI is in sync
-        } catch (err) {
-            console.error('Delete failed:', err);
-            showNotification(`${isChar ? 'Xoá nhân vật' : 'Xoá asset'} thất bại: ${err.message}`, 'error');
-        }
+        setConfirmData({
+            title: `Xoá ${isChar ? 'nhân vật' : 'asset'}`,
+            message: `Bạn có chắc chắn muốn xoá ${isChar ? 'nhân vật' : 'asset'} "${name}"? Hành động này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    if (isChar) await SupabaseAPI.deleteCharacter(id);
+                    else await SupabaseAPI.deleteAsset(id);
+                    
+                    showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
+                    loadAll(); 
+                } catch (err) {
+                    console.error('Delete failed:', err);
+                    showNotification(`${isChar ? 'Xoá nhân vật' : 'Xoá asset'} thất bại: ${err.message}`, 'error');
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     const openAssetDetail = (asset) => {
@@ -299,6 +310,15 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                 onUpdated={() => { loadAll(); setDetailOpen(false); }}
                 onPickAsset={onPickAsset}
                 showNotification={showNotification}
+            />
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmOpen}
+                title={confirmData.title}
+                message={confirmData.message}
+                onConfirm={confirmData.onConfirm}
+                onClose={() => setConfirmOpen(false)}
             />
         </div>
     );

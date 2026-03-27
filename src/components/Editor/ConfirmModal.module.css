@@ -1,0 +1,143 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.modal {
+    background: #1e1e26;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    width: 380px;
+    max-width: 90%;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: modalIn 0.2s ease-out;
+    text-align: center;
+}
+
+.headerDecor {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.dangerDecor {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.infoDecor {
+    background: rgba(107, 184, 255, 0.1);
+    color: #6bb8ff;
+    border: 1px solid rgba(107, 184, 255, 0.2);
+}
+
+.closeBtn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: #8b8ea1;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.content {
+    margin-bottom: 30px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 10px;
+}
+
+.message {
+    font-size: 14px;
+    color: #8b8ea1;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.footer {
+    display: flex;
+    gap: 12px;
+}
+
+.cancelBtn, .confirmBtn {
+    flex: 1;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.cancelBtn {
+    background: #2a2a35;
+    color: #8b8ea1;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cancelBtn:hover {
+    background: #323240;
+    color: #fff;
+}
+
+.confirmBtn {
+    color: #fff;
+}
+
+.dangerBtn {
+    background: #ee5253;
+}
+
+.dangerBtn:hover {
+    background: #ff6b6b;
+}
+
+.infoBtn {
+    background: #4a90e2;
+}
+
+.infoBtn:hover {
+    background: #6bb8ff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2 } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
+import ConfirmModal from './ConfirmModal';
 import styles from './StoryTreePanel.module.css';
 
 // ─── Icons per type ───────────────────────────────────────────────────────────
@@ -91,6 +92,10 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(currentStoryId || null);
+
+    // Confirm modal
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
 
     // Sync selection when parent changes (e.g., after save that creates a story ID)
     useEffect(() => {
@@ -188,18 +193,24 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
 
     // ─── Delete node ─────────────────────────────────────────────────────────
     const handleDelete = async (node) => {
-        const confirmMsg = `Bạn có chắc muốn xoá "${node.name}"?\nHành động này không thể hoàn tác.`;
-        if (!window.confirm(confirmMsg)) return;
-        try {
-            if (node.type === 'region') await SupabaseAPI.deleteRegion(node.region_id);
-            else if (node.type === 'arc') await SupabaseAPI.deleteArc(node.arc_id);
-            else if (node.type === 'event') await SupabaseAPI.deleteEvent(node.event_id);
-            else if (node.type === 'story') await SupabaseAPI.deleteStory(node.story_id);
-            await loadTree();
-        } catch (err) {
-            console.error('Delete failed:', err);
-            showNotification(`Xoá thất bại: ${err.message}`, 'error');
-        }
+        setConfirmData({
+            title: `Xoá ${node.type}`,
+            message: `Bạn có chắc muốn xoá "${node.name}"?\nHành động này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    if (node.type === 'region') await SupabaseAPI.deleteRegion(node.region_id);
+                    else if (node.type === 'arc') await SupabaseAPI.deleteArc(node.arc_id);
+                    else if (node.type === 'event') await SupabaseAPI.deleteEvent(node.event_id);
+                    else if (node.type === 'story') await SupabaseAPI.deleteStory(node.story_id);
+                    await loadTree();
+                    showNotification(`Đã xoá ${node.type} thành công`, 'success');
+                } catch (err) {
+                    console.error('Delete failed:', err);
+                    showNotification(`Xoá thất bại: ${err.message}`, 'error');
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     // ─── Add top-level region ─────────────────────────────────────────────────
@@ -246,6 +257,15 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
                     ))
                 )}
             </div>
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmOpen}
+                title={confirmData.title}
+                message={confirmData.message}
+                onConfirm={confirmData.onConfirm}
+                onClose={() => setConfirmOpen(false)}
+            />
         </div>
     );
 }
