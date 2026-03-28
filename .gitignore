@@ -1,3 +1,6 @@
-docs
 node_modules
-legacy
+dist
+dist-ssr
+*.local
+legacy/
+.DS_Store
