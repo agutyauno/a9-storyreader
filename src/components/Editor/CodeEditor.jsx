@@ -54,7 +54,7 @@ const fontExtension = EditorView.theme({
     },
 });
 
-const CodeEditor = forwardRef(({ value, onChange }, ref) => {
+const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], eventCharacters = [] }, ref) => {
     const editorRef = useRef(null);
 
     useImperativeHandle(ref, () => ({
@@ -152,12 +152,24 @@ const CodeEditor = forwardRef(({ value, onChange }, ref) => {
 
         // 4. Character IDs (after @char or at start of line for dialogue)
         if (textBefore.match(/^@char\s+\S+\s+id\s*=\s*"/) || textBefore.match(/^[^:]*$/)) {
-             return {
+            const eventCharIds = new Set((eventCharacters || []).map(ec => ec.character_id));
+            
+            // Sort characters: event characters first, then others
+            const sortedCharacters = [...(characters || [])].sort((a, b) => {
+                const aIsEvent = eventCharIds.has(a.character_id);
+                const bIsEvent = eventCharIds.has(b.character_id);
+                if (aIsEvent && !bIsEvent) return -1;
+                if (!aIsEvent && bIsEvent) return 1;
+                return 0;
+            });
+
+            return {
                 from: word.from,
-                options: (characters || []).map(c => ({
+                options: sortedCharacters.map(c => ({
                     label: c.character_id,
-                    type: 'variable',
-                    detail: c.name
+                    type: eventCharIds.has(c.character_id) ? 'variable' : 'type',
+                    detail: `${eventCharIds.has(c.character_id) ? '★ ' : ''}${c.name}`,
+                    boost: eventCharIds.has(c.character_id) ? 100 : 0
                 }))
             };
         }

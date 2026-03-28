@@ -36,7 +36,10 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEd
                 {/* Type icon + label */}
                 <span
                     className={styles.nodeLabel}
-                    onClick={() => onSelect(node)}
+                    onClick={() => {
+                        onSelect(node);
+                        if (node.type !== 'story') setOpen(v => !v);
+                    }}
                     title={node.description || node.name}
                 >
                     <span className={`${styles.typeIcon} ${styles[node.type]}`}>

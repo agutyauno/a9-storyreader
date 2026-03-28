@@ -7,6 +7,8 @@ import EditorSidebar from '../components/Editor/EditorSidebar';
 import EditorToolbar from '../components/Editor/EditorToolbar';
 import CodeEditor from '../components/Editor/CodeEditor';
 import MetadataForm from '../components/Editor/MetadataForm';
+import SuggestionsManager from '../components/Editor/SuggestionsManager';
+import EventCharactersManager from '../components/Editor/EventCharactersManager';
 import AssetPickerModal from '../components/Editor/AssetPickerModal';
 import NotificationToast from '../components/Editor/NotificationToast'; // New
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
@@ -66,6 +68,7 @@ export default function EditorPage() {
     const [previewLoading, setPreviewLoading] = useState(false);
     const [doctorNickname, setDoctorNickname] = useState(localStorage.getItem('doctor_nickname') || '');
     const [allCharacters, setAllCharacters] = useState([]);
+    const [eventCharacters, setEventCharacters] = useState([]); // Specifically linked to current event
     const [allAssets, setAllAssets] = useState([]);
 
     // Entity selection (Region/Arc/Event clicked in tree)
@@ -165,6 +168,19 @@ export default function EditorPage() {
                 });
 
                 setAllCharacters(charactersWithExprs);
+                
+                // Fetch event characters if we are in a story
+                if (metadata.event_id) {
+                    try {
+                        const eventChars = await SupabaseAPI.getCharactersByEvent(metadata.event_id);
+                        setEventCharacters(eventChars);
+                    } catch (e) {
+                        console.error('Failed to fetch event characters:', e);
+                    }
+                } else {
+                    setEventCharacters([]);
+                }
+                
                 setAllAssets(assets);
             } catch (err) {
                 console.error('Failed to load character/asset metadata:', err);
@@ -289,8 +305,10 @@ export default function EditorPage() {
             setEditorMode('story');
             setSelectedEntity(null);
         } else {
+            // For other types, just register the selection (highlight) 
+            // but don't show an edit panel since there's a modal now
             setSelectedEntity(node);
-            setEditorMode('entity');
+            setEditorMode(null);
         }
     };
 
@@ -401,20 +419,38 @@ export default function EditorPage() {
                                     value={scriptText}
                                     onChange={setScriptText}
                                     characters={allCharacters}
+                                    eventCharacters={eventCharacters}
                                     assets={allAssets}
                                 />
                             </div>
                         </>
-                    ) : editorMode === 'entity' ? (
-                        <MetadataForm
-                            entity={selectedEntity}
-                            onSaved={handleEntitySaved}
-                            onPickAsset={openPicker}
-                            showNotification={showNotification}
-                        />
+                    ) : selectedEntity ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-secondary)', padding: '20px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{selectedEntity.name}</div>
+                            <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginBottom: '16px' }}>{selectedEntity.type?.toUpperCase()}</div>
+                            <p style={{ maxWidth: '400px', lineHeight: '1.6' }}>{selectedEntity.description || "No description available."}</p>
+                            
+                            {/* Detailed Managers based on type */}
+                            {selectedEntity.type === 'arc' && (
+                                <SuggestionsManager 
+                                    arcId={selectedEntity.arc_id || selectedEntity.id} 
+                                    showNotification={showNotification} 
+                                />
+                            )}
+                            {selectedEntity.type === 'event' && (
+                                <EventCharactersManager 
+                                    eventId={selectedEntity.event_id || selectedEntity.id} 
+                                    showNotification={showNotification} 
+                                />
+                            )}
+
+                            <div style={{ marginTop: '24px', fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                                Sửa thông tin bằng icon bút chì ở bên trái.
+                            </div>
+                        </div>
                     ) : (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-tertiary)' }}>
-                            Chọn một item từ Story Tree để bắt đầu...
+                            Chọn một Story từ Story Tree để bắt đầu viết kịch bản...
                         </div>
                     )}
                 </div>

@@ -1,0 +1,242 @@
+.container {
+    background: var(--color-bg-tertiary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 600px;
+    border: 1px solid var(--color-border);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.addBtn {
+    background: var(--color-accent-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.addBtn:hover {
+    filter: brightness(1.1);
+}
+
+.helpText {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 20px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.2s;
+}
+
+.item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.grip {
+    color: var(--color-text-tertiary);
+    cursor: grab;
+}
+
+.pos {
+    color: var(--color-accent-primary);
+    font-weight: 600;
+    font-size: 14px;
+    min-width: 20px;
+}
+
+.name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.removeBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.removeBtn:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+}
+
+.empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 12px;
+    color: var(--color-text-secondary);
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Modal for Selector */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.selectorModal {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-bright);
+    border-radius: 16px;
+    width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modalHeader h4 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--color-text-primary);
+}
+
+.modalHeader button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+}
+
+.modalHeader button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+.searchBox {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.searchBox input {
+    background: transparent;
+    border: none;
+    flex: 1;
+    color: var(--color-text-primary);
+    font-size: 14px;
+}
+
+.searchBox input:focus {
+    outline: none;
+}
+
+.eventList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.eventPickerItem {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.eventPickerItem:hover {
+    background: var(--color-bg-secondary);
+}
+
+.eventName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.eventInfo {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
+.modalEmpty {
+    padding: 40px;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 14px;
+}

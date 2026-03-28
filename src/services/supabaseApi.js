@@ -14,7 +14,8 @@ const sortByOrder = (arr) =>
   [...arr].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
 /** Generate a simple timestamp-based ID */
-const genId = (prefix) => `${prefix}_${Date.now()}`;
+const genId = (prefix) => `${prefix}_${Math.floor(Math.random() * 1000000)}`;
+const genNumericId = () => Math.floor(Math.random() * 1000000000);
 
 /** Handle common Supabase errors, especially 401 Unauthorized */
 const handleAuthError = (error) => {
@@ -280,7 +281,7 @@ const SupabaseAPI_Raw = {
     const { expressions, ...charData } = payload;
     if (USE_MOCK_DB) {
       const newItem = { 
-        id: Math.max(0, ...mockDatabase.characters.map(c => c.id || 0)) + 1,
+        id: genNumericId(),
         character_id: payload.id || genId('char'), 
         name: charData.name,
         description: charData.description 
@@ -290,7 +291,7 @@ const SupabaseAPI_Raw = {
       if (expressions?.length) {
         expressions.forEach(e => {
           mockDatabase.character_expressions.push({
-            id: Math.max(0, ...mockDatabase.character_expressions.map(ex => ex.id || 0)) + 1,
+            id: genNumericId(),
             character_id: newItem.character_id,
             name: e.name,
             avatar_url: e.avatar_url,
@@ -298,7 +299,7 @@ const SupabaseAPI_Raw = {
           });
         });
       }
-      return newItem;
+      return { ...newItem, expressions: expressions || [] };
     }
     
     // For real Supabase, we map the custom ID
@@ -543,7 +544,7 @@ const SupabaseAPI_Raw = {
   async createGallery(payload) {
     if (USE_MOCK_DB) {
       const newItem = { 
-        id: Math.max(0, ...mockDatabase.gallery.map(g => g.id || 0)) + 1,
+        id: genNumericId(),
         gallery_id: payload.id || genId('gallery'), 
         display_order: payload.display_order || 0,
         event_id: payload.event_id || null,
@@ -583,9 +584,171 @@ const SupabaseAPI_Raw = {
     const events = [];
     for (const s of suggestions) {
       const ev = await this.getEvent(s.target_event_id);
-      if (ev) events.push({ ...ev, suggestion_position: s.position });
+      if (ev) events.push({ ...ev, suggestion_position: s.position, suggestion_id: s.id });
     }
     return events;
+  },
+
+  async createSuggestion(payload) {
+    if (USE_MOCK_DB) {
+      const newItem = { id: genNumericId(), position: 0, ...payload };
+      if (!mockDatabase.suggestions) mockDatabase.suggestions = [];
+      mockDatabase.suggestions.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('suggestions').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteSuggestion(id) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.suggestions) return;
+      mockDatabase.suggestions = mockDatabase.suggestions.filter(s => s.id !== id);
+      return;
+    }
+    const { error } = await supabase.from('suggestions').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async updateSuggestion(id, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.suggestions.findIndex(s => s.id === id);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.suggestions[idx], payload);
+      return mockDatabase.suggestions[idx];
+    }
+    const { data, error } = await supabase.from('suggestions').update(payload).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  /** Batch sync suggestions for an arc */
+  async saveSuggestions(arcId, targetEventIds) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.suggestions) mockDatabase.suggestions = [];
+      const existing = mockDatabase.suggestions.filter(s => s.arc_id === arcId);
+      const existingMap = Object.fromEntries(existing.map(s => [s.target_event_id, s]));
+      const newEventSet = new Set(targetEventIds);
+
+      // Remove suggestions that are no longer in the list
+      mockDatabase.suggestions = mockDatabase.suggestions.filter(
+        s => s.arc_id !== arcId || newEventSet.has(s.target_event_id)
+      );
+
+      // Update positions or insert new items
+      const result = [];
+      targetEventIds.forEach((eid, idx) => {
+        const pos = idx + 1;
+        if (existingMap[eid]) {
+          const item = mockDatabase.suggestions.find(s => s.arc_id === arcId && s.target_event_id === eid);
+          if (item) {
+            item.position = pos;
+            result.push(item);
+          }
+        } else {
+          const newItem = { id: genNumericId(), arc_id: arcId, target_event_id: eid, position: pos };
+          mockDatabase.suggestions.push(newItem);
+          result.push(newItem);
+        }
+      });
+      return result;
+    }
+
+    // 1. Fetch current suggestions for this arc
+    const { data: current } = await supabase.from('suggestions').select('id, target_event_id').eq('arc_id', arcId);
+    const existingMap = Object.fromEntries((current || []).map(s => [s.target_event_id, s.id]));
+    const newEventSet = new Set(targetEventIds);
+
+    // 2. Delete suggestions that are no longer in the list
+    const idsToDelete = (current || [])
+      .filter(s => !newEventSet.has(s.target_event_id))
+      .map(s => s.id);
+    if (idsToDelete.length) {
+      await supabase.from('suggestions').delete().in('id', idsToDelete);
+    }
+
+    // 3. Upsert (insert new, update existing position)
+    const rows = targetEventIds.map((eid, idx) => ({
+      ...(existingMap[eid] ? { id: existingMap[eid] } : {}),
+      arc_id: arcId,
+      target_event_id: eid,
+      position: idx + 1
+    }));
+    const { data, error } = await supabase.from('suggestions').insert(rows).select();
+    if (error) throw error;
+    return data;
+  },
+
+  // ===========================================================================
+  // EVENT CHARACTERS
+  // ===========================================================================
+  async getCharactersByEvent(eventId) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.event_characters) return [];
+      const links = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
+      // Fetch actual character info
+      const results = links.map(link => {
+        const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
+        return { ...char, ...link }; // Merge with additional link fields if any
+      });
+      return results;
+    }
+    
+    const { data, error } = await supabase
+      .from('event_characters')
+      .select('*, characters(*)')
+      .eq('event_id', eventId);
+    if (error) throw error;
+    
+    // Flatten result
+    return (data || []).map(row => ({
+      ...row.characters,
+      ...row // overrides with event_character metadata if any
+    }));
+  },
+
+  async addCharacterToEvent(eventId, characterId) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.event_characters) mockDatabase.event_characters = [];
+      const exists = mockDatabase.event_characters.find(ec => ec.event_id === eventId && ec.character_id === characterId);
+      if (exists) return exists;
+      
+      const newItem = { event_id: eventId, character_id: characterId };
+      mockDatabase.event_characters.push(newItem);
+      return newItem;
+    }
+    const { data, error } = await supabase.from('event_characters').insert({ event_id: eventId, character_id: characterId }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async removeCharacterFromEvent(eventId, characterId) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.event_characters) return;
+      mockDatabase.event_characters = mockDatabase.event_characters.filter(ec => !(ec.event_id === eventId && ec.character_id === characterId));
+      return;
+    }
+    const { error } = await supabase.from('event_characters').delete().eq('event_id', eventId).eq('character_id', characterId);
+    if (error) throw error;
+  },
+
+  async updateEventCharacter(eventId, characterId, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.event_characters.findIndex(ec => ec.event_id === eventId && ec.character_id === characterId);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.event_characters[idx], payload);
+      return mockDatabase.event_characters[idx];
+    }
+    const { data, error } = await supabase
+      .from('event_characters')
+      .update(payload)
+      .eq('event_id', eventId)
+      .eq('character_id', characterId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   },
 
   // ===========================================================================
