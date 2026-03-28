@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, GripVertical, Loader, Search } from 'lucide-react';
+import { Plus, X, Search, Loader, ChevronDown } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import styles from './SuggestionsManager.module.css';
 
 /**
- * Manages the "Next Event Suggestions" for a specific Arc.
- * These are events that the game suggests after the arc is completed.
+ * Manages "Next Event Suggestions" for a specific Arc.
+ * `position` = the event index (1-based) in the arc after which the suggestion is shown.
+ * e.g. position=2 means "show this suggestion after the 2nd event of the arc".
  */
 export default function SuggestionsManager({ arcId, showNotification }) {
     const [suggestions, setSuggestions] = useState([]);
-    const [allEvents, setAllEvents] = useState([]);
+    const [arcEvents, setArcEvents] = useState([]);     // Events of this arc (for position selector)
+    const [allEvents, setAllEvents] = useState([]);     // All events (for suggestion target picker)
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [showSelector, setShowSelector] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    // When adding a suggestion: which position to place it after
+    const [selectedPosition, setSelectedPosition] = useState(1);
 
     useEffect(() => {
         if (arcId) fetchData();
@@ -22,12 +25,14 @@ export default function SuggestionsManager({ arcId, showNotification }) {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [suggested, events] = await Promise.all([
-                SupabaseAPI.getSuggestedEvents(arcId),
+            const [suggs, arcEvs, allEvs] = await Promise.all([
+                SupabaseAPI.getSuggestionsByArc(arcId),
+                SupabaseAPI.getEventsByArc(arcId),
                 SupabaseAPI.getEvents()
             ]);
-            setSuggestions(suggested);
-            setAllEvents(events);
+            setSuggestions(suggs);
+            setArcEvents(arcEvs);
+            setAllEvents(allEvs);
         } catch (err) {
             console.error('Failed to fetch suggestions:', err);
             showNotification?.('Failed to load suggestions', 'error');
@@ -36,104 +41,187 @@ export default function SuggestionsManager({ arcId, showNotification }) {
         }
     };
 
-    const handleAdd = async (event) => {
-        if (suggestions.find(s => s.event_id === event.event_id)) {
-            showNotification?.('Event already in suggestions', 'warning');
+    const handleAdd = async (targetEvent) => {
+        // Check duplicate at same position
+        if (suggestions.find(s => s.target_event_id === targetEvent.event_id && s.position === selectedPosition)) {
+            showNotification?.('Sự kiện này đã được gợi ý tại vị trí này', 'warning');
             return;
         }
-
-        setSaving(true);
         try {
-            const nextPos = suggestions.length + 1;
             await SupabaseAPI.createSuggestion({
                 arc_id: arcId,
-                target_event_id: event.event_id,
-                position: nextPos
+                target_event_id: targetEvent.event_id,
+                position: selectedPosition
             });
             await fetchData();
-            showNotification?.('Added suggestion');
+            showNotification?.('Đã thêm gợi ý');
             setShowSelector(false);
+            setSearchQuery('');
         } catch (err) {
             console.error('Add suggestion failed:', err);
-            showNotification?.('Failed to add suggestion', 'error');
-        } finally {
-            setSaving(false);
+            showNotification?.('Thêm gợi ý thất bại', 'error');
         }
     };
 
     const handleDelete = async (suggestionId) => {
         try {
             await SupabaseAPI.deleteSuggestion(suggestionId);
-            setSuggestions(prev => prev.filter(s => s.suggestion_id !== suggestionId));
-            showNotification?.('Removed suggestion');
+            setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+            showNotification?.('Đã xoá gợi ý');
         } catch (err) {
             console.error('Delete suggestion failed:', err);
-            showNotification?.('Failed to remove suggestion', 'error');
+            showNotification?.('Xoá gợi ý thất bại', 'error');
         }
     };
 
-    const filteredEvents = allEvents.filter(e => 
-        e.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !suggestions.find(s => s.event_id === e.event_id)
+    // Group suggestions by position
+    const groupedByPos = {};
+    suggestions.forEach(s => {
+        if (!groupedByPos[s.position]) groupedByPos[s.position] = [];
+        groupedByPos[s.position].push(s);
+    });
+
+    // All arc event positions (1..N) for display
+    const arcEventPositions = arcEvents.map((ev, idx) => ({ ...ev, posIndex: idx + 1 }));
+
+    const filteredTargets = allEvents.filter(e =>
+    (e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.event_id.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    if (loading) return <div className={styles.loading}><Loader className={styles.spinner} /> Loading suggestions...</div>;
+    if (loading) {
+        return <div className={styles.loading}><Loader className={styles.spinner} size={16} /> Đang tải gợi ý...</div>;
+    }
 
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h3 className={styles.title}>Next Event Suggestions</h3>
+                <h3 className={styles.title}>Gợi ý sự kiện (Next Suggestions)</h3>
                 <button className={styles.addBtn} onClick={() => setShowSelector(true)}>
-                    <Plus size={14} /> Add Event
+                    <Plus size={14} /> Thêm gợi ý
                 </button>
             </div>
 
             <p className={styles.helpText}>
-                These events will be suggested to players after finishing this Arc.
+                Gợi ý sẽ hiển thị ngay sau event chỉ định.
             </p>
 
-            <div className={styles.list}>
-                {suggestions.length === 0 ? (
-                    <div className={styles.empty}>No suggestions added yet.</div>
+            {/* Render arc events interleaved with suggestions */}
+            <div className={styles.timeline}>
+                {arcEventPositions.length === 0 ? (
+                    <div className={styles.empty}>Arc này chưa có event nào.</div>
                 ) : (
-                    suggestions.map((s, idx) => (
-                        <div key={s.suggestion_id || idx} className={styles.item}>
-                            <GripVertical size={14} className={styles.grip} />
-                            <span className={styles.pos}>{s.suggestion_position}.</span>
-                            <span className={styles.name}>{s.name}</span>
-                            <button className={styles.removeBtn} onClick={() => handleDelete(s.suggestion_id)}>
-                                <X size={14} />
-                            </button>
-                        </div>
+                    arcEventPositions.map(ev => (
+                        <React.Fragment key={ev.event_id}>
+                            {/* Event node */}
+                            <div className={styles.timelineEvent}>
+                                <div className={styles.timelineDot} />
+                                <div className={styles.timelineContent}>
+                                    <span className={styles.eventPos}>#{ev.posIndex}</span>
+                                    <span className={styles.eventName}>{ev.name}</span>
+                                </div>
+                            </div>
+
+                            {/* Suggestions after this event */}
+                            {groupedByPos[ev.posIndex]?.map(s => {
+                                const target = allEvents.find(e => e.event_id === s.target_event_id);
+                                return (
+                                    <div key={s.id} className={styles.suggestionRow}>
+                                        <div className={styles.suggestionLine} />
+                                        <div className={styles.suggestionChip}>
+                                            <span className={styles.suggestionLabel}>Gợi ý:</span>
+                                            <span className={styles.suggestionTarget}>{target?.name || s.target_event_id}</span>
+                                            <button
+                                                className={styles.removeBtn}
+                                                onClick={() => handleDelete(s.id)}
+                                                title="Xoá gợi ý này"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </React.Fragment>
                     ))
                 )}
+
+                {/* Suggestions with position beyond arc event count */}
+                {Object.entries(groupedByPos)
+                    .filter(([pos]) => parseInt(pos) > arcEventPositions.length)
+                    .map(([pos, suggs]) => (
+                        <div key={`overflow_${pos}`} className={styles.overflowGroup}>
+                            <span className={styles.overflowLabel}>Sau event #{pos} (ngoài danh sách hiện tại)</span>
+                            {suggs.map(s => {
+                                const target = allEvents.find(e => e.event_id === s.target_event_id);
+                                return (
+                                    <div key={s.id} className={styles.suggestionChip}>
+                                        <span className={styles.suggestionLabel}>Gợi ý:</span>
+                                        <span className={styles.suggestionTarget}>{target?.name || s.target_event_id}</span>
+                                        <button className={styles.removeBtn} onClick={() => handleDelete(s.id)}><X size={12} /></button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))
+                }
             </div>
 
+            {/* Add Suggestion Modal */}
             {showSelector && (
                 <div className={styles.modalOverlay} onClick={() => setShowSelector(false)}>
                     <div className={styles.selectorModal} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h4>Select Event</h4>
+                            <h4>Thêm Gợi ý</h4>
                             <button onClick={() => setShowSelector(false)}><X size={18} /></button>
                         </div>
+
+                        {/* Position Selector */}
+                        <div className={styles.positionSelector}>
+                            <label>Hiển thị sau event thứ:</label>
+                            <div className={styles.posOptions}>
+                                {arcEventPositions.length > 0 ? (
+                                    arcEventPositions.map(ev => (
+                                        <button
+                                            key={ev.posIndex}
+                                            className={`${styles.posBtn} ${selectedPosition === ev.posIndex ? styles.posBtnActive : ''}`}
+                                            onClick={() => setSelectedPosition(ev.posIndex)}
+                                            title={ev.name}
+                                        >
+                                            #{ev.posIndex}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <span className={styles.noEventsHint}>Arc chưa có event</span>
+                                )}
+                            </div>
+                            {arcEventPositions.find(e => e.posIndex === selectedPosition) && (
+                                <span className={styles.posPreview}>
+                                    → Sau "{arcEventPositions.find(e => e.posIndex === selectedPosition)?.name}"
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Target Event Search */}
                         <div className={styles.searchBox}>
                             <Search size={16} />
-                            <input 
-                                type="text" 
-                                placeholder="Search events..." 
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm event mục tiêu..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 autoFocus
                             />
                         </div>
+
                         <div className={styles.eventList}>
-                            {filteredEvents.length === 0 ? (
-                                <div className={styles.modalEmpty}>No events found</div>
+                            {filteredTargets.length === 0 ? (
+                                <div className={styles.modalEmpty}>Không tìm thấy event</div>
                             ) : (
-                                filteredEvents.map(e => (
+                                filteredTargets.map(e => (
                                     <div key={e.event_id} className={styles.eventPickerItem} onClick={() => handleAdd(e)}>
                                         <div className={styles.eventName}>{e.name}</div>
-                                        <div className={styles.eventInfo}>{e.arc_id}</div>
+                                        <div className={styles.eventInfo}>{e.event_id}</div>
                                     </div>
                                 ))
                             )}
