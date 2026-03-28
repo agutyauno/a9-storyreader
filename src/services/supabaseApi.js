@@ -262,11 +262,40 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   // CHARACTERS
   // ===========================================================================
+  // Helper to attach expressions to characters
+  async _enrichCharactersWithExpressions(characters) {
+    if (!characters?.length) return [];
+
+    const charIds = characters.map(c => c.character_id).filter(Boolean);
+    if (!charIds.length) return characters;
+
+    try {
+      const exprMap = await this.getExpressionsByCharacters(charIds);
+      return characters.map(c => {
+        const exprs = exprMap[c.character_id] || [];
+        // Use 'default' expression or first one
+        const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+        
+        // Map common fields for compatibility
+        return {
+          ...c,
+          avatar_url: c.avatar_url || def.avatar_url || '',
+          image_url: c.image_url || def.full_url || '',  // For EventPage
+          full_url: c.full_url || def.full_url || '',    // For Editor
+          expressions: exprs
+        };
+      });
+    } catch (err) {
+      console.warn('Failed to enrich characters with expressions:', err);
+      return characters;
+    }
+  },
+
   async getCharacters() {
-    if (USE_MOCK_DB) return [...mockDatabase.characters];
+    if (USE_MOCK_DB) return this._enrichCharactersWithExpressions([...mockDatabase.characters]);
     const { data, error } = await supabase.from('characters').select('*');
     if (error) throw error;
-    return data || [];
+    return this._enrichCharactersWithExpressions(data || []);
   },
 
   async getCharacter(characterId) {
@@ -357,17 +386,26 @@ const SupabaseAPI_Raw = {
   async getCharactersByEvent(eventId) {
     if (USE_MOCK_DB) {
       if (!mockDatabase.event_characters) return [];
-      const ec = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
-      return sortByOrder(ec);
+      const links = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
+      const results = links.map(link => {
+        const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
+        return { ...char, ...link };
+      });
+      return this._enrichCharactersWithExpressions(results);
     }
-    const { data: ec, error: ecErr } = await supabase
-      .from('event_characters').select('character_id').eq('event_id', eventId);
-    if (ecErr) throw ecErr;
-    if (!ec?.length) return [];
-    const ids = ec.map(r => r.character_id);
-    const { data, error } = await supabase.from('characters').select('*').in('character_id', ids);
+
+    const { data, error } = await supabase
+      .from('event_characters')
+      .select('*, characters(*)')
+      .eq('event_id', eventId);
     if (error) throw error;
-    return data || [];
+
+    const characters = (data || []).map(row => ({
+      ...row.characters,
+      ...row 
+    }));
+    
+    return this._enrichCharactersWithExpressions(characters);
   },
 
   // ===========================================================================
@@ -720,30 +758,6 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   // EVENT CHARACTERS
   // ===========================================================================
-  async getCharactersByEvent(eventId) {
-    if (USE_MOCK_DB) {
-      if (!mockDatabase.event_characters) return [];
-      const links = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
-      // Fetch actual character info
-      const results = links.map(link => {
-        const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
-        return { ...char, ...link }; // Merge with additional link fields if any
-      });
-      return results;
-    }
-
-    const { data, error } = await supabase
-      .from('event_characters')
-      .select('*, characters(*)')
-      .eq('event_id', eventId);
-    if (error) throw error;
-
-    // Flatten result
-    return (data || []).map(row => ({
-      ...row.characters,
-      ...row // overrides with event_character metadata if any
-    }));
-  },
 
   async addCharacterToEvent(eventId, characterId) {
     if (USE_MOCK_DB) {
@@ -823,7 +837,7 @@ const SupabaseAPI_Raw = {
       mockDatabase.characters
         .filter(c => characterIds.includes(c.character_id))
         .forEach(c => {
-          const exprs = mockDatabase.charater_expressions.filter(e => e.character_id === c.character_id);
+          const exprs = mockDatabase.character_expressions.filter(e => e.character_id === c.character_id);
           const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
 
           // Build expressions map
@@ -845,7 +859,7 @@ const SupabaseAPI_Raw = {
     const unique = [...new Set(characterIds)];
     const [charRes, exprRes] = await Promise.all([
       supabase.from('characters').select('*').in('character_id', unique),
-      supabase.from('charater_expressions').select('*').in('character_id', unique),
+      supabase.from('character_expressions').select('*').in('character_id', unique),
     ]);
     if (charRes.error) throw charRes.error;
     if (exprRes.error) throw exprRes.error;
