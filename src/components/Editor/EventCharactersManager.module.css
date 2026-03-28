@@ -1,0 +1,295 @@
+.container {
+    background: var(--color-bg-tertiary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 600px;
+    border: 1px solid var(--color-border);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.addBtn {
+    background: var(--color-accent-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.addBtn:hover {
+    filter: brightness(1.1);
+}
+
+.helpText {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.charCard {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.charCard:hover {
+    border-color: var(--color-accent-primary);
+}
+
+.avatarWrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 10px;
+    background: var(--color-bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-border);
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatarPlaceholder {
+    color: var(--color-text-tertiary);
+}
+
+.charInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.charName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.charId {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
+.removeBtn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 107, 107, 0.1);
+    border: none;
+    color: #ff6b6b;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.charCard:hover .removeBtn {
+    opacity: 1;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 12px;
+    color: var(--color-text-secondary);
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Modal Selector Styles (reuse from SuggestionsManager if possible, but keep local for now) */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.selectorModal {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-bright);
+    border-radius: 16px;
+    width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modalHeader h4 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--color-text-primary);
+}
+
+.modalHeader button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+}
+
+.modalHeader button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+.searchBox {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.searchBox input {
+    background: transparent;
+    border: none;
+    flex: 1;
+    color: var(--color-text-primary);
+    font-size: 14px;
+}
+
+.searchBox input:focus {
+    outline: none;
+}
+
+.charList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.charPickerItem {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.charPickerItem:hover {
+    background: var(--color-bg-secondary);
+}
+
+.pickerAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pickerAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pickerInfo {
+    flex: 1;
+}
+
+.pickerName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.pickerId {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+}
+
+.modalEmpty {
+    padding: 40px;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 14px;
+}

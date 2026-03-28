@@ -1,0 +1,167 @@
+.container {
+    background: var(--color-bg-tertiary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 600px;
+    border: 1px solid var(--color-border);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.addBtn {
+    background: var(--color-accent-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.addBtn:hover {
+    filter: brightness(1.1);
+}
+
+.helpText {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    border-color: var(--color-accent-primary);
+}
+
+.imageWrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-tertiary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.imageWrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.deleteBtn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 107, 107, 0.2);
+    border: none;
+    color: #ff6b6b;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.card:hover .deleteBtn {
+    opacity: 1;
+}
+
+.deleteBtn:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+.cardInfo {
+    padding: 8px;
+}
+
+.titleInput {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    padding: 4px;
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.titleInput:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.titleInput:focus {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-accent-primary);
+    color: var(--color-text-primary);
+}
+
+.empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 12px;
+    color: var(--color-text-secondary);
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
