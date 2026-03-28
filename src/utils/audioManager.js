@@ -1,3 +1,5 @@
+import { getAssetUrl } from './assetUtils';
+
 export class BGMManager {
   constructor(options = {}) {
     this.basePath = options.basePath || '/assets/audio/bgm/';
@@ -69,10 +71,12 @@ export class BGMManager {
 
     const resolvePath = (src) => {
       if (!src) return '';
-      if (src.startsWith('http') || src.startsWith('../') || src.startsWith('/')) {
-        return src;
+      // If it's a full URL or data URI, getAssetUrl will handle it
+      // If it's a relative path (doesn't start with / or http), prepend basePath
+      if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
+        return getAssetUrl(this.basePath + src);
       }
-      return this.basePath + src;
+      return getAssetUrl(src);
     };
 
     if (track.intro) {
@@ -432,11 +436,11 @@ export class SFXManager {
 
     try {
       const audio = new Audio();
-      if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('../') && !sfxSrc.startsWith('/')) {
-        audio.src = this.basePath + sfxSrc;
-      } else {
-        audio.src = sfxSrc;
+      let finalSrc = sfxSrc;
+      if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
+        finalSrc = this.basePath + sfxSrc;
       }
+      audio.src = getAssetUrl(finalSrc);
       audio.volume = this.volume;
       this.currentAudio = audio;
 

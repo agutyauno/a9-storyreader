@@ -1,3 +1,5 @@
+import { getAssetUrl } from './assetUtils';
+
 function cx(classNames, styles) {
   if (!classNames) return '';
   return String(classNames).split(' ').filter(Boolean).map(c => `${c} ${styles[c] || ''}`.trim()).join(' ').trim();
@@ -18,33 +20,34 @@ export const StoryRenderer = {
   },
 
   getAvatar(nameWithExpr) {
-    if (!nameWithExpr) return '/assets/images/character/blank.png';
-    if (nameWithExpr.includes('/')) return nameWithExpr;
+    const defaultAvt = getAssetUrl('/assets/images/character/blank.png');
+    if (!nameWithExpr) return defaultAvt;
+    if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
     const char = this.characters[name];
     
     if (char) {
       if (expr && char.expressions?.[expr]) {
-        return char.expressions[expr].avatar_url || char.avatar || '/assets/images/character/blank.png';
+        return getAssetUrl(char.expressions[expr].avatar_url || char.avatar) || defaultAvt;
       }
-      return char.avatar || '/assets/images/character/blank.png';
+      return getAssetUrl(char.avatar) || defaultAvt;
     }
-    return '/assets/images/character/blank.png';
+    return defaultAvt;
   },
 
   getFullImage(nameWithExpr) {
     if (!nameWithExpr) return '';
-    if (nameWithExpr.includes('/')) return nameWithExpr;
+    if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
     const char = this.characters[name];
 
     if (char) {
       if (expr && char.expressions?.[expr]) {
-        return char.expressions[expr].full_url || char.full_image || '';
+        return getAssetUrl(char.expressions[expr].full_url || char.full_image || '');
       }
-      return char.full_image || '';
+      return getAssetUrl(char.full_image || '');
     }
     return '';
   },
@@ -71,7 +74,7 @@ export const StoryRenderer = {
   renderVideo(element, styles) {
     return `
       <div class="${cx('dialogue-video-box', styles)}" data-bgm-id="" data-bgm-intro="" data-bgm-loop="">
-        <video src="${element.src}" controls></video>
+        <video src="${getAssetUrl(element.src)}" controls></video>
       </div>
     `;
   },
@@ -85,12 +88,13 @@ export const StoryRenderer = {
     }
 
     const dialogues = (element.dialogues || []).map((d) => this.renderDialogue(d, styles)).join('');
+    const bgUrl = getAssetUrl(element.image);
     return `
       <section class="${cx('dialogue-background', styles)}" ${bgmAttrs}>
         <div class="${cx('background-wrapper', styles)}">
-          <img class="${cx('background-blur', styles)}" src="${element.image}" alt="">
-          <img class="${cx('background-image', styles)}" src="${element.image}" alt="">
-          <img class="${cx('expand-icon', styles)}" src="/assets/images/web icon/expand.png" alt="">
+          <img class="${cx('background-blur', styles)}" src="${bgUrl}" alt="">
+          <img class="${cx('background-image', styles)}" src="${bgUrl}" alt="">
+          <img class="${cx('expand-icon', styles)}" src="${getAssetUrl('/assets/images/web icon/expand.png')}" alt="">
         </div>
         <div class="${cx('dialogue-container', styles)}">
           ${dialogues}
@@ -134,7 +138,7 @@ export const StoryRenderer = {
 
   renderSFX(sfx, styles) {
     return `
-      <div class="${cx('sfx_player', styles)}" data-sfx-src="${sfx.src}" data-sfx-name="${sfx.name || ''}">
+      <div class="${cx('sfx_player', styles)}" data-sfx-src="${getAssetUrl(sfx.src)}" data-sfx-name="${sfx.name || ''}">
         <div class="${cx('sfx-content', styles)}">
           <span class="${cx('sfx-name', styles)}">${sfx.name || 'Sound Effect'}</span>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/HomePage.module.css'; // Will be created or mapped to old style
 
 function cx(classNames) {
@@ -72,7 +73,7 @@ export default function HomePage() {
                     to={`/region/${region.region_id}`}
                   >
                     <img 
-                      src={region.icon_url || '/assets/images/icon/default.png'} 
+                      src={getAssetUrl(region.icon_url || '/assets/images/icon/default.png')} 
                       alt={region.name} 
                     />
                     <div className={cx("selection-content")}>

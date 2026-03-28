@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/EventPage.module.css';
 
 function cx(classNames) {
@@ -52,15 +53,15 @@ export default function EventPage() {
         const formattedCharacters = ch.map((c, index) => ({
           id: c.character_id || `char-${index}`,
           name: c.name,
-          avatar: c.avatar_url || AVATAR_FALLBACK,
-          fullImage: c.image_url || AVATAR_FALLBACK,
+          avatar: getAssetUrl(c.avatar_url || AVATAR_FALLBACK),
+          fullImage: getAssetUrl(c.image_url || AVATAR_FALLBACK),
           description: c.description
         }));
 
         const formattedGallery = ga.map((g, index) => ({
           id: g.gallery_id || `img-${index}`,
           title: g.title,
-          image: g.image_url || '/assets/images/icon/default.png'
+          image: getAssetUrl(g.image_url || '/assets/images/icon/default.png')
         }));
 
         setStories(st);

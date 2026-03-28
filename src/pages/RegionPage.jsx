@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/RegionPage.module.css';
 
 function cx(classNames) {
@@ -28,6 +29,10 @@ export default function RegionPage() {
 
         const arcs = await SupabaseAPI.getArcsByRegion(id);
 
+        // Fetch all events once for name lookup in suggestions
+        const allEvents = await SupabaseAPI.getEvents();
+        const eventLookup = Object.fromEntries(allEvents.map(e => [e.event_id, e]));
+
         const arcsData = await Promise.all(arcs.map(async (arc) => {
           let events = [];
           let suggestions = [];
@@ -46,7 +51,10 @@ export default function RegionPage() {
           const suggestionsByPos = new Map();
           suggestions.forEach(s => {
             if (!suggestionsByPos.has(s.position)) suggestionsByPos.set(s.position, []);
-            suggestionsByPos.get(s.position).push(s);
+            suggestionsByPos.get(s.position).push({
+              ...s,
+              targetEvent: eventLookup[s.target_event_id] || null
+            });
           });
 
           return { ...arc, events, suggestionsByPos };
@@ -111,7 +119,7 @@ export default function RegionPage() {
             elements.push(
               <div key={`sug_before_${pos}_${idx}`} className={cx("arc-suggestion")}>
                 <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
-                  Gợi ý: Đọc tiếp tại đây...
+                  {s.targetEvent ? `Gợi ý: ${s.targetEvent.name}` : 'Sự kiện liên quan'}
                 </Link>
               </div>
             );
@@ -123,7 +131,7 @@ export default function RegionPage() {
       // Insert the actual event
       elements.push(
         <Link key={event.event_id} className={cx("selection-panel-item")} to={`/event/${event.event_id}${regionParam}`}>
-          <img src={event.image_url || '/assets/images/icon/default.png'} alt={event.name} />
+          <img src={getAssetUrl(event.image_url || '/assets/images/icon/default.png')} alt={event.name} />
           <div className={cx("selection-content")}>
             <p className={cx("event_name name")}>{event.name}</p>
             <p className={cx("event_description description")}>{event.description || ''}</p>
@@ -139,7 +147,7 @@ export default function RegionPage() {
           elements.push(
             <div key={`sug_end_${pos}_${idx}`} className={cx("arc-suggestion")}>
               <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
-                Gợi ý: Đọc tiếp tại đây...
+                {s.targetEvent ? `Gợi ý: ${s.targetEvent.name}` : 'Sự kiện liên quan'}
               </Link>
             </div>
           );

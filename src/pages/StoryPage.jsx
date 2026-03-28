@@ -4,6 +4,7 @@ import { SupabaseAPI } from '../services/supabaseApi';
 import { StoryRenderer } from '../utils/storyRenderer';
 import { BGMManager, SFXManager } from '../utils/audioManager';
 import { StoryScriptParser } from '../utils/storyParser';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/StoryPage.module.css';
 
 export default function StoryPage() {
@@ -274,7 +275,7 @@ export default function StoryPage() {
       <header>
         <div id="story_page-header" className={styles['story_page-header']}>
           <Link to="/">
-            <img className={styles['header-logo']} src="/assets/images/icon/dreambind castle.png" alt="Home" />
+            <img className={styles['header-logo']} src={getAssetUrl('/assets/images/icon/dreambind castle.png')} alt="Home" />
           </Link>
           <Link id="header-event-link" to={story.event_id ? `/event/${story.event_id}` : '#'} className={styles['header-name-link']}>
             <h1 className={styles['header-name']}>{eventData?.name || story.name}</h1>
@@ -299,7 +300,7 @@ export default function StoryPage() {
             </div>
 
             <button id="sidebar-toggle" className={styles['sidebar-toggle-btn']} onClick={() => setSidebarActive(true)}>
-              <img src="/assets/images/web icon/list.png" alt="List" />
+              <img src={getAssetUrl('/assets/images/web icon/list.png')} alt="List" />
             </button>
           </div>
         </div>
