@@ -9,6 +9,7 @@ import CodeEditor from '../components/Editor/CodeEditor';
 import MetadataForm from '../components/Editor/MetadataForm';
 import SuggestionsManager from '../components/Editor/SuggestionsManager';
 import EventCharactersManager from '../components/Editor/EventCharactersManager';
+import EventGalleryManager from '../components/Editor/EventGalleryManager';
 import AssetPickerModal from '../components/Editor/AssetPickerModal';
 import NotificationToast from '../components/Editor/NotificationToast'; // New
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
@@ -87,8 +88,8 @@ export default function EditorPage() {
         setPickerOpen(true);
     };
 
-    const handlePickerSelect = (url) => {
-        pickerCallbackRef.current?.(url);
+    const handlePickerSelect = (asset) => {
+        pickerCallbackRef.current?.(asset);
         pickerCallbackRef.current = null;
         setPickerFilter(null);
         setPickerOpen(false);
@@ -438,10 +439,17 @@ export default function EditorPage() {
                                 />
                             )}
                             {selectedEntity.type === 'event' && (
-                                <EventCharactersManager 
-                                    eventId={selectedEntity.event_id || selectedEntity.id} 
-                                    showNotification={showNotification} 
-                                />
+                                <>
+                                    <EventCharactersManager 
+                                        eventId={selectedEntity.event_id || selectedEntity.id} 
+                                        showNotification={showNotification} 
+                                    />
+                                    <EventGalleryManager 
+                                        eventId={selectedEntity.event_id || selectedEntity.id} 
+                                        showNotification={showNotification} 
+                                        onPickAsset={openPicker}
+                                    />
+                                </>
                             )}
 
                             <div style={{ marginTop: '24px', fontSize: '12px', color: 'var(--color-text-tertiary)' }}>

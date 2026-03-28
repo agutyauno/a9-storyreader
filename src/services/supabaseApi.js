@@ -280,14 +280,14 @@ const SupabaseAPI_Raw = {
   async createCharacter(payload) {
     const { expressions, ...charData } = payload;
     if (USE_MOCK_DB) {
-      const newItem = { 
+      const newItem = {
         id: genNumericId(),
-        character_id: payload.id || genId('char'), 
+        character_id: payload.id || genId('char'),
         name: charData.name,
-        description: charData.description 
+        description: charData.description
       };
       mockDatabase.characters.push(newItem);
-      
+
       if (expressions?.length) {
         expressions.forEach(e => {
           mockDatabase.character_expressions.push({
@@ -301,19 +301,19 @@ const SupabaseAPI_Raw = {
       }
       return { ...newItem, expressions: expressions || [] };
     }
-    
+
     // For real Supabase, we map the custom ID
     const dbPayload = {
       character_id: payload.id,
       name: charData.name,
       description: charData.description
     };
-    
+
     const { data: char, error } = await supabase.from('characters').insert(dbPayload).select().single();
     if (error) throw error;
-    
+
     if (expressions?.length) {
-      const exprData = expressions.map(e => ({ 
+      const exprData = expressions.map(e => ({
         character_id: char.character_id,
         name: e.name,
         avatar_url: e.avatar_url,
@@ -322,7 +322,7 @@ const SupabaseAPI_Raw = {
       const { error: exprErr } = await supabase.from('character_expressions').insert(exprData);
       if (exprErr) throw exprErr;
     }
-    
+
     return char;
   },
 
@@ -541,29 +541,66 @@ const SupabaseAPI_Raw = {
     return data || [];
   },
 
-  async createGallery(payload) {
+  async getAllGallery() {
     if (USE_MOCK_DB) {
-      const newItem = { 
-        id: genNumericId(),
-        gallery_id: payload.id || genId('gallery'), 
+      return [...(mockDatabase.gallery || [])];
+    }
+    const { data, error } = await supabase.from('gallery').select('*');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createGallery(payload) {
+    const galleryId = payload.gallery_id || payload.asset_id || payload.id;
+    if (USE_MOCK_DB) {
+      const existingIdx = (mockDatabase.gallery || []).findIndex(g => g.gallery_id === galleryId);
+      const newItem = {
+        id: existingIdx >= 0 ? mockDatabase.gallery[existingIdx].id : genNumericId(),
+        gallery_id: galleryId || genId('gallery'),
         display_order: payload.display_order || 0,
         event_id: payload.event_id || null,
         title: payload.title,
         image_url: payload.image_url || '',
       };
-      mockDatabase.gallery.push(newItem);
+      if (existingIdx >= 0) mockDatabase.gallery[existingIdx] = newItem;
+      else mockDatabase.gallery.push(newItem);
       return newItem;
     }
-    
+
     const dbPayload = {
-      gallery_id: payload.id,
+      gallery_id: galleryId,
       event_id: payload.event_id,
       title: payload.title,
       image_url: payload.image_url,
       display_order: payload.display_order || 0
     };
-    
-    const { data, error } = await supabase.from('gallery').insert(dbPayload).select().single();
+
+    const { data, error } = await supabase.from('gallery')
+      .upsert(dbPayload, { onConflict: 'gallery_id' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteGallery(id) {
+    if (USE_MOCK_DB) {
+      if (!mockDatabase.gallery) return;
+      mockDatabase.gallery = mockDatabase.gallery.filter(g => g.id !== id);
+      return;
+    }
+    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async updateGallery(id, payload) {
+    if (USE_MOCK_DB) {
+      const idx = mockDatabase.gallery.findIndex(g => g.id === id);
+      if (idx < 0) throw new Error('not-found');
+      Object.assign(mockDatabase.gallery[idx], payload);
+      return mockDatabase.gallery[idx];
+    }
+    const { data, error } = await supabase.from('gallery').update(payload).eq('id', id).select().single();
     if (error) throw error;
     return data;
   },
@@ -694,13 +731,13 @@ const SupabaseAPI_Raw = {
       });
       return results;
     }
-    
+
     const { data, error } = await supabase
       .from('event_characters')
       .select('*, characters(*)')
       .eq('event_id', eventId);
     if (error) throw error;
-    
+
     // Flatten result
     return (data || []).map(row => ({
       ...row.characters,
@@ -713,7 +750,7 @@ const SupabaseAPI_Raw = {
       if (!mockDatabase.event_characters) mockDatabase.event_characters = [];
       const exists = mockDatabase.event_characters.find(ec => ec.event_id === eventId && ec.character_id === characterId);
       if (exists) return exists;
-      
+
       const newItem = { event_id: eventId, character_id: characterId };
       mockDatabase.event_characters.push(newItem);
       return newItem;
@@ -788,7 +825,7 @@ const SupabaseAPI_Raw = {
         .forEach(c => {
           const exprs = mockDatabase.charater_expressions.filter(e => e.character_id === c.character_id);
           const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
-          
+
           // Build expressions map
           const expressions = {};
           exprs.forEach(e => {
@@ -799,7 +836,7 @@ const SupabaseAPI_Raw = {
             character_id: c.character_id,
             name: c.name,
             avatar_url: def.avatar_url || '',
-            full_url:   def.full_url   || '',
+            full_url: def.full_url || '',
             expressions
           };
         });
@@ -822,7 +859,7 @@ const SupabaseAPI_Raw = {
       (charRes.data || []).map(c => {
         const exprs = exprMap[c.character_id] || [];
         const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
-        
+
         const expressions = {};
         exprs.forEach(e => {
           expressions[e.name] = { avatar_url: e.avatar_url, full_url: e.full_url };
@@ -830,9 +867,9 @@ const SupabaseAPI_Raw = {
 
         return [c.character_id, {
           character_id: c.character_id,
-          name:       c.name,
+          name: c.name,
           avatar_url: def.avatar_url || '',
-          full_url:   def.full_url   || '',
+          full_url: def.full_url || '',
           expressions
         }];
       })

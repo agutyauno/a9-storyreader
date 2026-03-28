@@ -19,11 +19,21 @@ const ASSET_TYPES = [
     { value: 'sfx', label: 'SFX (audio)', type: 'audio', category: 'sfx' },
 ];
 
-export default function AddAssetModal({ isOpen, onClose, onSubmit }) {
+export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCategory }) {
     const [assetId, setAssetId] = useState('');
     const [assetValue, setAssetValue] = useState('');
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+
+    // Update assetValue when initialCategory or isOpen changes
+    React.useEffect(() => {
+        if (isOpen && initialCategory && initialCategory !== 'all') {
+            // Check if initialCategory is a valid value in ASSET_TYPES
+            const isValid = ASSET_TYPES.some(t => t.value === initialCategory);
+            if (isValid) setAssetValue(initialCategory);
+            else setAssetValue('');
+        }
+    }, [isOpen, initialCategory]);
 
     // Main file (for non-character assets)
     const [file, setFile] = useState(null);

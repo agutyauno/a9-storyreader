@@ -22,6 +22,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
     // AddAssetModal state
     const [assetModalOpen, setAssetModalOpen] = useState(false);
+    const [assetModalCategory, setAssetModalCategory] = useState(null);
     const assetReloadRef = useRef(null);
 
     // Expose tree reload to parent
@@ -169,7 +170,8 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
         }
     };
 
-    const handleAddAsset = (type, reloadFn) => {
+    const handleAddAsset = (category, reloadFn) => {
+        setAssetModalCategory(category);
         assetReloadRef.current = reloadFn;
         setAssetModalOpen(true);
     };
@@ -209,6 +211,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 isOpen={assetModalOpen}
                 onClose={() => setAssetModalOpen(false)}
                 onSubmit={handleAssetSubmit}
+                initialCategory={assetModalCategory}
             />
         </aside>
     );

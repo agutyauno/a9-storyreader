@@ -119,6 +119,7 @@ function CharacterCard({ character, onDetail, avatarUrl }) {
 export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }) {
     const [assets, setAssets] = useState([]);
     const [characters, setCharacters] = useState([]);
+    const [gallery, setGallery] = useState([]);
     const [avatarMap, setAvatarMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('all');
@@ -136,12 +137,14 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
     const loadAll = async () => {
         setLoading(true);
         try {
-            const [assetData, charData] = await Promise.all([
+            const [assetData, charData, galleryData] = await Promise.all([
                 SupabaseAPI.getAssets(),
                 SupabaseAPI.getCharacters(),
+                SupabaseAPI.getAllGallery(),
             ]);
             setAssets(assetData);
             setCharacters(charData);
+            setGallery(galleryData);
 
             // Batch load expressions for characters to get avatar previews
             try {
@@ -178,6 +181,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
             onConfirm: async () => {
                 try {
                     if (isChar) await SupabaseAPI.deleteCharacter(id);
+                    else if (activeCategory === 'gallery') await SupabaseAPI.deleteGallery(id);
                     else await SupabaseAPI.deleteAsset(id);
                     
                     showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
@@ -213,13 +217,23 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
 
         if (activeCategory === 'all') return true;
         if (activeCategory === 'background') return a.type === 'image' && a.category === 'background';
-        if (activeCategory === 'gallery') return a.type === 'image' && a.category === 'gallery';
         if (activeCategory === 'thumbnail') return a.type === 'image' && a.category === 'thumbnail';
         if (activeCategory === 'video') return a.type === 'video';
         if (activeCategory === 'bgm') return a.type === 'audio' && a.category === 'bgm';
         if (activeCategory === 'sfx') return a.type === 'audio' && a.category === 'sfx';
         return false;
     });
+
+    const filteredGallery = gallery.filter(g => {
+        const q = search.toLowerCase();
+        return !q || g.title?.toLowerCase().includes(q) || g.gallery_id.toLowerCase().includes(q);
+    }).map(g => ({
+        asset_id: g.gallery_id,
+        name: g.title,
+        url: g.image_url,
+        type: 'image',
+        category: 'gallery'
+    }));
 
     const filteredChars = characters.filter(c => {
         const q = search.toLowerCase();
@@ -229,11 +243,14 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
     const allItems = activeCategory === 'all'
         ? [
             ...filteredAssets.map(a => ({ ...a, gridKind: 'asset' })),
-            ...filteredChars.map(c => ({ ...c, gridKind: 'character' }))
+            ...filteredChars.map(c => ({ ...c, gridKind: 'character' })),
+            ...filteredGallery.map(g => ({ ...g, gridKind: 'asset' }))
         ]
         : isCharacterView
             ? filteredChars.map(c => ({ ...c, gridKind: 'character' }))
-            : filteredAssets.map(a => ({ ...a, gridKind: 'asset' }));
+            : activeCategory === 'gallery'
+                ? filteredGallery.map(g => ({ ...g, gridKind: 'asset' }))
+                : filteredAssets.map(a => ({ ...a, gridKind: 'asset' }));
 
     return (
         <div className={styles.panel}>

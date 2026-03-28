@@ -69,8 +69,8 @@ export default function MetadataForm({ entity, onSaved, onPickAsset, showNotific
     };
 
     const handleBrowse = () => {
-        onPickAsset?.((selectedUrl) => {
-            setImageUrl(selectedUrl);
+        onPickAsset?.((asset) => {
+            setImageUrl(asset.url);
         });
     };
 
@@ -127,7 +127,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset, showNotific
                                 type="button"
                                 className={`${styles.browseBtn} ${imageUrl ? styles.hasImage : ''}`}
                                 title="Chọn ảnh từ Asset"
-                                onClick={() => onPickAsset?.((url) => setImageUrl(url), 'image')}
+                                onClick={() => onPickAsset?.((asset) => setImageUrl(asset.url), 'image')}
                             >
                                 <ImageIcon size={18} />
                                 {imageUrl ? 'Thay đổi ảnh' : 'Chọn ảnh'}

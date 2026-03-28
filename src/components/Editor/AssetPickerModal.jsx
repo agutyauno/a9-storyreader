@@ -41,12 +41,25 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
         if (!isOpen) return;
         loadAssets();
     }, [isOpen]);
-
     const loadAssets = async () => {
         setLoading(true);
         try {
-            const data = await SupabaseAPI.getAssets();
-            setAssets(data);
+            const [assetData, galleryData] = await Promise.all([
+                SupabaseAPI.getAssets(),
+                SupabaseAPI.getAllGallery(),
+            ]);
+            
+            // Merge gallery items into assets for the picker
+            // We map gallery items to match the asset structure
+            const mappedGallery = (galleryData || []).map(g => ({
+                asset_id: g.gallery_id,
+                name: g.title,
+                url: g.image_url,
+                type: 'image',
+                category: 'gallery'
+            }));
+
+            setAssets([...(assetData || []), ...mappedGallery]);
         } catch (err) {
             console.error('AssetPicker load failed:', err);
         } finally {
@@ -65,10 +78,10 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                 });
             } else if (newAssetData.category === 'gallery') {
                 await SupabaseAPI.createGallery({
-                    id: newAssetData.asset_id,
-                    name: newAssetData.name,
-                    imageUrl: newAssetData.url || '',
-                    displayOrder: 0
+                    gallery_id: newAssetData.asset_id,
+                    title: newAssetData.name,
+                    image_url: newAssetData.url || '',
+                    display_order: 0
                 });
             } else {
                 await SupabaseAPI.createAsset({
@@ -93,13 +106,14 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
         if (activeCat !== 'all') {
             if (activeCat === 'bgm' && !(a.type === 'audio' && a.category === 'bgm')) return false;
             if (activeCat === 'sfx' && !(a.type === 'audio' && a.category === 'sfx')) return false;
-            if (activeCat === 'background' && !(a.type === 'image' && a.category === 'background')) return false;
+            if (activeCat === 'background' && a.category !== 'background') return false;
             if (activeCat === 'gallery' && a.category !== 'gallery') return false;
-            if (activeCat === 'image' && !(a.type === 'image' && a.category === 'thumbnail')) return false;
+            if (activeCat === 'thumbnail' && a.category !== 'thumbnail') return false;
+            if (activeCat === 'image' && a.type !== 'image') return false;
             if (activeCat === 'video' && a.type !== 'video') return false;
         }
-        // Type filter override
-        if (filterType && a.type !== filterType) return false;
+        // Type/Category filter override
+        if (filterType && a.type !== filterType && a.category !== filterType) return false;
         // Search
         const q = search.toLowerCase();
         if (q && !a.name?.toLowerCase().includes(q) && !a.asset_id?.toLowerCase().includes(q)) return false;
@@ -107,7 +121,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     });
 
     const handleSelect = (asset) => {
-        onSelect?.(asset.url);
+        onSelect?.(asset);
         onClose();
     };
 
@@ -125,7 +139,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                 <div className={styles.modalHeader}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <h3>Chọn Asset</h3>
-                        <button 
+                        <button
                             className={styles.addBtn}
                             onClick={() => setShowAddModal(true)}
                             title="Thêm Asset mới"
@@ -196,10 +210,11 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                 </div>
             </div>
 
-            <AddAssetModal 
+            <AddAssetModal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 onSubmit={handleAddAsset}
+                initialCategory={activeCat}
             />
         </div>
     );
