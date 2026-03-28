@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2 } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import ConfirmModal from './ConfirmModal';
 import styles from './StoryTreePanel.module.css';
@@ -13,7 +13,7 @@ const TYPE_ICON = {
 };
 
 // ─── Single Node ──────────────────────────────────────────────────────────────
-function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
+function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEdit }) {
     const [open, setOpen] = useState(depth < 2);
     const hasChildren = node.children?.length > 0;
     const isSelected = selectedId === node.id;
@@ -65,6 +65,14 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
                     >
                         <Trash2 size={15} />
                     </button>
+                    {/* Edit */}
+                    <button
+                        className={styles.actionBtn}
+                        title="Chỉnh sửa"
+                        onClick={(e) => { e.stopPropagation(); onEdit(node); }}
+                    >
+                        <Edit size={14} />
+                    </button>
                 </span>
             </div>
 
@@ -79,6 +87,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
                             onSelect={onSelect}
                             onAdd={onAdd}
                             onDelete={onDelete}
+                            onEdit={onEdit}
                         />
                     ))}
                 </div>
@@ -88,7 +97,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete }) {
 }
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
-export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryId, showNotification }) {
+export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, currentStoryId, showNotification }) {
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(currentStoryId || null);
@@ -188,7 +197,10 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
     const handleAddChild = (parentNode) => {
         const childType = { region: 'arc', arc: 'event', event: 'story' }[parentNode.type];
         if (!childType || !onAddItem) return;
-        onAddItem(childType, parentNode, () => loadTree());
+        
+        // Auto-increment: count existing children
+        const nextOrder = (parentNode.children?.length || 0) + 1;
+        onAddItem(childType, parentNode, () => loadTree(), nextOrder);
     };
 
     // ─── Delete node ─────────────────────────────────────────────────────────
@@ -213,10 +225,20 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
         setConfirmOpen(true);
     };
 
+    // ─── Edit node ───────────────────────────────────────────────────────────
+    const handleEdit = (node) => {
+        if (onEditItem) {
+            onEditItem(node, () => loadTree());
+        }
+    };
+
     // ─── Add top-level region ─────────────────────────────────────────────────
     const handleAddRegion = () => {
         if (!onAddItem) return;
-        onAddItem('region', null, () => loadTree());
+        
+        // Auto-increment: count top-level regions
+        const nextOrder = tree.length + 1;
+        onAddItem('region', null, () => loadTree(), nextOrder);
     };
 
     return (
@@ -253,6 +275,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, currentStoryI
                             onSelect={handleSelect}
                             onAdd={handleAddChild}
                             onDelete={handleDelete}
+                            onEdit={handleEdit}
                         />
                     ))
                 )}

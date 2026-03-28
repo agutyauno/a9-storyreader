@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Check, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import styles from './AddItemModal.module.css';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
@@ -11,7 +11,7 @@ import { uploadFileToGithub, getFolderPath } from '../../services/githubService'
  *   onClose() — close modal
  *   onSubmit({ type, name, id, description, displayOrder }) — submit form
  */
-export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAsset }) {
+export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAsset, initialDisplayOrder, initialData }) {
     const [name, setName] = useState('');
     const [itemId, setItemId] = useState('');
     const [description, setDescription] = useState('');
@@ -22,6 +22,30 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
     const [uploadingFields, setUploadingFields] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
+
+    const isEditMode = !!initialData;
+
+    // Initial value for displayOrder when modal opens
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (initialData) {
+            // Edit Mode
+            setName(initialData.name || '');
+            setItemId(initialData.id || '');
+            setDescription(initialData.description || '');
+            setDisplayOrder(initialData.display_order || '');
+            setImageUrl(initialData.icon_url || initialData.image_url || '');
+        } else {
+            // Add Mode
+            setName('');
+            setItemId('');
+            setDescription('');
+            setDisplayOrder(initialDisplayOrder || '');
+            setImageUrl('');
+        }
+        setError(null);
+    }, [isOpen, initialDisplayOrder, initialData]);
 
     if (!isOpen) return null;
 
@@ -43,9 +67,9 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                 name: name.trim(),
                 id: itemId.trim(),
                 description: description.trim(),
-                displayOrder: displayOrder ? parseInt(displayOrder) : null,
+                displayOrder: displayOrder ? parseInt(displayOrder) : 0,
                 imageUrl: imageUrl.trim() || null,
-            });
+            }, isEditMode);
 
             // Reset
             setName('');
@@ -87,7 +111,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
-                    <h3>Add New {typeLabel}</h3>
+                    <h3>{isEditMode ? 'Edit' : 'Add New'} {typeLabel}</h3>
                     <button className={styles.closeBtn} onClick={onClose}>
                         <X size={18} />
                     </button>
@@ -111,8 +135,9 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                         <input
                             type="text"
                             value={itemId}
-                            onChange={(e) => setItemId(e.target.value)}
-                            placeholder={`e.g. ${type}_01`}
+                            onChange={(e) => setItemId(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                            placeholder={`Unique ${typeLabel} ID`}
+                            disabled={isSubmitting || isEditMode}
                             required
                         />
                     </div>
@@ -198,7 +223,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                                     <Loader2 size={16} className={styles.spinner} style={{ marginRight: '8px' }} />
                                     Creating...
                                 </>
-                            ) : `Add ${typeLabel}`}
+                            ) : (isEditMode ? `Save ${typeLabel}` : `Add ${typeLabel}`)}
                         </button>
                     </div>
                 </form>

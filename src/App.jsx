@@ -1,7 +1,7 @@
 // Global Styles
 import './styles/global.css';
 
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import EventPage from './pages/EventPage';
 import StoryPage from './pages/StoryPage';
@@ -60,11 +60,11 @@ function AppLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <AppLayout />
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
 

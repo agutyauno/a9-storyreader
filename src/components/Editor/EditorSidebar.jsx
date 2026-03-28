@@ -16,6 +16,8 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState('region');
     const [modalParent, setModalParent] = useState(null);
+    const [modalOrder, setModalOrder] = useState(1);
+    const [initialData, setInitialData] = useState(null);
     const reloadTreeRef = useRef(null); // callback to reload tree after CRUD
 
     // AddAssetModal state
@@ -30,73 +32,99 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
     }, [reloadRef]);
 
     // ─── Story tree CRUD ───────────────────────────────────────────────────────
-    const handleAddItem = (type, parentNode, reloadFn) => {
+    const handleAddItem = (type, parentNode, reloadFn, defaultOrder) => {
         setModalType(type);
         setModalParent(parentNode);
+        setModalOrder(defaultOrder || 1);
+        setInitialData(null);
         reloadTreeRef.current = reloadFn;
         setModalOpen(true);
     };
 
-    const handleModalSubmit = async (formData) => {
+    const handleEditItem = (node, reloadFn) => {
+        setModalType(node.type);
+        setModalParent(null); 
+        setInitialData(node);
+        reloadTreeRef.current = reloadFn;
+        setModalOpen(true);
+    };
+
+    const handleModalSubmit = async (formData, isEditMode) => {
         try {
-            let created;
+            let result;
             if (modalType === 'region') {
-                created = await SupabaseAPI.createRegion({
+                const payload = {
                     region_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
                     icon_url: formData.imageUrl,
-                });
+                };
+                result = isEditMode 
+                    ? await SupabaseAPI.updateRegion(formData.id, payload)
+                    : await SupabaseAPI.createRegion(payload);
             } else if (modalType === 'arc') {
-                created = await SupabaseAPI.createArc({
+                const payload = {
                     arc_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
-                    region_id: modalParent?.region_id || modalParent?.id,
-                });
+                    region_id: isEditMode ? initialData.region_id : (modalParent?.region_id || modalParent?.id),
+                };
+                result = isEditMode 
+                    ? await SupabaseAPI.updateArc(formData.id, payload)
+                    : await SupabaseAPI.createArc(payload);
             } else if (modalType === 'event') {
-                created = await SupabaseAPI.createEvent({
+                const payload = {
                     event_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
-                    arc_id: modalParent?.arc_id || modalParent?.id,
+                    arc_id: isEditMode ? initialData.arc_id : (modalParent?.arc_id || modalParent?.id),
                     image_url: formData.imageUrl,
-                });
+                };
+                result = isEditMode 
+                    ? await SupabaseAPI.updateEvent(formData.id, payload)
+                    : await SupabaseAPI.createEvent(payload);
             } else if (modalType === 'story') {
-                created = await SupabaseAPI.createStory({
+                const payload = {
                     story_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
-                    event_id: modalParent?.event_id || modalParent?.id,
-                    story_content: { characters: {}, sections: [] },
-                });
+                    event_id: isEditMode ? initialData.event_id : (modalParent?.event_id || modalParent?.id),
+                };
+                if (!isEditMode) {
+                    payload.story_content = { characters: {}, sections: [] };
+                }
+                result = isEditMode 
+                    ? await SupabaseAPI.updateStory(formData.id, payload)
+                    : await SupabaseAPI.createStory(payload);
             } else if (modalType === 'character') {
-                created = await SupabaseAPI.createCharacter({
+                const payload = {
                     character_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     expressions: formData.expressions
-                });
+                };
+                result = await SupabaseAPI.createCharacter(payload);
             } else if (modalType === 'gallery') {
-                created = await SupabaseAPI.createGallery({
+                const payload = {
                     gallery_id: formData.id,
                     title: formData.name,
                     display_order: formData.displayOrder,
-                    event_id: modalParent?.event_id || modalParent?.id || null, // Optional FK
+                    event_id: modalParent?.event_id || modalParent?.id || null, 
                     image_url: formData.imageUrl
-                });
+                };
+                result = await SupabaseAPI.createGallery(payload);
             }
             // Reload tree or asset list
             reloadTreeRef.current?.();
             setModalOpen(false);
 
             // If a story was created, open it in the editor
-            if (modalType === 'story' && created?.story_id) {
-                navigate(`/editor/${created.story_id}`);
+            if (modalType === 'story' && !isEditMode && result?.story_id) {
+                navigate(`/editor/${result.story_id}`);
             }
         } catch (err) {
             console.error('Create item failed:', err);
@@ -156,6 +184,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 <StoryTreePanel
                     onStorySelect={onStorySelect}
                     onAddItem={handleAddItem}
+                    onEditItem={handleEditItem}
                     currentStoryId={currentStoryId}
                     showNotification={showNotification}
                 />
@@ -173,6 +202,8 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                 onClose={() => setModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 onPickAsset={onPickAsset}
+                initialDisplayOrder={modalOrder}
+                initialData={initialData}
             />
             <AddAssetModal
                 isOpen={assetModalOpen}
