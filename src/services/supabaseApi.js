@@ -272,17 +272,24 @@ const SupabaseAPI_Raw = {
     try {
       const exprMap = await this.getExpressionsByCharacters(charIds);
       return characters.map(c => {
-        const exprs = exprMap[c.character_id] || [];
+        const exprList = exprMap[c.character_id] || [];
+        // Convert to object for renderer
+        const expressions = {};
+        exprList.forEach(e => {
+          if (e.name) expressions[e.name] = e;
+        });
+
         // Use 'default' expression or first one
-        const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
-        
+        const def = expressions['default'] || exprList[0] || {};
+
         // Map common fields for compatibility
         return {
           ...c,
           avatar_url: c.avatar_url || def.avatar_url || '',
           image_url: c.image_url || def.full_url || '',  // For EventPage
           full_url: c.full_url || def.full_url || '',    // For Editor
-          expressions: exprs
+          expressions,
+          expressionList: exprList
         };
       });
     } catch (err) {
@@ -308,10 +315,14 @@ const SupabaseAPI_Raw = {
 
   async createCharacter(payload) {
     const { expressions, ...charData } = payload;
+
+    // Determine the character identifier, prioritizing 'id' then 'character_id' then 'asset_id'
+    const charId = payload.character_id;
+
     if (USE_MOCK_DB) {
       const newItem = {
         id: genNumericId(),
-        character_id: payload.id || genId('char'),
+        character_id: charId || genId('char'),
         name: charData.name,
         description: charData.description
       };
@@ -331,15 +342,24 @@ const SupabaseAPI_Raw = {
       return { ...newItem, expressions: expressions || [] };
     }
 
+    if (!charId) {
+      throw new Error('Character ID (identifier) is required but was not provided.');
+    }
+
     // For real Supabase, we map the custom ID
     const dbPayload = {
-      character_id: payload.id,
-      name: charData.name,
-      description: charData.description
+      character_id: charId,
+      name: charData.name || charId,
+      description: charData.description || ''
     };
 
+    console.log('Inserting character with payload:', dbPayload);
+
     const { data: char, error } = await supabase.from('characters').insert(dbPayload).select().single();
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase Character Insert Error:', error);
+      throw error;
+    }
 
     if (expressions?.length) {
       const exprData = expressions.map(e => ({
@@ -402,9 +422,9 @@ const SupabaseAPI_Raw = {
 
     const characters = (data || []).map(row => ({
       ...row.characters,
-      ...row 
+      ...row
     }));
-    
+
     return this._enrichCharactersWithExpressions(characters);
   },
 

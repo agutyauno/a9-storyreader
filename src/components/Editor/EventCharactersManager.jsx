@@ -6,12 +6,9 @@ import styles from './EventCharactersManager.module.css';
 /**
  * Manages the characters associated with a specific Event.
  */
-export default function EventCharactersManager({ eventId, showNotification }) {
+export default function EventCharactersManager({ eventId, showNotification, onPickAsset, onPreview }) {
     const [linkedCharacters, setLinkedCharacters] = useState([]);
-    const [allCharacters, setAllCharacters] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showSelector, setShowSelector] = useState(false);
 
     useEffect(() => {
         if (eventId) fetchData();
@@ -20,12 +17,8 @@ export default function EventCharactersManager({ eventId, showNotification }) {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [linked, chars] = await Promise.all([
-                SupabaseAPI.getCharactersByEvent(eventId),
-                SupabaseAPI.getCharacters()
-            ]);
+            const linked = await SupabaseAPI.getCharactersByEvent(eventId);
             setLinkedCharacters(linked);
-            setAllCharacters(chars);
         } catch (err) {
             console.error('Failed to fetch event characters:', err);
             showNotification?.('Failed to load characters', 'error');
@@ -34,21 +27,23 @@ export default function EventCharactersManager({ eventId, showNotification }) {
         }
     };
 
-    const handleAdd = async (char) => {
-        if (linkedCharacters.find(c => c.character_id === char.character_id)) {
-            showNotification?.('Character already in event', 'warning');
-            return;
-        }
+    const handleAdd = () => {
+        onPickAsset?.(async (char) => {
+            // Check if already linked
+            if (linkedCharacters.find(c => c.character_id === char.asset_id)) {
+                showNotification?.('Character already in event', 'warning');
+                return;
+            }
 
-        try {
-            await SupabaseAPI.addCharacterToEvent(eventId, char.character_id);
-            await fetchData();
-            showNotification?.('Added character to event');
-            setShowSelector(false);
-        } catch (err) {
-            console.error('Add character failed:', err);
-            showNotification?.('Failed to add character', 'error');
-        }
+            try {
+                await SupabaseAPI.addCharacterToEvent(eventId, char.asset_id);
+                await fetchData();
+                showNotification?.('Added character to event');
+            } catch (err) {
+                console.error('Add character failed:', err);
+                showNotification?.('Failed to add character', 'error');
+            }
+        }, 'character');
     };
 
     const handleRemove = async (characterId) => {
@@ -62,19 +57,13 @@ export default function EventCharactersManager({ eventId, showNotification }) {
         }
     };
 
-    const filteredCharacters = allCharacters.filter(c => 
-        (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-         c.character_id.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        !linkedCharacters.find(lc => lc.character_id === c.character_id)
-    );
-
     if (loading) return <div className={styles.loading}><Loader className={styles.spinner} /> Loading characters...</div>;
 
     return (
         <div className={styles.container}>
             <div className={styles.header}>
                 <h3 className={styles.title}>Characters in this Event</h3>
-                <button className={styles.addBtn} onClick={() => setShowSelector(true)}>
+                <button className={styles.addBtn} onClick={handleAdd}>
                     <Plus size={14} /> Add Character
                 </button>
             </div>
@@ -88,7 +77,7 @@ export default function EventCharactersManager({ eventId, showNotification }) {
                     <div className={styles.empty}>No characters linked yet.</div>
                 ) : (
                     linkedCharacters.map(c => (
-                        <div key={c.character_id} className={styles.charCard}>
+                        <div key={c.character_id} className={styles.charCard} onClick={() => onPreview?.(c, 'character')}>
                             <div className={styles.avatarWrap}>
                                 {c.avatar_url ? (
                                     <img src={c.avatar_url} alt={c.name} className={styles.avatar} />
@@ -100,51 +89,16 @@ export default function EventCharactersManager({ eventId, showNotification }) {
                                 <div className={styles.charName}>{c.name}</div>
                                 <div className={styles.charId}>{c.character_id}</div>
                             </div>
-                            <button className={styles.removeBtn} onClick={() => handleRemove(c.character_id)}>
+                            <button className={styles.removeBtn} onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemove(c.character_id);
+                            }}>
                                 <X size={14} />
                             </button>
                         </div>
                     ))
                 )}
             </div>
-
-            {showSelector && (
-                <div className={styles.modalOverlay} onClick={() => setShowSelector(false)}>
-                    <div className={styles.selectorModal} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h4>Add Character</h4>
-                            <button onClick={() => setShowSelector(false)}><X size={18} /></button>
-                        </div>
-                        <div className={styles.searchBox}>
-                            <Search size={16} />
-                            <input 
-                                type="text" 
-                                placeholder="Search characters..." 
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        <div className={styles.charList}>
-                            {filteredCharacters.length === 0 ? (
-                                <div className={styles.modalEmpty}>No characters found</div>
-                            ) : (
-                                filteredCharacters.map(c => (
-                                    <div key={c.character_id} className={styles.charPickerItem} onClick={() => handleAdd(c)}>
-                                        <div className={styles.pickerAvatar}>
-                                            {c.avatar_url ? <img src={c.avatar_url} alt="" /> : <User size={14} />}
-                                        </div>
-                                        <div className={styles.pickerInfo}>
-                                            <div className={styles.pickerName}>{c.name}</div>
-                                            <div className={styles.pickerId}>{c.character_id}</div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -31,6 +31,7 @@ const TOOL_GROUPS = [
         label: 'Content',
         tools: [
             { id: 'char', label: 'Char', icon: UserPlus, template: '@char Name id=""' },
+            { id: 'narrator', label: 'Narrator', icon: MessageSquare, template: '@narrator: ' },
             { id: 'dialogue', label: 'Dialogue', icon: MessageSquare, template: 'Name [, ]: ' },
             { id: 'decision', label: 'Decision', icon: GitMerge, template: '@decision "" [, ]\n- Choice 1\n- Choice 2' },
             { id: 'response', label: 'Response', icon: CornerDownRight, template: '@response "" 1\nName [, ]: ' },

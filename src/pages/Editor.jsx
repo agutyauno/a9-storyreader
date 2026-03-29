@@ -11,6 +11,8 @@ import SuggestionsManager from '../components/Editor/SuggestionsManager';
 import EventCharactersManager from '../components/Editor/EventCharactersManager';
 import EventGalleryManager from '../components/Editor/EventGalleryManager';
 import AssetPickerModal from '../components/Editor/AssetPickerModal';
+import AssetDetailModal from '../components/Editor/AssetDetailModal';
+import AssetPreviewModal from '../components/Editor/AssetPreviewModal';
 import NotificationToast from '../components/Editor/NotificationToast'; // New
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
 
@@ -56,6 +58,43 @@ export default function EditorPage() {
     const [isResizingSidebar, setIsResizingSidebar] = useState(false);
     const [isResizingPreview, setIsResizingPreview] = useState(false);
 
+    // Asset Preview Modal (Read-only Lightbox)
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewTarget, setPreviewTarget] = useState(null);
+    const [previewKind, setPreviewKind] = useState('asset'); // 'asset' or 'character'
+
+    const handlePreviewAsset = (item, kind) => {
+        let target = item;
+        if (kind === 'asset' && item.gallery_id) {
+            target = {
+                asset_id: item.gallery_id,
+                url: item.image_url,
+                title: item.title,
+                type: 'image',
+                category: 'gallery'
+            };
+        }
+        setPreviewTarget(target);
+        setPreviewKind(kind);
+        setPreviewOpen(true);
+    };
+
+    // Asset Detail/Edit Modal
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailTarget, setDetailTarget] = useState(null);
+    const [detailKind, setDetailKind] = useState('asset'); // 'asset' or 'character'
+
+    const handleEditAsset = (item, kind) => {
+        setDetailTarget(item);
+        setDetailKind(kind);
+        setDetailOpen(true);
+    };
+
+    const handleDetailUpdate = () => {
+        sidebarReloadRef.current?.();
+    };
+
+    // Sidebar reload ref
     const [metadata, setMetadata] = useState({
         name: 'Untitled Draft',
         description: '',
@@ -104,7 +143,6 @@ export default function EditorPage() {
         setPickerOpen(false);
     };
 
-    // Sidebar reload ref
     const sidebarReloadRef = useRef(null);
 
     // Initial Load
@@ -431,11 +469,14 @@ export default function EditorPage() {
                                     <EventCharactersManager 
                                         eventId={selectedEntity.event_id || selectedEntity.id} 
                                         showNotification={showNotification} 
+                                        onPickAsset={openPicker}
+                                        onPreview={handlePreviewAsset}
                                     />
                                     <EventGalleryManager 
                                         eventId={selectedEntity.event_id || selectedEntity.id} 
                                         showNotification={showNotification} 
                                         onPickAsset={openPicker}
+                                        onPreview={handlePreviewAsset}
                                     />
                                 </>
                             )}
@@ -497,6 +538,22 @@ export default function EditorPage() {
                 filterType={pickerFilter}
                 onClose={() => setPickerOpen(false)}
                 onSelect={handlePickerSelect}
+            />
+
+            <AssetPreviewModal
+                isOpen={previewOpen}
+                asset={previewTarget}
+                kind={previewKind}
+                onClose={() => setPreviewOpen(false)}
+            />
+
+            <AssetDetailModal
+                isOpen={detailOpen}
+                asset={detailTarget}
+                kind={detailKind}
+                onClose={() => setDetailOpen(false)}
+                onUpdated={handleDetailUpdate}
+                showNotification={showNotification}
             />
 
             <NotificationToast

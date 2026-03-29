@@ -101,6 +101,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
 
             const options = [
                 { label: '@char', type: 'keyword', apply: snippet('@char ', 0), detail: 'Declare character' },
+                { label: '@narrator', type: 'keyword', apply: snippet('@narrator: ', 0), detail: 'Narrator line (centered)' },
                 { label: '@bg', type: 'keyword', apply: snippet('@bg ""', -1), detail: 'Change background' },
                 { label: '@bgm', type: 'keyword', apply: snippet('@bgm id=""', -1), detail: 'Play background music' },
                 { label: '@sfx', type: 'keyword', apply: snippet('@sfx ""', -1), detail: 'Play sound effect' },

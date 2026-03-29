@@ -310,6 +310,24 @@ header {
     line-height: 1;
 }
 
+/* Narrator Style */
+.narrator-box .dialogue-content {
+    background-color: #1a1a1a90;
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.narrator-text {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-lg);
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    line-height: 1.4;
+}
+
 /* Decision Choice Styles */
 .decision-choice {
     display: flex;
@@ -695,6 +713,11 @@ header {
 
 .isPreviewMode .character_name {
     font-size: var(--font-size-sm);
+}
+
+.isPreviewMode .narrator-text {
+    font-size: var(--font-size-base);
+    padding: 0.5rem 0.8rem;
 }
 
 .isPreviewMode .expand-icon {

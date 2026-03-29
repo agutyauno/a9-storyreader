@@ -20,13 +20,14 @@ export const StoryRenderer = {
   },
 
   getAvatar(nameWithExpr) {
+    console.log('getAvatar:', nameWithExpr, this.characters);
     const defaultAvt = getAssetUrl('/assets/images/character/blank.png');
     if (!nameWithExpr) return defaultAvt;
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
     const char = this.characters[name];
-    
+
     if (char) {
       if (expr && char.expressions?.[expr]) {
         return getAssetUrl(char.expressions[expr].avatar_url || char.avatar) || defaultAvt;
@@ -107,6 +108,8 @@ export const StoryRenderer = {
     switch (dialogue.type) {
       case 'dialogue':
         return this.renderDialogueBox(dialogue, styles);
+      case 'narrator':
+        return this.renderNarrator(dialogue, styles);
       case 'sfx':
         return this.renderSFX(dialogue, styles);
       case 'decision':
@@ -116,6 +119,19 @@ export const StoryRenderer = {
       default:
         return '';
     }
+  },
+
+  renderNarrator(narrator, styles) {
+    const blankAvt = this.getAvatar(null);
+    return `
+      <div class="${cx('dialogue-box narrator-box', styles)}">
+        <img class="${cx('character_avt', styles)}" style="visibility: hidden;" src="${blankAvt}" alt="">
+        <div class="${cx('dialogue-content', styles)}">
+          <p class="${cx('narrator-text', styles)}">${narrator.text || ''}</p>
+        </div>
+        <img class="${cx('character_avt', styles)}" style="visibility: hidden;" src="${blankAvt}" alt="">
+      </div>
+    `;
   },
 
   renderDialogueBox(dialogue, styles) {

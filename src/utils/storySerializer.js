@@ -79,6 +79,9 @@ export const StoryScriptSerializer = {
                 case 'dialogue':
                     lines.push(this.formatDialogueLine(d.name, d.left, d.right, d.text));
                     break;
+                case 'narrator':
+                    lines.push(`@narrator: ${d.text || ''}`);
+                    break;
                 case 'sfx': {
                     const sfxSrc = d._asset_id || d.src || '';
                     lines.push(`@sfx "${d.name || ''}" src="${sfxSrc}"`);

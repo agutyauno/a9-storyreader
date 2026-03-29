@@ -250,6 +250,16 @@ export const StoryScriptParser = {
                 continue;
             }
 
+            // @narrator: text
+            const narratorMatch = trimmed.match(/^@narrator:\s*(.+)/);
+            if (narratorMatch && currentBackground) {
+                currentBackground.dialogues.push({
+                    type: 'narrator',
+                    text: narratorMatch[1].trim()
+                });
+                continue;
+            }
+
             // @decision "group_id" [left, right]
             const decisionMatch = trimmed.match(/^@decision\s+"([^"]*)"\s*(?:\[([^\]]*)\])?\s*/);
             if (decisionMatch && currentBackground) {

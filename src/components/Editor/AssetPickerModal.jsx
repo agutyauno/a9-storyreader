@@ -44,22 +44,32 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     const loadAssets = async () => {
         setLoading(true);
         try {
-            const [assetData, galleryData] = await Promise.all([
-                SupabaseAPI.getAssets(),
-                SupabaseAPI.getAllGallery(),
-            ]);
-            
-            // Merge gallery items into assets for the picker
-            // We map gallery items to match the asset structure
-            const mappedGallery = (galleryData || []).map(g => ({
-                asset_id: g.gallery_id,
-                name: g.title,
-                url: g.image_url,
-                type: 'image',
-                category: 'gallery'
-            }));
+            if (filterType === 'character') {
+                const charData = await SupabaseAPI.getCharacters();
+                const mappedChars = (charData || []).map(c => ({
+                    asset_id: c.character_id,
+                    name: c.name,
+                    url: c.avatar_url,
+                    type: 'character',
+                    category: 'character'
+                }));
+                setAssets(mappedChars);
+            } else {
+                const [assetData, galleryData] = await Promise.all([
+                    SupabaseAPI.getAssets(),
+                    SupabaseAPI.getAllGallery(),
+                ]);
+                
+                const mappedGallery = (galleryData || []).map(g => ({
+                    asset_id: g.gallery_id,
+                    name: g.title,
+                    url: g.image_url,
+                    type: 'image',
+                    category: 'gallery'
+                }));
 
-            setAssets([...(assetData || []), ...mappedGallery]);
+                setAssets([...(assetData || []), ...mappedGallery]);
+            }
         } catch (err) {
             console.error('AssetPicker load failed:', err);
         } finally {
@@ -126,7 +136,9 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     };
 
     const renderThumb = (asset) => {
-        if (asset.type === 'image') return <img src={asset.url} alt={asset.name} loading="lazy" />;
+        if (asset.type === 'character' || asset.type === 'image') {
+            return <img src={asset.url} alt={asset.name} loading="lazy" />;
+        }
         if (asset.type === 'video') return <Video size={24} />;
         if (asset.type === 'audio') return <Music size={24} />;
         return <ImageIcon size={24} />;

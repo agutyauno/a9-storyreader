@@ -7,7 +7,7 @@ import styles from './EventGalleryManager.module.css';
 /**
  * Manages the art gallery images for a specific Event.
  */
-export default function EventGalleryManager({ eventId, showNotification, onPickAsset }) {
+export default function EventGalleryManager({ eventId, showNotification, onPickAsset, onPreview }) {
     const [gallery, setGallery] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -102,9 +102,12 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
                 ) : (
                     gallery.map(img => (
                         <div key={img.id} className={styles.card}>
-                            <div className={styles.imageWrap}>
+                            <div className={styles.imageWrap} onClick={() => onPreview?.(img, 'asset')}>
                                 <img src={getAssetUrl(img.image_url)} alt={img.title} />
-                                <button className={styles.deleteBtn} onClick={() => handleDelete(img.id)}>
+                                <button className={styles.deleteBtn} onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(img.id);
+                                }}>
                                     <X size={14} />
                                 </button>
                             </div>

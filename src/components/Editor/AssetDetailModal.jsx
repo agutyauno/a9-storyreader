@@ -340,6 +340,29 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                         </div>
                     )}
 
+                    {/* Character Full Body Preview */}
+                    {isCharacter && (
+                        <div className={styles.section}>
+                            <h4>Character Preview</h4>
+                            <div className={styles.previewContainer} style={{ background: 'rgba(0,0,0,0.2)', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? (
+                                    <Loader size={24} className={styles.spinner} />
+                                ) : expressions.length > 0 && expressions.find(e => e.full_url) ? (
+                                    <img 
+                                        src={expressions.find(e => e.full_url)?.full_url} 
+                                        alt="Featured Preview" 
+                                        style={{ maxHeight: '500px', objectFit: 'contain' }}
+                                    />
+                                ) : (
+                                    <div style={{ color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
+                                        <ImageIcon size={48} style={{ opacity: 0.2, marginBottom: 10 }} />
+                                        <p>Chưa có ảnh Full Body nào được upload.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Expression list (characters only) */}
                     {isCharacter && (
                         <div className={styles.section}>
