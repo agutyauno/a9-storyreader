@@ -139,3 +139,67 @@ export const deleteFileFromGithub = async (url) => {
         return { success: false, error: err.message };
     }
 };
+
+/**
+ * Uploads multiple files to GitHub in a single commit via 'bulk_save' action.
+ * @param {Array<{file: File, folderPath: string, customFileName: string}>} fileItems 
+ * @param {string} branch 
+ * @returns {Promise<{success: boolean, commitUrl?: string, files: Array<{path: string, url: string}>}>}
+ */
+export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Unauthorized');
+
+        // Convert all files to base64 and prepare payload
+        const preparedFiles = await Promise.all(fileItems.map(async (item) => {
+            const b64 = await fileToBase64(item.file);
+            
+            // Determine filename
+            let fileName = item.file.name;
+            if (item.customFileName) {
+                const ext = item.file.name.split('.').pop();
+                fileName = `${item.customFileName}.${ext}`;
+            }
+            
+            const cleanFolder = (item.folderPath || '').replace(/\/$/, '').replace(/^\//, '');
+            const fullPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+
+            return {
+                path: fullPath,
+                contentBase64: b64
+            };
+        }));
+
+        const { data, error } = await supabase.functions.invoke('github-manager', {
+            body: {
+                action: 'bulk_save',
+                files: preparedFiles,
+                branch: branch
+            }
+        });
+
+        if (error || !data?.success) {
+            throw new Error(error?.message || data?.error || 'Bulk upload failed');
+        }
+
+        // Map results back to usable URLs
+        const resultFiles = preparedFiles.map(f => ({
+            path: f.path,
+            url: `https://raw.githubusercontent.com/agutyauno/a9sr-data/main/${f.path}`
+        }));
+
+        return {
+            success: true,
+            commitUrl: data.commitUrl,
+            files: resultFiles
+        };
+    } catch (err) {
+        console.error('Error in uploadFilesToGithub:', err);
+        return {
+            success: false,
+            error: err.message || 'Error connecting to upload service'
+        };
+    }
+};
+

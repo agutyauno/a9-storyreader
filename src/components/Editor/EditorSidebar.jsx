@@ -161,14 +161,18 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     url: formData.url || '',
                 });
             }
-            assetReloadRef.current?.();
-            setAssetModalOpen(false);
+            // In bulk mode, _skipClose is true — don't close/reload yet
+            if (!formData._skipClose) {
+                assetReloadRef.current?.();
+                setAssetModalOpen(false);
+            }
         } catch (err) {
             console.error('Create asset/character failed:', err);
             // Re-throw so the modal can show the error
             throw err;
         }
     };
+
 
     const handleAddAsset = (category, reloadFn) => {
         setAssetModalCategory(category);
@@ -209,7 +213,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
             />
             <AddAssetModal
                 isOpen={assetModalOpen}
-                onClose={() => setAssetModalOpen(false)}
+                onClose={() => { setAssetModalOpen(false); assetReloadRef.current?.(); }}
                 onSubmit={handleAssetSubmit}
                 initialCategory={assetModalCategory}
             />
