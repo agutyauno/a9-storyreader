@@ -84,10 +84,20 @@
 .chevron {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    width: 14px;
+    width: 24px; /* Increased from 14px */
+    height: 24px;
+    margin-left: -4px; /* Adjust for better alignment with larger width */
     color: var(--color-text-tertiary);
     cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.12s;
+}
+
+.chevron:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .nodeLabel {

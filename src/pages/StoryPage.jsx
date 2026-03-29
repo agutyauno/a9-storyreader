@@ -58,7 +58,11 @@ export default function StoryPage() {
 
 
         setStory(fetchedStory);
-        document.title = `${fetchedStory.name} - Arknights Story Reader`;
+
+        // Update title
+        if (fetchedStory?.name) {
+          document.title = `${fetchedStory.name} - A9 StoryReader`;
+        }
 
         if (fetchedStory.event_id) {
           const ev = await SupabaseAPI.getEvent(fetchedStory.event_id);

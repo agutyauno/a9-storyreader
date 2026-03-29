@@ -16,6 +16,7 @@ export default function HomePage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    document.title = 'A9 StoryReader - Home';
     async function loadRegions() {
       try {
         const data = await SupabaseAPI.getRegions();

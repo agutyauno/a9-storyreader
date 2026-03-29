@@ -66,9 +66,9 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.regions[idx], payload);
       return mockDatabase.regions[idx];
     }
-    const { data, error } = await supabase.from('regions').update(payload).eq('region_id', regionId).select().single();
+    const { data, error } = await supabase.from('regions').update(payload).eq('region_id', regionId).select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteRegion(regionId) {
@@ -124,9 +124,9 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.arcs[idx], payload);
       return mockDatabase.arcs[idx];
     }
-    const { data, error } = await supabase.from('arcs').update(payload).eq('arc_id', arcId).select().single();
+    const { data, error } = await supabase.from('arcs').update(payload).eq('arc_id', arcId).select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteArc(arcId) {
@@ -182,9 +182,9 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.events[idx], payload);
       return mockDatabase.events[idx];
     }
-    const { data, error } = await supabase.from('events').update(payload).eq('event_id', eventId).select().single();
+    const { data, error } = await supabase.from('events').update(payload).eq('event_id', eventId).select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteEvent(eventId) {
@@ -245,9 +245,9 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.stories[idx], payload);
       return mockDatabase.stories[idx];
     }
-    const { data, error } = await supabase.from('stories').update(payload).eq('story_id', storyId).select().single();
+    const { data, error } = await supabase.from('stories').update(payload).eq('story_id', storyId).select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteStory(storyId) {
@@ -362,9 +362,9 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.characters[idx], payload);
       return mockDatabase.characters[idx];
     }
-    const { data, error } = await supabase.from('characters').update(payload).eq('character_id', characterId).select().single();
+    const { data, error } = await supabase.from('characters').update(payload).eq('character_id', characterId).select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteCharacter(characterId) {

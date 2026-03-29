@@ -36,7 +36,10 @@ export default function EventPage() {
       if (!id) return;
       try {
         const ev = await SupabaseAPI.getEvent(id);
-        if (ev) setEvent(ev);
+        if (ev) {
+          setEvent(ev);
+          document.title = `${ev.name} - A9 StoryReader`;
+        }
 
         if (ev && ev.arc_id) {
           const arc = await SupabaseAPI.getArc(ev.arc_id);

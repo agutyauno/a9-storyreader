@@ -24,7 +24,7 @@ export default function RegionPage() {
         const reg = await SupabaseAPI.getRegion(id);
         if (reg) {
           setRegion(reg);
-          document.title = `${reg.name} - Arknights Story Reader VN`;
+          document.title = `${reg.name} - A9 StoryReader`;
         }
 
         const arcs = await SupabaseAPI.getArcsByRegion(id);

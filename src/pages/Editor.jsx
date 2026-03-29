@@ -64,6 +64,15 @@ export default function EditorPage() {
         story_id: null,
     });
 
+    // Update Page Title
+    useEffect(() => {
+        if (metadata.name) {
+            document.title = `Editor: ${metadata.name} - A9 StoryReader`;
+        } else {
+            document.title = 'A9 Story Editor';
+        }
+    }, [metadata.name]);
+
     const [scriptText, setScriptText] = useState('');
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);

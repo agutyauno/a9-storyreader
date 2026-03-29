@@ -36,10 +36,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEd
                 {/* Type icon + label */}
                 <span
                     className={styles.nodeLabel}
-                    onClick={() => {
-                        onSelect(node);
-                        if (node.type !== 'story') setOpen(v => !v);
-                    }}
+                    onClick={() => onSelect(node)}
                     title={node.description || node.name}
                 >
                     <span className={`${styles.typeIcon} ${styles[node.type]}`}>
@@ -132,11 +129,11 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                 const eid = s.event_id;
                 if (!storiesByEvent[eid]) storiesByEvent[eid] = [];
                 storiesByEvent[eid].push({
-                    id: s.story_id,
                     type: 'story',
                     parentId: eid,
                     parentType: 'event',
                     ...s,
+                    id: s.story_id,
                     children: []
                 });
             });
@@ -146,11 +143,11 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                 const aid = e.arc_id;
                 if (!eventsByArc[aid]) eventsByArc[aid] = [];
                 eventsByArc[aid].push({
-                    id: e.event_id,
                     type: 'event',
                     parentId: aid,
                     parentType: 'arc',
                     ...e,
+                    id: e.event_id,
                     children: storiesByEvent[e.event_id] || []
                 });
             });
@@ -160,21 +157,21 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                 const rid = a.region_id;
                 if (!arcsByRegion[rid]) arcsByRegion[rid] = [];
                 arcsByRegion[rid].push({
-                    id: a.arc_id,
                     type: 'arc',
                     parentId: rid,
                     parentType: 'region',
                     ...a,
+                    id: a.arc_id,
                     children: eventsByArc[a.arc_id] || []
                 });
             });
 
             const built = regions.map(r => ({
-                id: r.region_id,
                 type: 'region',
                 parentId: null,
                 parentType: null,
                 ...r,
+                id: r.region_id,
                 children: arcsByRegion[r.region_id] || []
             }));
 

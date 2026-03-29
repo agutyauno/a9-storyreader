@@ -71,7 +71,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset, showNotific
     const handleBrowse = () => {
         onPickAsset?.((asset) => {
             setImageUrl(asset.url);
-        });
+        }, 'thumbnail');
     };
 
     return (

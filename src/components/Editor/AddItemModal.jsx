@@ -32,7 +32,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
         if (initialData) {
             // Edit Mode
             setName(initialData.name || '');
-            setItemId(initialData.id || '');
+            setItemId(String(initialData.id || ''));
             setDescription(initialData.description || '');
             setDisplayOrder(initialData.display_order || '');
             setImageUrl(initialData.icon_url || initialData.image_url || '');
@@ -172,7 +172,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                                     type="button"
                                     className={`${styles.browseBtn} ${imageUrl ? styles.hasImage : ''}`}
                                     title="Chọn ảnh từ Asset"
-                                    onClick={() => onPickAsset?.((asset) => setImageUrl(asset.url), 'image')}
+                                    onClick={() => onPickAsset?.((asset) => setImageUrl(asset.url), 'thumbnail')}
                                 >
                                     <ImageIcon size={18} />
                                     {imageUrl ? 'Thay đổi ảnh' : 'Chọn ảnh'}
