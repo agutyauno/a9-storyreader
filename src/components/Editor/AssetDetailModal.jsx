@@ -18,6 +18,7 @@ import styles from './AssetDetailModal.module.css';
 export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset, showNotification }) {
     const [name, setName] = useState('');
     const [expressions, setExpressions] = useState([]);
+    const [deletedExprNames, setDeletedExprNames] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [file, setFile] = useState(null);
@@ -66,31 +67,29 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 // 1. Update character name
                 await SupabaseAPI.updateCharacter(charId, { name: name.trim() });
 
-                // 2. Sync expressions: Update existing or create new
+                // 2. Delete removed ones
+                if (deletedExprNames.size > 0) {
+                    for (const name of deletedExprNames) {
+                        await SupabaseAPI.deleteExpression(charId, name);
+                    }
+                }
+
+                // 3. Add/Update expressions
                 for (const expr of expressions) {
                     const exprData = {
+                        character_id: charId,
                         name: expr.name,
                         avatar_url: expr.avatar_url,
                         full_url: expr.full_url
                     };
 
-                    // isNew is set in handleAddExpression for new local items
                     if (expr.isNew) {
-                        await SupabaseAPI.createExpression({
-                            character_id: charId,
-                            ...exprData
-                        });
-                    } else if (expr.id) {
-                        // Existing in DB
-                        await SupabaseAPI.updateExpression(expr.id, exprData);
+                        await SupabaseAPI.createExpression(exprData);
+                    } else {
+                        await SupabaseAPI.updateExpression(charId, expr.name, exprData);
                     }
                 }
-
-                // 3. Delete removed ones
-                for (const id of deletedExprIds) {
-                    await SupabaseAPI.deleteExpression(id);
-                }
-                setDeletedExprIds(new Set());
+                setDeletedExprNames(new Set());
             } else {
                 // Table 'assets' only has: asset_id, type, category, url. 'name' is NOT a column.
                 const payload = {};
@@ -211,8 +210,8 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     };
 
     const handleAddExpression = () => {
-        // Just add a local item with a temporary ID
-        const tempId = `temp-${Date.now()}`;
+        // Just add a local item with a temporary ID that is very unlikely to collide
+        const tempId = `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         setExpressions([...expressions, {
             id: tempId,
             isNew: true,
@@ -227,9 +226,9 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             title: `Xoá biểu cảm`,
             message: `Bạn có chắc chắn muốn xoá biểu cảm "${expr.name}"?`,
             onConfirm: () => {
-                setExpressions(prev => prev.filter(e => e.id !== expr.id));
+                setExpressions(expressions.filter(e => e !== expr));
                 if (!expr.isNew) {
-                    setDeletedExprIds(prev => new Set(prev).add(expr.id));
+                    setDeletedExprNames(prev => new Set(prev).add(expr.name));
                 }
             }
         });
@@ -379,8 +378,8 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 <p className={styles.empty}>Chưa có expression nào.</p>
                             ) : (
                                 <div className={styles.expressionList}>
-                                    {expressions.map(expr => (
-                                        <div key={expr.id} className={styles.expressionCard}>
+                                    {expressions.map((expr, idx) => (
+                                        <div key={`expr-${expr.id || idx}`} className={styles.expressionCard}>
                                             <div className={styles.expHeader}>
                                                 <input
                                                     className={styles.expNameInput}

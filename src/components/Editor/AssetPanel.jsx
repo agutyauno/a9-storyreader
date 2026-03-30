@@ -80,7 +80,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
 }
 
 // ─── Character Card (for character category) ─────────────────────────────────
-function CharacterCard({ character, onDetail, avatarUrl }) {
+function CharacterCard({ character, onDetail, onDelete, avatarUrl }) {
     const [copied, setCopied] = useState(false);
 
     const copyId = (e) => {
@@ -181,7 +181,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
             onConfirm: async () => {
                 try {
                     if (isChar) await SupabaseAPI.deleteCharacter(id);
-                    else if (activeCategory === 'gallery') await SupabaseAPI.deleteGallery(id);
+                    else if (activeCategory === 'gallery') await SupabaseAPI.deleteGallery(item.asset_id);
                     else await SupabaseAPI.deleteAsset(id);
                     
                     showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
@@ -296,10 +296,10 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                             <p>Không tìm thấy mục nào.</p>
                         </div>
                     ) : (
-                        allItems.map(item => (
+                        allItems.map((item, idx) => (
                             item.gridKind === 'character' ? (
                                 <CharacterCard 
-                                    key={item.character_id} 
+                                    key={`char-${item.character_id || idx}`} 
                                     character={item} 
                                     onDetail={openCharacterDetail} 
                                     onDelete={handleDelete}
@@ -307,7 +307,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                                 />
                             ) : (
                                 <AssetCard 
-                                    key={item.asset_id} 
+                                    key={`asset-${item.category || 'misc'}-${item.asset_id || idx}`} 
                                     asset={item} 
                                     onDelete={handleDelete} 
                                     onDetail={openAssetDetail} 

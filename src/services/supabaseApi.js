@@ -392,12 +392,51 @@ const SupabaseAPI_Raw = {
       mockDatabase.characters = mockDatabase.characters.filter(c => c.character_id !== characterId);
       return;
     }
-    // 1. Delete associated expressions and their files
-    const expressions = await this.getExpressionsByCharacter(characterId);
-    for (const expr of expressions) {
-      await this.deleteExpression(expr.id);
+    console.log(`Starting deletion for character: ${characterId}`);
+
+    // 1. Delete associated references in event_characters (join table)
+    try {
+        await supabase.from('event_characters').delete().eq('character_id', characterId);
+    } catch (err) {
+        console.warn('Warning: Failed to clean up event_characters:', err.message);
     }
-    // 2. Delete character
+
+    // 2. Clean up GitHub files for all expressions (non-blocking)
+    const expressions = await this.getExpressionsByCharacter(characterId);
+    if (expressions.length > 0) {
+        console.log(`Cleaning up files for ${expressions.length} expressions...`);
+        for (const expr of expressions) {
+            // We only need to clean up files here, DB cleanup is bulked later
+            const urls = [expr.avatar_url, expr.full_url].filter(Boolean);
+            for (const url of urls) {
+                try {
+                    const res = await deleteFileFromGithub(url);
+                    if (!res.success) {
+                        console.warn(`GitHub cleanup skipped/failed: ${url} (ignoring for character delete)`);
+                    }
+                } catch (e) {
+                    console.warn(`GitHub process failed: ${url} (ignoring)`);
+                }
+            }
+        }
+    }
+
+    // 3. Bulk delete all expressions from DB
+    console.log(`Executing bulk DB delete for expressions: ${characterId}`);
+    const { error: exprDelErr } = await supabase.from('character_expressions').delete().eq('character_id', characterId);
+    if (exprDelErr) throw exprDelErr;
+
+    // 4. Verification: Check if expressions are actually gone (RLS might silently fail)
+    const { count, error: checkErr } = await supabase.from('character_expressions')
+        .select('*', { count: 'exact', head: true })
+        .eq('character_id', characterId);
+    
+    if (!checkErr && count > 0) {
+        throw new Error(`DB Policy Violation: Found ${count} expressions remaining for "${characterId}". The "anon" key used by the app likely lacks "DELETE" permissions on "character_expressions", even if you can delete them from the Supabase dashboard. Please enable the "DELETE" policy for this table.`);
+    }
+    
+    // 5. Delete character
+    console.log(`Deleting character record: ${characterId}`);
     const { error } = await supabase.from('characters').delete().eq('character_id', characterId);
     if (error) throw error;
   },
@@ -478,37 +517,63 @@ const SupabaseAPI_Raw = {
     return data;
   },
 
-  async updateExpression(id, payload) {
+  async updateExpression(characterId, name, payload) {
     if (USE_MOCK_DB) {
-      const idx = mockDatabase.character_expressions.findIndex(e => e.id === id);
+      const idx = mockDatabase.character_expressions.findIndex(e => e.character_id === characterId && e.name === name);
       if (idx < 0) throw new Error('not-found');
       Object.assign(mockDatabase.character_expressions[idx], payload);
       return mockDatabase.character_expressions[idx];
     }
-    const { data, error } = await supabase.from('character_expressions').update(payload).eq('id', id).select().single();
+    const { data, error } = await supabase.from('character_expressions')
+        .update(payload)
+        .match({ character_id: characterId, name: name })
+        .select()
+        .single();
     if (error) throw error;
     return data;
   },
 
-  async deleteExpression(id) {
+  async deleteExpression(characterId, name, forceDbDelete = false) {
     if (USE_MOCK_DB) {
-      mockDatabase.character_expressions = mockDatabase.character_expressions.filter(e => e.id !== id);
+      mockDatabase.character_expressions = mockDatabase.character_expressions.filter(e => !(e.character_id === characterId && e.name === name));
       return;
     }
     // 1. Fetch URLs for GitHub deletion
-    const { data: expr } = await supabase.from('character_expressions').select('*').eq('id', id).single();
+    const { data: expr } = await supabase.from('character_expressions')
+        .select('*')
+        .match({ character_id: characterId, name: name })
+        .maybeSingle();
     if (expr) {
-      if (expr.avatar_url) {
-        const res = await deleteFileFromGithub(expr.avatar_url);
-        if (!res.success) throw new Error(`GitHub delete failed (avatar): ${res.error}`);
-      }
-      if (expr.full_url) {
-        const res = await deleteFileFromGithub(expr.full_url);
-        if (!res.success) throw new Error(`GitHub delete failed (full body): ${res.error}`);
-      }
+        const urls = [expr.avatar_url, expr.full_url].filter(Boolean);
+        for (const url of urls) {
+            try {
+                const res = await deleteFileFromGithub(url);
+                if (!res.success) {
+                    const errTxt = String(res.error || '').toLowerCase();
+                    const isAlreadyGone = errTxt.includes('404') || errTxt.includes('not found') || errTxt.includes('not exist');
+                    if (!isAlreadyGone) {
+                        if (forceDbDelete) {
+                            console.warn(`GitHub delete failed (ignored): ${url} - ${res.error}`);
+                        } else {
+                            throw new Error(`GitHub delete failed for ${url}: ${res.error}`);
+                        }
+                    } else {
+                        console.warn(`GitHub file already missing, allowing DB delete: ${url}`);
+                    }
+                }
+            } catch (err) {
+                if (forceDbDelete) {
+                    console.warn(`GitHub delete process failed (ignored): ${url} - ${err.message}`);
+                } else {
+                    throw err;
+                }
+            }
+        }
     }
     // 2. Delete from DB
-    const { error } = await supabase.from('character_expressions').delete().eq('id', id);
+    const { error } = await supabase.from('character_expressions')
+        .delete()
+        .match({ character_id: characterId, name: name });
     if (error) throw error;
   },
 
@@ -579,7 +644,14 @@ const SupabaseAPI_Raw = {
     const { data: asset } = await supabase.from('assets').select('url').eq('asset_id', assetId).single();
     if (asset?.url) {
       const res = await deleteFileFromGithub(asset.url);
-      if (!res.success) throw new Error(`GitHub delete failed: ${res.error}`);
+      if (!res.success) {
+        const errTxt = String(res.error || '').toLowerCase();
+        const isAlreadyGone = errTxt.includes('404') || errTxt.includes('not found') || errTxt.includes('not exist');
+        if (!isAlreadyGone) {
+          throw new Error(`GitHub delete failed: ${res.error}`);
+        }
+        console.warn(`GitHub file already missing, allowing DB delete: ${asset.url}`);
+      }
     }
     // 2. Delete from DB
     const { error } = await supabase.from('assets').delete().eq('asset_id', assetId);
@@ -641,24 +713,42 @@ const SupabaseAPI_Raw = {
     return data;
   },
 
-  async deleteGallery(id) {
+  async deleteGallery(galleryId) {
     if (USE_MOCK_DB) {
       if (!mockDatabase.gallery) return;
-      mockDatabase.gallery = mockDatabase.gallery.filter(g => g.id !== id);
+      mockDatabase.gallery = mockDatabase.gallery.filter(g => g.gallery_id !== galleryId);
       return;
     }
-    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    // 1. Fetch asset to get URL for GitHub deletion
+    const { data: gallery } = await supabase.from('gallery').select('image_url').eq('gallery_id', galleryId).single();
+    if (gallery?.image_url) {
+      const res = await deleteFileFromGithub(gallery.image_url);
+      if (!res.success) {
+        const errTxt = String(res.error || '').toLowerCase();
+        const isAlreadyGone = errTxt.includes('404') || errTxt.includes('not found') || errTxt.includes('not exist');
+        if (!isAlreadyGone) {
+          throw new Error(`GitHub delete failed: ${res.error}`);
+        }
+        console.warn(`GitHub file already missing, allowing DB delete: ${gallery.image_url}`);
+      }
+    }
+    // 2. Delete from DB
+    const { error } = await supabase.from('gallery').delete().eq('gallery_id', galleryId);
     if (error) throw error;
   },
 
-  async updateGallery(id, payload) {
+  async updateGallery(galleryId, payload) {
     if (USE_MOCK_DB) {
-      const idx = mockDatabase.gallery.findIndex(g => g.id === id);
+      const idx = mockDatabase.gallery.findIndex(g => g.gallery_id === galleryId);
       if (idx < 0) throw new Error('not-found');
       Object.assign(mockDatabase.gallery[idx], payload);
       return mockDatabase.gallery[idx];
     }
-    const { data, error } = await supabase.from('gallery').update(payload).eq('id', id).select().single();
+    const { data, error } = await supabase.from('gallery')
+        .update(payload)
+        .eq('gallery_id', galleryId)
+        .select()
+        .single();
     if (error) throw error;
     return data;
   },
