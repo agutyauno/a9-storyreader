@@ -319,12 +319,13 @@ export default function EditorPage() {
         }
     };
 
-    const handleOpenStandalonePreview = () => {
-        const parsed = StoryScriptParser.parse(scriptText);
+    const handleOpenStandalonePreview = async () => {
+        const parsed = await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
         const previewObj = { ...metadata, story_content: parsed };
         sessionStorage.setItem('preview_story', JSON.stringify(previewObj));
-        window.open('/story/preview?preview=1', '_blank');
+        window.open('#/story/preview?preview=1', '_blank');
     };
+
 
     const handleEntitySelect = (node) => {
         if (node.type === 'story') {

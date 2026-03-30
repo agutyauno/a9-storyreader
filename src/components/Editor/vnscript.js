@@ -59,8 +59,9 @@ const vnscriptParser = {
         // =
         if (stream.match(/^=/)) return 'operator';
 
-        // Colon (dialogue separator)
-        if (stream.match(/^:\s*/)) return 'punctuation';
+        // Colon (dialogue separator) or Braces
+        if (stream.match(/^:/)) return 'punctuation';
+        if (stream.match(/^[{}]$/)) return 'bracket';
 
         // Numbers
         if (stream.match(/^\d+/)) return 'number';

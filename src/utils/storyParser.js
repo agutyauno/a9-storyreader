@@ -163,7 +163,10 @@ export const StoryScriptParser = {
 
         let currentSection = null;
         let currentBackground = null;
-        let pendingResponse = null;
+        
+        // Stack for nested elements (like contents of a @response)
+        // Each entry is { elements: [], type: 'root'|'response'|'narrator', target: object }
+        const stack = [];
 
         // First pass: collect @char declarations
         for (const line of lines) {
@@ -179,12 +182,41 @@ export const StoryScriptParser = {
             }
         }
 
+        const pushToParent = (element) => {
+            if (stack.length > 0) {
+                const top = stack[stack.length - 1];
+                if (top.type === 'narrator') {
+                    // Narrator blocks ignore other elements, just treat as text if not @end
+                    return; 
+                }
+                top.elements.push(element);
+            } else if (currentBackground) {
+                currentBackground.dialogues.push(element);
+            }
+        };
+
         // Second pass: parse content
         for (let i = 0; i < lines.length; i++) {
-            const trimmed = lines[i].trim();
+            const line = lines[i];
+            const trimmed = line.trim();
 
-            // Skip empty lines, comments, and @char (already processed)
-            if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('@char')) continue;
+            // skip empty lines only if not in a block, and always skip comments/@char here
+            if (trimmed.startsWith('#') || trimmed.startsWith('@char')) continue;
+            if (!trimmed && stack.length === 0) continue; 
+
+
+            // Handle Block End
+            if (trimmed === '}') {
+                if (stack.length > 0) stack.pop();
+                continue;
+            }
+
+            // If we are inside a narrator block, everything is text until '}'
+            if (stack.length > 0 && stack[stack.length - 1].type === 'narrator') {
+                const top = stack[stack.length - 1];
+                top.target.text = (top.target.text ? top.target.text + '\n' : '') + trimmed;
+                continue;
+            }
 
             // @section
             if (trimmed === '@section') {
@@ -194,16 +226,16 @@ export const StoryScriptParser = {
                 }
                 currentSection = { type: 'dialogue_section', elements: [] };
                 result.sections.push(currentSection);
+                stack.length = 0; // Clear stack on new section
                 continue;
             }
 
-            // Auto-create section if none exists
             if (!currentSection) {
                 currentSection = { type: 'dialogue_section', elements: [] };
                 result.sections.push(currentSection);
             }
 
-            // @video src="url"
+            // @video
             const videoMatch = trimmed.match(/^@video\s*(.*)/);
             if (videoMatch) {
                 if (currentBackground) {
@@ -216,17 +248,18 @@ export const StoryScriptParser = {
                 continue;
             }
 
-            // @bg "url_or_id"
+            // @bg
             const bgMatch = trimmed.match(/^@bg\s+"([^"]*)"/);
             if (bgMatch) {
                 if (currentBackground) {
                     currentSection.elements.push(currentBackground);
                 }
                 currentBackground = { type: 'background', image: bgMatch[1], dialogues: [] };
+                stack.length = 0; 
                 continue;
             }
 
-            // @bgm id="id" intro="url" loop="url"
+            // @bgm
             const bgmMatch = trimmed.match(/^@bgm\s+(.*)/);
             if (bgmMatch && currentBackground) {
                 const params = ScriptUtils.parseParams(bgmMatch[1]);
@@ -238,11 +271,11 @@ export const StoryScriptParser = {
                 continue;
             }
 
-            // @sfx "name" src="url_or_id"
+            // @sfx
             const sfxMatch = trimmed.match(/^@sfx\s+"([^"]*)"\s*(.*)/);
             if (sfxMatch && currentBackground) {
                 const params = ScriptUtils.parseParams(sfxMatch[2]);
-                currentBackground.dialogues.push({
+                pushToParent({
                     type: 'sfx',
                     name: sfxMatch[1],
                     src: params.src || ''
@@ -250,17 +283,23 @@ export const StoryScriptParser = {
                 continue;
             }
 
-            // @narrator: text
-            const narratorMatch = trimmed.match(/^@narrator:\s*(.+)/);
+            // @narrator: text OR @narrator {
+            const narratorMatch = trimmed.match(/^@narrator:?\s*(.*)/);
             if (narratorMatch && currentBackground) {
-                currentBackground.dialogues.push({
-                    type: 'narrator',
-                    text: narratorMatch[1].trim()
-                });
+                const content = narratorMatch[1].trim();
+                const narrator = { type: 'narrator', text: '' };
+                
+                if (content === '{') {
+                    pushToParent(narrator);
+                    stack.push({ type: 'narrator', target: narrator });
+                } else {
+                    narrator.text = content.replace(/^:/, '').trim();
+                    pushToParent(narrator);
+                }
                 continue;
             }
 
-            // @decision "group_id" [left, right]
+            // @decision
             const decisionMatch = trimmed.match(/^@decision\s+"([^"]*)"\s*(?:\[([^\]]*)\])?\s*/);
             if (decisionMatch && currentBackground) {
                 const chars = decisionMatch[2] ? decisionMatch[2].split(',').map(s => s.trim()) : [];
@@ -277,63 +316,48 @@ export const StoryScriptParser = {
                 const decision = { type: 'decision', group_id: decisionMatch[1], choices };
                 if (chars[0]) decision.left = chars[0];
                 if (chars[1]) decision.right = chars[1];
-                currentBackground.dialogues.push(decision);
+                pushToParent(decision);
                 continue;
             }
 
-            // @response "group_id" choice_value
-            const responseMatch = trimmed.match(/^@response\s+"([^"]*)"\s+(\d+)/);
+            // @response
+            const responseMatch = trimmed.match(/^@response\s+"([^"]*)"\s+(\d+)\s*(\{?)/);
             if (responseMatch) {
-                pendingResponse = {
+                const response = {
+                    type: 'choice_response',
                     group_id: responseMatch[1],
-                    choice_value: responseMatch[2]
+                    choice_value: responseMatch[2],
+                    elements: []
                 };
+                pushToParent(response);
+                if (responseMatch[3] === '{') {
+                    stack.push({ type: 'response', elements: response.elements, target: response });
+                }
                 continue;
             }
 
-            // Dialogue with brackets: Name [left, right]: text
+            // Dialogue: Name [left, right]: text
             const dialogueMatch = trimmed.match(/^(.+?)\s*\[([^\]]*)\]\s*:\s*(.+)/);
             if (dialogueMatch && currentBackground) {
                 const name = dialogueMatch[1].trim();
                 const chars = dialogueMatch[2].split(',').map(s => s.trim());
                 const text = dialogueMatch[3];
 
-                if (pendingResponse) {
-                    currentBackground.dialogues.push({
-                        type: 'choice_response',
-                        group_id: pendingResponse.group_id,
-                        choice_value: pendingResponse.choice_value,
-                        name, text,
-                        left: chars[0] || '', right: chars[1] || ''
-                    });
-                    pendingResponse = null;
-                } else {
-                    currentBackground.dialogues.push({
-                        type: 'dialogue', name, text,
-                        left: chars[0] || '', right: chars[1] || ''
-                    });
-                }
+                pushToParent({
+                    type: 'dialogue', name, text,
+                    left: chars[0] || '', right: chars[1] || ''
+                });
                 continue;
             }
 
-            // Simple dialogue without brackets: Name: text
+            // Simple dialogue: Name: text
             const simpleMatch = trimmed.match(/^(\S+):\s+(.+)/);
             if (simpleMatch && currentBackground && !trimmed.startsWith('@')) {
                 const name = simpleMatch[1];
                 const text = simpleMatch[2];
-                if (pendingResponse) {
-                    currentBackground.dialogues.push({
-                        type: 'choice_response',
-                        group_id: pendingResponse.group_id,
-                        choice_value: pendingResponse.choice_value,
-                        name, text, left: '', right: ''
-                    });
-                    pendingResponse = null;
-                } else {
-                    currentBackground.dialogues.push({
-                        type: 'dialogue', name, text, left: '', right: ''
-                    });
-                }
+                pushToParent({
+                    type: 'dialogue', name, text, left: '', right: ''
+                });
                 continue;
             }
         }

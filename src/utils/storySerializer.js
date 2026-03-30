@@ -74,38 +74,52 @@ export const StoryScriptSerializer = {
             lines.push(bgmLine);
         }
 
-        (el.dialogues || []).forEach(d => {
-            switch (d.type) {
-                case 'dialogue':
-                    lines.push(this.formatDialogueLine(d.name, d.left, d.right, d.text));
-                    break;
-                case 'narrator':
-                    lines.push(`@narrator: ${d.text || ''}`);
-                    break;
-                case 'sfx': {
-                    const sfxSrc = d._asset_id || d.src || '';
-                    lines.push(`@sfx "${d.name || ''}" src="${sfxSrc}"`);
-                    break;
-                }
-                case 'decision':
-                    this.serializeDecision(d, lines);
-                    break;
-                case 'choice_response':
-                    lines.push(`@response "${d.group_id || ''}" ${d.choice_value || 0}`);
-                    lines.push(this.formatDialogueLine(d.name, d.left, d.right, d.text));
-                    break;
-            }
-        });
+        this.serializeElements(el.dialogues || [], lines, 0);
         lines.push('');
     },
 
-    serializeDecision(d, lines) {
-        let line = `@decision "${d.group_id || ''}"`;
+    serializeElements(elements, lines, indentLevel = 0) {
+        const indent = '  '.repeat(indentLevel);
+        elements.forEach(d => {
+            switch (d.type) {
+                case 'dialogue':
+                    lines.push(indent + this.formatDialogueLine(d.name, d.left, d.right, d.text));
+                    break;
+                case 'narrator':
+                    if (d.text?.includes('\n')) {
+                        lines.push(`${indent}@narrator {`);
+                        d.text.split('\n').forEach(line => lines.push(`${indent}  ${line}`));
+                        lines.push(`${indent}}`);
+                    } else {
+                        lines.push(`${indent}@narrator: ${d.text || ''}`);
+                    }
+                    break;
+                case 'sfx': {
+                    const sfxSrc = d._asset_id || d.src || '';
+                    lines.push(`${indent}@sfx "${d.name || ''}" src="${sfxSrc}"`);
+                    break;
+                }
+                case 'decision':
+                    this.serializeDecision(d, lines, indentLevel);
+                    break;
+                case 'choice_response': {
+                    lines.push(`${indent}@response "${d.group_id || ''}" ${d.choice_value || 0} {`);
+                    this.serializeElements(d.elements || [], lines, indentLevel + 1);
+                    lines.push(`${indent}}`);
+                    break;
+                }
+            }
+        });
+    },
+
+    serializeDecision(d, lines, indentLevel = 0) {
+        const indent = '  '.repeat(indentLevel);
+        let line = `${indent}@decision "${d.group_id || ''}"`;
         if (d.left || d.right) {
             line += ` [${d.left || ''}, ${d.right || ''}]`;
         }
         lines.push(line);
-        (d.choices || []).forEach(choice => lines.push(`- ${choice}`));
+        (d.choices || []).forEach(choice => lines.push(`${indent}- ${choice}`));
     },
 
     formatDialogueLine(name, left, right, text) {

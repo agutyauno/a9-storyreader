@@ -101,13 +101,13 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
 
             const options = [
                 { label: '@char', type: 'keyword', apply: snippet('@char ', 0), detail: 'Declare character' },
-                { label: '@narrator', type: 'keyword', apply: snippet('@narrator: ', 0), detail: 'Narrator line (centered)' },
+                { label: '@narrator', type: 'keyword', apply: snippet('@narrator {\n  \n}', -2), detail: 'Multi-line narrator' },
                 { label: '@bg', type: 'keyword', apply: snippet('@bg ""', -1), detail: 'Change background' },
                 { label: '@bgm', type: 'keyword', apply: snippet('@bgm id=""', -1), detail: 'Play background music' },
                 { label: '@sfx', type: 'keyword', apply: snippet('@sfx ""', -1), detail: 'Play sound effect' },
                 { label: '@video', type: 'keyword', apply: snippet('@video src=""', -1), detail: 'Play video' },
                 { label: '@decision', type: 'keyword', apply: snippet('@decision ""', -1), detail: 'Choice menu' },
-                { label: '@response', type: 'keyword', apply: snippet('@response ', 0), detail: 'Choice response' },
+                { label: '@response', type: 'keyword', apply: snippet('@response "" 1 {\n  \n}', -2), detail: 'Choice response group' },
                 { label: '@section', type: 'keyword', detail: 'Break into chunks' },
                 { label: '@nickname', type: 'variable', detail: 'Shorthand for player name' },
             ];

@@ -20,17 +20,19 @@ export const StoryRenderer = {
   },
 
   getAvatar(nameWithExpr) {
-    console.log('getAvatar:', nameWithExpr, this.characters);
-    const defaultAvt = getAssetUrl('/assets/images/character/blank.png');
-    if (!nameWithExpr) return defaultAvt;
+    const transparentPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    const defaultAvt = transparentPixel; // Use transparent pixel instead of potentially missing blank.png
+    
+    if (!nameWithExpr || nameWithExpr.trim() === '') return defaultAvt;
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
     const char = this.characters[name];
-
+    
     if (char) {
       if (expr && char.expressions?.[expr]) {
-        return getAssetUrl(char.expressions[expr].avatar_url || char.avatar) || defaultAvt;
+        const exprData = char.expressions[expr];
+        return getAssetUrl(exprData.avatar_url || char.avatar) || defaultAvt;
       }
       return getAssetUrl(char.avatar) || defaultAvt;
     }
@@ -38,7 +40,7 @@ export const StoryRenderer = {
   },
 
   getFullImage(nameWithExpr) {
-    if (!nameWithExpr) return '';
+    if (!nameWithExpr || nameWithExpr.trim() === '') return '';
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
@@ -46,7 +48,8 @@ export const StoryRenderer = {
 
     if (char) {
       if (expr && char.expressions?.[expr]) {
-        return getAssetUrl(char.expressions[expr].full_url || char.full_image || '');
+        const exprData = char.expressions[expr];
+        return getAssetUrl(exprData.full_url || char.full_image || '');
       }
       return getAssetUrl(char.full_image || '');
     }
@@ -181,19 +184,14 @@ export const StoryRenderer = {
   },
 
   renderChoiceResponse(response, styles) {
-    const leftAvatar = this.getAvatar(response.left);
-    const rightAvatar = this.getAvatar(response.right);
-    const leftFull = this.getFullImage(response.left);
-    const rightFull = this.getFullImage(response.right);
-
+    // A response is now a container for other dialogue elements
+    const elements = (response.elements || []).map(el => this.renderDialogue(el, styles)).join('');
+    
     return `
-      <div class="${cx('dialogue-box choice-response', styles)}" data-choice-response="${response.choice_value}" data-choice-group="${response.group_id}">
-        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
-        <div class="${cx('dialogue-content', styles)}">
-          <p class="${cx('character_name', styles)}">${response.name || ''}</p>
-          <p class="${cx('dialogue', styles)}">${response.text || ''}</p>
-        </div>
-        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+      <div class="${cx('choice-response choice-response-container', styles)}" 
+           data-choice-response="${response.choice_value}" 
+           data-choice-group="${response.group_id}">
+        ${elements}
       </div>
     `;
   }
