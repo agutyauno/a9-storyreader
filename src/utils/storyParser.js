@@ -160,7 +160,7 @@ export const StoryScriptParser = {
      */
     _buildStructure(scriptText) {
         const lines = scriptText.split('\n');
-        const result = { characters: {}, sections: [] };
+        const result = { characters: {}, sections: [], header_comments: [] };
 
         let currentSection = null;
         let currentBackground = null;
@@ -235,7 +235,22 @@ export const StoryScriptParser = {
             const trimmed = line.trim();
 
             // skip empty lines only if not in a block, and always skip comments/@char here
-            if (trimmed.startsWith('#') || trimmed.startsWith('@char')) continue;
+            // Capture comments instead of skipping them
+            if (trimmed.startsWith('#')) {
+                const commentText = trimmed.substring(1).trim();
+                if (!currentSection && !currentBackground) {
+                    result.header_comments.push(commentText);
+                } else if (stack.length > 0) {
+                  stack[stack.length - 1].elements.push({ type: 'comment', text: commentText });
+                } else if (currentBackground) {
+                  currentBackground.dialogues.push({ type: 'comment', text: commentText });
+                } else {
+                  currentSection.elements.push({ type: 'comment', text: commentText });
+                }
+                continue;
+            }
+            
+            if (trimmed.startsWith('@char')) continue;
             if (!trimmed && stack.length === 0) continue; 
 
 

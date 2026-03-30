@@ -97,6 +97,8 @@ export const StoryRenderer = {
         return this.renderVideo(element, styles);
       case 'background':
         return this.renderBackground(element, styles);
+      case 'comment':
+        return '';
       default:
         return '';
     }
@@ -146,6 +148,8 @@ export const StoryRenderer = {
         return this.renderDecision(dialogue, styles);
       case 'choice_response':
         return this.renderChoiceResponse(dialogue, styles);
+      case 'comment':
+        return '';
       default:
         return '';
     }

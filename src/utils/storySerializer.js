@@ -14,12 +14,17 @@ export const StoryScriptSerializer = {
         if (!storyContent) return '';
         const lines = [];
 
+        // Header Comments
+        if (Array.isArray(storyContent.header_comments)) {
+            storyContent.header_comments.forEach(c => lines.push(`# ${c}`));
+            if (storyContent.header_comments.length > 0) lines.push('');
+        }
+
         // Characters
         const characters = storyContent.characters;
         if (characters && typeof characters === 'object' && !Array.isArray(characters)) {
             const entries = Object.entries(characters);
             if (entries.length > 0) {
-                lines.push('# Characters');
                 for (const [name, data] of entries) {
                     if (name.includes('.')) continue; // skip expression variants
 
@@ -42,6 +47,8 @@ export const StoryScriptSerializer = {
                     this.serializeVideo(element, lines);
                 } else if (element.type === 'background') {
                     this.serializeBackground(element, lines);
+                } else if (element.type === 'comment') {
+                    this.serializeComment(element, lines);
                 }
             });
         });
@@ -78,6 +85,11 @@ export const StoryScriptSerializer = {
         lines.push('');
     },
 
+    serializeComment(el, lines, indentLevel = 0) {
+        const indent = '  '.repeat(indentLevel);
+        lines.push(`${indent}# ${el.text || ''}`);
+    },
+
     serializeElements(elements, lines, indentLevel = 0) {
         const indent = '  '.repeat(indentLevel);
         elements.forEach(d => {
@@ -106,6 +118,10 @@ export const StoryScriptSerializer = {
                     lines.push(`${indent}@response "${d.group_id || ''}" ${d.choice_value || 0} {`);
                     this.serializeElements(d.elements || [], lines, indentLevel + 1);
                     lines.push(`${indent}}`);
+                    break;
+                }
+                case 'comment': {
+                    this.serializeComment(d, lines, indentLevel);
                     break;
                 }
             }

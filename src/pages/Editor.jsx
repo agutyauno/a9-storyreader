@@ -13,7 +13,8 @@ import EventGalleryManager from '../components/Editor/EventGalleryManager';
 import AssetPickerModal from '../components/Editor/AssetPickerModal';
 import AssetDetailModal from '../components/Editor/AssetDetailModal';
 import AssetPreviewModal from '../components/Editor/AssetPreviewModal';
-import NotificationToast from '../components/Editor/NotificationToast'; // New
+import NotificationToast from '../components/Editor/NotificationToast';
+import UnsavedChangesModal from '../components/Editor/UnsavedChangesModal';
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
 
 import { StoryScriptParser } from '../utils/storyParser';
@@ -33,22 +34,35 @@ export default function EditorPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-        } catch (err) {
-            console.error('Logout failed:', err);
-        }
-    };
-
     // Sidebar & Preview visibility & width
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const [isPreviewVisible, setIsPreviewVisible] = useState(true);
     const [sidebarWidth, setSidebarWidth] = useState(280);
     const [previewWidth, setPreviewWidth] = useState(420);
 
-    // Notification State
+    const handleBack = () => {
+        confirmNavigation(() => navigate(-1));
+    };
+
+    const handleLogout = () => {
+        confirmNavigation(async () => {
+            try {
+                await logout();
+                navigate('/login');
+            } catch (err) {
+                console.error('Logout failed:', err);
+            }
+        });
+    };
+
+    const confirmNavigation = (action) => {
+        if (isDirty) {
+            setPendingAction(() => action);
+            setUnsavedModalOpen(true);
+        } else {
+            action();
+        }
+    };
     const [notification, setNotification] = useState({ message: '', type: 'success' });
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -119,6 +133,12 @@ export default function EditorPage() {
     const [allCharacters, setAllCharacters] = useState([]);
     const [eventCharacters, setEventCharacters] = useState([]); // Specifically linked to current event
     const [allAssets, setAllAssets] = useState([]);
+    const [initialScript, setInitialScript] = useState('');
+    const isDirty = scriptText !== initialScript;
+
+    // Unsaved Changes Modal State
+    const [unsavedModalOpen, setUnsavedModalOpen] = useState(false);
+    const [pendingAction, setPendingAction] = useState(null);
 
     // Entity selection (Region/Arc/Event clicked in tree)
     const [selectedEntity, setSelectedEntity] = useState(null);
@@ -174,6 +194,7 @@ export default function EditorPage() {
                     ? StoryScriptSerializer.serialize(item.story_content)
                     : '';
                 setScriptText(text);
+                setInitialScript(text); // Track initial state
                 setEditorMode('story');
             } catch (err) {
                 console.error('Failed to load story:', err);
@@ -260,6 +281,18 @@ export default function EditorPage() {
         localStorage.setItem('doctor_nickname', doctorNickname);
     }, [doctorNickname]);
 
+    // Handle Browser-level BeforeUnload
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
     // Resizing
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -298,7 +331,7 @@ export default function EditorPage() {
     };
 
 
-    const handleSave = async () => {
+    const handleSave = async (silent = false) => {
         setSaving(true);
         try {
             const parsed = await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
@@ -312,19 +345,37 @@ export default function EditorPage() {
 
             if (metadata.story_id) {
                 await SupabaseAPI.updateStory(metadata.story_id, payload);
-                showNotification('Đã lưu thay đổi!', 'success');
+                setInitialScript(scriptText); // Reset dirty state
+                if (!silent) showNotification('Đã lưu thay đổi!', 'success');
+                return true;
             } else {
                 const created = await SupabaseAPI.createStory(payload);
                 setMetadata(prev => ({ ...prev, story_id: created.story_id }));
+                setInitialScript(scriptText); // Reset dirty state
                 navigate(`/editor/${created.story_id}`, { replace: true });
-                showNotification('Story đã được tạo!', 'success');
+                if (!silent) showNotification('Story đã được tạo!', 'success');
+                return true;
             }
         } catch (err) {
             console.error('Save failed:', err);
-            showNotification('Lưu thất bại: ' + (err.message || 'Lỗi hệ thống'), 'error');
+            if (!silent) showNotification('Lưu thất bại: ' + (err.message || 'Lỗi hệ thống'), 'error');
+            return false;
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleSaveAndConfirm = async () => {
+        const success = await handleSave(true);
+        if (success) {
+            setUnsavedModalOpen(false);
+            if (pendingAction) pendingAction();
+        }
+    };
+
+    const handleConfirmDiscard = () => {
+        setUnsavedModalOpen(false);
+        if (pendingAction) pendingAction();
     };
 
     const handleOpenStandalonePreview = async () => {
@@ -336,16 +387,17 @@ export default function EditorPage() {
 
 
     const handleEntitySelect = (node) => {
-        if (node.type === 'story') {
-            navigate(`/editor/${node.story_id || node.id}`);
-            setEditorMode('story');
-            setSelectedEntity(null);
-        } else {
-            // For other types, just register the selection (highlight) 
-            // but don't show an edit panel since there's a modal now
-            setSelectedEntity(node);
-            setEditorMode(null);
-        }
+        const action = () => {
+            if (node.type === 'story') {
+                navigate(`/editor/${node.story_id || node.id}`);
+                setEditorMode('story');
+                setSelectedEntity(null);
+            } else {
+                setSelectedEntity(node);
+                setEditorMode(null);
+            }
+        };
+        confirmNavigation(action);
     };
 
     const handleEntitySaved = () => {
@@ -367,7 +419,7 @@ export default function EditorPage() {
         <div className={editorStyles.editorPage}>
             <div className={editorStyles.editorHeader}>
                 <div className={editorStyles.headerLeft}>
-                    <button onClick={() => navigate(-1)} className={editorStyles.backBtn} title="Back">
+                    <button onClick={handleBack} className={editorStyles.backBtn} title="Back">
                         <ArrowLeft size={20} />
                     </button>
                     <button 
@@ -569,6 +621,14 @@ export default function EditorPage() {
                 message={notification.message}
                 type={notification.type}
                 onClose={() => setNotification({ message: '', type: 'success' })}
+            />
+
+            <UnsavedChangesModal 
+                isOpen={unsavedModalOpen}
+                saving={saving}
+                onConfirm={handleConfirmDiscard}
+                onCancel={() => setUnsavedModalOpen(false)}
+                onSaveAndConfirm={handleSaveAndConfirm}
             />
         </div>
     );
