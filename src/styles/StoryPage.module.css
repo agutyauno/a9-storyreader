@@ -194,6 +194,9 @@ header {
 
 /* ================================================================================================= */
 /* dialogue */
+p {
+    margin: 0;
+}
 
 .dialogue-background {
     position: relative;
@@ -212,14 +215,14 @@ header {
     width: 100%;
     height: calc(100vh - 4.5rem);
     align-self: start;
-    overflow: hidden; /* Clamp the blur bleeding */
+    overflow: hidden;
 }
 
 .background-wrapper .background-blur {
     position: absolute;
-    top: -5%; 
+    top: -5%;
     left: -5%;
-    width: 110%; 
+    width: 110%;
     height: 110%;
     object-fit: cover;
     filter: blur(20px) brightness(0.4);
@@ -266,10 +269,8 @@ header {
 
 .dialogue-box {
     display: flex;
-    gap: var(--spacing-sm);
     align-items: center;
     justify-content: center;
-    margin: 0 1rem;
 }
 
 .character_avt {
@@ -313,11 +314,14 @@ header {
 /* Narrator Style */
 .narrator-box .dialogue-content {
     background-color: #1a1a1a90;
-    padding: 0.8rem 1.2rem;
+    padding: 1rem 1rem;
+    /* Match standard dialogue padding */
     display: flex;
     justify-content: center;
     align-items: center;
+    box-sizing: border-box;
 }
+
 
 .narrator-text {
     color: var(--color-text-primary);
@@ -325,7 +329,15 @@ header {
     text-align: center;
     width: 100%;
     margin: 0;
-    line-height: 1.4;
+    /* line-height: 1.2; */
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.narrator-box {
+    margin: 0 5.5rem; /* Mirrors space where avatars would be in standard dialogue */
+    height: min-content;
 }
 
 /* Decision Choice Styles */

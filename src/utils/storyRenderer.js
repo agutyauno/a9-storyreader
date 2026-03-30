@@ -122,14 +122,11 @@ export const StoryRenderer = {
   },
 
   renderNarrator(narrator, styles) {
-    const blankAvt = this.getAvatar(null);
     return `
       <div class="${cx('dialogue-box narrator-box', styles)}">
-        <img class="${cx('character_avt', styles)}" style="visibility: hidden;" src="${blankAvt}" alt="">
         <div class="${cx('dialogue-content', styles)}">
           <p class="${cx('narrator-text', styles)}">${narrator.text || ''}</p>
         </div>
-        <img class="${cx('character_avt', styles)}" style="visibility: hidden;" src="${blankAvt}" alt="">
       </div>
     `;
   },
