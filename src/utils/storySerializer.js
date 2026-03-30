@@ -26,6 +26,7 @@ export const StoryScriptSerializer = {
                     let line = `@char ${name}`;
                     // Always output character_id (the DB key)
                     if (data.character_id) line += ` id="${data.character_id}"`;
+                    if (data.color) line += ` color="${data.color}"`;
                     // avatar/full_image are resolved URLs — don't output them back to script
                     // The parser will re-resolve from character_id when loading
                     lines.push(line);
@@ -83,7 +84,7 @@ export const StoryScriptSerializer = {
         elements.forEach(d => {
             switch (d.type) {
                 case 'dialogue':
-                    lines.push(indent + this.formatDialogueLine(d.name, d.left, d.right, d.text));
+                    lines.push(indent + this.formatDialogueLine(d));
                     break;
                 case 'narrator':
                     if (d.text?.includes('\n')) {
@@ -122,8 +123,21 @@ export const StoryScriptSerializer = {
         (d.choices || []).forEach(choice => lines.push(`${indent}- ${choice}`));
     },
 
-    formatDialogueLine(name, left, right, text) {
-        const charPart = (left || right) ? ` [${left || ''}, ${right || ''}]` : '';
-        return `${name || '???'}${charPart}: ${text || ''}`;
+    formatDialogueLine(d) {
+        const params = [];
+        if (d.left || d.right || d.color) {
+            if (d.color && !d.left && !d.right) {
+                // If only color is present, we can just use named param
+                params.push(`color="${d.color}"`);
+            } else {
+                // If left/right are present, we maintain positions
+                params.push(d.left || '');
+                params.push(d.right || '');
+                if (d.color) params.push(`color="${d.color}"`);
+            }
+        }
+
+        const charPart = params.length > 0 ? ` [${params.join(', ')}]` : '';
+        return `${d.name || '???'}${charPart}: ${d.text || ''}`;
     }
 };

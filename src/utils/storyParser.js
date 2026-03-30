@@ -177,7 +177,8 @@ export const StoryScriptParser = {
                 result.characters[charMatch[1]] = {
                     character_id: params.id || null,
                     avatar: params.avatar || '',
-                    full_image: params.full || ''
+                    full_image: params.full || '',
+                    color: params.color || null
                 };
             }
         }
@@ -340,12 +341,20 @@ export const StoryScriptParser = {
             const dialogueMatch = trimmed.match(/^(.+?)\s*\[([^\]]*)\]\s*:\s*(.+)/);
             if (dialogueMatch && currentBackground) {
                 const name = dialogueMatch[1].trim();
-                const chars = dialogueMatch[2].split(',').map(s => s.trim());
+                const bracketContent = dialogueMatch[2];
                 const text = dialogueMatch[3];
+
+                // Support both positional [left, right] and named [color="red"]
+                const commaParts = bracketContent.split(',').map(s => s.trim());
+                const left = (commaParts[0] && !commaParts[0].includes('=')) ? commaParts[0] : '';
+                const right = (commaParts[1] && !commaParts[1].includes('=')) ? commaParts[1] : '';
+                
+                const namedParams = ScriptUtils.parseParams(bracketContent);
+                const color = namedParams.color || null;
 
                 pushToParent({
                     type: 'dialogue', name, text,
-                    left: chars[0] || '', right: chars[1] || ''
+                    left, right, color
                 });
                 continue;
             }

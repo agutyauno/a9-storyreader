@@ -144,7 +144,12 @@ export const StoryRenderer = {
       <div class="${cx('dialogue-box', styles)}">
         <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
         <div class="${cx('dialogue-content', styles)}">
-          <p class="${cx('character_name', styles)}">${dialogue.name || ''}</p>
+          ${(() => {
+            const char = this.characters[dialogue.name];
+            const nameColor = dialogue.color || char?.color;
+            const colorStyle = nameColor ? `style="color: ${nameColor}"` : '';
+            return `<p class="${cx('character_name', styles)}" ${colorStyle}>${dialogue.name || ''}</p>`;
+          })()}
           <p class="${cx('dialogue', styles)}">${dialogue.text || ''}</p>
         </div>
         <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
