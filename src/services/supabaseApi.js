@@ -923,16 +923,48 @@ const SupabaseAPI_Raw = {
   async getAssetsByIds(assetIds) {
     if (!assetIds?.length) return {};
     if (USE_MOCK_DB) {
-      return Object.fromEntries(
-        mockDatabase.assets
-          .filter(a => assetIds.includes(a.asset_id))
-          .map(a => [a.asset_id, a])
-      );
+      const assets = mockDatabase.assets
+        .filter(a => assetIds.includes(a.asset_id))
+        .map(a => [a.asset_id, a]);
+      
+      const gallery = (mockDatabase.gallery || [])
+        .filter(g => assetIds.includes(g.gallery_id))
+        .map(g => [g.gallery_id, { 
+          asset_id: g.gallery_id, 
+          url: g.image_url, 
+          name: g.title, 
+          type: 'image', 
+          category: 'gallery' 
+        }]);
+
+      return Object.fromEntries([...assets, ...gallery]);
     }
+
     const unique = [...new Set(assetIds)];
-    const { data, error } = await supabase.from('assets').select('*').in('asset_id', unique);
-    if (error) throw error;
-    return Object.fromEntries((data || []).map(a => [a.asset_id, a]));
+    
+    // Query both tables in parallel
+    const [assetRes, galleryRes] = await Promise.all([
+      supabase.from('assets').select('*').in('asset_id', unique),
+      supabase.from('gallery').select('*').in('gallery_id', unique)
+    ]);
+
+    if (assetRes.error) throw assetRes.error;
+    if (galleryRes.error) throw galleryRes.error;
+
+    const assetMap = Object.fromEntries((assetRes.data || []).map(a => [a.asset_id, a]));
+    const galleryMap = Object.fromEntries((galleryRes.data || []).map(g => [
+      g.gallery_id, 
+      { 
+        asset_id: g.gallery_id, 
+        url: g.image_url, 
+        name: g.title, 
+        type: 'image', 
+        category: 'gallery' 
+      }
+    ]));
+
+    // Merge: asset table takes priority if IDs collide
+    return { ...galleryMap, ...assetMap };
   },
 
   /**

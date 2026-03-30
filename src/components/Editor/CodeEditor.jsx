@@ -100,7 +100,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
             };
 
             const options = [
-                { label: '@char', type: 'keyword', apply: snippet('@char ', 0), detail: 'Declare character' },
+                { label: '@char', type: 'keyword', apply: snippet('@char Name [id="", color=""]', -20), detail: 'Declare character' },
                 { label: '@narrator', type: 'keyword', apply: snippet('@narrator {\n  \n}', -2), detail: 'Multi-line narrator' },
                 { label: '@bg', type: 'keyword', apply: snippet('@bg ""', -1), detail: 'Change background' },
                 { label: '@bgm', type: 'keyword', apply: snippet('@bgm id=""', -1), detail: 'Play background music' },
@@ -152,7 +152,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
         }
 
         // 4. Character IDs (after @char or at start of line for dialogue)
-        if (textBefore.match(/^@char\s+\S+\s+id\s*=\s*"/) || textBefore.match(/^[^:]*$/)) {
+        if (textBefore.match(/^@char\s+\S+\s+\[?\s*id\s*=\s*"/) || textBefore.match(/^[^:]*$/)) {
             const eventCharIds = new Set((eventCharacters || []).map(ec => ec.character_id));
             
             // Sort characters: event characters first, then others

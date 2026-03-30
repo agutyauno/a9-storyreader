@@ -189,9 +189,10 @@ export default function EditorPage() {
     useEffect(() => {
         async function loadMetadata() {
             try {
-                const [chars, assets] = await Promise.all([
+                const [chars, assets, galleryData] = await Promise.all([
                     SupabaseAPI.getCharacters(),
-                    SupabaseAPI.getAssets()
+                    SupabaseAPI.getAssets(),
+                    SupabaseAPI.getAllGallery(),
                 ]);
                 
                 setAllCharacters(chars);
@@ -208,7 +209,14 @@ export default function EditorPage() {
                     setEventCharacters([]);
                 }
                 
-                setAllAssets(assets);
+                const mappedGallery = (galleryData || []).map(g => ({
+                    asset_id: g.gallery_id,
+                    name: g.title,
+                    url: g.image_url,
+                    type: 'image',
+                    category: 'gallery'
+                }));
+                setAllAssets([...(assets || []), ...mappedGallery]);
             } catch (err) {
                 console.error('Failed to load character/asset metadata:', err);
             }

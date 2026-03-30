@@ -23,13 +23,12 @@ export const StoryScriptSerializer = {
                 for (const [name, data] of entries) {
                     if (name.includes('.')) continue; // skip expression variants
 
-                    let line = `@char ${name}`;
-                    // Always output character_id (the DB key)
-                    if (data.character_id) line += ` id="${data.character_id}"`;
-                    if (data.color) line += ` color="${data.color}"`;
-                    // avatar/full_image are resolved URLs — don't output them back to script
-                    // The parser will re-resolve from character_id when loading
-                    lines.push(line);
+                    const params = [];
+                    if (data.character_id) params.push(`id="${data.character_id}"`);
+                    if (data.color) params.push(`color="${data.color}"`);
+                    
+                    const paramPart = params.length > 0 ? ` [${params.join(', ')}]` : '';
+                    lines.push(`@char ${name}${paramPart}`);
                 }
                 lines.push('');
             }

@@ -118,6 +118,7 @@ export const StoryScriptParser = {
                     character_id: data.character_id,
                     avatar: dbChar.avatar_url || data.avatar,
                     full_image: dbChar.full_url || data.full_image,
+                    color: data.color || null,
                     expressions: dbChar.expressions || {}
                 };
             }
@@ -173,8 +174,16 @@ export const StoryScriptParser = {
             const trimmed = line.trim();
             const charMatch = trimmed.match(/^@char\s+(\S+)\s*(.*)/);
             if (charMatch) {
-                const params = ScriptUtils.parseParams(charMatch[2]);
-                result.characters[charMatch[1]] = {
+                const name = charMatch[1];
+                let paramsRaw = charMatch[2].trim();
+                
+                // Support unified bracket format: @char Name [id="...", color="..."]
+                if (paramsRaw.startsWith('[') && paramsRaw.endsWith(']')) {
+                    paramsRaw = paramsRaw.slice(1, -1);
+                }
+                
+                const params = ScriptUtils.parseParams(paramsRaw);
+                result.characters[name] = {
                     character_id: params.id || null,
                     avatar: params.avatar || '',
                     full_image: params.full || '',

@@ -116,7 +116,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
         if (activeCat !== 'all') {
             if (activeCat === 'bgm' && !(a.type === 'audio' && a.category === 'bgm')) return false;
             if (activeCat === 'sfx' && !(a.type === 'audio' && a.category === 'sfx')) return false;
-            if (activeCat === 'background' && a.category !== 'background') return false;
+            if (activeCat === 'background' && a.category !== 'background' && a.category !== 'gallery') return false;
             if (activeCat === 'gallery' && a.category !== 'gallery') return false;
             if (activeCat === 'thumbnail' && a.category !== 'thumbnail') return false;
             if (activeCat === 'image' && a.type !== 'image') return false;
