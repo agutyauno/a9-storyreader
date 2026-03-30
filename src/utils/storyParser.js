@@ -172,9 +172,9 @@ export const StoryScriptParser = {
         // First pass: collect @char declarations
         for (const line of lines) {
             const trimmed = line.trim();
-            // Match Name (can have spaces) until bracket [ or end of line/named params
-            // Using greedy [^\[]+ instead of non-greedy [^\[]+? to capture full name including spaces
-            const charMatch = trimmed.match(/^@char\s+([^\[]+?)(?:\s+\[(.*)\]|\s+(.*)|$)/);
+            // Match Name (can have spaces) until bracket [ or a parameter assignment key=
+            // We use lookahead to ensure the name doesn't consume the start of parameters.
+            const charMatch = trimmed.match(/^@char\s+([^\[=]+?)(?=\s+\[|\s+\w+=|$)(?:\s+\[(.*)\]|\s+(.*)|$)/);
             if (charMatch) {
                 let name = charMatch[1].trim();
                 let paramsRaw = (charMatch[2] || charMatch[3] || '').trim();

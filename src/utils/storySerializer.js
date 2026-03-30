@@ -26,7 +26,8 @@ export const StoryScriptSerializer = {
             const entries = Object.entries(characters);
             if (entries.length > 0) {
                 for (const [name, data] of entries) {
-                    if (name.includes('.')) continue; // skip expression variants
+                    // We no longer skip names with dots, as base characters 
+                    // like "Mr. Nothing" are now properly supported.
 
                     const params = [];
                     if (data.character_id) params.push(`id="${data.character_id}"`);
