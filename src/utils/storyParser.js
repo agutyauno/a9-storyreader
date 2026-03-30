@@ -172,14 +172,38 @@ export const StoryScriptParser = {
         // First pass: collect @char declarations
         for (const line of lines) {
             const trimmed = line.trim();
-            const charMatch = trimmed.match(/^@char\s+(\S+)\s*(.*)/);
+            // Match Name (can have spaces) until bracket [ or end of line/named params
+            // Using greedy [^\[]+ instead of non-greedy [^\[]+? to capture full name including spaces
+            const charMatch = trimmed.match(/^@char\s+([^\[]+?)(?:\s+\[(.*)\]|\s+(.*)|$)/);
             if (charMatch) {
-                const name = charMatch[1];
-                let paramsRaw = charMatch[2].trim();
+                let name = charMatch[1].trim();
+                let paramsRaw = (charMatch[2] || charMatch[3] || '').trim();
                 
-                // Support unified bracket format: @char Name [id="...", color="..."]
-                if (paramsRaw.startsWith('[') && paramsRaw.endsWith(']')) {
-                    paramsRaw = paramsRaw.slice(1, -1);
+                // Final check: if paramsRaw contains something that looks like params but name was captured too lazily
+                // We actually want the name to be everything BEFORE the first '[' OR before the first space followed by a param-like key
+                // But with our unified bracket syntax, the name is simply everything before '['.
+                // If no bracket, we look for the first space that is followed by a key="value" pattern.
+                
+                const bracketIndex = trimmed.indexOf('[');
+                if (bracketIndex !== -1) {
+                    name = trimmed.slice(6, bracketIndex).trim(); // 6 is length of "@char "
+                    paramsRaw = trimmed.slice(bracketIndex + 1).replace(/\]\s*$/, '').trim();
+                } else {
+                    // No brackets, fallback to space-based split but cautiously
+                    // We split at the first space that is followed by something containing '='
+                    const parts = trimmed.split(/\s+/);
+                    const nameParts = [parts[1]]; // parts[0] is @char
+                    let pRaw = '';
+                    for (let i = 2; i < parts.length; i++) {
+                        if (parts[i].includes('=')) {
+                            pRaw = parts.slice(i).join(' ');
+                            break;
+                        } else {
+                            nameParts.push(parts[i]);
+                        }
+                    }
+                    name = nameParts.join(' ');
+                    paramsRaw = pRaw;
                 }
                 
                 const params = ScriptUtils.parseParams(paramsRaw);
@@ -347,7 +371,7 @@ export const StoryScriptParser = {
             }
 
             // Dialogue: Name [left, right]: text
-            const dialogueMatch = trimmed.match(/^(.+?)\s*\[([^\]]*)\]\s*:\s*(.+)/);
+            const dialogueMatch = trimmed.match(/^([^\[\]:]+?)\s*\[([^\]]*)\]\s*:\s*(.+)/);
             if (dialogueMatch && currentBackground) {
                 const name = dialogueMatch[1].trim();
                 const bracketContent = dialogueMatch[2];
@@ -369,10 +393,11 @@ export const StoryScriptParser = {
             }
 
             // Simple dialogue: Name: text
-            const simpleMatch = trimmed.match(/^(\S+):\s+(.+)/);
-            if (simpleMatch && currentBackground && !trimmed.startsWith('@')) {
-                const name = simpleMatch[1];
-                const text = simpleMatch[2];
+            // Support spaces in names by matching until colon
+            const simpleMatch = trimmed.match(/^([^:@]+):\s*(.+)/);
+            if (simpleMatch && currentBackground) {
+                const name = simpleMatch[1].trim();
+                const text = simpleMatch[2].trim();
                 pushToParent({
                     type: 'dialogue', name, text, left: '', right: ''
                 });

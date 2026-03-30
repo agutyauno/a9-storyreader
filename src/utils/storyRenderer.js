@@ -7,6 +7,29 @@ function cx(classNames, styles) {
 
 export const StoryRenderer = {
   characters: {},
+  
+  _resolveCharAndExpr(nameWithExpr) {
+    if (!nameWithExpr) return { char: null, expr: null };
+    const nameLower = nameWithExpr.toLowerCase();
+    
+    // 1. Try full match first (e.g. "Dr.Ami")
+    if (this.characters[nameLower]) {
+      return { char: this.characters[nameLower], expr: null };
+    }
+    
+    // 2. Try splitting at the last dot (e.g. "Ms Ami.smile" -> "Ms Ami" + "smile")
+    const lastDot = nameWithExpr.lastIndexOf('.');
+    if (lastDot !== -1) {
+      const name = nameWithExpr.slice(0, lastDot);
+      const expr = nameWithExpr.slice(lastDot + 1);
+      const char = this.characters[name.toLowerCase()];
+      if (char) {
+        return { char, expr };
+      }
+    }
+    
+    return { char: null, expr: null };
+  },
 
   render(storyContent, styles = {}) {
     if (!storyContent) {
@@ -15,7 +38,13 @@ export const StoryRenderer = {
     if (!Array.isArray(storyContent.sections)) {
       storyContent.sections = [];
     }
-    this.characters = storyContent.characters || {};
+    // Normalizing character keys to lowercase for case-insensitive lookup
+    this.characters = {};
+    if (storyContent.characters) {
+      Object.entries(storyContent.characters).forEach(([name, data]) => {
+        this.characters[name.toLowerCase()] = data;
+      });
+    }
     return storyContent.sections.map((section) => this.renderSection(section, styles)).join('');
   },
 
@@ -26,8 +55,7 @@ export const StoryRenderer = {
     if (!nameWithExpr || nameWithExpr.trim() === '') return defaultAvt;
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
-    const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
-    const char = this.characters[name];
+    const { char, expr } = this._resolveCharAndExpr(nameWithExpr);
     
     if (char) {
       if (expr && char.expressions?.[expr]) {
@@ -43,8 +71,7 @@ export const StoryRenderer = {
     if (!nameWithExpr || nameWithExpr.trim() === '') return '';
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
-    const [name, expr] = nameWithExpr.includes('.') ? nameWithExpr.split('.') : [nameWithExpr, null];
-    const char = this.characters[name];
+    const { char, expr } = this._resolveCharAndExpr(nameWithExpr);
 
     if (char) {
       if (expr && char.expressions?.[expr]) {
@@ -145,7 +172,7 @@ export const StoryRenderer = {
         <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
         <div class="${cx('dialogue-content', styles)}">
           ${(() => {
-            const char = this.characters[dialogue.name];
+            const { char } = this._resolveCharAndExpr(dialogue.name);
             const nameColor = dialogue.color || char?.color;
             const colorStyle = nameColor ? `style="color: ${nameColor}"` : '';
             return `<p class="${cx('character_name', styles)}" ${colorStyle}>${dialogue.name || ''}</p>`;
