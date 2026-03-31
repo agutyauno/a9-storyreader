@@ -16,6 +16,7 @@ Một dự án phi lợi nhuận mang cốt truyện của Arknights đến gầ
 
 **Agutyauno**
 - GitHub: [github.com/agutyauno](https://github.com/agutyauno)
+- Email: [nccyolo@gmail.com](mailto:nccyolo@gmail.com)
 
 ## Disclaimer
 
@@ -56,6 +57,7 @@ A non-profit project bringing the story of Arknights closer to the Vietnamese pl
 
 **Agutyauno**
 - GitHub: [github.com/agutyauno](https://github.com/agutyauno)
+- Email: [nccyolo@gmail.com](mailto:nccyolo@gmail.com)
 
 ## Disclaimer
 
