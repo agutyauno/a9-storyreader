@@ -188,6 +188,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
                 extensions={[
                     vnscriptLanguage, 
                     fontExtension,
+                    EditorView.lineWrapping,
                     autocompletion({ override: [vnscriptCompletionSource] })
                 ]}
                 onChange={onChange}
