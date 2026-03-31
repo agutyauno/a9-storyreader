@@ -32,6 +32,10 @@ Các asset được lấy từ nhiều nguồn:
 - [Akgcc Arknights Story Reader](https://akgcc.github.io/story/)
 - [Arkwaifu](https://arkwaifu.cc/)
 
+## Giấy Phép
+
+Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
+
 ---
 
 # Arknights Story Reader (English Version)
@@ -67,3 +71,7 @@ Assets are taken from various sources:
 - [Arknights Wiki](https://arknights.wiki.gg/)
 - [Akgcc Arknights Story Reader](https://akgcc.github.io/story/)
 - [Arkwaifu](https://arkwaifu.cc/)
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
