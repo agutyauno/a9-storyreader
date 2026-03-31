@@ -1,6 +1,6 @@
 # Arknights Story Reader VN
 
-Một dự án phi lợi nhuận mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam
+Một dự án phi lợi nhuận mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.
 Website: https://agutyauno.github.io/a9-storyreader/
 ## Giới Thiệu
 
