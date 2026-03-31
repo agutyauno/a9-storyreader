@@ -35,10 +35,41 @@ export default function EditorPage() {
     const [error, setError] = useState(null);
 
     // Sidebar & Preview visibility & width
-    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-    const [isPreviewVisible, setIsPreviewVisible] = useState(true);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(window.innerWidth > 1024);
+    const [isPreviewVisible, setIsPreviewVisible] = useState(window.innerWidth > 1024);
     const [sidebarWidth, setSidebarWidth] = useState(280);
     const [previewWidth, setPreviewWidth] = useState(420);
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 1024);
+
+    // Monitor screen size
+    useEffect(() => {
+        const handleResize = () => {
+            const small = window.innerWidth <= 1024;
+            setIsSmallScreen(small);
+            if (small) {
+                // On small screens, hide both by default if they were both open
+                if (isSidebarVisible && isPreviewVisible) {
+                    setIsSidebarVisible(false);
+                }
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isSidebarVisible, isPreviewVisible]);
+
+    const toggleSidebar = () => {
+        if (isSmallScreen && !isSidebarVisible) {
+            setIsPreviewVisible(false); // Close preview if opening sidebar on small screen
+        }
+        setIsSidebarVisible(!isSidebarVisible);
+    };
+
+    const togglePreview = () => {
+        if (isSmallScreen && !isPreviewVisible) {
+            setIsSidebarVisible(false); // Close sidebar if opening preview on small screen
+        }
+        setIsPreviewVisible(!isPreviewVisible);
+    };
 
     const handleBack = () => {
         confirmNavigation(() => navigate(-1));
@@ -423,7 +454,7 @@ export default function EditorPage() {
                         <ArrowLeft size={20} />
                     </button>
                     <button 
-                        onClick={() => setIsSidebarVisible(!isSidebarVisible)} 
+                        onClick={toggleSidebar} 
                         className={`${editorStyles.toggleBtn} ${isSidebarVisible ? editorStyles.active : ''}`} 
                         title={isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
                     >
@@ -446,14 +477,14 @@ export default function EditorPage() {
                         <>
                             <button onClick={handleOpenStandalonePreview} className={editorStyles.btnSecondary}>
                                 <ExternalLink size={16} />
-                                Full Preview
+                                <span className={editorStyles.btnText}>Full Preview</span>
                             </button>
                             <button onClick={handleSave} className={editorStyles.btnPrimary} disabled={saving}>
                                 {saving
                                     ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
                                     : <Save size={16} />
                                 }
-                                {saving ? 'Đang lưu...' : 'Lưu'}
+                                <span className={editorStyles.btnText}>{saving ? 'Đang lưu...' : 'Lưu'}</span>
                             </button>
                         </>
                     )}
@@ -464,7 +495,7 @@ export default function EditorPage() {
 
                     {editorMode === 'story' && (
                         <button 
-                            onClick={() => setIsPreviewVisible(!isPreviewVisible)} 
+                            onClick={togglePreview} 
                             className={`${editorStyles.toggleBtn} ${isPreviewVisible ? editorStyles.active : ''}`} 
                             title={isPreviewVisible ? "Hide Preview" : "Show Preview"}
                         >

@@ -314,6 +314,9 @@ export default function StoryPage() {
       <div id="chapter-sidebar" className={`${styles['chapter-sidebar']} ${sidebarActive ? styles['active'] : ''}`}>
         <div className={styles['sidebar-header']}>
           <h2>Danh sách chương</h2>
+          <button className={styles['sidebar-close-btn']} onClick={() => setSidebarActive(false)}>
+             &times;
+          </button>
         </div>
         <div className={styles['sidebar-content']}>
           <ul className={styles['chapter-list']}>

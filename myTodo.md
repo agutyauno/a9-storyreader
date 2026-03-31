@@ -3,6 +3,6 @@
 ## sẽ làm
 - thêm responsive cho mobile
 - operator story
-## cân nhắc
 - thêm hiệu ứng cho background
+## cân nhắc
 - translator note

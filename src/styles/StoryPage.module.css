@@ -103,6 +103,8 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+    /* Added for absolute positioning of children */
 }
 
 .sidebar-header h2 {
@@ -112,20 +114,33 @@ header {
 }
 
 .sidebar-close-btn {
-    padding: var(--spacing-sm) var(--spacing-lg);
-    font-size: var(--font-size-base);
-    font-weight: 600;
+    position: absolute;
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%);
+    z-index: 210;
+    /* Above sidebar header */
+    padding: 0;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.8rem;
+    font-weight: 300;
     color: var(--color-text-primary);
     background-color: var(--color-bg-secondary);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
     cursor: pointer;
     transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: .8;
 }
 
 .sidebar-close-btn:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
+    background-color: var(--color-bg-dark);
 }
 
 .sidebar-content {
@@ -248,7 +263,9 @@ p {
     height: 2.5rem;
     cursor: pointer;
     background-color: #1a1a1a90;
-    z-index: 1;
+    z-index: 5;
+    opacity: 0.8;
+    transition: opacity var(--transition-base);
 }
 
 .background-wrapper:hover .expand-icon {
@@ -337,8 +354,8 @@ p {
 }
 
 .narrator-box {
-    margin: 0 6rem;
-    /* Mirrors space where avatars would be in standard dialogue */
+    margin: 0 calc(5.5rem + var(--spacing-xs));
+    /* Synchronize width with standard dialogue boxes (avatar width + gap) */
     height: min-content;
 }
 
@@ -753,4 +770,189 @@ p {
 
 .isPreviewMode .narrator-box {
     margin: 0 4rem;
+}
+
+/* ================================================================================================= */
+/* Responsive Media Queries */
+/* ================================================================================================= */
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .narrator-box {
+        margin: 0 calc(5.5rem + var(--spacing-xs));
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .story_page-header {
+        height: 3.5rem;
+        padding: 0 var(--spacing-sm);
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: var(--spacing-xs);
+        position: relative;
+    }
+
+    .header-logo {
+        position: absolute;
+        left: var(--spacing-sm);
+        top: 50%;
+        transform: translateY(-50%) translateX(10%);
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .header-right-controls {
+        position: absolute;
+        right: var(--spacing-sm);
+        top: 50%;
+        transform: translateY(-50%) translateX(-10%);
+        gap: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+    }
+
+    .header-name-link {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        margin: 0 4.5rem;
+        /* Keep centered and away from absolute buttons */
+        min-width: 0;
+    }
+
+    .header-name {
+        font-size: var(--font-size-base);
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+        margin: 0;
+    }
+
+    .sidebar-toggle-btn {
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar-toggle-btn img {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    /* Chapter Sidebar */
+    .chapter-sidebar {
+        width: 100%;
+        right: -100%;
+        border-left: none;
+    }
+
+    .chapter-sidebar.active {
+        right: 0;
+    }
+
+    /* Background & Dialogue Layout */
+    .background-wrapper {
+        top: 3.5rem !important;
+        /* Matches new compact header height */
+        height: calc(100vh - 3.5rem);
+    }
+
+    .dialogue-container {
+        width: 88%;
+        padding: var(--spacing-xl) 0 var(--spacing-base) 0;
+    }
+
+    .character_avt {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .dialogue-content {
+        padding: 0.75rem;
+    }
+
+    .dialogue {
+        font-size: var(--font-size-base);
+    }
+
+    .narrator-box {
+        margin: 0 calc(4rem + var(--spacing-xs));
+        /* Synchronize with smaller mobile avatars */
+    }
+
+    .narrator-text {
+        font-size: var(--font-size-base);
+    }
+
+    /* Navigation */
+    .switch-chapter-button {
+        flex-direction: column;
+        padding: var(--spacing-lg) var(--spacing-base);
+        gap: var(--spacing-base);
+    }
+
+    .switch-chapter-button button {
+        max-width: none;
+        width: 100%;
+    }
+
+    /* Audio */
+    .audio-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+    }
+
+    .audio-icon {
+        font-size: 1rem;
+    }
+
+    .audio-controls:hover .volume-slider-container {
+        width: 80px;
+    }
+
+    /* Info/Settings */
+    .dr-name {
+        position: static;
+        text-align: center;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .back-to-top {
+        width: 2.5rem;
+        height: 2.5rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        transform: translateY(-20%) translateX(30%);
+    }
+
+    .expand-icon {
+        width: 1.8rem;
+        height: 1.8rem;
+        right: 0.5rem;
+        top: 0.5rem;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .character_avt {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .chapter-sidebar {
+        width: 100%;
+        right: -100%;
+    }
 }

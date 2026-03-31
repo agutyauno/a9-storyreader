@@ -513,3 +513,84 @@
 .addBtn {
     background-color: var(--color-bg-dark);
 }
+
+/* ================================================================================================= */
+/* Responsive Media Queries */
+/* ================================================================================================= */
+
+@media (max-width: 1024px) {
+    .resizer {
+        display: none;
+    }
+
+    .editorColumn {
+        min-width: 0;
+    }
+
+    .sidebarWrapper {
+        position: fixed;
+        top: 48px;
+        left: 0;
+        z-index: 30;
+        height: calc(100vh - 48px);
+        width: 100% !important;
+        background-color: var(--color-bg-dark);
+        border-right: none;
+    }
+
+    .previewWrapper {
+        position: fixed;
+        top: 48px;
+        right: 0;
+        z-index: 30;
+        height: calc(100vh - 48px);
+        width: 100% !important;
+        background-color: #000;
+        border-left: none;
+    }
+
+    .headerTitle {
+        font-size: var(--font-size-base);
+    }
+
+    .headerTitle span {
+        display: none;
+    }
+
+    /* Collapse button text in header */
+    .btnSecondary, .btnPrimary {
+        padding: 6px;
+        justify-content: center;
+    }
+
+    .btnText {
+        display: none;
+    }
+    
+    /* Toolbar scrollable */
+    .toolbar {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding: 4px var(--spacing-sm);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .toolBtn {
+        padding: 4px 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .headerLeft {
+        gap: var(--spacing-sm);
+    }
+
+    .headerRight {
+        gap: var(--spacing-xs);
+    }
+
+    .toolbar {
+        gap: 4px;
+    }
+}

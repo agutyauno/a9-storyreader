@@ -90,3 +90,25 @@
 .suggestion-text:hover {
 	color: var(--color-accent);
 }
+
+/* ================================================================================================= */
+/* Responsive Media Queries */
+/* ================================================================================================= */
+
+@media (max-width: 768px) {
+	.arc-sections-container {
+		gap: var(--spacing-xl);
+	}
+
+	.arc-header {
+		padding: var(--spacing-base);
+	}
+
+	.arc-items {
+		padding: var(--spacing-lg) var(--spacing-base);
+	}
+
+	.arc-suggestion {
+		padding: var(--spacing-base);
+	}
+}
