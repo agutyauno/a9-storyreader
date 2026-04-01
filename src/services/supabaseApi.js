@@ -279,15 +279,16 @@ const SupabaseAPI_Raw = {
           if (e.name) expressions[e.name] = e;
         });
 
-        // Use 'default' expression or first one
-        const def = expressions['default'] || exprList[0] || {};
+        // Use 'default' expression (case-insensitive) or first one
+        const defKey = Object.keys(expressions).find(k => k.toLowerCase() === 'default');
+        const def = defKey ? expressions[defKey] : (exprList[0] || {});
 
         // Map common fields for compatibility
         return {
           ...c,
-          avatar_url: c.avatar_url || def.avatar_url || '',
-          image_url: c.image_url || def.full_url || '',  // For EventPage
-          full_url: c.full_url || def.full_url || '',    // For Editor
+          avatar_url: def.avatar_url || '',
+          image_url: def.full_url || '',  // For EventPage
+          full_url: def.full_url || '',    // For Editor
           expressions,
           expressionList: exprList
         };
@@ -980,7 +981,7 @@ const SupabaseAPI_Raw = {
         .filter(c => characterIds.includes(c.character_id))
         .forEach(c => {
           const exprs = mockDatabase.character_expressions.filter(e => e.character_id === c.character_id);
-          const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+          const def = exprs.find(e => e.name?.toLowerCase() === 'default') || exprs[0] || {};
 
           // Build expressions map
           const expressions = {};
@@ -1014,7 +1015,7 @@ const SupabaseAPI_Raw = {
     return Object.fromEntries(
       (charRes.data || []).map(c => {
         const exprs = exprMap[c.character_id] || [];
-        const def = exprs.find(e => e.name === 'default') || exprs[0] || {};
+        const def = exprs.find(e => e.name?.toLowerCase() === 'default') || exprs[0] || {};
 
         const expressions = {};
         exprs.forEach(e => {

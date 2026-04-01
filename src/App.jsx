@@ -9,6 +9,7 @@ import RegionPage from './pages/RegionPage';
 import EditorPage from './pages/Editor.jsx';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -30,6 +31,11 @@ function ProtectedRoute({ children }) {
 function AppLayout() {
   const location = useLocation();
   const isEditorPage = location.pathname.startsWith('/editor');
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <>

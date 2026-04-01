@@ -16,7 +16,7 @@ export default function HomePage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = 'A9 StoryReader - Home';
+    document.title = 'Civilight Eterna Database - Trang chủ';
     async function loadRegions() {
       try {
         const data = await SupabaseAPI.getRegions();
@@ -35,7 +35,7 @@ export default function HomePage() {
     <main>
       <div className={cx("container")}>
         <div id="info">
-          <h2 className={cx("info-title")}>Chào mừng đến với Arknights Story Reader</h2>
+          <h2 className={cx("info-title")}>Chào mừng đến với Civilight Eterna Database</h2>
           <p className={cx("info-description")}>
             Trang web này được tạo ra nhằm mục đích giúp người chơi Arknights có thể dễ dàng tiếp cận với cốt truyện của trò chơi. Trang cung cấp cho người chơi các đoạn hội thoại, cốt truyện và các thông tin liên quan đến các nhân vật
           </p>

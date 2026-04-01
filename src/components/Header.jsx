@@ -56,7 +56,7 @@ export default function Header() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
           <Link to="/" className="logo">
             <h1 id="web_name">
-              {isScrolled && dynamicTitle ? dynamicTitle : 'Arknights Story Reader VN'}
+              {isScrolled && dynamicTitle ? dynamicTitle : 'Civilight Eterna Database'}
             </h1>
           </Link>
 

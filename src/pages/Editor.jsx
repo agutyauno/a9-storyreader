@@ -151,7 +151,7 @@ export default function EditorPage() {
     // Update Page Title
     useEffect(() => {
         if (metadata.name) {
-            document.title = `Editor: ${metadata.name} - A9 StoryReader`;
+            document.title = `Editor: ${metadata.name} - Civilight Eterna Database`;
         } else {
             document.title = 'A9 Story Editor';
         }
@@ -160,7 +160,6 @@ export default function EditorPage() {
     const [scriptText, setScriptText] = useState('');
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
-    const [doctorNickname, setDoctorNickname] = useState(localStorage.getItem('doctor_nickname') || '');
     const [allCharacters, setAllCharacters] = useState([]);
     const [eventCharacters, setEventCharacters] = useState([]); // Specifically linked to current event
     const [allAssets, setAllAssets] = useState([]);
@@ -307,10 +306,7 @@ export default function EditorPage() {
         return () => clearTimeout(timerId);
     }, [scriptText, metadata.name, editorMode, charCacheMap, assetCacheMap]);
 
-    // Persist Nickname
-    useEffect(() => {
-        localStorage.setItem('doctor_nickname', doctorNickname);
-    }, [doctorNickname]);
+
 
     // Handle Browser-level BeforeUnload
     useEffect(() => {
@@ -598,23 +594,12 @@ export default function EditorPage() {
                                         {previewLoading ? 'Parsing...' : 'Live Preview'}
                                     </span>
                                 </div>
-                                <div className={editorStyles.nicknameInputWrapper}>
-                                    <span className={editorStyles.nicknamePrefix}>Dr.</span>
-                                    <input 
-                                        type="text" 
-                                        className={editorStyles.nicknameInput} 
-                                        value={doctorNickname}
-                                        onChange={(e) => setDoctorNickname(e.target.value)}
-                                        placeholder="@nickname"
-                                    />
-                                </div>
                             </div>
                             <div className={editorStyles.previewBody}>
                                 {previewData?.story_content ? (
                                     <StoryRenderer 
                                         previewData={previewData} 
                                         isPreviewMode={true} 
-                                        doctorNickname={doctorNickname}
                                     />
                                 ) : (
                                     <div className={editorStyles.previewPlaceholder} style={{ background: '#000' }} />

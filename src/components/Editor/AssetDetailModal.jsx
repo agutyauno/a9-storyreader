@@ -90,6 +90,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                     }
                 }
                 setDeletedExprNames(new Set());
+            } else if (asset.category === 'gallery') {
+                // Gallery items have a 'title' column in the gallery table
+                const payload = { title: name.trim() };
+                await SupabaseAPI.updateGallery(asset.asset_id, payload);
             } else {
                 // Table 'assets' only has: asset_id, type, category, url. 'name' is NOT a column.
                 const payload = {};
@@ -129,7 +133,11 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             const targetFileName = asset.asset_id;
             const res = await uploadFileToGithub(file, folder, targetFileName);
             if (res?.success) {
-                await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
+                if (asset.category === 'gallery') {
+                    await SupabaseAPI.updateGallery(asset.asset_id, { image_url: res.url });
+                } else {
+                    await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
+                }
                 onUpdated?.();
                 showNotification('Upload và thay thế thành công!', 'success');
             }
@@ -348,7 +356,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                     <Loader size={24} className={styles.spinner} />
                                 ) : expressions.length > 0 && expressions.find(e => e.full_url) ? (
                                     <img 
-                                        src={expressions.find(e => e.full_url)?.full_url} 
+                                        src={(expressions.find(e => e.name?.toLowerCase() === 'default' && e.full_url) || expressions.find(e => e.full_url))?.full_url} 
                                         alt="Featured Preview" 
                                         style={{ maxHeight: '500px', objectFit: 'contain' }}
                                     />

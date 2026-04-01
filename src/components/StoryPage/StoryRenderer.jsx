@@ -7,7 +7,7 @@ import styles from '../../styles/StoryPage.module.css';
  * A wrapper component that safely renders the converted HTML script.
  * Suitable for both the Live Preview and the main StoryPage. 
  */
-export default function StoryRenderer({ previewData, isPreviewMode, doctorNickname }) {
+export default function StoryRenderer({ previewData, isPreviewMode }) {
     const contentRef = useRef(null);
     const [htmlContent, setHtmlContent] = useState('');
 
@@ -73,25 +73,7 @@ export default function StoryRenderer({ previewData, isPreviewMode, doctorNickna
             contentDiv.scrollTop = contentDiv.scrollHeight;
         }
 
-        // Nickname substitution for preview
-        const updateNickname = () => {
-            const nickname = doctorNickname || '';
-            const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, null);
-            let node;
-            const nodesToUpdate = [];
-            while (node = walker.nextNode()) {
-                if (node.textContent.includes('@nickname') || node.originalText) {
-                    if (!node.originalText) node.originalText = node.textContent;
-                    nodesToUpdate.push(node);
-                }
-            }
-            nodesToUpdate.forEach(n => {
-                n.textContent = nickname ? n.originalText.replace(/@nickname/g, nickname) : n.originalText;
-            });
-        };
-        updateNickname();
-        
-    }, [htmlContent, isPreviewMode, doctorNickname]);
+    }, [htmlContent, isPreviewMode]);
 
     return (
         <div 

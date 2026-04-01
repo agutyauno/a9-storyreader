@@ -109,7 +109,6 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
                 { label: '@decision', type: 'keyword', apply: snippet('@decision ""', -1), detail: 'Choice menu' },
                 { label: '@response', type: 'keyword', apply: snippet('@response "" 1 {\n  \n}', -2), detail: 'Choice response group' },
                 { label: '@section', type: 'keyword', detail: 'Break into chunks' },
-                { label: '@nickname', type: 'variable', detail: 'Shorthand for player name' },
             ];
             return {
                 from: word.from,

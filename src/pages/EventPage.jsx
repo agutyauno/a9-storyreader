@@ -13,6 +13,7 @@ export default function EventPage() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [arcRegionId, setArcRegionId] = useState(null);
+  const [regionName, setRegionName] = useState('');
   const [stories, setStories] = useState([]);
   const [characters, setCharacters] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -38,12 +39,16 @@ export default function EventPage() {
         const ev = await SupabaseAPI.getEvent(id);
         if (ev) {
           setEvent(ev);
-          document.title = `${ev.name} - A9 StoryReader`;
+          document.title = `${ev.name} - Civilight Eterna Database`;
         }
 
         if (ev && ev.arc_id) {
           const arc = await SupabaseAPI.getArc(ev.arc_id);
-          if (arc) setArcRegionId(arc.region_id);
+          if (arc) {
+            setArcRegionId(arc.region_id);
+            const region = await SupabaseAPI.getRegion(arc.region_id);
+            if (region) setRegionName(region.name);
+          }
         }
 
         const [st, ch, ga] = await Promise.all([
@@ -71,7 +76,7 @@ export default function EventPage() {
         setCharacters(formattedCharacters);
         setGallery(formattedGallery);
 
-        if (ev) document.title = `${ev.name} - Arknights Story Reader VN`;
+        if (ev) document.title = `${ev.name} - Civilight Eterna Database`;
       } catch (err) {
         console.error('Error loading event:', err);
         setError('Đã xảy ra lỗi khi tải dữ liệu.');
@@ -134,7 +139,7 @@ export default function EventPage() {
         <div className={cx("container")}>
           {arcRegionId && (
             <Link className={cx("back-to-region-btn")} to={`/region/${arcRegionId}`} aria-label="Quay lại trang region">
-              ← Quay lại Region
+              ← Quay về {regionName || 'Region'}
             </Link>
           )}
 

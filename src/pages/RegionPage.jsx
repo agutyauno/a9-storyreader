@@ -24,7 +24,7 @@ export default function RegionPage() {
         const reg = await SupabaseAPI.getRegion(id);
         if (reg) {
           setRegion(reg);
-          document.title = `${reg.name} - A9 StoryReader`;
+          document.title = `${reg.name} - Civilight Eterna Database`;
         }
 
         const arcs = await SupabaseAPI.getArcsByRegion(id);

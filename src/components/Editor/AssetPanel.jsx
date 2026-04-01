@@ -146,21 +146,6 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
             setCharacters(charData);
             setGallery(galleryData);
 
-            // Batch load expressions for characters to get avatar previews
-            try {
-                const charIds = (charData || []).map(c => c.character_id).filter(Boolean);
-                if (charIds.length) {
-                    const exprMap = await SupabaseAPI.getExpressionsByCharacters(charIds);
-                    const map = {};
-                    for (const id of Object.keys(exprMap)) {
-                        const arr = exprMap[id] || [];
-                        if (arr.length) map[id] = arr[0].avatar_url || arr[0].full_url || null;
-                    }
-                    setAvatarMap(map);
-                }
-            } catch (err) {
-                console.warn('Batch expressions load failed:', err);
-            }
         } catch (err) {
             console.error('Failed to load assets/characters:', err);
         } finally {
@@ -303,7 +288,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                                     character={item} 
                                     onDetail={openCharacterDetail} 
                                     onDelete={handleDelete}
-                                    avatarUrl={avatarMap[item.character_id]} 
+                                    avatarUrl={item.avatar_url || item.full_url} 
                                 />
                             ) : (
                                 <AssetCard 

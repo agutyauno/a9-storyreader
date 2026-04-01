@@ -306,7 +306,7 @@ p {
 }
 
 .dialogue-content {
-    background-color: #1a1a1a90;
+    background-color: rgba(0, 0, 0, 0.8);
     padding: 1rem 1rem;
     display: flex;
     flex-direction: column;

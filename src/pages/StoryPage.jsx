@@ -23,6 +23,11 @@ export default function StoryPage() {
   const [sidebarActive, setSidebarActive] = useState(false);
   const [modalData, setModalData] = useState(null); // { type: 'character'|'background', src: '' }
 
+  // Auto-close sidebar when story changes
+  useEffect(() => {
+    setSidebarActive(false);
+  }, [id]);
+
   // Audio State
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [audioVolume, setAudioVolume] = useState(100);
@@ -61,7 +66,7 @@ export default function StoryPage() {
 
         // Update title
         if (fetchedStory?.name) {
-          document.title = `${fetchedStory.name} - A9 StoryReader`;
+          document.title = `${fetchedStory.name} - Civilight Eterna Database`;
         }
 
         if (fetchedStory.event_id) {
@@ -114,35 +119,7 @@ export default function StoryPage() {
 
     const contentDiv = contentRef.current;
 
-    // 1. Nickname substitution
-    const docInput = document.getElementById('dr-nickname-input');
-    const updateNickname = () => {
-      const nickname = docInput?.value.trim() || '';
-      localStorage.setItem('doctor_nickname', nickname);
-      // We manually traverse text nodes inside contentRef like the legacy script:
-      const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, null);
-      let node;
-      const nodesToUpdate = [];
-      while (node = walker.nextNode()) {
-        if (node.textContent.includes('@nickname') || node.originalText) {
-          if (!node.originalText) node.originalText = node.textContent;
-          nodesToUpdate.push(node);
-        }
-      }
-      nodesToUpdate.forEach(n => {
-        n.textContent = nickname ? n.originalText.replace(/@nickname/g, nickname) : n.originalText;
-      });
-    };
-    if (docInput) {
-      const saved = localStorage.getItem('doctor_nickname');
-      if (saved) {
-        docInput.value = saved;
-        updateNickname();
-      }
-      docInput.addEventListener('input', updateNickname);
-    }
-
-    // 2. Decision Choices
+    // 1. Decision Choices
     const decisionGroups = contentDiv.querySelectorAll(`.${styles['decision-group'] || 'decision-group'}`);
     decisionGroups.forEach(group => {
       const groupId = group.getAttribute('data-choice-group');
@@ -350,7 +327,6 @@ export default function StoryPage() {
         <div className={styles['container']}>
           <div id="info" className={styles['info']}>
             <div className={styles['info-header']}>
-              <p id="dr-name" className={styles['dr-name']}>Dr. <input type="text" id="dr-nickname-input" placeholder="@nickname" /></p>
               <h2 className={styles['info-title']}>{story.name}</h2>
             </div>
             <p className={styles['info-description']}>{story.description}</p>
@@ -359,8 +335,8 @@ export default function StoryPage() {
           <div id="story-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: htmlContent }} />
 
           <div className={styles['switch-chapter-button']}>
-            <button className={styles['prevous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương trước</button>
-            <button className={styles['next']} disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương sau</button>
+            <button className={styles['prevous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương Trước</button>
+            <button className={styles['next']} disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương Sau</button>
           </div>
         </div>
       </main>

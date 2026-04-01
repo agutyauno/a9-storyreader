@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="footer-content">
         <div className="footer-section">
           <h3>Về Dự Án</h3>
-          <p>Arknights Story Reader VN là một dự án phi lợi nhuận nhằm mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.</p>
+          <p>Civilight Eterna Database là một dự án phi lợi nhuận nhằm mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.</p>
         </div>
         <div className="footer-section">
           <h3>Nhóm Dịch</h3>
