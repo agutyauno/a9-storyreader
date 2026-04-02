@@ -46,7 +46,13 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         try {
             const charId = asset.character_id || asset.asset_id;
             const data = await SupabaseAPI.getExpressionsByCharacter(charId);
-            setExpressions(data);
+            // Ensure every expression has a unique ID for UI state management.
+            // If the DB doesn't provide an 'id', we generate one.
+            const dataWithIds = data.map((e, index) => ({
+                ...e,
+                id: e.id || `db-${index}-${Date.now()}`
+            }));
+            setExpressions(dataWithIds);
         } catch (err) {
             console.error('Load expressions failed:', err);
         } finally {

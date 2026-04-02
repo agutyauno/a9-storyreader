@@ -14,14 +14,14 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
  */
 export function getAssetUrl(path) {
   if (!path) return '';
-  
+
   // If it's already an absolute URL (http/https) or a data URI, return as is
   if (path.startsWith('http') || path.startsWith('data:')) {
     return path;
   }
-  
+
   const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-  
+
   // Idempotency check: if the path already starts with the base URL, return as is
   // (Handling both /base/path and base/path)
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;

@@ -148,15 +148,6 @@ export default function EditorPage() {
         story_id: null,
     });
 
-    // Update Page Title
-    useEffect(() => {
-        if (metadata.name) {
-            document.title = `Editor: ${metadata.name} - Civilight Eterna Database`;
-        } else {
-            document.title = 'A9 Story Editor';
-        }
-    }, [metadata.name]);
-
     const [scriptText, setScriptText] = useState('');
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
@@ -165,6 +156,16 @@ export default function EditorPage() {
     const [allAssets, setAllAssets] = useState([]);
     const [initialScript, setInitialScript] = useState('');
     const isDirty = scriptText !== initialScript;
+
+    // Update Page Title
+    useEffect(() => {
+        const prefix = isDirty ? '* ' : '';
+        if (metadata.name) {
+            document.title = `${prefix}Editor: ${metadata.name} - Civilight Eterna Database`;
+        } else {
+            document.title = `${prefix}A9 Story Editor`;
+        }
+    }, [metadata.name, isDirty]);
 
     // Unsaved Changes Modal State
     const [unsavedModalOpen, setUnsavedModalOpen] = useState(false);
@@ -220,9 +221,14 @@ export default function EditorPage() {
                     event_id: item.event_id ?? null,
                     story_id: item.story_id,
                 });
-                const text = item.story_content
-                    ? StoryScriptSerializer.serialize(item.story_content)
-                    : '';
+                let text = '';
+                if (item.story_content) {
+                    if (item.story_content.type === 'vns') {
+                        text = item.story_content.script || '';
+                    } else {
+                        text = StoryScriptSerializer.serialize(item.story_content);
+                    }
+                }
                 setScriptText(text);
                 setInitialScript(text); // Track initial state
                 setEditorMode('story');
@@ -361,13 +367,17 @@ export default function EditorPage() {
     const handleSave = async (silent = false) => {
         setSaving(true);
         try {
-            const parsed = await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
+            // Keep parseWithDB to validate syntax, but discard the result for saving.
+            // If it throws an error, the save will abort.
+            await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
+            
             const payload = {
                 name: metadata.name,
                 description: metadata.description,
                 display_order: metadata.display_order,
                 event_id: metadata.event_id,
-                story_content: parsed, 
+                // V2 Format: Save the raw script text instead of parsed JSON
+                story_content: { type: 'vns', script: scriptText }, 
             };
 
             if (metadata.story_id) {
@@ -460,6 +470,7 @@ export default function EditorPage() {
                         {editorMode === 'entity' && selectedEntity
                             ? selectedEntity.name
                             : (metadata.story_id ? metadata.name : 'New Story')}
+                        {isDirty && <span className={editorStyles.dirtyStar}>*</span>}
                         <span>
                             {editorMode === 'entity'
                                 ? selectedEntity?.type?.charAt(0).toUpperCase() + selectedEntity?.type?.slice(1)
@@ -475,7 +486,7 @@ export default function EditorPage() {
                                 <ExternalLink size={16} />
                                 <span className={editorStyles.btnText}>Full Preview</span>
                             </button>
-                            <button onClick={handleSave} className={editorStyles.btnPrimary} disabled={saving}>
+                            <button onClick={handleSave} className={`${editorStyles.btnPrimary} ${isDirty ? editorStyles.dirty : ''}`} disabled={saving}>
                                 {saving
                                     ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
                                     : <Save size={16} />
@@ -540,8 +551,8 @@ export default function EditorPage() {
                             </div>
                         </>
                     ) : selectedEntity ? (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-secondary)', padding: '20px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{selectedEntity.name}</div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', color: 'var(--color-text-secondary)', padding: '20px', textAlign: 'center', overflowY: 'auto' }}>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', marginTop: '20px' }}>{selectedEntity.name}</div>
                             <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginBottom: '16px' }}>{selectedEntity.type?.toUpperCase()}</div>
                             <p style={{ maxWidth: '400px', lineHeight: '1.6' }}>{selectedEntity.description || "No description available."}</p>
                             

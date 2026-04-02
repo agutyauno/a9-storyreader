@@ -133,6 +133,29 @@
     background: var(--color-accent);
 }
 
+.btnPrimary.dirty {
+    background: #f59e0b; /* Amber/Orange color */
+    color: #fff;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.btnPrimary.dirty:hover {
+    background: #ea580c;
+}
+
+.dirtyStar {
+    color: #f59e0b;
+    margin-left: 6px;
+    font-size: 20px;
+    font-weight: bold;
+    animation: pulse-dirty 2s infinite;
+}
+
+@keyframes pulse-dirty {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 .btnPrimary:active {
     transform: scale(0.96);
 }

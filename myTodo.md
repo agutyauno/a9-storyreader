@@ -4,7 +4,7 @@
 - khắc phục khi chuyển trang sẽ bị kéo xuống footer (từ home -> region hay region -> story) (done)
 - title của gallery không thay đổi được (done)
 - chỉnh sửa chính tả trên nút chuyển chap (done)
-- khắc phục lỗi hiển thị cho gallery manager trong trang editor
+- khắc phục lỗi hiển thị cho gallery manager trong trang editor (done)
 - cải thiện responsive cho mobile 
 ## sẽ làm
 - sửa lại @sfx

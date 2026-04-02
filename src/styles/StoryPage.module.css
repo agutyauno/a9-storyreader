@@ -882,16 +882,17 @@ p {
     }
 
     .dialogue {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
+        line-height: 1.4;
     }
 
     .narrator-box {
-        margin: 0 calc(4rem + var(--spacing-xs));
-        /* Synchronize with smaller mobile avatars */
+        margin: 0 3rem;
     }
 
     .narrator-text {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
+        line-height: 1.5;
     }
 
     /* Navigation */
@@ -947,8 +948,8 @@ p {
 /* Small Mobile */
 @media (max-width: 480px) {
     .character_avt {
-        width: 3rem;
-        height: 3rem;
+        width: 2.8rem;
+        height: 2.8rem;
     }
 
     .chapter-sidebar {

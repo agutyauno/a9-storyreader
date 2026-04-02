@@ -18,7 +18,7 @@
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    overflow: auto;
+    overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -146,8 +146,8 @@
 }
 
 .grid {
-    height: max-content;
     flex: 1;
+    overflow-y: auto;
     padding: var(--spacing-xl);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

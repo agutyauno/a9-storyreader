@@ -35,14 +35,19 @@ export default function StoryPage() {
 
   useEffect(() => {
     async function fetchStoryData() {
-      // Handle preview mode
       const queryParams = new URLSearchParams(location.search);
       if (queryParams.get('preview')) {
         const raw = sessionStorage.getItem('preview_story');
         if (raw) {
           const previewStory = JSON.parse(raw);
           setStory(previewStory);
-          setHtmlContent(StoryRenderer.render(previewStory.story_content, styles));
+          
+          let contentToRender = previewStory.story_content;
+          if (contentToRender && contentToRender.type === 'vns') {
+            contentToRender = await StoryScriptParser.parseWithDB(contentToRender.script);
+          }
+          
+          setHtmlContent(StoryRenderer.render(contentToRender, styles));
           setLoading(false);
           return;
         }
@@ -76,7 +81,13 @@ export default function StoryPage() {
           setAllStories(stories);
         }
 
-        setHtmlContent(StoryRenderer.render(fetchedStory.story_content, styles));
+        // Handle dynamic v2 format vs legacy JSON format
+        let contentToRender = fetchedStory.story_content;
+        if (contentToRender && contentToRender.type === 'vns') {
+           contentToRender = await StoryScriptParser.parseWithDB(contentToRender.script);
+        }
+
+        setHtmlContent(StoryRenderer.render(contentToRender, styles));
       } catch (err) {
         console.error(err);
         setError('Đã xảy ra lỗi khi tải dữ liệu.');
