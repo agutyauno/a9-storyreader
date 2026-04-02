@@ -60,7 +60,7 @@ export default function Header() {
             </h1>
           </Link>
 
-          {user && (
+          {user && location.pathname.startsWith('/editor') && (
             <button 
               onClick={handleLogout}
               className="logout-button"

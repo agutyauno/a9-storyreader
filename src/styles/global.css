@@ -244,9 +244,9 @@ header.scrolled .subtitle {
 }
 
 .selection-panel-item img {
-    width: 7.5rem;
-    height: 7.5rem;
-    object-fit: cover;
+    height: 8rem;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
     border-radius: var(--radius-base);
     flex-shrink: 0;
 }

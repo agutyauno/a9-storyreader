@@ -228,8 +228,14 @@ p {
     top: 4.5rem !important;
     z-index: 0;
     width: 100%;
-    height: calc(100vh - 4.5rem);
-    align-self: start;
+    /* Bằng chiều cao của đoạn thoại chứa trong nó */
+    height: 100%;
+    /* Ngừng dài ra nếu vượt quá màn hình -> Chuyển sang chế độ Parallax */
+    max-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
 }
 
@@ -247,7 +253,8 @@ p {
 .background-wrapper .background-image {
     position: relative;
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: 100vh; /* Không bao giờ vượt quá màn hình */
     object-fit: contain;
     box-shadow: var(--shadow-lg);
     display: block;
@@ -332,7 +339,7 @@ p {
 
 /* Narrator Style */
 .narrator-box .dialogue-content {
-    background-color: #1a1a1a90;
+    background-color: rgba(20, 20, 20, 0.8);
     padding: 1rem 1rem;
     display: flex;
     justify-content: center;
@@ -864,7 +871,8 @@ p {
     .background-wrapper {
         top: 3.5rem !important;
         /* Matches new compact header height */
-        height: calc(100vh - 3.5rem);
+        height: 100%;
+        max-height: calc(100vh - 3.5rem);
     }
 
     .dialogue-container {
@@ -887,19 +895,20 @@ p {
     }
 
     .narrator-box {
-        margin: 0 3rem;
+        margin: 0 calc(3.5rem - var(--spacing-xs));
     }
 
     .narrator-text {
         font-size: var(--font-size-sm);
-        line-height: 1.5;
+        line-height: 1.4;
     }
 
     /* Navigation */
     .switch-chapter-button {
-        flex-direction: column;
-        padding: var(--spacing-lg) var(--spacing-base);
-        gap: var(--spacing-base);
+        flex-direction: row;
+        padding: var(--spacing-lg) var(--spacing-sm);
+        gap: var(--spacing-sm);
+        justify-content: space-between;
     }
 
     .switch-chapter-button button {
