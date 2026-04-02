@@ -29,6 +29,29 @@ const handleAuthError = (error) => {
   throw error;
 };
 
+/** 
+ * Strips the GitHub/jsDelivr prefix to store only the relative path in the DB 
+ */
+const cleanUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  
+  const prefixes = [
+    'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/',
+    'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/',
+    'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/',
+    'https://cdn.jsdelivr.net/gh/agutyauno/a9-storyreader@main/'
+  ];
+  
+  let cleaned = url;
+  for (const p of prefixes) {
+    if (cleaned.startsWith(p)) {
+      cleaned = '/' + cleaned.slice(p.length);
+      break;
+    }
+  }
+  return cleaned;
+};
+
 const SupabaseAPI_Raw = {
   // ===========================================================================
   // REGIONS
@@ -54,7 +77,10 @@ const SupabaseAPI_Raw = {
       mockDatabase.regions.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('regions').insert(payload).select().single();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    
+    const { data, error } = await supabase.from('regions').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
   },
@@ -66,7 +92,10 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.regions[idx], payload);
       return mockDatabase.regions[idx];
     }
-    const { data, error } = await supabase.from('regions').update(payload).eq('region_id', regionId).select();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+
+    const { data, error } = await supabase.from('regions').update(cleanPayload).eq('region_id', regionId).select();
     if (error) throw error;
     return data?.[0] || null;
   },
@@ -170,7 +199,10 @@ const SupabaseAPI_Raw = {
       mockDatabase.events.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('events').insert(payload).select().single();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+
+    const { data, error } = await supabase.from('events').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
   },
@@ -182,7 +214,10 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.events[idx], payload);
       return mockDatabase.events[idx];
     }
-    const { data, error } = await supabase.from('events').update(payload).eq('event_id', eventId).select();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+
+    const { data, error } = await supabase.from('events').update(cleanPayload).eq('event_id', eventId).select();
     if (error) throw error;
     return data?.[0] || null;
   },
@@ -513,7 +548,11 @@ const SupabaseAPI_Raw = {
       mockDatabase.character_expressions.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('character_expressions').insert(payload).select().single();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+
+    const { data, error } = await supabase.from('character_expressions').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
   },
@@ -525,8 +564,12 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.character_expressions[idx], payload);
       return mockDatabase.character_expressions[idx];
     }
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+
     const { data, error } = await supabase.from('character_expressions')
-        .update(payload)
+        .update(cleanPayload)
         .match({ character_id: characterId, name: name })
         .select()
         .single();
@@ -619,7 +662,10 @@ const SupabaseAPI_Raw = {
       mockDatabase.assets.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('assets').insert(payload).select().single();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.url) cleanPayload.url = cleanUrl(cleanPayload.url);
+
+    const { data, error } = await supabase.from('assets').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
   },
@@ -631,7 +677,10 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.assets[idx], payload);
       return mockDatabase.assets[idx];
     }
-    const { data, error } = await supabase.from('assets').update(payload).eq('asset_id', assetId).select().single();
+    const cleanPayload = { ...payload };
+    if (cleanPayload.url) cleanPayload.url = cleanUrl(cleanPayload.url);
+
+    const { data, error } = await supabase.from('assets').update(cleanPayload).eq('asset_id', assetId).select().single();
     if (error) throw error;
     return data;
   },
@@ -702,7 +751,7 @@ const SupabaseAPI_Raw = {
       gallery_id: galleryId,
       event_id: payload.event_id,
       title: payload.title,
-      image_url: payload.image_url,
+      image_url: cleanUrl(payload.image_url),
       display_order: payload.display_order || 0
     };
 
@@ -745,8 +794,11 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.gallery[idx], payload);
       return mockDatabase.gallery[idx];
     }
+    const cleanPayload = { ...payload };
+    if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+
     const { data, error } = await supabase.from('gallery')
-        .update(payload)
+        .update(cleanPayload)
         .eq('gallery_id', galleryId)
         .select()
         .single();

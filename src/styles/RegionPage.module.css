@@ -5,6 +5,10 @@
 	background-color: var(--color-border);
 }
 
+.info-description {
+	white-space: pre-wrap;
+}
+
 
 /* ================================================================================================= */
 /* Arc Sections Layout */

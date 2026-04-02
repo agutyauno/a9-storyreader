@@ -69,12 +69,13 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
             };
         }
 
-        // The URL format based on JsDelivr or GitHub raw
-        const rawUrl = `https://raw.githubusercontent.com/agutyauno/a9sr-data/main/${data.path}`;
-
+        // Standardize the relative path with a leading slash
+        const relativePath = data.path.startsWith('/') ? data.path : `/${data.path}`;
+        const rawUrl = `https://raw.githubusercontent.com/agutyauno/a9sr-data/main${relativePath}`;
+        
         return {
             success: true,
-            path: data.path,
+            path: relativePath,
             url: rawUrl
         };
     } catch (err) {
@@ -93,14 +94,20 @@ export const deleteFileFromGithub = async (url) => {
     if (!url) return { success: true };
     
     // Extract path from URL: https://raw.githubusercontent.com/agutyauno/a9sr-data/main/path/to/file
-    let fullPath = url;
-    if (url.includes('/main/')) {
-        fullPath = url.split('/main/')[1];
-    } else if (url.includes('githubusercontent.com')) {
-        const parts = url.split('/');
-        const mainIndex = parts.indexOf('main');
-        if (mainIndex !== -1) {
-            fullPath = parts.slice(mainIndex + 1).join('/');
+    // Or handle it if it is already a relative path /path/to/file
+    let fullPath = url.startsWith('/') ? url.slice(1) : url;
+    
+    if (url.includes('githubusercontent.com') || url.includes('cdn.jsdelivr.net')) {
+        const repoMarker = url.includes('/main/') ? '/main/' : (url.includes('@main/') ? '@main/' : null);
+        if (repoMarker) {
+            fullPath = url.split(repoMarker)[1];
+        } else {
+            // Fallback for other GitHub/JsDelivr structures
+            const parts = url.split('/');
+            const branchIndex = parts.findIndex(p => p === 'main' || p.includes('@main'));
+            if (branchIndex !== -1) {
+                fullPath = parts.slice(branchIndex + 1).join('/');
+            }
         }
     }
 
@@ -183,11 +190,14 @@ export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
             throw new Error(error?.message || data?.error || 'Bulk upload failed');
         }
 
-        // Map results back to usable URLs
-        const resultFiles = preparedFiles.map(f => ({
-            path: f.path,
-            url: `https://raw.githubusercontent.com/agutyauno/a9sr-data/main/${f.path}`
-        }));
+        // Map results back to usable URLs and relative paths
+        const resultFiles = preparedFiles.map(f => {
+            const relativePath = f.path.startsWith('/') ? f.path : `/${f.path}`;
+            return {
+                path: relativePath,
+                url: `https://raw.githubusercontent.com/agutyauno/a9sr-data/main${relativePath}`
+            };
+        });
 
         return {
             success: true,

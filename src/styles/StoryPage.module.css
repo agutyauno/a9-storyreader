@@ -441,6 +441,10 @@ p {
     border-radius: var(--radius-base) var(--radius-base) 0 0;
 }
 
+.info-description {
+    white-space: pre-wrap;
+}
+
 .info-header {
     position: relative;
 }
