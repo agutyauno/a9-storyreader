@@ -40,20 +40,20 @@ export default function HomePage() {
             Trang web này được tạo ra nhằm mục đích giúp người chơi Arknights có thể dễ dàng tiếp cận với cốt truyện của trò chơi. Trang cung cấp cho người chơi các đoạn hội thoại, cốt truyện và các thông tin liên quan đến các nhân vật
           </p>
         </div>
-        
+
         {/* Tab buttons */}
         <div className={cx("tab-buttons")}>
-          <button 
+          <button
             className={cx(`tab-button ${activeTab === 'regions-tab' ? 'active' : ''}`)}
             onClick={() => setActiveTab('regions-tab')}
           >
             Cốt Truyện Khu Vực
           </button>
-          <button 
+          <button
             className={cx(`tab-button ${activeTab === 'operators-tab' ? 'active' : ''}`)}
             onClick={() => setActiveTab('operators-tab')}
           >
-            Câu Truyện Operator
+            Danh Sách Cán Viên
           </button>
         </div>
 
@@ -68,14 +68,14 @@ export default function HomePage() {
                   <p className={cx("no-data")}>Chưa có dữ liệu khu vực.</p>
                 )}
                 {!loading && !error && regions.length > 0 && regions.map(region => (
-                  <Link 
-                    key={region.region_id} 
-                    className={cx("selection-panel-item")} 
+                  <Link
+                    key={region.region_id}
+                    className={cx("selection-panel-item")}
                     to={`/region/${region.region_id}`}
                   >
-                    <img 
-                      src={getAssetUrl(region.icon_url || '/assets/images/icon/default.png')} 
-                      alt={region.name} 
+                    <img
+                      src={getAssetUrl(region.icon_url || '/assets/images/icon/default.png')}
+                      alt={region.name}
                     />
                     <div className={cx("selection-content")}>
                       <p className={cx("region_name name")}>{region.name}</p>
