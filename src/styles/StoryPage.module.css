@@ -251,36 +251,44 @@ p {
 }
 
 .background-wrapper .background-image {
-    position: relative;
     width: 100%;
     height: auto;
-    max-height: 100vh; /* Không bao giờ vượt quá màn hình */
-    object-fit: contain;
+    max-height: 100vh;
+    object-fit: cover;
     box-shadow: var(--shadow-lg);
     display: block;
     margin: 0 auto;
+}
+
+.image-container {
+    max-height: 100vh;
+    position: relative;
+    display: inline-block;
+    width: 100%;
     z-index: 1;
 }
 
 .background-wrapper .expand-icon {
     position: absolute;
-    top: var(--spacing-xl);
-    right: var(--spacing-sm);
-    width: 2.5rem;
-    height: 2.5rem;
+    top: 8px;
+    right: 8px;
+    width: 2rem;
+    height: 2rem;
     cursor: pointer;
     background-color: #1a1a1a90;
+    border-radius: 4px;
     z-index: 5;
     opacity: 0.8;
-    transition: opacity var(--transition-base);
+    transition: opacity var(--transition-base), transform var(--transition-base);
 }
 
-.background-wrapper:hover .expand-icon {
+.image-container:hover .expand-icon {
     opacity: 1;
+    transform: scale(1.1);
 }
 
 .dialogue-container {
-    width: 90%;
+    width: 94%;
     grid-area: content;
     z-index: 10;
     display: flex;
@@ -310,6 +318,15 @@ p {
 .character_avt:hover {
     opacity: 0.8;
     transform: scale(1.05);
+}
+
+.character_avt.no-click {
+    cursor: default;
+}
+
+.character_avt.no-click:hover {
+    opacity: 1;
+    transform: none;
 }
 
 .dialogue-content {
@@ -879,6 +896,17 @@ p {
         max-height: calc(100vh - 3.5rem);
     }
 
+    .image-container {
+        display: block;
+    }
+
+    .background-wrapper .expand-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        top: 6px;
+        right: 6px;
+    }
+
     .dialogue-container {
         width: 88%;
         padding: var(--spacing-xl) 0 var(--spacing-base) 0;
@@ -894,8 +922,12 @@ p {
     }
 
     .dialogue {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xs);
         line-height: 1.4;
+    }
+
+    .character_name {
+        font-size: var(--font-size-xs);
     }
 
     .narrator-box {
@@ -903,7 +935,7 @@ p {
     }
 
     .narrator-text {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xs);
         line-height: 1.4;
     }
 

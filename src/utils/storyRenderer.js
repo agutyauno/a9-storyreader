@@ -126,8 +126,10 @@ export const StoryRenderer = {
       <section class="${cx('dialogue-background', styles)}" ${bgmAttrs}>
         <div class="${cx('background-wrapper', styles)}">
           <img class="${cx('background-blur', styles)}" src="${bgUrl}" alt="">
-          <img class="${cx('background-image', styles)}" src="${bgUrl}" alt="">
-          <img class="${cx('expand-icon', styles)}" src="${getAssetUrl('/assets/images/web icon/expand.png')}" alt="">
+          <div class="${cx('image-container', styles)}">
+            <img class="${cx('background-image', styles)}" src="${bgUrl}" alt="">
+            <img class="${cx('expand-icon', styles)}" src="${getAssetUrl('/assets/images/web icon/expand.png')}" alt="">
+          </div>
         </div>
         <div class="${cx('dialogue-container', styles)}">
           ${dialogues}
@@ -173,7 +175,7 @@ export const StoryRenderer = {
 
     return `
       <div class="${cx('dialogue-box', styles)}">
-        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
+        <img class="${cx(`character_avt ${!leftFull ? 'no-click' : ''}`, styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
         <div class="${cx('dialogue-content', styles)}">
           ${(() => {
             const { char } = this._resolveCharAndExpr(dialogue.name);
@@ -183,7 +185,7 @@ export const StoryRenderer = {
           })()}
           <p class="${cx('dialogue', styles)}">${dialogue.text || ''}</p>
         </div>
-        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+        <img class="${cx(`character_avt ${!rightFull ? 'no-click' : ''}`, styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>
     `;
   },
@@ -210,11 +212,11 @@ export const StoryRenderer = {
 
     return `
       <div class="${cx('dialogue-box decision-group', styles)}" data-choice-group="${decision.group_id}">
-        <img class="${cx('character_avt', styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
+        <img class="${cx(`character_avt ${!leftFull ? 'no-click' : ''}`, styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
         <div class="${cx('dialogue-content decision-choice', styles)}">
           ${choices}
         </div>
-        <img class="${cx('character_avt', styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
+        <img class="${cx(`character_avt ${!rightFull ? 'no-click' : ''}`, styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>
     `;
   },

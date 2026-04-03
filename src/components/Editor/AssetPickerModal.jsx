@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader, Image as ImageIcon, Music, Video, Plus } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
+import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './AssetPickerModal.module.css';
 import AddAssetModal from './AddAssetModal';
 
@@ -137,7 +138,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
 
     const renderThumb = (asset) => {
         if (asset.type === 'character' || asset.type === 'image') {
-            return <img src={asset.url} alt={asset.name} loading="lazy" />;
+            return <img src={getAssetUrl(asset.url)} alt={asset.name} loading="lazy" />;
         }
         if (asset.type === 'video') return <Video size={24} />;
         if (asset.type === 'audio') return <Music size={24} />;

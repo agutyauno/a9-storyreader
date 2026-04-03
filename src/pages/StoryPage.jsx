@@ -154,9 +154,8 @@ export default function StoryPage() {
     const avatars = contentDiv.querySelectorAll(`.${styles['character_avt'] || 'character_avt'}`);
     avatars.forEach(av => {
       av.addEventListener('click', () => {
-        let src = av.getAttribute('src');
-        if (!src || src.includes('blank.png')) return;
-        let fullSrc = av.getAttribute('data-full-image') || src.replace('_avatar.webp', '.png').replace('_avatar.png', '.png');
+        const fullSrc = av.getAttribute('data-full-image');
+        if (!fullSrc) return;
         setModalData({ type: 'character', src: fullSrc });
       });
     });

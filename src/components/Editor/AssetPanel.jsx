@@ -3,6 +3,7 @@ import { Plus, Search, Loader, Trash2, Copy, Edit2, Music, Image, Video, Film, U
 import { SupabaseAPI } from '../../services/supabaseApi';
 import AssetDetailModal from './AssetDetailModal';
 import ConfirmModal from './ConfirmModal';
+import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './AssetPanel.module.css';
 
 // ─── Category config (matches legacy) ─────────────────────────────────────────
@@ -45,7 +46,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
         <div className={styles.card} onClick={() => onDetail?.(asset)}>
             {/* Preview area */}
             <div className={styles.cardPreview} onClick={isAudio ? toggleAudio : undefined}>
-                {isImage && <img src={asset.url} alt={asset.name} loading="lazy" />}
+                {isImage && <img src={getAssetUrl(asset.url)} alt={asset.name} loading="lazy" />}
                 {isVideo && (
                     <div className={styles.videoThumb}>
                         <Video size={24} />
@@ -55,7 +56,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
                     <div className={`${styles.audioThumb} ${playing ? styles.playing : ''}`}>
                         <Music size={20} />
                         {playing && <span className={styles.playingDot} />}
-                        <audio ref={audioRef} src={asset.url} loop={false} onEnded={() => setPlaying(false)} />
+                        <audio ref={audioRef} src={getAssetUrl(asset.url)} loop={false} onEnded={() => setPlaying(false)} />
                     </div>
                 )}
             </div>
@@ -94,7 +95,7 @@ function CharacterCard({ character, onDetail, onDelete, avatarUrl }) {
         <div className={styles.card} onClick={() => onDetail?.(character)}>
             <div className={styles.cardPreview}>
                 {avatarUrl ? (
-                    <img src={avatarUrl} alt={character.name} loading="lazy" />
+                    <img src={getAssetUrl(avatarUrl)} alt={character.name} loading="lazy" />
                 ) : (
                     <UserSquare2 size={24} />
                 )}

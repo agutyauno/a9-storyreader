@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, User, Image as ImageIcon, Loader } from 'lucide-react';
+import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './AssetPreviewModal.module.css';
 
 /**
@@ -45,7 +46,7 @@ export default function AssetPreviewModal({ isOpen, asset, kind = 'asset', onClo
 
                 <div className={styles.imageContainer}>
                     {previewUrl ? (
-                        <img src={previewUrl} alt={title} />
+                        <img src={getAssetUrl(previewUrl)} alt={title} />
                     ) : (
                         <div className={styles.placeholder}>
                             {isCharacter ? <User size={120} /> : <ImageIcon size={120} />}

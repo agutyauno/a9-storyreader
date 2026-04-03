@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Check, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import styles from './AddItemModal.module.css';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
+import { getAssetUrl } from '../../utils/assetUtils';
 
 /**
  * Modal dialog for creating a new Region, Arc, Event, or Story.
@@ -180,7 +181,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             </div>
                             {imageUrl && (
                                 <div className={styles.imagePreview}>
-                                    <img src={imageUrl} alt="Preview" />
+                                    <img src={getAssetUrl(imageUrl)} alt="Preview" />
                                 </div>
                             )}
                         </div>

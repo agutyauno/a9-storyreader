@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, Check, Alert
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
 import ConfirmModal from './ConfirmModal';
+import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './AssetDetailModal.module.css';
 
 /**
@@ -27,6 +28,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const [deletedExprIds, setDeletedExprIds] = useState(new Set());
     const [category, setCategory] = useState('');
     const [error, setError] = useState(null);
+    const [previewImage, setPreviewImage] = useState(null); // URL of image to show in lightbox
 
     // Confirm Modal
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -324,9 +326,9 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                         <div className={styles.section}>
                             <h4>Preview</h4>
                             <div className={styles.previewContainer}>
-                                {asset.type === 'image' && <img src={asset.url} alt={asset.name} />}
-                                {asset.type === 'video' && <video src={asset.url} controls />}
-                                {asset.type === 'audio' && <audio src={asset.url} controls style={{ width: '100%' }} />}
+                                {asset.type === 'image' && <img src={getAssetUrl(asset.url)} alt={asset.name} />}
+                                {asset.type === 'video' && <video src={getAssetUrl(asset.url)} controls />}
+                                {asset.type === 'audio' && <audio src={getAssetUrl(asset.url)} controls style={{ width: '100%' }} />}
                             </div>
                             <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
                                 <input
@@ -362,7 +364,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                     <Loader size={24} className={styles.spinner} />
                                 ) : expressions.length > 0 && expressions.find(e => e.full_url) ? (
                                     <img 
-                                        src={(expressions.find(e => e.name?.toLowerCase() === 'default' && e.full_url) || expressions.find(e => e.full_url))?.full_url} 
+                                        src={getAssetUrl((expressions.find(e => e.name?.toLowerCase() === 'default' && e.full_url) || expressions.find(e => e.full_url))?.full_url)} 
                                         alt="Featured Preview" 
                                         style={{ maxHeight: '500px', objectFit: 'contain' }}
                                     />
@@ -426,15 +428,32 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                         />
                                                         {uploadingFields[`${expr.id}-avatar_url`] ? (
                                                             <Loader size={12} className={styles.spinner} />
-                                                        ) : expr.avatar_url ? (
-                                                            <img src={expr.avatar_url} alt="avatar" className={styles.miniPreview} />
                                                         ) : (
-                                                            <ImageIcon size={14} />
+                                                            <img
+                                                                src={getAssetUrl(expr.avatar_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')}
+                                                                alt="avatar"
+                                                                className={styles.miniPreview}
+                                                                onClick={(e) => { 
+                                                                    if (expr.avatar_url) {
+                                                                        e.stopPropagation(); 
+                                                                        setPreviewImage(getAssetUrl(expr.avatar_url)); 
+                                                                    }
+                                                                }}
+                                                                style={{ opacity: expr.avatar_url ? 1 : 0.2 }}
+                                                            />
                                                         )}
                                                     </div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                        <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Add Avatar'}</span>
+                                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <span className={styles.miniLabel}>{expr.avatar_url ? 'Avatar' : 'Chưa có Avatar'}</span>
                                                     </div>
+                                                    <button 
+                                                        className={styles.miniUploadBtn}
+                                                        onClick={(e) => { e.stopPropagation(); document.getElementById(`avatar-file-${expr.id}`).click(); }}
+                                                        disabled={uploadingFields[`${expr.id}-avatar_url`]}
+                                                        title="Chọn ảnh mới"
+                                                    >
+                                                        <Upload size={14} /> {expr.avatar_url ? 'Đổi ảnh' : 'Tải lên'}
+                                                    </button>
                                                 </div>
 
                                                 {/* Full Body Upload */}
@@ -452,15 +471,32 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                         />
                                                         {uploadingFields[`${expr.id}-full_url`] ? (
                                                             <Loader size={12} className={styles.spinner} />
-                                                        ) : expr.full_url ? (
-                                                            <img src={expr.full_url} alt="full" className={styles.miniPreview} />
                                                         ) : (
-                                                            <Upload size={14} />
+                                                            <img
+                                                                src={getAssetUrl(expr.full_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')}
+                                                                alt="full"
+                                                                className={styles.miniPreview}
+                                                                onClick={(e) => { 
+                                                                    if (expr.full_url) {
+                                                                        e.stopPropagation(); 
+                                                                        setPreviewImage(getAssetUrl(expr.full_url)); 
+                                                                    }
+                                                                }}
+                                                                style={{ opacity: expr.full_url ? 1 : 0.2 }}
+                                                            />
                                                         )}
                                                     </div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                        <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Add Full Body'}</span>
+                                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <span className={styles.miniLabel}>{expr.full_url ? 'Full Body' : 'Chưa có Full Body'}</span>
                                                     </div>
+                                                    <button 
+                                                        className={styles.miniUploadBtn}
+                                                        onClick={(e) => { e.stopPropagation(); document.getElementById(`full-file-${expr.id}`).click(); }}
+                                                        disabled={uploadingFields[`${expr.id}-full_url`]}
+                                                        title="Chọn ảnh mới"
+                                                    >
+                                                        <Upload size={14} /> {expr.full_url ? 'Đổi ảnh' : 'Tải lên'}
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -471,6 +507,18 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                     )}
                 </div>
             </div>
+
+            {/* Lightbox for Expression Images */}
+            {previewImage && (
+                <div className={styles.lightbox} onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}>
+                    <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
+                        <button className={styles.lightboxClose} onClick={() => setPreviewImage(null)}>
+                            <X size={24} />
+                        </button>
+                        <img src={previewImage} alt="Preview" className={styles.lightboxImage} />
+                    </div>
+                </div>
+            )}
 
             {/* Confirm Modal */}
             <ConfirmModal

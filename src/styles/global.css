@@ -67,7 +67,7 @@
     --transition-base: all 0.3s ease;
 
     /* Container width */
-    --container-max-width: 1200px;
+    --container-max-width: 1300px;
 
     /* Breakpoints */
     --mobile-width: 768px;
