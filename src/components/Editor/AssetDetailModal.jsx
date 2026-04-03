@@ -18,6 +18,7 @@ import styles from './AssetDetailModal.module.css';
  */
 export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset, showNotification }) {
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [expressions, setExpressions] = useState([]);
     const [deletedExprNames, setDeletedExprNames] = useState(new Set());
     const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         if (!isOpen || !asset) return;
         setName(asset.name || '');
         setCategory(asset.category || asset.type || '');
+        setDescription(asset.description || '');
         setError(null);
         if (kind === 'character') loadExpressions();
     }, [isOpen, asset, kind]);
@@ -72,8 +74,11 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         try {
             const charId = asset.character_id || asset.asset_id;
             if (isCharacter) {
-                // 1. Update character name
-                await SupabaseAPI.updateCharacter(charId, { name: name.trim() });
+                // 1. Update character name & description
+                await SupabaseAPI.updateCharacter(charId, { 
+                    name: name.trim(),
+                    description: description.trim() 
+                });
 
                 // 2. Delete removed ones
                 if (deletedExprNames.size > 0) {
@@ -295,14 +300,38 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                             </div>
                         </div>
                         {(isCharacter || asset.category === 'gallery') && (
-                            <div className={styles.formGroup}>
-                                <label>{isCharacter ? 'Display Name' : 'Title'}</label>
-                                <input
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    placeholder="Enter name"
-                                />
-                            </div>
+                            <>
+                                <div className={styles.formGroup}>
+                                    <label>{isCharacter ? 'Display Name' : 'Title'}</label>
+                                    <input
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="Enter name"
+                                    />
+                                </div>
+                                {isCharacter && (
+                                    <div className={styles.formGroup} style={{ marginTop: 12 }}>
+                                        <label>Description</label>
+                                        <textarea
+                                            value={description}
+                                            onChange={e => setDescription(e.target.value)}
+                                            placeholder="Character biography, notes, etc."
+                                            rows="4"
+                                            style={{ 
+                                                width: '100%',
+                                                padding: '8px 12px',
+                                                borderRadius: '6px',
+                                                background: 'rgba(0,0,0,0.2)',
+                                                border: '1px solid var(--color-border)',
+                                                color: 'var(--color-text-primary)',
+                                                resize: 'vertical',
+                                                fontSize: '14px',
+                                                lineHeight: '1.5'
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </>
                         )}
                         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                             <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
