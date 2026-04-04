@@ -243,11 +243,9 @@ header.scrolled .subtitle {
 }
 
 .selection-panel-item img {
-    width: 240px;
-    height: 135px; /* Fixed height for 16:9 ratio (240 / 16 * 9) */
+    width: 16rem;
+    aspect-ratio: 16/9;
     object-fit: contain;
-    background-color: rgba(255, 255, 255, 0.03);
-    border-radius: 0;
     flex-shrink: 0;
     display: block;
 }
