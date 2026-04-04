@@ -9,6 +9,8 @@ export default function Header() {
   const location = useLocation();
   const { user, logout } = useAuth();
 
+  const isEventPage = location.pathname.startsWith('/event/');
+
   // Reset dynamic title when route changes
   useEffect(() => {
     setDynamicTitle('');
@@ -21,6 +23,10 @@ export default function Header() {
     } catch (err) {
       console.error('Logout failed:', err);
     }
+  };
+
+  const handleToggleEventSidebar = () => {
+    window.dispatchEvent(new CustomEvent('toggleEventSidebar'));
   };
 
   useEffect(() => {
@@ -59,6 +65,35 @@ export default function Header() {
               {isScrolled && dynamicTitle ? dynamicTitle : 'Civilight Eterna Database'}
             </h1>
           </Link>
+
+          {/* Event sidebar toggle — always visible on event pages */}
+          {isEventPage && (
+            <button
+              onClick={handleToggleEventSidebar}
+              className="header-sidebar-toggle"
+              title="Danh sách sự kiện"
+              style={{
+                position: 'absolute',
+                right: '1rem',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-accent)',
+                borderRadius: 'var(--radius-base)',
+                padding: '4px 10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '18px',
+                fontWeight: 600,
+                transition: 'all 0.2s',
+                minWidth: '36px',
+                height: '32px'
+              }}
+            >
+              ☰
+            </button>
+          )}
 
           {user && location.pathname.startsWith('/editor') && (
             <button 

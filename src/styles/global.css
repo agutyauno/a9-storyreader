@@ -52,6 +52,7 @@
 
     /* Colors - Accent */
     --color-accent: #e9e3ff;
+    --color-accent-rgb: 233, 227, 255;
     --color-accent-light: #b8a9ff;
 
     /* Border radius */
@@ -243,7 +244,7 @@ header.scrolled .subtitle {
 }
 
 .selection-panel-item img {
-    width: 16rem;
+    width: 15rem;
     aspect-ratio: 16/9;
     object-fit: contain;
     flex-shrink: 0;
