@@ -7,6 +7,7 @@ function cx(classNames, styles) {
 
 export const StoryRenderer = {
   characters: {},
+  notes: {},
   
   _resolveCharAndExpr(nameWithExpr) {
     if (!nameWithExpr) return { char: null, expr: null };
@@ -45,6 +46,9 @@ export const StoryRenderer = {
         this.characters[name.toLowerCase()] = data;
       });
     }
+    
+    this.notes = storyContent.notes || {};
+    
     return storyContent.sections.map((section) => this.renderSection(section, styles)).join('');
   },
 
@@ -157,11 +161,28 @@ export const StoryRenderer = {
     }
   },
 
+  processNotes(text, styles) {
+    if (!text) return '';
+    // This regex matches [any text | note_id]
+    // Group 1: the word/phrase to annotate
+    // Group 2: the note ID
+    return text.replace(/\[([^|\]]+)\|([^\]]+)\]/g, (match, word, noteId) => {
+      const id = noteId.trim();
+      const noteContent = this.notes[id] || '';
+      const cleanWord = word.trim();
+      
+      // We use cx to get the scoped class name from the CSS module
+      const noteClass = cx('translator-note', styles);
+      
+      return `<span class="${noteClass}" data-note-id="${id}" title="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}</span>`;
+    });
+  },
+
   renderNarrator(narrator, styles) {
     return `
       <div class="${cx('dialogue-box narrator-box', styles)}">
         <div class="${cx('dialogue-content', styles)}">
-          <p class="${cx('narrator-text', styles)}">${narrator.text || ''}</p>
+          <p class="${cx('narrator-text', styles)}">${this.processNotes(narrator.text, styles)}</p>
         </div>
       </div>
     `;
@@ -183,7 +204,7 @@ export const StoryRenderer = {
             const colorStyle = nameColor ? `style="color: ${nameColor}"` : '';
             return `<p class="${cx('character_name', styles)}" ${colorStyle}>${dialogue.name || ''}</p>`;
           })()}
-          <p class="${cx('dialogue', styles)}">${dialogue.text || ''}</p>
+          <p class="${cx('dialogue', styles)}">${this.processNotes(dialogue.text, styles)}</p>
         </div>
         <img class="${cx(`character_avt ${!rightFull ? 'no-click' : ''}`, styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
       </div>

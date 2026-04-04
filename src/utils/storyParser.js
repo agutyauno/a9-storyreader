@@ -160,7 +160,7 @@ export const StoryScriptParser = {
      */
     _buildStructure(scriptText) {
         const lines = scriptText.split('\n');
-        const result = { characters: {}, sections: [], header_comments: [] };
+        const result = { characters: {}, sections: [], header_comments: [], notes: {} };
 
         let currentSection = null;
         let currentBackground = null;
@@ -251,6 +251,16 @@ export const StoryScriptParser = {
             }
             
             if (trimmed.startsWith('@char')) continue;
+
+            // Handle @note <id>: <content>
+            const noteMatch = trimmed.match(/^@note\s+([^:]+):\s*(.+)/);
+            if (noteMatch) {
+                const noteId = noteMatch[1].trim();
+                const noteContent = noteMatch[2].trim();
+                result.notes[noteId] = noteContent;
+                continue;
+            }
+
             if (!trimmed && stack.length === 0) continue; 
 
 

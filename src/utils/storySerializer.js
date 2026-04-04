@@ -40,6 +40,18 @@ export const StoryScriptSerializer = {
             }
         }
 
+        // Notes
+        const notes = storyContent.notes;
+        if (notes && typeof notes === 'object') {
+            const noteEntries = Object.entries(notes);
+            if (noteEntries.length > 0) {
+                for (const [id, content] of noteEntries) {
+                    lines.push(`@note ${id}: ${content}`);
+                }
+                lines.push('');
+            }
+        }
+
         // Sections
         const sections = storyContent.sections || [];
         sections.forEach((section) => {

@@ -22,6 +22,7 @@ export default function StoryPage() {
   // Modals & Sidebar
   const [sidebarActive, setSidebarActive] = useState(false);
   const [modalData, setModalData] = useState(null); // { type: 'character'|'background', src: '' }
+  const [activeNote, setActiveNote] = useState(null); // { word: string, content: string }
 
   // Auto-close sidebar when story changes
   useEffect(() => {
@@ -170,7 +171,18 @@ export default function StoryPage() {
       });
     });
 
-    // 4. BGM & SFX scroll triggers
+    // 4. Translator Notes
+    const notes = contentDiv.querySelectorAll(`.${styles['translator-note'] || 'translator-note'}`);
+    notes.forEach(note => {
+      note.addEventListener('click', () => {
+        setActiveNote({
+          word: note.textContent,
+          content: note.getAttribute('title')
+        });
+      });
+    });
+
+    // 5. BGM & SFX scroll triggers
     if (window.bgmManager) {
       window.bgmManager.setupScrollTriggers({ selector: '[data-bgm-id]', threshold: 0, rootMargin: '0px 0px -20% 0px' });
     }
@@ -329,6 +341,17 @@ export default function StoryPage() {
           <div className={styles['modal-content']} onClick={e => e.stopPropagation()}>
             <img className={styles['modal-image']} src={modalData.src} alt={modalData.type} />
             <button style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer' }} onClick={() => setModalData(null)}>x</button>
+          </div>
+        </div>
+      )}
+
+      {/* Note Popup */}
+      {activeNote && (
+        <div className={styles['note-popup-overlay']} onClick={() => setActiveNote(null)}>
+          <div className={styles['note-popup-content']} onClick={e => e.stopPropagation()}>
+            <h4 className={styles['note-popup-title']}>{activeNote.word}</h4>
+            <p className={styles['note-popup-text']}>{activeNote.content}</p>
+            <button className={styles['note-popup-close']} onClick={() => setActiveNote(null)}>&times;</button>
           </div>
         </div>
       )}
