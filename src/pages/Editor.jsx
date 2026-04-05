@@ -359,8 +359,8 @@ export default function EditorPage() {
         };
     }, [isResizingSidebar, isResizingPreview]);
 
-    const handleInsertTemplate = (template) => {
-        editorRef.current?.insertText(template);
+    const handleInsertTemplate = (template, isInline = false) => {
+        editorRef.current?.insertText(template, isInline);
     };
 
 

@@ -58,23 +58,34 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
     const editorRef = useRef(null);
 
     useImperativeHandle(ref, () => ({
-        insertText: (text) => {
+        insertText: (text, isInline = false) => {
             if (editorRef.current?.view) {
                 const view = editorRef.current.view;
                 const selection = view.state.selection.main;
                 
-                const line = view.state.doc.lineAt(selection.head);
-                const prefix = line.text.trim().length > 0 ? '\n' : '';
-                const insertion = prefix + text + '\n';
-                
-                view.dispatch({
-                    changes: {
-                        from: selection.from,
-                        to: selection.to,
-                        insert: insertion
-                    },
-                    selection: { anchor: selection.from + insertion.length }
-                });
+                if (isInline) {
+                    view.dispatch({
+                        changes: {
+                            from: selection.from,
+                            to: selection.to,
+                            insert: text
+                        },
+                        selection: { anchor: selection.from + text.length }
+                    });
+                } else {
+                    const line = view.state.doc.lineAt(selection.head);
+                    const prefix = line.text.trim().length > 0 ? '\n' : '';
+                    const insertion = prefix + text + '\n';
+                    
+                    view.dispatch({
+                        changes: {
+                            from: selection.from,
+                            to: selection.to,
+                            insert: insertion
+                        },
+                        selection: { anchor: selection.from + insertion.length }
+                    });
+                }
                 view.focus();
             }
         }
@@ -87,6 +98,15 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
         const line = context.state.doc.lineAt(context.pos);
         const lineText = line.text;
         const textBefore = lineText.slice(0, context.pos - line.from);
+
+        // 0. Extract all current @note IDs from the document for suggestion
+        const docText = context.state.doc.toString();
+        const noteIds = [];
+        const noteRegex = /^@note\s+([^:]+):/gm;
+        let noteMatch;
+        while ((noteMatch = noteRegex.exec(docText)) !== null) {
+            noteIds.push(noteMatch[1].trim());
+        }
 
         // 1. Directive suggestions (starts with @)
         if (word.text.startsWith('@')) {
@@ -108,6 +128,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
                 { label: '@video', type: 'keyword', apply: snippet('@video src=""', -1), detail: 'Play video' },
                 { label: '@decision', type: 'keyword', apply: snippet('@decision ""', -1), detail: 'Choice menu' },
                 { label: '@response', type: 'keyword', apply: snippet('@response "" 1 {\n  \n}', -2), detail: 'Choice response group' },
+                { label: '@note', type: 'keyword', apply: snippet('@note id: content', -11), detail: 'Declare translator note' },
                 { label: '@section', type: 'keyword', detail: 'Break into chunks' },
             ];
             return {
@@ -150,10 +171,23 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
             };
         }
 
+        // 3.5 Translator Note ID suggestions (inside [ | ])
+        if (textBefore.match(/\[[^|\]]*\|\s*[\w]*$/)) {
+            const currentWord = context.matchBefore(/[\w]*/);
+            return {
+                from: currentWord.from,
+                options: noteIds.map(id => ({
+                    label: id,
+                    type: 'constant',
+                    detail: 'Translator Note'
+                }))
+            };
+        }
+
         // 4. Character IDs (after @char or at start of line for dialogue)
         if (textBefore.match(/^@char\s+\S+\s+\[?\s*id\s*=\s*"/) || textBefore.match(/^[^:]*$/)) {
             const eventCharIds = new Set((eventCharacters || []).map(ec => ec.character_id));
-            
+
             // Sort characters: event characters first, then others
             const sortedCharacters = [...(characters || [])].sort((a, b) => {
                 const aIsEvent = eventCharIds.has(a.character_id);
@@ -185,7 +219,7 @@ const CodeEditor = forwardRef(({ value, onChange, characters = [], assets = [], 
                 height="100%"
                 theme={editorTheme}
                 extensions={[
-                    vnscriptLanguage, 
+                    vnscriptLanguage,
                     fontExtension,
                     EditorView.lineWrapping,
                     autocompletion({ override: [vnscriptCompletionSource] })

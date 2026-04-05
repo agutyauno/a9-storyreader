@@ -1,14 +1,15 @@
 import React from 'react';
-import { 
-    UserPlus, 
-    LayoutList, 
-    Image as ImageIcon, 
-    Music, 
-    Video, 
-    MessageSquare, 
-    Volume2, 
-    GitMerge, 
-    CornerDownRight 
+import {
+    UserPlus,
+    LayoutList,
+    Image as ImageIcon,
+    Music,
+    Video,
+    MessageSquare,
+    Volume2,
+    GitMerge,
+    CornerDownRight,
+    HelpCircle
 } from 'lucide-react';
 import styles from '../../pages/EditorPage.module.css';
 
@@ -33,6 +34,8 @@ const TOOL_GROUPS = [
             { id: 'char', label: 'Char', icon: UserPlus, template: '@char Name id=""' },
             { id: 'narrator', label: 'Narrator', icon: MessageSquare, template: '@narrator {\n  \n}' },
             { id: 'dialogue', label: 'Dialogue', icon: MessageSquare, template: 'Name [, ]: ' },
+            { id: 'note_def', label: 'Note', icon: HelpCircle, template: '@note id: nội dung ghi chú' },
+            { id: 'note_link', label: 'Link Note', icon: HelpCircle, template: '[từ | id]', isInline: true },
             { id: 'decision', label: 'Decision', icon: GitMerge, template: '@decision "" [, ]\n- Choice 1\n- Choice 2' },
             { id: 'response', label: 'Response', icon: CornerDownRight, template: '@response "" 1 {\n  \n}' },
         ]
@@ -48,7 +51,7 @@ export default function EditorToolbar({ onInsert }) {
                         {group.tools.map(tool => (
                             <button
                                 key={tool.id}
-                                onClick={() => onInsert(tool.template)}
+                                onClick={() => onInsert(tool.template, tool.isInline)}
                                 className={styles.toolBtn}
                                 title={`Insert ${tool.label}`}
                             >

@@ -380,7 +380,6 @@ p {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: var(--spacing-lg);
 }
 
 .note-popup-content {
@@ -1078,6 +1077,21 @@ p {
         height: 1.8rem;
         right: 0.5rem;
         top: 0.5rem;
+    }
+
+    .note-popup-content {
+        width: 95%;
+        max-width: calc(100vw - 2rem);
+        padding: var(--spacing-lg);
+        box-sizing: border-box;
+    }
+
+    .note-popup-title {
+        font-size: var(--font-size-base);
+    }
+
+    .note-popup-text {
+        font-size: var(--font-size-xs);
     }
 }
 
