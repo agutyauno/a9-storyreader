@@ -358,6 +358,12 @@ export default function StoryPage() {
 
       <main>
         <div className={styles['container']}>
+          {/* Top Navigation Bar */}
+          <div className={`${styles['switch-chapter-button']} ${styles['top-switch']}`}>
+            <button className={styles['previous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương Trước</button>
+            <button className={styles['next']} disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương Sau</button>
+          </div>
+
           <div id="info" className={styles['info']}>
             <div className={styles['info-header']}>
               <h2 className={styles['info-title']}>{story.name}</h2>
@@ -367,8 +373,9 @@ export default function StoryPage() {
 
           <div id="story-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: htmlContent }} />
 
+          {/* Bottom Navigation Bar */}
           <div className={styles['switch-chapter-button']}>
-            <button className={styles['prevous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương Trước</button>
+            <button className={styles['previous']} disabled={!prevStory} onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}>Chương Trước</button>
             <button className={styles['next']} disabled={!nextStory} onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}>Chương Sau</button>
           </div>
         </div>

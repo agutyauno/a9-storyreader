@@ -200,6 +200,12 @@ header {
 }
 
 /* ================================================================================================= */
+/* info */
+.info {
+    margin: 0 auto !important;
+}
+
+/* ================================================================================================= */
 /* container */
 .container {
     padding-top: 0;
@@ -573,15 +579,21 @@ p {
 /* Switch Chapter Buttons */
 .switch-chapter-button {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
     padding: var(--spacing-lg) 0;
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+}
+
+.top-switch {
+    padding-top: 0;
 }
 
 .switch-chapter-button button {
     flex: 1;
-    max-width: 15rem;
     padding: var(--spacing-lg) var(--spacing-xl);
     font-size: var(--font-size-base);
     font-weight: 600;
@@ -1029,19 +1041,7 @@ p {
         line-height: 1.4;
     }
 
-    /* Navigation */
-    .switch-chapter-button {
-        flex-direction: row;
-        padding: var(--spacing-lg) var(--spacing-sm);
-        gap: var(--spacing-sm);
-        justify-content: space-between;
-    }
-
-    .switch-chapter-button button {
-        max-width: none;
-        width: 100%;
-    }
-
+    /* Audio */
     /* Audio */
     .audio-btn {
         width: 32px;
