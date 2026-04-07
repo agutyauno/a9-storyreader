@@ -1,7 +1,7 @@
 # Arknights Story Reader todo list
 ## quan trọng cần làm gấp
 ## sẽ làm
-- translator note (done)
+- sửa lại @sfx
 - thêm hiệu ứng cho background
 ## dài hạn
 - thêm vài tính năng qol cho trang editor (nếu cần)
@@ -12,4 +12,3 @@
 - link enemy info qua story
 - cập nhật/thay đổi trang editor để có thể tạo operator story và IS story
 ## cân nhắc
-- sửa lại @sfx
