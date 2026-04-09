@@ -10,18 +10,29 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 /**
  * Resolves a path to a full URL relative to the application base.
  * @param {string} path - The path to resolve (e.g., '/assets/images/...')
+ * @param {string} [type] - The type of asset (e.g., 'video')
  * @returns {string} The resolved URL
  */
-export function getAssetUrl(path) {
+export function getAssetUrl(path, type = null) {
   if (!path) return '';
+
+  const isVideo = type === 'video' || path.match(/\.(mp4|webm|ogg)$/i);
 
   // If it is already an absolute URL or a data URI
   if (path.startsWith('http') || path.startsWith('data:')) {
-    // Legacy support: Convert any full GitHub Raw URLs to jsDelivr CDN
     const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
     const GITHUB_RAW_READER = 'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/';
     const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
 
+    if (isVideo) {
+      // Do not convert to jsDelivr for videos. If it's already jsdelivr, convert to raw.
+      if (path.startsWith(JSDELIVR_CDN)) {
+        return path.replace(JSDELIVR_CDN, GITHUB_RAW_DATA);
+      }
+      return path;
+    }
+
+    // Legacy support: Convert any full GitHub Raw URLs to jsDelivr CDN
     if (path.startsWith(GITHUB_RAW_DATA)) {
       return path.replace(GITHUB_RAW_DATA, JSDELIVR_CDN);
     }
@@ -43,8 +54,13 @@ export function getAssetUrl(path) {
     }
     
     // Otherwise, assume it's a relative path to our shared DATA repository
-    const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
-    return `${JSDELIVR_CDN}${path.slice(1)}`;
+    if (isVideo) {
+      const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
+      return `${GITHUB_RAW_DATA}${path.slice(1)}`;
+    } else {
+      const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
+      return `${JSDELIVR_CDN}${path.slice(1)}`;
+    }
   }
 
   // Fallback for any other relative paths
