@@ -623,12 +623,14 @@
 	}
 
 	.character-list {
-		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-		gap: var(--spacing-base);
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		grid-auto-rows: min-content;
+		gap: var(--spacing-sm);
 	}
 
 	.character-card {
-		padding: var(--spacing-base);
+		padding: var(--spacing-sm);
+		height: auto;
 	}
 
 	.character-avatar {

@@ -1,7 +1,6 @@
 # Arknights Story Reader todo list
 ## quan trọng cần làm gấp
 ## sẽ làm
-- sửa lại @sfx
 - thêm hiệu ứng cho background
 ## dài hạn
 - thêm vài tính năng qol cho trang editor (nếu cần)
