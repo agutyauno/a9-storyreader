@@ -7,6 +7,8 @@ import EventPage from './pages/EventPage';
 import StoryPage from './pages/StoryPage';
 import RegionPage from './pages/RegionPage';
 import EditorPage from './pages/Editor.jsx';
+import OperatorListPage from './pages/OperatorListPage';
+import OperatorDetailPage from './pages/OperatorDetailPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { useEffect } from 'react';
@@ -48,6 +50,8 @@ function AppLayout() {
           <Route path="/story/:id" element={<StoryPage />} />
           <Route path="/region/:id" element={<RegionPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/operators" element={<OperatorListPage />} />
+          <Route path="/operators/:id" element={<OperatorDetailPage />} />
           <Route 
             path="/editor/:storyId?" 
             element={
