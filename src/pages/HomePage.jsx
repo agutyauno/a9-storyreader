@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { SupabaseAPI } from '../services/supabaseApi';
 import { getAssetUrl } from '../utils/assetUtils';
+import OperatorListPage from './OperatorListPage';
 import styles from '../styles/HomePage.module.css'; // Will be created or mapped to old style
 
 function cx(classNames) {
@@ -10,7 +11,14 @@ function cx(classNames) {
 }
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState('regions-tab');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'regions-tab');
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state?.tab]);
   const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -90,12 +98,8 @@ export default function HomePage() {
 
         {/* Operators Tab */}
         {activeTab === 'operators-tab' && (
-          <div id="operators-tab" className={cx("tab-content active")}>
-            <div id="operator_story_selection-panel">
-              <div className={cx("selection-list")}>
-                <p>Sẽ được cập nhật trong tương lai.</p>
-              </div>
-            </div>
+          <div id="operators-tab" className={cx("tab-content active")} style={{ paddingTop: '1rem' }}>
+            <OperatorListPage />
           </div>
         )}
       </div>

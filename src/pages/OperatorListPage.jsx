@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MOCK_OPERATORS, OPERATOR_CLASSES, FACTIONS, getClassById, getFactionById } from '../utils/mockOperatorData';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/OperatorPage.module.css';
 
 export default function OperatorListPage() {
@@ -41,10 +42,7 @@ export default function OperatorListPage() {
     }, []);
 
     return (
-        <div className={styles.listPage}>
-            <div className={styles.listHeader}>
-                <h1 className={styles.listTitle}>Operators</h1>
-            </div>
+        <div className={styles.listPage} style={{ padding: 0 }}>
 
             {/* ─── Controls ────────────────────────────────────────────── */}
             <div className={styles.controls}>
@@ -114,15 +112,15 @@ export default function OperatorListPage() {
                                 className={styles.operatorCard}
                             >
                                 <img
-                                    src={op.avatar_url}
+                                    src={getAssetUrl(op.avatar_url)}
                                     alt={op.name}
                                     className={styles.cardAvatar}
-                                    onError={(e) => { e.target.src = '/assets/images/character/blank.png'; }}
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
                                 />
                                 <p className={styles.cardName}>{op.name}</p>
                                 <div className={styles.cardMeta}>
-                                    {cls && <img src={cls.icon} alt={cls.name} className={styles.cardMetaIcon} title={cls.name} />}
-                                    {faction && <img src={faction.icon} alt={faction.name} className={styles.cardMetaIcon} title={faction.name} />}
+                                    {cls && <img src={getAssetUrl(cls.icon)} alt={cls.name} className={styles.cardMetaIcon} title={cls.name} />}
+                                    {faction && <img src={getAssetUrl(faction.icon)} alt={faction.name} className={styles.cardMetaIcon} title={faction.name} />}
                                 </div>
                             </Link>
                         );
@@ -141,17 +139,17 @@ export default function OperatorListPage() {
                                 className={styles.operatorRow}
                             >
                                 <img
-                                    src={op.avatar_url}
+                                    src={getAssetUrl(op.avatar_url)}
                                     alt={op.name}
                                     className={styles.rowAvatar}
-                                    onError={(e) => { e.target.src = '/assets/images/character/blank.png'; }}
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
                                 />
                                 <span className={styles.rowName}>{op.name}</span>
                                 <div className={styles.rowMeta}>
-                                    {cls && <img src={cls.icon} alt={cls.name} className={styles.rowMetaIcon} title={cls.name} />}
+                                    {cls && <img src={getAssetUrl(cls.icon)} alt={cls.name} className={styles.rowMetaIcon} title={cls.name} />}
                                     {faction && (
                                         <>
-                                            <img src={faction.icon} alt={faction.name} className={styles.rowMetaIcon} title={faction.name} />
+                                            <img src={getAssetUrl(faction.icon)} alt={faction.name} className={styles.rowMetaIcon} title={faction.name} />
                                             <span className={styles.rowFaction}>{faction.name}</span>
                                         </>
                                     )}

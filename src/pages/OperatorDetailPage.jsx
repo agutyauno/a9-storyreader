@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getOperatorById, getClassById, getSubClassById, getFactionById, getDialoguesBySkin, getSkinsWithDialogues } from '../utils/mockOperatorData';
+import { getAssetUrl } from '../utils/assetUtils';
 import styles from '../styles/OperatorPage.module.css';
 
 // ─── Accordion Component ──────────────────────────────────────────────────
@@ -9,7 +10,7 @@ function Accordion({ icon, title, children, defaultOpen = false }) {
     return (
         <div className={styles.accordionItem}>
             <div className={styles.accordionHeader} onClick={() => setOpen(!open)}>
-                {icon && <img src={icon} alt="" className={styles.accordionIcon} />}
+                {icon && <img src={getAssetUrl(icon)} alt="" className={styles.accordionIcon} />}
                 <span className={styles.accordionTitle}>{title}</span>
                 <span className={`${styles.accordionChevron} ${open ? styles.open : ''}`}>▼</span>
             </div>
@@ -35,10 +36,10 @@ function TabGeneral({ operator }) {
             <div className={styles.skinVisualizer}>
                 <div className={styles.skinImageWrapper}>
                     <img
-                        src={selectedSkin?.image_url || operator.avatar_url}
+                        src={getAssetUrl(selectedSkin?.image_url || operator.avatar_url)}
                         alt={selectedSkin?.name || operator.name}
                         className={styles.skinImage}
-                        onError={(e) => { e.target.src = '/assets/images/character/blank.png'; }}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
                     />
                     {operator.skins?.length > 1 && (
                         <div className={styles.skinSelector}>
@@ -60,19 +61,19 @@ function TabGeneral({ operator }) {
                     <div className={styles.detailBadges}>
                         {cls && (
                             <span className={styles.badge}>
-                                <img src={cls.icon} alt="" className={styles.badgeIcon} />
+                                <img src={getAssetUrl(cls.icon)} alt="" className={styles.badgeIcon} />
                                 {cls.name}
                             </span>
                         )}
                         {subCls && (
                             <span className={styles.badge}>
-                                <img src={subCls.icon} alt="" className={styles.badgeIcon} />
+                                <img src={getAssetUrl(subCls.icon)} alt="" className={styles.badgeIcon} />
                                 {subCls.name}
                             </span>
                         )}
                         {factions.map(f => (
                             <span key={f.id} className={styles.badge}>
-                                <img src={f.icon} alt="" className={styles.badgeIcon} />
+                                <img src={getAssetUrl(f.icon)} alt="" className={styles.badgeIcon} />
                                 {f.name}
                             </span>
                         ))}
@@ -194,7 +195,7 @@ function TabDialogues({ operator }) {
         if (audioRef.current) {
             audioRef.current.pause();
         }
-        const audio = new Audio(url);
+        const audio = new Audio(getAssetUrl(url));
         audioRef.current = audio;
         audio.play().catch(() => {});
         audio.onended = () => setPlayingId(null);
@@ -341,7 +342,7 @@ export default function OperatorDetailPage() {
             <div className={styles.detailPage}>
                 <div className={styles.emptyState}>
                     <p>Không tìm thấy Operator.</p>
-                    <button className={styles.backLink} onClick={() => navigate('/operators')}>
+                    <button className={styles.backLink} onClick={() => navigate('/', { state: { tab: 'operators-tab' } })}>
                         ← Quay lại danh sách
                     </button>
                 </div>
@@ -355,30 +356,30 @@ export default function OperatorDetailPage() {
     return (
         <div className={styles.detailPage}>
             {/* ── Back link ────────────────────────────────────────────── */}
-            <button className={styles.backLink} onClick={() => navigate('/operators')}>
+            <button className={styles.backLink} onClick={() => navigate('/', { state: { tab: 'operators-tab' } })}>
                 ← Quay lại danh sách Operator
             </button>
 
             {/* ── Header ───────────────────────────────────────────────── */}
             <div className={styles.detailHeader}>
                 <img
-                    src={operator.avatar_url}
+                    src={getAssetUrl(operator.avatar_url)}
                     alt={operator.name}
                     className={styles.detailAvatar}
-                    onError={(e) => { e.target.src = '/assets/images/character/blank.png'; }}
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
                 />
                 <div className={styles.detailHeaderInfo}>
                     <h1 className={styles.detailName}>{operator.name}</h1>
                     <div className={styles.detailBadges}>
                         {cls && (
                             <span className={styles.badge}>
-                                <img src={cls.icon} alt="" className={styles.badgeIcon} />
+                                <img src={getAssetUrl(cls.icon)} alt="" className={styles.badgeIcon} />
                                 {cls.name}
                             </span>
                         )}
                         {factions.map(f => (
                             <span key={f.id} className={styles.badge}>
-                                <img src={f.icon} alt="" className={styles.badgeIcon} />
+                                <img src={getAssetUrl(f.icon)} alt="" className={styles.badgeIcon} />
                                 {f.name}
                             </span>
                         ))}
