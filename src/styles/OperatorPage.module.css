@@ -122,7 +122,7 @@
 .cardAvatar {
     width: 80px;
     height: 80px;
-    border-radius: 50%;
+    border-radius: var(--radius-base);
     object-fit: cover;
     border: 2px solid var(--color-border);
     background: var(--color-bg-dark);
@@ -272,7 +272,7 @@
 .detailAvatar {
     width: 80px;
     height: 80px;
-    border-radius: 50%;
+    border-radius: var(--radius-base);
     object-fit: cover;
     border: 2px solid var(--color-border);
     background: var(--color-bg-dark);
@@ -426,6 +426,33 @@
     background: var(--color-bg-secondary);
     border-radius: var(--radius-base);
     border: 1px solid var(--color-border);
+    display: flex;
+    gap: var(--spacing-base);
+    align-items: center;
+}
+
+.tokenImageWrapper {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: var(--color-bg-dark);
+    border-radius: var(--radius-base);
+    border: 1px solid var(--color-border);
+}
+
+.tokenImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.tokenContent {
+    flex: 1;
 }
 
 .tokenLabel {
@@ -517,10 +544,17 @@
 /* ─── Dialogues (Tab 3) ────────────────────────────────────────────────── */
 .dialogueControls {
     display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: flex-start;
     margin-bottom: var(--spacing-xl);
+}
+
+.dialogueRow {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
 }
 
 .dialogueControlLabel {
@@ -634,6 +668,68 @@
     margin: 0;
 }
 
+/* ─── Images ───────────────────────────────────────────────────────────── */
+.moduleImage {
+    width: 50%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: var(--radius-base);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-dark);
+    display: block;
+    margin: 0 auto var(--spacing-base) auto;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.moduleImage:hover {
+    border-color: var(--color-accent-light);
+    box-shadow: 0 0 10px rgba(var(--color-accent-rgb), 0.2);
+}
+
+/* ─── Image Modal ──────────────────────────────────────────────────────── */
+.imageModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-2xl);
+}
+
+.imageModalContent {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.imageModalImg {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.imageModalClose {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.imageModalClose:hover {
+    color: var(--color-accent);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* Responsive                                                                */
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -678,5 +774,14 @@
     .tabBtn {
         padding: var(--spacing-sm) var(--spacing-base);
         font-size: var(--font-size-xs);
+    }
+
+    .imageModalClose {
+        top: -40px;
+        right: 0;
+    }
+
+    .moduleImage {
+        width: 90%;
     }
 }

@@ -20,7 +20,7 @@ function Accordion({ icon, title, children, defaultOpen = false }) {
 }
 
 // ─── Tab 1: General & Combat ──────────────────────────────────────────────
-function TabGeneral({ operator }) {
+function TabGeneral({ operator, onImageClick }) {
     const [selectedSkinIdx, setSelectedSkinIdx] = useState(0);
     const selectedSkin = operator.skins?.[selectedSkinIdx];
 
@@ -40,6 +40,8 @@ function TabGeneral({ operator }) {
                         alt={selectedSkin?.name || operator.name}
                         className={styles.skinImage}
                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => onImageClick(getAssetUrl(selectedSkin?.image_url || operator.avatar_url))}
                     />
                     {operator.skins?.length > 1 && (
                         <div className={styles.skinSelector}>
@@ -87,8 +89,15 @@ function TabGeneral({ operator }) {
                     {/* Token */}
                     {operator_token && (
                         <div className={styles.tokenSection}>
-                            <p className={styles.tokenLabel}>Operator Token</p>
-                            <p className={styles.tokenText}>{operator_token.description}</p>
+                            {operator_token.image_url && (
+                                <div className={styles.tokenImageWrapper} onClick={() => onImageClick(getAssetUrl(operator_token.image_url))}>
+                                    <img src={getAssetUrl(operator_token.image_url)} alt="Token" className={styles.tokenImage} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }} />
+                                </div>
+                            )}
+                            <div className={styles.tokenContent}>
+                                <p className={styles.tokenLabel}>Operator Token</p>
+                                <p className={styles.tokenText}>{operator_token.description}</p>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -124,6 +133,15 @@ function TabGeneral({ operator }) {
                     <h3 className={styles.sectionTitle}>Modules</h3>
                     {modules.map(mod => (
                         <Accordion key={mod.id} icon={mod.icon} title={mod.name}>
+                            {mod.image_url && (
+                                <img 
+                                    src={getAssetUrl(mod.image_url)} 
+                                    alt={mod.name} 
+                                    className={styles.moduleImage} 
+                                    onClick={() => onImageClick(getAssetUrl(mod.image_url))}
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
+                                />
+                            )}
                             <p style={{ marginTop: 0 }}><strong>Effect:</strong> {mod.description}</p>
                             {mod.story && (
                                 <>
@@ -224,7 +242,7 @@ function TabDialogues({ operator }) {
             {/* ── Controls ────────────────────────────────────────────── */}
             <div className={styles.dialogueControls}>
                 {skinsWithDlg.length > 1 && (
-                    <>
+                    <div className={styles.dialogueRow}>
                         <span className={styles.dialogueControlLabel}>Skin:</span>
                         {skinsWithDlg.map(s => (
                             <button
@@ -235,22 +253,23 @@ function TabDialogues({ operator }) {
                                 {s.name}
                             </button>
                         ))}
-                        <span style={{ width: '1px', height: '20px', background: 'var(--color-border)', margin: '0 4px' }} />
-                    </>
+                    </div>
                 )}
-                <span className={styles.dialogueControlLabel}>Audio:</span>
-                {['jp', 'en', 'cn'].map(lang => (
-                    <button
-                        key={lang}
-                        className={`${styles.skinBtn} ${selectedLang === lang ? styles.active : ''}`}
-                        onClick={() => {
-                            setSelectedLang(lang);
-                            if (audioRef.current) { audioRef.current.pause(); setPlayingId(null); }
-                        }}
-                    >
-                        {lang.toUpperCase()}
-                    </button>
-                ))}
+                <div className={styles.dialogueRow}>
+                    <span className={styles.dialogueControlLabel}>Audio:</span>
+                    {['jp', 'en', 'cn'].map(lang => (
+                        <button
+                            key={lang}
+                            className={`${styles.skinBtn} ${selectedLang === lang ? styles.active : ''}`}
+                            onClick={() => {
+                                setSelectedLang(lang);
+                                if (audioRef.current) { audioRef.current.pause(); setPlayingId(null); }
+                            }}
+                        >
+                            {lang.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* ── Dialogue Items ───────────────────────────────────────── */}
@@ -326,6 +345,7 @@ export default function OperatorDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('general');
+    const [modalImage, setModalImage] = useState(null);
 
     const operator = getOperatorById(id);
 
@@ -402,11 +422,26 @@ export default function OperatorDetailPage() {
 
             {/* ── Tab Content ──────────────────────────────────────────── */}
             <div className={styles.tabContent}>
-                {activeTab === 'general' && <TabGeneral operator={operator} />}
+                {activeTab === 'general' && <TabGeneral operator={operator} onImageClick={setModalImage} />}
                 {activeTab === 'profiles' && <TabProfiles operator={operator} />}
                 {activeTab === 'dialogues' && <TabDialogues operator={operator} />}
                 {activeTab === 'records' && <TabRecords operator={operator} />}
             </div>
+
+            {/* Modal Image */}
+            {modalImage && (
+                <div className={styles.imageModalOverlay} onClick={() => setModalImage(null)}>
+                    <div className={styles.imageModalContent} onClick={e => e.stopPropagation()}>
+                        <img 
+                            src={modalImage} 
+                            alt="Full view" 
+                            className={styles.imageModalImg} 
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getAssetUrl('/assets/images/character/blank.png'); }}
+                        />
+                        <button className={styles.imageModalClose} onClick={() => setModalImage(null)}>×</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

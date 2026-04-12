@@ -58,6 +58,7 @@ export const MOCK_OPERATORS = [
     combat_info: {
       operator_token: {
         description: 'A small ring that carries a familiar warmth. As you put it on, you feel as if she is standing right beside you.',
+        image_url: '/assets/images/operator/amiya/token.png',
       },
       skills: [
         {
@@ -94,6 +95,7 @@ export const MOCK_OPERATORS = [
           id: 'mod_amiya_x',
           name: 'Module X: Starfall',
           icon: '/assets/images/operator/amiya/module_x.png',
+          image_url: '/assets/images/operator/amiya/module_x_img.png',
           description: 'Increases base ATK by 25 and ASPD by 3. After deployment, immediately recovers 15 SP.',
           story: 'Amiya has always carried a burden far heavier than what any child should bear. The ring upon her finger pulses with a light that speaks of promises, both made and broken. Those who know its origin understand why she fights with such quiet desperation—not for vengeance, but for a world where such rings need never be forged again.\n\nThe module designated "Starfall" was engineered by the Engineering Department specifically for Amiya after the Chernobog incident. It channels the ambient Originium Arts in the environment to supplement her natural energy reserves, reducing the physical toll of her abilities. Dr. Kal\'tsit insisted on its creation after observing the aftereffects of Amiya\'s third combat skill during field operations.',
         },
@@ -296,6 +298,7 @@ She smiles — a small, quiet smile, but one that carries the weight of an unsha
     combat_info: {
       operator_token: {
         description: 'A well-worn badge from the Lungmen Guard Department. Though she has left, her sense of justice remains.',
+        image_url: '/assets/images/operator/chen/token.png',
       },
       skills: [
         {
@@ -328,6 +331,7 @@ She smiles — a small, quiet smile, but one that carries the weight of an unsha
           id: 'mod_chen_y',
           name: 'Module Y: Lungmen Code',
           icon: '/assets/images/operator/chen/module_y.png',
+          image_url: '/assets/images/operator/chen/module_y_img.png',
           description: 'When this Operator is deployed, all [Guard] operators gain +8% ATK.',
           story: "The Lungmen Guard Department was Ch'en's life. She joined not out of obligation, but because she saw in its mission a reflection of her own sense of justice. The rules, the order, the clear lines between right and wrong—they were a framework she could cling to in a world of moral ambiguity.\n\nBut the world changed, and so did Lungmen. When the choice came between duty and conscience, Ch'en chose to walk away. The badge stays with her, not as a reminder of what she left behind, but of the ideals that first drove her to serve.",
         },
@@ -416,6 +420,7 @@ She smiles — a small, quiet smile, but one that carries the weight of an unsha
     combat_info: {
       operator_token: {
         description: 'A small snow leopard figurine carved from a Kjerag glacier stone. It\'s cold to the touch, yet somehow comforting.',
+        image_url: '/assets/images/operator/silverash/token.png',
       },
       skills: [
         {
@@ -448,6 +453,7 @@ She smiles — a small, quiet smile, but one that carries the weight of an unsha
           id: 'mod_sa_x',
           name: 'Module X: Kjerag\'s Will',
           icon: '/assets/images/operator/silverash/module_x.png',
+          image_url: '/assets/images/operator/silverash/module_x_img.png',
           description: 'During Truesilver Slash, enemies hit have their DEF reduced by 100 for 3 seconds.',
           story: 'SilverAsh grew up in the heart of Kjerag, where the snow never melts and the politics are as treacherous as the mountain passes. Inheriting leadership of Karlan Trade at a young age, he learned quickly that survival demanded both strength and cunning.\n\nThe module "Kjerag\'s Will" represents his philosophy: break the enemy\'s defenses, and the rest follows. It was developed in collaboration with Rhine Lab, a partnership that raised more than a few eyebrows among Kjerag\'s conservative elders.',
         },
