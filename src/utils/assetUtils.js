@@ -16,6 +16,17 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 export function getAssetUrl(path, type = null) {
   if (!path) return '';
 
+  // Handle temporary local preview blobs (from Deferred Upload)
+  if (typeof path === 'object' && path.preview) {
+    return path.preview;
+  }
+  // Fallback to extract string if object
+  if (typeof path === 'object' && path.path) {
+    path = path.path;
+  }
+
+  if (typeof path !== 'string') return '';
+
   const isVideo = type === 'video' || path.match(/\.(mp4|webm|ogg)$/i);
 
   // If it is already an absolute URL or a data URI

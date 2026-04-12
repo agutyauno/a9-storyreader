@@ -54,6 +54,46 @@ const cleanUrl = (url) => {
 
 const SupabaseAPI_Raw = {
   // ===========================================================================
+  // UTILS
+  // ===========================================================================
+  /**
+   * Upload an asset to GitHub via Supabase Edge Function
+   * @param {File} file 
+   * @param {string} fullPath e.g. "/images/operators_images/amiya.png"
+   */
+  async uploadAssetToGithub(file, fullPath) {
+    if (USE_MOCK_DB) {
+      console.log('Mock upload:', fullPath);
+      return new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Content = reader.result.split(',')[1];
+          const path = fullPath.startsWith('/') ? fullPath.slice(1) : fullPath;
+          
+          const { data, error } = await supabase.functions.invoke('upload-github', {
+            body: { 
+              path: path,
+              content: base64Content,
+              message: `Upload asset: ${path}`
+            }
+          });
+
+          if (error) throw error;
+          resolve(data);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
+    });
+  },
+
+  // ===========================================================================
   // REGIONS
   // ===========================================================================
   async getRegions() {
@@ -1083,6 +1123,220 @@ const SupabaseAPI_Raw = {
         }];
       })
     );
+  },
+
+  // ===========================================================================
+  // OPERATOR CLASSES
+  // ===========================================================================
+  async getOperatorClasses() {
+    const { data, error } = await supabase.from('operator_classes').select('*').order('name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorClass(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('operator_classes').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorClass(id, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('operator_classes').update(cleanPayload).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorClass(id) {
+    const { error } = await supabase.from('operator_classes').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR SUBCLASSES
+  // ===========================================================================
+  async getOperatorSubclasses(classId = null) {
+    let q = supabase.from('operator_subclasses').select('*').order('name');
+    if (classId) q = q.eq('class_id', classId);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorSubclass(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('operator_subclasses').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorSubclass(id, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('operator_subclasses').update(cleanPayload).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorSubclass(id) {
+    const { error } = await supabase.from('operator_subclasses').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // FACTIONS
+  // ===========================================================================
+  async getFactions() {
+    const { data, error } = await supabase.from('factions').select('*').order('name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createFaction(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('factions').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateFaction(id, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    const { data, error } = await supabase.from('factions').update(cleanPayload).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteFaction(id) {
+    const { error } = await supabase.from('factions').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATORS
+  // ===========================================================================
+  async getOperators() {
+    const { data, error } = await supabase.from('operators').select('*').order('name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getOperator(operatorId) {
+    const { data, error } = await supabase.from('operators').select('*').eq('operator_id', operatorId).single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createOperator(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    const { data, error } = await supabase.from('operators').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperator(operatorId, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    const { data, error } = await supabase.from('operators').update(cleanPayload).eq('operator_id', operatorId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperator(operatorId) {
+    const { error } = await supabase.from('operators').delete().eq('operator_id', operatorId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR FACTIONS (join table)
+  // ===========================================================================
+  async getOperatorFactions(operatorId) {
+    const { data, error } = await supabase.from('operator_factions').select('*, factions(*)').eq('operator_id', operatorId);
+    if (error) throw error;
+    return (data || []).map(row => row.factions).filter(Boolean);
+  },
+
+  async setOperatorFactions(operatorId, factionIds) {
+    // Delete all existing, then insert new
+    await supabase.from('operator_factions').delete().eq('operator_id', operatorId);
+    if (factionIds?.length) {
+      const rows = factionIds.map(fid => ({ operator_id: operatorId, faction_id: fid }));
+      const { error } = await supabase.from('operator_factions').insert(rows);
+      if (error) throw error;
+    }
+  },
+
+  // ===========================================================================
+  // OPERATOR SKINS
+  // ===========================================================================
+  async getOperatorSkins(operatorId) {
+    const { data, error } = await supabase.from('operator_skins').select('*').eq('operator_id', operatorId);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorSkin(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+    const { data, error } = await supabase.from('operator_skins').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorSkin(skinId, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+    const { data, error } = await supabase.from('operator_skins').update(cleanPayload).eq('skin_id', skinId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorSkin(skinId) {
+    const { error } = await supabase.from('operator_skins').delete().eq('skin_id', skinId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR DIALOGUES
+  // ===========================================================================
+  async getOperatorDialogues(operatorId, skinId = null) {
+    let q = supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('title');
+    if (skinId) q = q.eq('skin_id', skinId);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorDialogue(payload) {
+    const { data, error } = await supabase.from('operator_dialogues').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorDialogue(dialogueId, payload) {
+    const { data, error } = await supabase.from('operator_dialogues').update(payload).eq('dialogue_id', dialogueId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorDialogue(dialogueId) {
+    const { error } = await supabase.from('operator_dialogues').delete().eq('dialogue_id', dialogueId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR STORIES (Records) — uses stories table with operator_id
+  // ===========================================================================
+  async getStoriesByOperator(operatorId) {
+    const { data, error } = await supabase.from('stories').select('*').eq('operator_id', operatorId).order('display_order');
+    if (error) throw error;
+    return data || [];
   },
 };
 

@@ -51,7 +51,7 @@ function AppLayout() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/operators/:id" element={<OperatorDetailPage />} />
           <Route 
-            path="/editor/:storyId?" 
+            path="/editor/*" 
             element={
               <ProtectedRoute>
                 <EditorPage />

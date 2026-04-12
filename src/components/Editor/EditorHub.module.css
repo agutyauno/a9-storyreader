@@ -1,0 +1,112 @@
+/* ================================================================================================= */
+/* Editor Hub — Module selection screen                                                              */
+/* Thiết kế đơn giản, nhất quán với phong cách tối của Editor                                        */
+/* ================================================================================================= */
+
+.hub {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-dark);
+    padding: var(--spacing-2xl);
+    overflow-y: auto;
+}
+
+.hubInner {
+    max-width: 480px;
+    width: 100%;
+}
+
+.hubHeader {
+    margin-bottom: var(--spacing-xl);
+}
+
+.hubTitle {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+/* ---- Cards ---- */
+.cardGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-base);
+    padding: var(--spacing-base) var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background-color 0.2s;
+    font-family: inherit;
+    color: inherit;
+}
+
+.card:hover {
+    border-color: var(--color-accent-light);
+    background: rgba(184, 169, 255, 0.04);
+}
+
+.cardIcon {
+    flex-shrink: 0;
+    color: var(--card-accent, var(--color-text-tertiary));
+    opacity: 0.7;
+}
+
+.card:hover .cardIcon {
+    opacity: 1;
+}
+
+.cardBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.cardTitle {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.cardDesc {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin: 2px 0 0 0;
+    line-height: 1.4;
+}
+
+.cardArrow {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.card:hover .cardArrow {
+    opacity: 0.6;
+    transform: translateX(2px);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+    .hub {
+        padding: var(--spacing-base);
+    }
+
+    .card {
+        padding: var(--spacing-sm) var(--spacing-base);
+    }
+}

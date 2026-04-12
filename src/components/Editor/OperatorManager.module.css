@@ -1,0 +1,800 @@
+/* ================================================================================================= */
+/* Operator Manager — Dashboard + Editor (WYSIWYG style, mirrors Reader)                             */
+/* ================================================================================================= */
+
+/* ── Container ─────────────────────────────────────────────────────────── */
+.manager {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg-primary, #1e2128);
+}
+
+.inner {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-2xl) var(--spacing-base);
+}
+
+/* Editor inner: fixed header + scrollable content */
+.editorInner {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-2xl) var(--spacing-base);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.editorInner .tabContent {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ── Dashboard Header ──────────────────────────────────────────────────── */
+.dashHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-base);
+    flex-wrap: wrap;
+}
+
+.dashTitle {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-accent);
+    margin: 0;
+}
+
+.dashActions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+/* ── Controls (Search / Filter) ────────────────────────────────────────── */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.searchBar {
+    flex: 1;
+    min-width: 200px;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.searchBar:focus {
+    border-color: var(--color-accent-light);
+}
+
+.searchBar::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.filterSelect {
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    outline: none;
+    min-width: 140px;
+    font-family: inherit;
+}
+
+.filterSelect:focus {
+    border-color: var(--color-accent-light);
+}
+
+/* ── Operator Grid ─────────────────────────────────────────────────────── */
+.operatorGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--spacing-base);
+}
+
+.operatorCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-base);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    font-family: inherit;
+}
+
+.operatorCard:hover {
+    border-color: var(--color-accent-light);
+    box-shadow: 0 0 12px rgba(var(--color-accent-rgb), 0.15);
+}
+
+.cardAvatar {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-base);
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    background: var(--color-bg-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.cardName {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: center;
+    margin: 0 0 4px 0;
+}
+
+.cardMeta {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.cardMetaIcon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    opacity: 0.7;
+}
+
+/* ── Add New Card ──────────────────────────────────────────────────────── */
+.addCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    background: transparent;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-base);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    font-family: inherit;
+    min-height: 140px;
+}
+
+.addCard:hover {
+    border-color: var(--color-accent-light);
+    color: var(--color-accent-light);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btnPrimary {
+    padding: 8px 16px;
+    background: var(--color-accent-light);
+    color: var(--color-bg-dark);
+    border: none;
+    border-radius: 6px;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnPrimary:hover {
+    opacity: 0.85;
+}
+
+.btnSecondary {
+    padding: 8px 16px;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnSecondary:hover {
+    border-color: var(--color-text-tertiary);
+    color: var(--color-text-primary);
+}
+
+.btnDanger {
+    padding: 8px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnDanger:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btnIcon {
+    padding: 6px;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.btnIcon:hover {
+    border-color: var(--color-text-tertiary);
+    color: var(--color-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* EDITOR (Detail View) — mirrors Reader's OperatorDetailPage                */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Back Link ─────────────────────────────────────────────────────────── */
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--spacing-xl);
+    cursor: pointer;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+}
+
+.backLink:hover {
+    color: var(--color-accent);
+}
+
+/* ── Detail Header ─────────────────────────────────────────────────────── */
+.detailHeader {
+    display: flex;
+    gap: var(--spacing-xl);
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-base);
+    border: 1px solid var(--color-border);
+}
+
+.detailAvatar {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-base);
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    background: var(--color-bg-dark);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.detailAvatar:hover {
+    border-color: var(--color-accent-light);
+}
+
+.detailHeaderInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.detailName {
+    font-size: var(--font-size-2xl);
+    color: var(--color-accent);
+    margin: 0 0 var(--spacing-xs) 0;
+    font-weight: 700;
+}
+
+.headerActions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+/* ── Detail Badges ─────────────────────────────────────────────────────── */
+.detailBadges {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--color-bg-dark);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.badgeIcon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+/* ── Tab Bar ───────────────────────────────────────────────────────────── */
+.tabBar {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: var(--spacing-xl);
+    overflow-x: auto;
+}
+
+.tabBtn {
+    padding: var(--spacing-sm) var(--spacing-xl);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    font-family: inherit;
+}
+
+.tabBtn:hover {
+    color: var(--color-accent);
+}
+
+.tabBtn.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent-light);
+}
+
+.tabContent {
+    min-height: 400px;
+}
+
+/* ── Form Elements ─────────────────────────────────────────────────────── */
+.formGroup {
+    margin-bottom: var(--spacing-base);
+}
+
+.formLabel {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.formInput {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.formInput:focus {
+    border-color: var(--color-accent-light);
+}
+
+.formInput::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.formTextarea {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.7;
+}
+
+.formTextarea:focus {
+    border-color: var(--color-accent-light);
+}
+
+.formSelect {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.formSelect:focus {
+    border-color: var(--color-accent-light);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-base);
+}
+
+.formRowThree {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacing-base);
+}
+
+/* Inline select with add button */
+.selectWithAdd {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.selectWithAdd .formSelect {
+    flex: 1;
+}
+
+.selectWithAdd .btnIcon {
+    flex-shrink: 0;
+}
+
+/* ── Asset Upload Only ─────────────────────────────────────────────────── */
+.assetUploadWrapper {
+    width: 100%;
+}
+
+.assetUploadBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    text-align: left;
+}
+
+.assetUploadBtn:hover:not(:disabled) {
+    border-color: var(--color-accent-light);
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.assetUploadBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.assetFilename {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+
+/* ── Skin Visualizer (mirrors Reader) ──────────────────────────────────── */
+.skinVisualizer {
+    display: flex;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.skinImageWrapper {
+    flex: 0 0 340px;
+    max-width: 340px;
+    text-align: center;
+}
+
+.skinImage {
+    width: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    border-radius: var(--radius-base);
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.skinImage:hover {
+    border-color: var(--color-accent-light);
+}
+
+.skinSelector {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-sm);
+    justify-content: center;
+}
+
+.skinBtn {
+    padding: 4px 12px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.skinBtn:hover {
+    border-color: var(--color-accent-light);
+    color: var(--color-text-primary);
+}
+
+.skinBtn.active {
+    background: var(--color-accent-light);
+    color: var(--color-bg-dark);
+    border-color: var(--color-accent-light);
+}
+
+.skinInfoPanel {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Accordion (Skills, Modules, Profiles) ─────────────────────────────── */
+.accordion {
+    margin-bottom: var(--spacing-base);
+}
+
+.accordionItem {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--spacing-xs);
+    overflow: hidden;
+}
+
+.accordionHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-bg-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.accordionHeader:hover {
+    background: var(--color-bg-dark);
+}
+
+.accordionIcon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+}
+
+.accordionTitle {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.accordionChevron {
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.accordionChevron.open {
+    transform: rotate(180deg);
+}
+
+.accordionBody {
+    padding: var(--spacing-base);
+    background: var(--color-bg-dark);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+.sectionTitle {
+    font-size: var(--font-size-lg);
+    color: var(--color-accent);
+    margin: 0 0 var(--spacing-base) 0;
+    font-weight: 600;
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--color-accent);
+}
+
+/* ── Section with add button (Skills etc) ──────────────────────────────── */
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-base);
+}
+
+.sectionHeader .sectionTitle {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* ── Empty State ──────────────────────────────────────────────────────── */
+.emptyState {
+    text-align: center;
+    padding: var(--spacing-3xl);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-base);
+}
+
+/* ── Notification / Toast ─────────────────────────────────────────────── */
+.actionBar {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-base) 0;
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-xl);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .operatorGrid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: var(--spacing-sm);
+    }
+
+    .cardAvatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .detailHeader {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .detailBadges {
+        justify-content: center;
+    }
+
+    .skinVisualizer {
+        flex-direction: column;
+    }
+
+    .skinImageWrapper {
+        flex: unset;
+        max-width: 100%;
+    }
+
+    .formRow, .formRowThree {
+        grid-template-columns: 1fr;
+    }
+
+    .tabBtn {
+        padding: var(--spacing-sm) var(--spacing-base);
+        font-size: var(--font-size-xs);
+    }
+
+    .dashHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ── Metadata Popup ────────────────────────────────────────────────────── */
+.popupOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.popup {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    width: 100%;
+    max-width: 400px;
+    padding: var(--spacing-xl);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.popupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xl);
+}
+
+.popupTitle {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}

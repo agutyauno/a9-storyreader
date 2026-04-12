@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, Routes, Route, useMatch } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight } from 'lucide-react';
+import { LogOut, ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, Home } from 'lucide-react';
 
 import EditorSidebar from '../components/Editor/EditorSidebar';
 import EditorToolbar from '../components/Editor/EditorToolbar';
@@ -17,6 +17,9 @@ import NotificationToast from '../components/Editor/NotificationToast';
 import UnsavedChangesModal from '../components/Editor/UnsavedChangesModal';
 import StoryRenderer from '../components/StoryPage/StoryRenderer';
 
+import EditorHub from '../components/Editor/EditorHub';
+import OperatorManager from '../components/Editor/OperatorManager';
+
 import { StoryScriptParser } from '../utils/storyParser';
 import { StoryScriptSerializer } from '../utils/storySerializer';
 import { SupabaseAPI } from '../services/supabaseApi';
@@ -24,11 +27,17 @@ import { SupabaseAPI } from '../services/supabaseApi';
 import styles from './EditorPage.module.css';
 const editorStyles = styles;
 
-export default function EditorPage() {
+// =============================================================================
+// Game Story Editor (extracted from old EditorPage logic)
+// =============================================================================
+function GameStoryEditor({ showNotification }) {
     const navigate = useNavigate();
-    const { logout } = useAuth();
-    const { storyId } = useParams();  // undefined when creating a new story
+    const location = useLocation();
     const editorRef = useRef(null);
+
+    // Extract storyId from URL: /editor/game/:storyId or /editor/game
+    const storyMatch = useMatch('/editor/game/:storyId');
+    const storyId = storyMatch?.params?.storyId;
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -47,7 +56,6 @@ export default function EditorPage() {
             const small = window.innerWidth <= 1024;
             setIsSmallScreen(small);
             if (small) {
-                // On small screens, hide both by default if they were both open
                 if (isSidebarVisible && isPreviewVisible) {
                     setIsSidebarVisible(false);
                 }
@@ -59,44 +67,21 @@ export default function EditorPage() {
 
     const toggleSidebar = () => {
         if (isSmallScreen && !isSidebarVisible) {
-            setIsPreviewVisible(false); // Close preview if opening sidebar on small screen
+            setIsPreviewVisible(false);
         }
         setIsSidebarVisible(!isSidebarVisible);
     };
 
     const togglePreview = () => {
         if (isSmallScreen && !isPreviewVisible) {
-            setIsSidebarVisible(false); // Close sidebar if opening preview on small screen
+            setIsSidebarVisible(false);
         }
         setIsPreviewVisible(!isPreviewVisible);
     };
 
-    const handleBack = () => {
-        confirmNavigation(() => navigate(-1));
-    };
-
-    const handleLogout = () => {
-        confirmNavigation(async () => {
-            try {
-                await logout();
-                navigate('/login');
-            } catch (err) {
-                console.error('Logout failed:', err);
-            }
-        });
-    };
-
-    const confirmNavigation = (action) => {
-        if (isDirty) {
-            setPendingAction(() => action);
-            setUnsavedModalOpen(true);
-        } else {
-            action();
-        }
-    };
     const [notification, setNotification] = useState({ message: '', type: 'success' });
-    const showNotification = (message, type = 'success') => {
-        setNotification({ message, type });
+    const localNotify = (message, type = 'success') => {
+        showNotification ? showNotification(message, type) : setNotification({ message, type });
     };
 
     // Resizing state
@@ -106,7 +91,7 @@ export default function EditorPage() {
     // Asset Preview Modal (Read-only Lightbox)
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewTarget, setPreviewTarget] = useState(null);
-    const [previewKind, setPreviewKind] = useState('asset'); // 'asset' or 'character'
+    const [previewKind, setPreviewKind] = useState('asset');
 
     const handlePreviewAsset = (item, kind) => {
         let target = item;
@@ -127,7 +112,7 @@ export default function EditorPage() {
     // Asset Detail/Edit Modal
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailTarget, setDetailTarget] = useState(null);
-    const [detailKind, setDetailKind] = useState('asset'); // 'asset' or 'character'
+    const [detailKind, setDetailKind] = useState('asset');
 
     const handleEditAsset = (item, kind) => {
         setDetailTarget(item);
@@ -139,7 +124,6 @@ export default function EditorPage() {
         sidebarReloadRef.current?.();
     };
 
-    // Sidebar reload ref
     const [metadata, setMetadata] = useState({
         name: 'Untitled Draft',
         description: '',
@@ -152,7 +136,7 @@ export default function EditorPage() {
     const [previewData, setPreviewData] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [allCharacters, setAllCharacters] = useState([]);
-    const [eventCharacters, setEventCharacters] = useState([]); // Specifically linked to current event
+    const [eventCharacters, setEventCharacters] = useState([]);
     const [allAssets, setAllAssets] = useState([]);
     const [initialScript, setInitialScript] = useState('');
     const isDirty = scriptText !== initialScript;
@@ -196,11 +180,19 @@ export default function EditorPage() {
 
     const sidebarReloadRef = useRef(null);
 
+    const confirmNavigation = (action) => {
+        if (isDirty) {
+            setPendingAction(() => action);
+            setUnsavedModalOpen(true);
+        } else {
+            action();
+        }
+    };
+
     // Initial Load
     useEffect(() => {
         async function loadStory() {
             if (!storyId) {
-                // New/Blank state — start with empty script and no active editor
                 setScriptText('');
                 setEditorMode(null);
                 return;
@@ -230,7 +222,7 @@ export default function EditorPage() {
                     }
                 }
                 setScriptText(text);
-                setInitialScript(text); // Track initial state
+                setInitialScript(text);
                 setEditorMode('story');
             } catch (err) {
                 console.error('Failed to load story:', err);
@@ -254,7 +246,6 @@ export default function EditorPage() {
                 
                 setAllCharacters(chars);
                 
-                // Fetch event characters if we are in a story
                 if (metadata.event_id) {
                     try {
                         const eventChars = await SupabaseAPI.getCharactersByEvent(metadata.event_id);
@@ -312,8 +303,6 @@ export default function EditorPage() {
         return () => clearTimeout(timerId);
     }, [scriptText, metadata.name, editorMode, charCacheMap, assetCacheMap]);
 
-
-
     // Handle Browser-level BeforeUnload
     useEffect(() => {
         const handleBeforeUnload = (e) => {
@@ -363,12 +352,9 @@ export default function EditorPage() {
         editorRef.current?.insertText(template, isInline);
     };
 
-
     const handleSave = async (silent = false) => {
         setSaving(true);
         try {
-            // Keep parseWithDB to validate syntax, but discard the result for saving.
-            // If it throws an error, the save will abort.
             await StoryScriptParser.parseWithDB(scriptText, charCacheMap, assetCacheMap);
             
             const payload = {
@@ -376,26 +362,25 @@ export default function EditorPage() {
                 description: metadata.description,
                 display_order: metadata.display_order,
                 event_id: metadata.event_id,
-                // V2 Format: Save the raw script text instead of parsed JSON
                 story_content: { type: 'vns', script: scriptText }, 
             };
 
             if (metadata.story_id) {
                 await SupabaseAPI.updateStory(metadata.story_id, payload);
-                setInitialScript(scriptText); // Reset dirty state
-                if (!silent) showNotification('Đã lưu thay đổi!', 'success');
+                setInitialScript(scriptText);
+                if (!silent) localNotify('Đã lưu thay đổi!', 'success');
                 return true;
             } else {
                 const created = await SupabaseAPI.createStory(payload);
                 setMetadata(prev => ({ ...prev, story_id: created.story_id }));
-                setInitialScript(scriptText); // Reset dirty state
-                navigate(`/editor/${created.story_id}`, { replace: true });
-                if (!silent) showNotification('Story đã được tạo!', 'success');
+                setInitialScript(scriptText);
+                navigate(`/editor/game/${created.story_id}`, { replace: true });
+                if (!silent) localNotify('Story đã được tạo!', 'success');
                 return true;
             }
         } catch (err) {
             console.error('Save failed:', err);
-            if (!silent) showNotification('Lưu thất bại: ' + (err.message || 'Lỗi hệ thống'), 'error');
+            if (!silent) localNotify('Lưu thất bại: ' + (err.message || 'Lỗi hệ thống'), 'error');
             return false;
         } finally {
             setSaving(false);
@@ -422,11 +407,10 @@ export default function EditorPage() {
         window.open('#/story/preview?preview=1', '_blank');
     };
 
-
     const handleEntitySelect = (node) => {
         const action = () => {
             if (node.type === 'story') {
-                navigate(`/editor/${node.story_id || node.id}`);
+                navigate(`/editor/game/${node.story_id || node.id}`);
                 setEditorMode('story');
                 setSelectedEntity(null);
             } else {
@@ -445,7 +429,7 @@ export default function EditorPage() {
         return (
             <div className={editorStyles.editorPage} style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--color-error, #f87171)', fontSize: 16 }}>{error}</p>
-                <button className={editorStyles.backBtn} onClick={() => navigate(-1)} style={{ marginTop: 16 }}>
+                <button className={editorStyles.backBtn} onClick={() => navigate('/editor/game')} style={{ marginTop: 16 }}>
                     <ArrowLeft size={18} /> Quay lại
                 </button>
             </div>
@@ -453,11 +437,12 @@ export default function EditorPage() {
     }
 
     return (
-        <div className={editorStyles.editorPage}>
+        <>
+            {/* Header actions — injected via the parent shell */}
             <div className={editorStyles.editorHeader}>
                 <div className={editorStyles.headerLeft}>
-                    <button onClick={handleBack} className={editorStyles.backBtn} title="Back">
-                        <ArrowLeft size={20} />
+                    <button onClick={() => confirmNavigation(() => navigate('/editor'))} className={editorStyles.backBtn} title="Hub">
+                        <Home size={20} />
                     </button>
                     <button 
                         onClick={toggleSidebar} 
@@ -495,10 +480,6 @@ export default function EditorPage() {
                             </button>
                         </>
                     )}
-                    
-                    <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
-                        <LogOut size={16} />
-                    </button>
 
                     {editorMode === 'story' && (
                         <button 
@@ -522,7 +503,7 @@ export default function EditorPage() {
                             currentStoryId={metadata.story_id}
                             reloadRef={sidebarReloadRef}
                             onPickAsset={openPicker}
-                            showNotification={showNotification}
+                            showNotification={localNotify}
                         />
                         <div 
                             className={editorStyles.resizer} 
@@ -556,24 +537,23 @@ export default function EditorPage() {
                             <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginBottom: '16px' }}>{selectedEntity.type?.toUpperCase()}</div>
                             <p style={{ maxWidth: '400px', lineHeight: '1.6' }}>{selectedEntity.description || "No description available."}</p>
                             
-                            {/* Detailed Managers based on type */}
                             {selectedEntity.type === 'arc' && (
                                 <SuggestionsManager 
                                     arcId={selectedEntity.arc_id || selectedEntity.id} 
-                                    showNotification={showNotification} 
+                                    showNotification={localNotify} 
                                 />
                             )}
                             {selectedEntity.type === 'event' && (
                                 <>
                                     <EventCharactersManager 
                                         eventId={selectedEntity.event_id || selectedEntity.id} 
-                                        showNotification={showNotification} 
+                                        showNotification={localNotify} 
                                         onPickAsset={openPicker}
                                         onPreview={handlePreviewAsset}
                                     />
                                     <EventGalleryManager 
                                         eventId={selectedEntity.event_id || selectedEntity.id} 
-                                        showNotification={showNotification} 
+                                        showNotification={localNotify} 
                                         onPickAsset={openPicker}
                                         onPreview={handlePreviewAsset}
                                     />
@@ -641,13 +621,7 @@ export default function EditorPage() {
                 kind={detailKind}
                 onClose={() => setDetailOpen(false)}
                 onUpdated={handleDetailUpdate}
-                showNotification={showNotification}
-            />
-
-            <NotificationToast
-                message={notification.message}
-                type={notification.type}
-                onClose={() => setNotification({ message: '', type: 'success' })}
+                showNotification={localNotify}
             />
 
             <UnsavedChangesModal 
@@ -656,6 +630,91 @@ export default function EditorPage() {
                 onConfirm={handleConfirmDiscard}
                 onCancel={() => setUnsavedModalOpen(false)}
                 onSaveAndConfirm={handleSaveAndConfirm}
+            />
+        </>
+    );
+}
+
+
+// =============================================================================
+// Editor Shell — The main page component that handles routing
+// =============================================================================
+export default function EditorPage() {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+    const [notification, setNotification] = useState({ message: '', type: 'success' });
+
+    const showNotification = (message, type = 'success') => {
+        setNotification({ message, type });
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (err) {
+            console.error('Logout failed:', err);
+        }
+    };
+
+    return (
+        <div className={editorStyles.editorPage}>
+            <Routes>
+                {/* Hub — Landing page */}
+                <Route path="/" element={
+                    <>
+                        <div className={editorStyles.editorHeader}>
+                            <div className={editorStyles.headerLeft}>
+                                <button onClick={() => navigate(-1)} className={editorStyles.backBtn} title="Back">
+                                    <ArrowLeft size={20} />
+                                </button>
+                                <h1 className={editorStyles.headerTitle}>
+                                    Editor Hub
+                                </h1>
+                            </div>
+                            <div className={editorStyles.headerRight}>
+                                <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
+                                    <LogOut size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        <EditorHub />
+                    </>
+                } />
+
+                {/* Game Story Editor */}
+                <Route path="/game" element={<GameStoryEditor showNotification={showNotification} />} />
+                <Route path="/game/:storyId" element={<GameStoryEditor showNotification={showNotification} />} />
+
+                {/* Operator Manager */}
+                <Route path="/operator/*" element={
+                    <>
+                        <div className={editorStyles.editorHeader}>
+                            <div className={editorStyles.headerLeft}>
+                                <button onClick={() => navigate('/editor')} className={editorStyles.backBtn} title="Hub">
+                                    <Home size={20} />
+                                </button>
+                                <h1 className={editorStyles.headerTitle}>
+                                    Operator Database
+                                </h1>
+                            </div>
+                            <div className={editorStyles.headerRight}>
+                                <button onClick={handleLogout} className={editorStyles.btnSecondary} title="Đăng xuất">
+                                    <LogOut size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className={editorStyles.workspace}>
+                            <OperatorManager showNotification={showNotification} />
+                        </div>
+                    </>
+                } />
+            </Routes>
+
+            <NotificationToast
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: '', type: 'success' })}
             />
         </div>
     );
