@@ -98,12 +98,9 @@
 /* ================================================================================================= */
 
 .eventBannerContainer {
-	margin-bottom: var(--spacing-xl);
 	border-radius: var(--radius-lg);
 	overflow: hidden;
 	box-shadow: var(--shadow-md);
-	background-color: var(--color-bg-dark);
-	border: 1px solid var(--color-border);
 }
 
 .eventBanner {

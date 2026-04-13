@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Search, Loader, User } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
+import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './EventCharactersManager.module.css';
 
 /**
@@ -28,22 +29,34 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
     };
 
     const handleAdd = () => {
-        onPickAsset?.(async (char) => {
-            // Check if already linked
-            if (linkedCharacters.find(c => c.character_id === char.asset_id)) {
-                showNotification?.('Character already in event', 'warning');
-                return;
-            }
+        onPickAsset?.(async (assets) => {
+            const assetList = Array.isArray(assets) ? assets : [assets];
+            if (assetList.length === 0) return;
 
+            setLoading(true);
             try {
-                await SupabaseAPI.addCharacterToEvent(eventId, char.asset_id);
-                await fetchData();
-                showNotification?.('Added character to event');
+                let addCount = 0;
+                for (const char of assetList) {
+                    // Check if already linked
+                    if (!linkedCharacters.find(c => c.character_id === char.asset_id)) {
+                        await SupabaseAPI.addCharacterToEvent(eventId, char.asset_id);
+                        addCount++;
+                    }
+                }
+                
+                if (addCount > 0) {
+                    await fetchData();
+                    showNotification?.(`Đã thêm ${addCount} nhân vật vào sự kiện`);
+                } else {
+                    showNotification?.('Các nhân vật đã chọn đều đã có trong sự kiện', 'warning');
+                }
             } catch (err) {
-                console.error('Add character failed:', err);
-                showNotification?.('Failed to add character', 'error');
+                console.error('Add characters failed:', err);
+                showNotification?.('Thêm nhân vật thất bại', 'error');
+            } finally {
+                setLoading(false);
             }
-        }, 'character');
+        }, { filter: 'character', multi: true });
     };
 
     const handleRemove = async (characterId) => {
@@ -80,7 +93,7 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
                         <div key={c.character_id} className={styles.charCard} onClick={() => onPreview?.(c, 'character')}>
                             <div className={styles.avatarWrap}>
                                 {c.avatar_url ? (
-                                    <img src={c.avatar_url} alt={c.name} className={styles.avatar} />
+                                    <img src={getAssetUrl(c.avatar_url)} alt={c.name} className={styles.avatar} />
                                 ) : (
                                     <div className={styles.avatarPlaceholder}><User size={20} /></div>
                                 )}

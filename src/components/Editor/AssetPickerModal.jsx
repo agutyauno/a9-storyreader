@@ -24,12 +24,13 @@ const CATEGORIES = [
  *   onSelect(url) — called with the selected asset's url
  *   filterType    — optional: e.g. 'image' to only show images
  */
-export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType }) {
+export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType, multiSelect = false }) {
     const [assets, setAssets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeCat, setActiveCat] = useState('all');
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedAssets, setSelectedAssets] = useState(new Map()); // id -> asset object
 
     useEffect(() => {
         if (filterType) {
@@ -40,7 +41,10 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     }, [filterType, isOpen]);
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            setSelectedAssets(new Map());
+            return;
+        }
         loadAssets();
     }, [isOpen]);
     const loadAssets = async () => {
@@ -134,7 +138,23 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     });
 
     const handleSelect = (asset) => {
-        onSelect?.(asset);
+        if (multiSelect) {
+            const newSelected = new Map(selectedAssets);
+            if (newSelected.has(asset.asset_id)) {
+                newSelected.delete(asset.asset_id);
+            } else {
+                newSelected.set(asset.asset_id, asset);
+            }
+            setSelectedAssets(newSelected);
+        } else {
+            onSelect?.(asset);
+            onClose();
+        }
+    };
+
+    const handleConfirmMultiSelect = () => {
+        if (selectedAssets.size === 0) return;
+        onSelect?.(Array.from(selectedAssets.values()));
         onClose();
     };
 
@@ -162,9 +182,19 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                             <Plus size={16} />
                         </button>
                     </div>
-                    <button className={styles.closeBtn} onClick={onClose}>
-                        <X size={18} />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button className={styles.closeBtn} onClick={onClose}>
+                            <X size={18} />
+                        </button>
+                        {multiSelect && selectedAssets.size > 0 && (
+                            <button 
+                                className={styles.confirmBtn}
+                                onClick={handleConfirmMultiSelect}
+                            >
+                                Xác nhận thêm ({selectedAssets.size})
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Search */}
@@ -209,7 +239,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                         filtered.map(asset => (
                             <div
                                 key={asset.asset_id}
-                                className={styles.card}
+                                className={`${styles.card} ${selectedAssets.has(asset.asset_id) ? styles.cardSelected : ''}`}
                                 onClick={() => handleSelect(asset)}
                             >
                                 <div className={styles.cardPreview}>
