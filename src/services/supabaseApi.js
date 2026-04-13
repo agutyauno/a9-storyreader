@@ -201,6 +201,7 @@ const SupabaseAPI_Raw = {
     }
     const cleanPayload = { ...payload };
     if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+    if (cleanPayload.banner_url) cleanPayload.banner_url = cleanUrl(cleanPayload.banner_url);
 
     const { data, error } = await supabase.from('events').insert(cleanPayload).select().single();
     if (error) throw error;
@@ -216,6 +217,7 @@ const SupabaseAPI_Raw = {
     }
     const cleanPayload = { ...payload };
     if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
+    if (cleanPayload.banner_url) cleanPayload.banner_url = cleanUrl(cleanPayload.banner_url);
 
     const { data, error } = await supabase.from('events').update(cleanPayload).eq('event_id', eventId).select();
     if (error) throw error;

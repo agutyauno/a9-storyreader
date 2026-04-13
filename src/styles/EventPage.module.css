@@ -94,6 +94,30 @@
 }
 
 /* ================================================================================================= */
+/* Event Banner & Thumbnail */
+/* ================================================================================================= */
+
+.eventBannerContainer {
+	margin-bottom: var(--spacing-xl);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+	box-shadow: var(--shadow-md);
+	background-color: var(--color-bg-dark);
+	border: 1px solid var(--color-border);
+}
+
+.eventBanner {
+	width: 100%;
+	display: block;
+	aspect-ratio: 21 / 9;
+	object-fit: contain;
+}
+
+
+
+
+
+/* ================================================================================================= */
 /* Back Button (legacy — kept for compatibility) */
 /* ================================================================================================= */
 
@@ -119,9 +143,11 @@
 
 .info-description {
 	white-space: pre-wrap;
+	margin-top: var(--spacing-base);
 }
 
 /* ================================================================================================= */
+
 /* Story Selection Grid */
 /* ================================================================================================= */
 
@@ -654,5 +680,9 @@
 
 	.modal-title {
 		font-size: var(--font-size-lg);
+	}
+
+	.eventBanner {
+		aspect-ratio: 16 / 9;
 	}
 }

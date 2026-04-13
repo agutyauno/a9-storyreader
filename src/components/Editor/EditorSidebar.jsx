@@ -83,6 +83,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     display_order: formData.displayOrder,
                     arc_id: isEditMode ? initialData.arc_id : (modalParent?.arc_id || modalParent?.id),
                     image_url: formData.imageUrl,
+                    banner_url: formData.bannerUrl,
                 };
                 result = isEditMode 
                     ? await SupabaseAPI.updateEvent(formData.id, payload)

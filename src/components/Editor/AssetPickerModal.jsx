@@ -10,6 +10,7 @@ const CATEGORIES = [
     { key: 'background', label: 'Background' },
     { key: 'gallery', label: 'Gallery' },
     { key: 'thumbnail', label: 'Thumnails' },
+    { key: 'banner', label: 'Banner' },
     { key: 'video', label: 'Video' },
     { key: 'bgm', label: 'BGM' },
     { key: 'sfx', label: 'SFX' },
@@ -120,6 +121,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
             if (activeCat === 'background' && a.category !== 'background' && a.category !== 'gallery') return false;
             if (activeCat === 'gallery' && a.category !== 'gallery') return false;
             if (activeCat === 'thumbnail' && a.category !== 'thumbnail') return false;
+            if (activeCat === 'banner' && a.category !== 'banner') return false;
             if (activeCat === 'image' && a.type !== 'image') return false;
             if (activeCat === 'video' && a.type !== 'video') return false;
         }

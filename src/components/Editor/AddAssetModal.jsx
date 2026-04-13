@@ -12,6 +12,7 @@ import { uploadFileToGithub, uploadFilesToGithub, getFolderPath } from '../../se
 const ASSET_TYPES = [
     { value: 'background', label: 'Background Image', type: 'image', category: 'background' },
     { value: 'thumbnail', label: 'Thumbnail Image', type: 'image', category: 'thumbnail' },
+    { value: 'banner', label: 'Banner Image', type: 'image', category: 'banner' },
     { value: 'character', label: 'Character', type: 'character', category: 'character' },
     { value: 'gallery', label: 'Gallery / Story Art', type: 'image', category: 'gallery' },
     { value: 'video', label: 'Video (PV)', type: 'video', category: 'video' },

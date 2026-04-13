@@ -13,6 +13,7 @@ const CATEGORIES = [
     { key: 'background', label: 'Background', Icon: Image },
     { key: 'gallery', label: 'Gallery', Icon: Film },
     { key: 'thumbnail', label: 'Thumnails', Icon: Image },
+    { key: 'banner', label: 'Banner', Icon: Image },
     { key: 'video', label: 'Video', Icon: Video },
     { key: 'bgm', label: 'BGM', Icon: Music },
     { key: 'sfx', label: 'SFX', Icon: Music },
@@ -204,6 +205,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
         if (activeCategory === 'all') return true;
         if (activeCategory === 'background') return a.type === 'image' && a.category === 'background';
         if (activeCategory === 'thumbnail') return a.type === 'image' && a.category === 'thumbnail';
+        if (activeCategory === 'banner') return a.type === 'image' && a.category === 'banner';
         if (activeCategory === 'video') return a.type === 'video';
         if (activeCategory === 'bgm') return a.type === 'audio' && a.category === 'bgm';
         if (activeCategory === 'sfx') return a.type === 'audio' && a.category === 'sfx';
