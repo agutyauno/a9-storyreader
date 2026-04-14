@@ -28,10 +28,10 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
         }
     };
 
-    const handleUpdateTitle = async (id, newTitle) => {
+    const handleUpdateTitle = async (galleryId, newTitle) => {
         try {
-            await SupabaseAPI.updateGallery(id, { title: newTitle });
-            setGallery(prev => prev.map(g => g.id === id ? { ...g, title: newTitle } : g));
+            await SupabaseAPI.updateGallery(galleryId, { title: newTitle });
+            setGallery(prev => prev.map(g => g.gallery_id === galleryId ? { ...g, title: newTitle } : g));
         } catch (err) {
             console.error('Update gallery title failed:', err);
             showNotification?.('Cập nhật tiêu đề thất bại', 'error');
@@ -39,41 +39,51 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
     };
 
     const handleAdd = () => {
-        onPickAsset?.(async (asset) => {
+        onPickAsset?.(async (assets) => {
+            const assetList = Array.isArray(assets) ? assets : [assets];
+            if (assetList.length === 0) return;
+
+            setLoading(true);
             try {
-                const url = asset.url;
                 // Determine next display order
-                const maxOrder = gallery.length > 0 
+                let currentMaxOrder = gallery.length > 0 
                     ? Math.max(...gallery.map(g => g.display_order || 0)) 
                     : -1;
                 
-                // Get filename as default title
-                const filename = url.split('/').pop().split('.')[0] || 'New Image';
-                const formattedTitle = filename.replace(/_/g, ' ').replace(/-/g, ' ');
+                for (const asset of assetList) {
+                    const url = asset.url;
+                    currentMaxOrder++;
+                    
+                    // Get filename as default title
+                    const filename = url.split('/').pop().split('.')[0] || 'New Image';
+                    const formattedTitle = filename.replace(/_/g, ' ').replace(/-/g, ' ');
 
-                await SupabaseAPI.createGallery({
-                    gallery_id: asset.asset_id,
-                    event_id: eventId,
-                    image_url: url,
-                    title: formattedTitle,
-                    display_order: maxOrder + 1
-                });
+                    await SupabaseAPI.createGallery({
+                        gallery_id: asset.asset_id,
+                        event_id: eventId,
+                        image_url: url,
+                        title: formattedTitle,
+                        display_order: currentMaxOrder
+                    });
+                }
                 
                 await fetchData();
-                showNotification?.('Đã thêm ảnh vào bộ sưu tập');
+                showNotification?.(`Đã thêm ${assetList.length} ảnh vào bộ sưu tập`);
             } catch (err) {
-                console.error('Add gallery image failed:', err);
+                console.error('Add gallery images failed:', err);
                 showNotification?.('Thêm ảnh thất bại', 'error');
+            } finally {
+                setLoading(false);
             }
-        }, 'gallery'); // Only show assets categorized as 'gallery'
+        }, { filter: 'gallery', multi: true });
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (galleryId) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa ảnh này khỏi bộ sưu tập?')) return;
         
         try {
-            await SupabaseAPI.deleteGallery(id);
-            setGallery(prev => prev.filter(g => g.id !== id));
+            await SupabaseAPI.deleteGallery(galleryId);
+            setGallery(prev => prev.filter(g => g.gallery_id !== galleryId));
             showNotification?.('Đã xóa ảnh');
         } catch (err) {
             console.error('Delete gallery image failed:', err);
@@ -101,12 +111,12 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
                     <div className={styles.empty}>Chưa có ảnh nào.</div>
                 ) : (
                     gallery.map(img => (
-                        <div key={img.id} className={styles.card}>
+                        <div key={img.gallery_id} className={styles.card}>
                             <div className={styles.imageWrap} onClick={() => onPreview?.(img, 'asset')}>
                                 <img src={getAssetUrl(img.image_url)} alt={img.title} />
                                 <button className={styles.deleteBtn} onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(img.id);
+                                    handleDelete(img.gallery_id);
                                 }}>
                                     <X size={14} />
                                 </button>
@@ -115,7 +125,7 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
                                 <input 
                                     className={styles.titleInput}
                                     defaultValue={img.title}
-                                    onBlur={(e) => handleUpdateTitle(img.id, e.target.value)}
+                                    onBlur={(e) => handleUpdateTitle(img.gallery_id, e.target.value)}
                                     placeholder="Tiêu đề ảnh..."
                                 />
                             </div>

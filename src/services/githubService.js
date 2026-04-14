@@ -4,13 +4,14 @@ import { fileToBase64 } from '../utils/fileUtils';
 /**
  * Maps asset type and category to the correct GitHub folder path.
  * @param {string} type - 'image', 'audio', 'video'
- * @param {string} category - 'background', 'thumbnail', 'bgm', 'sfx', 'PV', 'char_avatar', 'character', 'story_image'
+ * @param {string} category - 'background', 'thumbnail', 'banner', 'bgm', 'sfx', 'PV', 'char_avatar', 'character', 'story_image'
  * @returns {string}
  */
 export const getFolderPath = (type, category) => {
     if (type === 'image') {
         if (category === 'background') return 'images/backgrounds';
         if (category === 'thumbnail') return 'images/thumbnails';
+        if (category === 'banner') return 'images/banners';
         if (category === 'char_avatar') return 'images/char_avatars';
         if (category === 'character') return 'images/characters';
         if (category === 'gallery') return 'images/story_images';

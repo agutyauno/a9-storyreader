@@ -290,6 +290,8 @@ export default function EventPage() {
     <>
       <main>
         <div className={cx("container")}>
+
+
           {/* Top Navigation Bar */}
           <div className={cx("top-nav")}>
             {prevEvent ? (
@@ -319,7 +321,19 @@ export default function EventPage() {
             )}
           </div>
 
-          <div id="info" ref={infoRef}>
+          {/* Event Banner */}
+          {event.banner_url && (
+            <div className={styles.eventBannerContainer}>
+              <img 
+                src={getAssetUrl(event.banner_url)} 
+                alt={event.name} 
+                className={styles.eventBanner} 
+              />
+            </div>
+          )}
+
+
+          <div id="info" ref={infoRef} className={styles.eventInfo}>
             <h2 className={cx("info-title")}>{event.name}</h2>
             <p className={cx("info-description")}>{event.description}</p>
           </div>

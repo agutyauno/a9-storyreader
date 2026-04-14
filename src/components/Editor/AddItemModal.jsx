@@ -18,6 +18,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
     const [description, setDescription] = useState('');
     const [displayOrder, setDisplayOrder] = useState('');
     const [imageUrl, setImageUrl] = useState('');
+    const [bannerUrl, setBannerUrl] = useState('');
     
     // Tracking upload status for image fields
     const [uploadingFields, setUploadingFields] = useState({});
@@ -37,6 +38,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDescription(initialData.description || '');
             setDisplayOrder(initialData.display_order || '');
             setImageUrl(initialData.icon_url || initialData.image_url || '');
+            setBannerUrl(initialData.banner_url || '');
         } else {
             // Add Mode
             setName('');
@@ -44,6 +46,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDescription('');
             setDisplayOrder(initialDisplayOrder || '');
             setImageUrl('');
+            setBannerUrl('');
         }
         setError(null);
     }, [isOpen, initialDisplayOrder, initialData]);
@@ -70,6 +73,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                 description: description.trim(),
                 displayOrder: displayOrder ? parseInt(displayOrder) : 0,
                 imageUrl: imageUrl.trim() || null,
+                bannerUrl: bannerUrl.trim() || null,
             }, isEditMode);
 
             // Reset
@@ -78,6 +82,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDescription('');
             setDisplayOrder('');
             setImageUrl('');
+            setBannerUrl('');
             onClose();
         } catch (err) {
             console.error('Submit item failed:', err);
@@ -167,7 +172,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
 
                     {(type === 'region' || type === 'event') && (
                         <div className={styles.formGroup}>
-                            <label>{type === 'region' ? 'Icon' : 'Image'}</label>
+                            <label>{type === 'region' ? 'Icon' : 'Thumbnail (16:9 / 1:1)'}</label>
                             <div className={styles.imageInputRow}>
                                 <button
                                     type="button"
@@ -182,6 +187,28 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             {imageUrl && (
                                 <div className={styles.imagePreview}>
                                     <img src={getAssetUrl(imageUrl)} alt="Preview" />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {type === 'event' && (
+                        <div className={styles.formGroup}>
+                            <label>Banner (21:9)</label>
+                            <div className={styles.imageInputRow}>
+                                <button
+                                    type="button"
+                                    className={`${styles.browseBtn} ${bannerUrl ? styles.hasImage : ''}`}
+                                    title="Chọn ảnh banner"
+                                    onClick={() => onPickAsset?.((asset) => setBannerUrl(asset.url), 'banner')}
+                                >
+                                    <ImageIcon size={18} />
+                                    {bannerUrl ? 'Thay đổi banner' : 'Chọn banner'}
+                                </button>
+                            </div>
+                            {bannerUrl && (
+                                <div className={styles.imagePreview}>
+                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ aspectRatio: '21/9', objectFit: 'cover' }} />
                                 </div>
                             )}
                         </div>

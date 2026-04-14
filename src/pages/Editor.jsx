@@ -162,19 +162,22 @@ function GameStoryEditor({ showNotification }) {
 
     // Asset Picker Modal
     const [pickerOpen, setPickerOpen] = useState(false);
-    const [pickerFilter, setPickerFilter] = useState(null);
+    const [pickerOptions, setPickerOptions] = useState({ filter: null, multi: false });
     const pickerCallbackRef = useRef(null);
 
-    const openPicker = (callback, filter = null) => {
+    const openPicker = (callback, options = {}) => {
         pickerCallbackRef.current = callback;
-        setPickerFilter(filter);
+        setPickerOptions({
+            filter: options.filter || (typeof options === 'string' ? options : null),
+            multi: options.multi || false
+        });
         setPickerOpen(true);
     };
 
-    const handlePickerSelect = (asset) => {
-        pickerCallbackRef.current?.(asset);
+    const handlePickerSelect = (assetOrAssets) => {
+        pickerCallbackRef.current?.(assetOrAssets);
         pickerCallbackRef.current = null;
-        setPickerFilter(null);
+        setPickerOptions({ filter: null, multi: false });
         setPickerOpen(false);
     };
 
@@ -603,7 +606,8 @@ function GameStoryEditor({ showNotification }) {
 
             <AssetPickerModal
                 isOpen={pickerOpen}
-                filterType={pickerFilter}
+                filterType={pickerOptions.filter}
+                multiSelect={pickerOptions.multi}
                 onClose={() => setPickerOpen(false)}
                 onSelect={handlePickerSelect}
             />
