@@ -68,3 +68,27 @@ export function getAssetUrl(path, type = null) {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   return `${cleanBase}${cleanPath}`;
 }
+
+/**
+ * Extracts YouTube Video ID from various YouTube URL formats.
+ * @param {string} url - The YouTube URL
+ * @returns {string|null} The video ID, or null if not found
+ */
+export function getYouTubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+/**
+ * Extracts Google Drive File ID from various Drive URL formats.
+ * @param {string} url - The Google Drive URL
+ * @returns {string|null} The file ID, or null if not found
+ */
+export function getGoogleDriveId(url) {
+    if (!url) return null;
+    const regExp = /[-\w]{25,}/;
+    const match = url.match(regExp);
+    return match ? match[0] : null;
+}

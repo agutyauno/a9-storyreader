@@ -64,9 +64,20 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
         // Remove local fallback to enforce strict GitHub uploads as per user requirement.
         if (error || !data?.success) {
             console.error('GitHub upload failed:', error || data?.error);
+            
+            let errorMessage = error?.message || data?.error || 'GitHub upload failed';
+            
+            // Handle generic Supabase Edge Function error often caused by payload/timeout size
+            if (errorMessage.includes('non-2xx status code') || errorMessage.includes('fetch failed')) {
+                errorMessage = 'Lỗi kết nối hoặc tệp quá lớn (vượt giới hạn Edge Function). Hãy thử tệp dung lượng nhỏ hơn (< 15MB).';
+            }
+            if (errorMessage.includes('too large')) {
+                errorMessage = 'Tệp quá lớn không thể upload qua GitHub API.';
+            }
+
             return {
                 success: false,
-                error: (error?.message || data?.error || 'GitHub upload failed')
+                error: errorMessage
             };
         }
 

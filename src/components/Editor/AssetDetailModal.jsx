@@ -3,7 +3,7 @@ import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, Check, Alert
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
 import ConfirmModal from './ConfirmModal';
-import { getAssetUrl } from '../../utils/assetUtils';
+import { getAssetUrl, getYouTubeId, getGoogleDriveId } from '../../utils/assetUtils';
 import styles from './AssetDetailModal.module.css';
 
 /**
@@ -30,6 +30,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
     const [category, setCategory] = useState('');
     const [error, setError] = useState(null);
     const [previewImage, setPreviewImage] = useState(null); // URL of image to show in lightbox
+    const [externalUrl, setExternalUrl] = useState(''); // New: URL for video assets
 
     // Confirm Modal
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -40,6 +41,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         setName(asset.name || '');
         setCategory(asset.category || asset.type || '');
         setDescription(asset.description || '');
+        setExternalUrl(asset.url || '');
         setError(null);
         if (kind === 'character') loadExpressions();
     }, [isOpen, asset, kind]);
@@ -111,6 +113,9 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 // Table 'assets' only has: asset_id, type, category, url. 'name' is NOT a column.
                 const payload = {};
                 if (category && category !== asset.category) payload.category = category;
+                if (asset.type === 'video' && externalUrl !== asset.url) {
+                    payload.url = externalUrl.trim();
+                }
                 
                 if (Object.keys(payload).length > 0) {
                     await SupabaseAPI.updateAsset(asset.asset_id, payload);
@@ -356,31 +361,68 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                             <h4>Preview</h4>
                             <div className={styles.previewContainer}>
                                 {asset.type === 'image' && <img src={getAssetUrl(asset.url)} alt={asset.name} />}
-                                {asset.type === 'video' && <video src={getAssetUrl(asset.url)} controls />}
+                                {asset.type === 'video' && (
+                                    getYouTubeId(asset.url) ? (
+                                        <iframe 
+                                            src={`https://www.youtube.com/embed/${getYouTubeId(asset.url)}`}
+                                            title="YouTube video player"
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px' }}
+                                        ></iframe>
+                                    ) : getGoogleDriveId(asset.url) ? (
+                                        <iframe 
+                                            src={`https://drive.google.com/file/d/${getGoogleDriveId(asset.url)}/preview`}
+                                            title="Google Drive Video"
+                                            frameBorder="0"
+                                            allowFullScreen
+                                            style={{ width: '100%', minHeight: '300px', borderRadius: '8px' }}
+                                        ></iframe>
+                                    ) : (
+                                        <video src={getAssetUrl(asset.url)} controls style={{ width: '100%' }} />
+                                    )
+                                )}
                                 {asset.type === 'audio' && <audio src={getAssetUrl(asset.url)} controls style={{ width: '100%' }} />}
                             </div>
-                            <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                                <input
-                                    id="replace-file-input"
-                                    type="file"
-                                    style={{ display: 'none' }}
-                                    onChange={handleFileChange}
-                                    accept={asset.type === 'image' ? 'image/*' :
-                                        asset.type === 'audio' ? 'audio/*' :
-                                            asset.type === 'video' ? 'video/*' : '*'}
-                                />
-                                <label htmlFor="replace-file-input" className={styles.saveBtn} style={{ cursor: 'pointer', backgroundColor: file ? 'rgba(184, 169, 255, 0.1)' : '' }}>
-                                    <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
-                                </label>
+                            
+                            {asset.type === 'video' ? (
+                                <div style={{ marginTop: 10 }}>
+                                    <label style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '4px', display: 'block' }}>Video URL (YouTube/Drive)</label>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <input
+                                            type="url"
+                                            value={externalUrl}
+                                            onChange={(e) => setExternalUrl(e.target.value)}
+                                            style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                                            placeholder="https://www.youtube.com/watch?v=..."
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <input
+                                        id="replace-file-input"
+                                        type="file"
+                                        style={{ display: 'none' }}
+                                        onChange={handleFileChange}
+                                        accept={asset.type === 'image' ? 'image/*' :
+                                            asset.type === 'audio' ? 'audio/*' :
+                                                asset.type === 'video' ? 'video/*' : '*'}
+                                    />
+                                    <label htmlFor="replace-file-input" className={styles.saveBtn} style={{ cursor: 'pointer', backgroundColor: file ? 'rgba(184, 169, 255, 0.1)' : '' }}>
+                                        <Upload size={14} /> {file ? 'Đổi file' : 'Chọn file'}
+                                    </label>
 
-                                {file && (
-                                    <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
-                                        {uploading ? <Loader size={14} className={styles.spinner} /> : <Check size={14} />}
-                                        {uploading ? 'Đang upload...' : 'Upload & Thay thế'}
-                                    </button>
-                                )}
-                                {file && !uploading && <span className={styles.fileName}>{file.name}</span>}
-                            </div>
+                                    {file && (
+                                        <button className={styles.actionBtn} onClick={handleUploadAndReplace} disabled={uploading}>
+                                            {uploading ? <Loader size={14} className={styles.spinner} /> : <Check size={14} />}
+                                            {uploading ? 'Đang upload...' : 'Upload & Thay thế'}
+                                        </button>
+                                    )}
+                                    {file && !uploading && <span className={styles.fileName}>{file.name}</span>}
+                                </div>
+                            )}
                         </div>
                     )}
 
