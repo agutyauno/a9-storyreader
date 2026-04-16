@@ -16,7 +16,7 @@
 	justify-content: center;
 	padding: var(--spacing-base) var(--spacing-lg);
 	border-radius: var(--radius-base);
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	color: var(--color-text-secondary);
 	font-size: var(--font-size-xs);
 	font-weight: 500;
@@ -70,7 +70,7 @@
 
 .nav-center {
 	color: var(--color-accent);
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	font-weight: 700;
 	box-sizing: border-box;
 }
@@ -98,16 +98,16 @@
 /* ================================================================================================= */
 
 .eventBannerContainer {
-	border-radius: var(--radius-lg);
+	border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 	overflow: hidden;
-	box-shadow: var(--shadow-md);
-	background-color: var(--color-bg-dark);
+	box-shadow: none;
+	background-color: rgba(42, 42, 42, 0.8);
 }
 
 .eventBanner {
 	width: 100%;
 	display: block;
-	aspect-ratio: 21 / 9;
+	aspect-ratio: 16 / 9;
 	object-fit: contain;
 }
 
@@ -123,7 +123,7 @@
 	margin-bottom: var(--spacing-xs);
 	border-radius: var(--radius-base);
 	border: 1px solid var(--color-border-light);
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	color: var(--color-accent);
 	font-size: var(--font-size-sm);
 	font-weight: 600;
@@ -138,6 +138,15 @@
 .info-description {
 	white-space: pre-wrap;
 	margin-top: var(--spacing-base);
+}
+
+.eventInfo {
+    background-color: rgba(42, 42, 42, 0.8) !important;
+    padding: var(--spacing-2xl);
+    border-radius: 0 0 var(--radius-base) var(--radius-base) !important;
+    margin-bottom: var(--spacing-3xl);
+    border: none !important;
+    text-align: center;
 }
 
 /* ================================================================================================= */
@@ -155,14 +164,14 @@
 }
 
 .story-selection-panel {
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	padding: var(--spacing-base);
 	border-radius: var(--radius-base);
 	box-shadow: var(--shadow-sm);
 }
 
 .selection-grid {
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	padding: var(--spacing-base);
 	margin-bottom: var(--spacing-base);
 	border-radius: var(--radius-base);
@@ -179,7 +188,7 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: var(--spacing-lg);
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	border-radius: var(--radius-base);
 	box-shadow: var(--shadow-sm);
 	cursor: pointer;
@@ -257,7 +266,7 @@
 	flex-direction: column;
 	align-items: center;
 	padding: var(--spacing-lg);
-	background-color: var(--color-bg-secondary);
+	background-color: rgba(58, 58, 58, 0.8);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-base);
 	transition: var(--transition-base);
@@ -300,7 +309,7 @@
 	position: relative;
 	overflow: hidden;
 	border-radius: var(--radius-base);
-	background-color: var(--color-bg-secondary);
+	background-color: rgba(58, 58, 58, 0.8);
 	border: 1px solid var(--color-border);
 	cursor: pointer;
 	transition: var(--transition-base);
@@ -345,7 +354,7 @@
 	right: -400px;
 	width: 400px;
 	height: 100vh;
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	border-left: 2px solid var(--color-border);
 	z-index: 200;
 	transition: right 0.3s ease;
@@ -385,7 +394,7 @@
 	font-size: 1.8rem;
 	font-weight: 300;
 	color: var(--color-text-primary);
-	background-color: var(--color-bg-secondary);
+	background-color: rgba(58, 58, 58, 0.8);
 	border: 1px solid var(--color-border);
 	border-radius: 50%;
 	cursor: pointer;
@@ -437,7 +446,7 @@
 	display: block;
 	padding: var(--spacing-sm) var(--spacing-base);
 	color: var(--color-text-primary);
-	background-color: var(--color-bg-secondary);
+	background-color: rgba(58, 58, 58, 0.8);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-base);
 	text-decoration: none;
@@ -530,13 +539,13 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: rgba(0, 0, 0, 0.7);
+	background-color: rgba(0, 0, 0, 0.8);
 	cursor: pointer;
 }
 
 .modal-container {
 	position: relative;
-	background-color: var(--color-bg-dark);
+	background-color: rgba(42, 42, 42, 0.8);
 	border-radius: var(--radius-base);
 	box-shadow: var(--shadow-lg);
 	max-width: 90vw;
@@ -678,4 +687,32 @@
 	.eventBanner {
 		aspect-ratio: 16 / 9;
 	}
+}
+
+.pageWallpaper {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	z-index: -2;
+	transition: background-image 0.5s ease-in-out, filter 0.5s ease-in-out;
+}
+
+.pageWallpaperBlurred {
+	filter: blur(15px) brightness(0.6);
+	transform: scale(1.1);
+}
+
+.wallpaperOverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(circle, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.4) 100%);
+	z-index: -1;
 }

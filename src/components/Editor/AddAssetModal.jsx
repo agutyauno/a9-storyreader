@@ -15,6 +15,7 @@ const ASSET_TYPES = [
     { value: 'banner', label: 'Banner Image', type: 'image', category: 'banner' },
     { value: 'character', label: 'Character', type: 'character', category: 'character' },
     { value: 'gallery', label: 'Gallery / Story Art', type: 'image', category: 'gallery' },
+    { value: 'wallpaper', label: 'Wallpaper Image', type: 'image', category: 'wallpaper' },
     { value: 'video', label: 'Video (PV)', type: 'video', category: 'PV' },
     { value: 'bgm', label: 'BGM (audio)', type: 'audio', category: 'bgm' },
     { value: 'sfx', label: 'SFX (audio)', type: 'audio', category: 'sfx' },

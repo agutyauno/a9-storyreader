@@ -15,6 +15,7 @@ export const getFolderPath = (type, category) => {
         if (category === 'char_avatar') return 'images/char_avatars';
         if (category === 'character') return 'images/characters';
         if (category === 'gallery') return 'images/story_images';
+        if (category === 'wallpaper') return 'images/wallpapers';
         return 'images/thumbnails';
     }
     if (type === 'audio') {
@@ -64,9 +65,9 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
         // Remove local fallback to enforce strict GitHub uploads as per user requirement.
         if (error || !data?.success) {
             console.error('GitHub upload failed:', error || data?.error);
-            
+
             let errorMessage = error?.message || data?.error || 'GitHub upload failed';
-            
+
             // Handle generic Supabase Edge Function error often caused by payload/timeout size
             if (errorMessage.includes('non-2xx status code') || errorMessage.includes('fetch failed')) {
                 errorMessage = 'Lỗi kết nối hoặc tệp quá lớn (vượt giới hạn Edge Function). Hãy thử tệp dung lượng nhỏ hơn (< 15MB).';
@@ -84,7 +85,7 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
         // Standardize the relative path with a leading slash
         const relativePath = data.path.startsWith('/') ? data.path : `/${data.path}`;
         const rawUrl = `https://raw.githubusercontent.com/agutyauno/a9sr-data/main${relativePath}`;
-        
+
         return {
             success: true,
             path: relativePath,
@@ -104,11 +105,11 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
  */
 export const deleteFileFromGithub = async (url) => {
     if (!url) return { success: true };
-    
+
     // Extract path from URL: https://raw.githubusercontent.com/agutyauno/a9sr-data/main/path/to/file
     // Or handle it if it is already a relative path /path/to/file
     let fullPath = url.startsWith('/') ? url.slice(1) : url;
-    
+
     if (url.includes('githubusercontent.com') || url.includes('cdn.jsdelivr.net')) {
         const repoMarker = url.includes('/main/') ? '/main/' : (url.includes('@main/') ? '@main/' : null);
         if (repoMarker) {
@@ -139,7 +140,7 @@ export const deleteFileFromGithub = async (url) => {
                 fileName: fileName,
                 // The edge function has a strict check: if (!action || !fileName || !rawBase64) return 400
                 // We must provide a dummy contentBase64 even for delete action.
-                contentBase64: 'ZGVsZXRl', 
+                contentBase64: 'ZGVsZXRl',
                 branch: 'main'
             }
         });
@@ -173,14 +174,14 @@ export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
         // Convert all files to base64 and prepare payload
         const preparedFiles = await Promise.all(fileItems.map(async (item) => {
             const b64 = await fileToBase64(item.file);
-            
+
             // Determine filename
             let fileName = item.file.name;
             if (item.customFileName) {
                 const ext = item.file.name.split('.').pop();
                 fileName = `${item.customFileName}.${ext}`;
             }
-            
+
             const cleanFolder = (item.folderPath || '').replace(/\/$/, '').replace(/^\//, '');
             const fullPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 

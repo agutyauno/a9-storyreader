@@ -286,8 +286,20 @@ export default function EventPage() {
   if (error) return <main><div className={cx("container")}><p className={cx("error-message")}>{error}</p></div></main>;
   if (!event) return <main><div className={cx("container")}><p className={cx("no-data")}>Không tìm thấy sự kiện.</p></div></main>;
 
+  const isWallpaperFallback = !event.wallpaper_url && !!event.banner_url;
+  const wallpaperUrl = getAssetUrl(event.wallpaper_url || event.banner_url || '');
+
   return (
     <>
+      {wallpaperUrl && (
+        <div 
+          className={`${styles.pageWallpaper} ${isWallpaperFallback ? styles.pageWallpaperBlurred : ''}`} 
+          style={{ backgroundImage: `url(${wallpaperUrl})` }}
+          aria-hidden="true"
+        >
+          <div className={styles.wallpaperOverlay} />
+        </div>
+      )}
       <main>
         <div className={cx("container")}>
 
