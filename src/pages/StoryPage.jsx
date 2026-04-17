@@ -176,8 +176,8 @@ export default function StoryPage() {
     notes.forEach(note => {
       note.addEventListener('click', () => {
         setActiveNote({
-          word: note.textContent,
-          content: note.getAttribute('title')
+          word: note.childNodes[0].textContent.trim(),
+          content: note.getAttribute('data-note-content')
         });
       });
     });

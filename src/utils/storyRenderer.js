@@ -187,8 +187,9 @@ export const StoryRenderer = {
       
       // We use cx to get the scoped class name from the CSS module
       const noteClass = cx('translator-note', styles);
+      const tooltipClass = cx('note-tooltip', styles);
       
-      return `<span class="${noteClass}" data-note-id="${id}" title="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}</span>`;
+      return `<span class="${noteClass}" data-note-id="${id}" data-note-content="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}<span class="${tooltipClass}">${noteContent}</span></span>`;
     });
   },
 

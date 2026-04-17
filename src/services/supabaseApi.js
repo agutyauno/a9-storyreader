@@ -773,20 +773,9 @@ const SupabaseAPI_Raw = {
       mockDatabase.gallery = mockDatabase.gallery.filter(g => g.gallery_id !== galleryId);
       return;
     }
-    // 1. Fetch asset to get URL for GitHub deletion
-    const { data: gallery } = await supabase.from('gallery').select('image_url').eq('gallery_id', galleryId).single();
-    if (gallery?.image_url) {
-      const res = await deleteFileFromGithub(gallery.image_url);
-      if (!res.success) {
-        const errTxt = String(res.error || '').toLowerCase();
-        const isAlreadyGone = errTxt.includes('404') || errTxt.includes('not found') || errTxt.includes('not exist');
-        if (!isAlreadyGone) {
-          throw new Error(`GitHub delete failed: ${res.error}`);
-        }
-        console.warn(`GitHub file already missing, allowing DB delete: ${gallery.image_url}`);
-      }
-    }
-    // 2. Delete from DB
+    // Delete from DB only
+    // Note: We DO NOT delete the file from Github here because the asset 
+    // is tied to the Asset Manager. The gallery is simply a reference.
     const { error } = await supabase.from('gallery').delete().eq('gallery_id', galleryId);
     if (error) throw error;
   },
