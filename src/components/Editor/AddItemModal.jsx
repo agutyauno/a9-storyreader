@@ -213,6 +213,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             </div>
                             {bannerUrl && (
                                 <div className={styles.imagePreview}>
+<<<<<<< Updated upstream
                                     <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
                                 </div>
                             )}
@@ -236,6 +237,9 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             {wallpaperUrl && (
                                 <div className={styles.imagePreview}>
                                     <img src={getAssetUrl(wallpaperUrl)} alt="Wallpaper Preview" style={{ aspectRatio: '16/9', objectFit: 'cover', filter: 'brightness(0.7)' }} />
+=======
+                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ width: '100%', height: 'auto', objectFit: 'cover', borderRadius: '4px' }} />
+>>>>>>> Stashed changes
                                 </div>
                             )}
                         </div>

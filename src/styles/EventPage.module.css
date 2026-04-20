@@ -106,9 +106,14 @@
 
 .eventBanner {
 	width: 100%;
+	height: auto;
 	display: block;
+<<<<<<< Updated upstream
 	aspect-ratio: 16 / 9;
 	object-fit: contain;
+=======
+	object-fit: cover;
+>>>>>>> Stashed changes
 }
 
 /* ================================================================================================= */
@@ -685,7 +690,7 @@
 	}
 
 	.eventBanner {
-		aspect-ratio: 16 / 9;
+		height: auto;
 	}
 }
 
