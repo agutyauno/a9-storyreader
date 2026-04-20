@@ -108,12 +108,7 @@
 	width: 100%;
 	height: auto;
 	display: block;
-<<<<<<< Updated upstream
-	aspect-ratio: 16 / 9;
-	object-fit: contain;
-=======
 	object-fit: cover;
->>>>>>> Stashed changes
 }
 
 /* ================================================================================================= */
@@ -146,12 +141,12 @@
 }
 
 .eventInfo {
-    background-color: rgba(42, 42, 42, 0.8) !important;
-    padding: var(--spacing-2xl);
-    border-radius: 0 0 var(--radius-base) var(--radius-base) !important;
-    margin-bottom: var(--spacing-3xl);
-    border: none !important;
-    text-align: center;
+	background-color: rgba(42, 42, 42, 0.8) !important;
+	padding: var(--spacing-2xl);
+	border-radius: 0 0 var(--radius-base) var(--radius-base) !important;
+	margin-bottom: var(--spacing-3xl);
+	border: none !important;
+	text-align: center;
 }
 
 /* ================================================================================================= */

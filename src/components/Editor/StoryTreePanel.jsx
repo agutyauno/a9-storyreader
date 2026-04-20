@@ -7,14 +7,15 @@ import styles from './StoryTreePanel.module.css';
 // ─── Icons per type ───────────────────────────────────────────────────────────
 const TYPE_ICON = {
     region: <Layers size={14} />,
-    arc:    <BookOpen size={14} />,
-    event:  <Bookmark size={14} />,
-    story:  <FileText size={14} />,
+    arc: <BookOpen size={14} />,
+    event: <Bookmark size={14} />,
+    story: <FileText size={14} />,
 };
 
 // ─── Single Node ──────────────────────────────────────────────────────────────
-function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEdit }) {
-    const [open, setOpen] = useState(depth < 2);
+function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect, onAdd, onDelete, onEdit }) {
+    // If not in map, default to open for top 2 levels
+    const isOpen = expandedMap[node.id] !== undefined ? expandedMap[node.id] : (depth < 2);
     const hasChildren = node.children?.length > 0;
     const isSelected = selectedId === node.id;
 
@@ -27,10 +28,10 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEd
                 {/* Expand toggle */}
                 <span
                     className={styles.chevron}
-                    onClick={() => setOpen(v => !v)}
+                    onClick={() => onToggle(node.id, isOpen)}
                     style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
                 >
-                    {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </span>
 
                 {/* Type icon + label */}
@@ -76,7 +77,7 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEd
                 </span>
             </div>
 
-            {open && hasChildren && (
+            {isOpen && hasChildren && (
                 <div className={styles.children}>
                     {node.children.map(child => (
                         <TreeNode
@@ -84,6 +85,8 @@ function TreeNode({ node, depth = 0, selectedId, onSelect, onAdd, onDelete, onEd
                             node={child}
                             depth={depth + 1}
                             selectedId={selectedId}
+                            expandedMap={expandedMap}
+                            onToggle={onToggle}
                             onSelect={onSelect}
                             onAdd={onAdd}
                             onDelete={onDelete}
@@ -102,9 +105,24 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(currentStoryId || null);
 
+    // Expansion state: { [nodeId]: boolean }
+    const [expandedMap, setExpandedMap] = useState(() => {
+        try {
+            const saved = localStorage.getItem('story_tree_expanded');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            return {};
+        }
+    });
+
     // Confirm modal
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
+    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => { } });
+
+    // Persist expansion state
+    useEffect(() => {
+        localStorage.setItem('story_tree_expanded', JSON.stringify(expandedMap));
+    }, [expandedMap]);
 
     // Sync selection when parent changes (e.g., after save that creates a story ID)
     useEffect(() => {
@@ -193,11 +211,19 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
         }
     };
 
+    // ─── Toggle node expansion ───────────────────────────────────────────────
+    const handleToggleNode = (nodeId, currentlyOpen) => {
+        setExpandedMap(prev => ({
+            ...prev,
+            [nodeId]: !currentlyOpen
+        }));
+    };
+
     // ─── Add child node ───────────────────────────────────────────────────────
     const handleAddChild = (parentNode) => {
         const childType = { region: 'arc', arc: 'event', event: 'story' }[parentNode.type];
         if (!childType || !onAddItem) return;
-        
+
         // Auto-increment: count existing children
         const nextOrder = (parentNode.children?.length || 0) + 1;
         onAddItem(childType, parentNode, () => loadTree(), nextOrder);
@@ -235,7 +261,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     // ─── Add top-level region ─────────────────────────────────────────────────
     const handleAddRegion = () => {
         if (!onAddItem) return;
-        
+
         // Auto-increment: count top-level regions
         const nextOrder = tree.length + 1;
         onAddItem('region', null, () => loadTree(), nextOrder);
@@ -272,6 +298,8 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                             node={node}
                             depth={0}
                             selectedId={selectedId}
+                            expandedMap={expandedMap}
+                            onToggle={handleToggleNode}
                             onSelect={handleSelect}
                             onAdd={handleAddChild}
                             onDelete={handleDelete}
