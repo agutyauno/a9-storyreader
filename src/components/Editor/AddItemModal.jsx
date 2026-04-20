@@ -208,7 +208,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             </div>
                             {bannerUrl && (
                                 <div className={styles.imagePreview}>
-                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ width: '100%', height: 'auto', objectFit: 'cover', borderRadius: '4px' }} />
+                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ aspectRatio: '21/9', objectFit: 'cover' }} />
                                 </div>
                             )}
                         </div>
