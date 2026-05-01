@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { mockDatabase } from '../utils/mockStoryData';
-import { deleteFileFromGithub } from './githubService';
+import { deleteFileFromGithub, uploadFileToGithub } from './githubService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TODO: Set to false when Supabase is fully configured.
@@ -1129,7 +1129,15 @@ const SupabaseAPI_Raw = {
 
   async createOperatorClass(payload) {
     const cleanPayload = { ...payload };
-    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'object' && cleanPayload.icon_url.file) {
+      const uploadResult = await uploadFileToGithub(cleanPayload.icon_url.file, 'images/classes');
+      if (!uploadResult.success) {
+        throw new Error(`Upload ảnh Class thất bại: ${uploadResult.error}`);
+      }
+      cleanPayload.icon_url = uploadResult.path;
+    } else if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'string') {
+      cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    }
     const { data, error } = await supabase.from('operator_classes').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
@@ -1161,7 +1169,15 @@ const SupabaseAPI_Raw = {
 
   async createOperatorSubclass(payload) {
     const cleanPayload = { ...payload };
-    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'object' && cleanPayload.icon_url.file) {
+      const uploadResult = await uploadFileToGithub(cleanPayload.icon_url.file, 'images/classes');
+      if (!uploadResult.success) {
+        throw new Error(`Upload ảnh Sub-class thất bại: ${uploadResult.error}`);
+      }
+      cleanPayload.icon_url = uploadResult.path;
+    } else if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'string') {
+      cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    }
     const { data, error } = await supabase.from('operator_subclasses').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
@@ -1191,7 +1207,15 @@ const SupabaseAPI_Raw = {
 
   async createFaction(payload) {
     const cleanPayload = { ...payload };
-    if (cleanPayload.icon_url) cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'object' && cleanPayload.icon_url.file) {
+      const uploadResult = await uploadFileToGithub(cleanPayload.icon_url.file, 'images/factions');
+      if (!uploadResult.success) {
+        throw new Error(`Upload ảnh Faction thất bại: ${uploadResult.error}`);
+      }
+      cleanPayload.icon_url = uploadResult.path;
+    } else if (cleanPayload.icon_url && typeof cleanPayload.icon_url === 'string') {
+      cleanPayload.icon_url = cleanUrl(cleanPayload.icon_url);
+    }
     const { data, error } = await supabase.from('factions').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
@@ -1228,6 +1252,7 @@ const SupabaseAPI_Raw = {
   async createOperator(payload) {
     const cleanPayload = { ...payload };
     if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
     const { data, error } = await supabase.from('operators').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
@@ -1236,6 +1261,7 @@ const SupabaseAPI_Raw = {
   async updateOperator(operatorId, payload) {
     const cleanPayload = { ...payload };
     if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
     const { data, error } = await supabase.from('operators').update(cleanPayload).eq('operator_id', operatorId).select().single();
     if (error) throw error;
     return data;

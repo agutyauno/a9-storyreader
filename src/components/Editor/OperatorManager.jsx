@@ -4,8 +4,9 @@ import { SupabaseAPI } from '../../services/supabaseApi';
 import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './OperatorManager.module.css';
 
-// ─── Asset Path Prefixes ──────────────────────────────────────────────────
 const ASSET_PREFIXES = {
+  avatar: '/images/operators_images/avatars/',
+  splash: '/images/operators_images/splash/',
   portrait: '/images/operators_images/',
   icon: '/images/icons/',
   module: '/images/modules/',
@@ -33,15 +34,15 @@ function AssetPathInput({ prefix, value, onChange, placeholder }) {
 
   return (
     <div className={styles.assetUploadWrapper}>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        style={{ display: 'none' }} 
-        onChange={handleUpload} 
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleUpload}
       />
-      <button 
-        type="button" 
-        className={styles.assetUploadBtn} 
+      <button
+        type="button"
+        className={styles.assetUploadBtn}
         onClick={() => fileInputRef.current?.click()}
         title="Chọn ảnh/file từ máy tính"
       >
@@ -80,11 +81,15 @@ function EditableAccordion({ title, iconUrl, children, defaultOpen = false, onRe
 }
 
 // ─── Metadata Popup (Inline create Faction/Class/Subclass) ──────────────────
-function MetadataPopup({ type, onClose, onCreated }) {
+function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes }) {
   const [name, setName] = useState('');
   const [iconUrl, setIconUrl] = useState('');
-  const [parentClassId, setParentClassId] = useState('');
+  const [parentClassId, setParentClassId] = useState(defaultParentClassId || '');
+  const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const prefix = type === 'faction' ? '/images/factions/' : '/images/classes/';
 
   const labels = {
     faction: { title: 'Thêm Faction', namePlaceholder: 'VD: Rhodes Island' },
@@ -99,17 +104,23 @@ function MetadataPopup({ type, onClose, onCreated }) {
     try {
       let created;
       const payload = { name: name.trim(), icon_url: iconUrl || null };
+
+      if (type === 'subclass' && description.trim()) {
+        payload.description = description.trim();
+      }
+
       if (type === 'faction') {
         created = await SupabaseAPI.createFaction(payload);
       } else if (type === 'class') {
         created = await SupabaseAPI.createOperatorClass(payload);
       } else if (type === 'subclass') {
-        created = await SupabaseAPI.createOperatorSubclass({ ...payload, class_id: parseInt(parentClassId) || null });
+        created = await SupabaseAPI.createOperatorSubclass({ ...payload, class_id: parentClassId || null });
       }
       onCreated?.(created);
       onClose();
     } catch (err) {
       console.error('Failed to create metadata:', err);
+      setErrorMsg(err.message || 'Lỗi khi tạo dữ liệu mới');
     } finally {
       setSaving(false);
     }
@@ -126,10 +137,32 @@ function MetadataPopup({ type, onClose, onCreated }) {
           <label className={styles.formLabel}>Tên</label>
           <input className={styles.formInput} value={name} onChange={e => setName(e.target.value)} placeholder={label.namePlaceholder} autoFocus />
         </div>
+        {type === 'subclass' && (
+          <>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Class cha</label>
+              <select className={styles.formSelect} value={parentClassId} onChange={e => setParentClassId(e.target.value)}>
+                <option value="">-- Chọn Class cha --</option>
+                {classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Mô tả</label>
+              <textarea
+                className={styles.formTextarea}
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Mô tả subclass..."
+              />
+            </div>
+          </>
+        )}
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Icon</label>
-          <AssetPathInput prefix={ASSET_PREFIXES.icon} value={iconUrl} onChange={setIconUrl} placeholder="icon_name.png" />
+          <AssetPathInput prefix={prefix} value={iconUrl} onChange={setIconUrl} placeholder="icon_name.png" />
         </div>
+        {errorMsg && <div style={{ color: 'red', fontSize: '13px', marginTop: '8px', marginBottom: '8px' }}>{errorMsg}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
           <button className={styles.btnSecondary} onClick={onClose}>Huỷ</button>
           <button className={styles.btnPrimary} onClick={handleSave} disabled={saving || !name.trim()}>
@@ -225,7 +258,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
   const [selectedSkinIdx, setSelectedSkinIdx] = useState(0);
   const skins = form.skins || [];
   const currentSkin = skins[selectedSkinIdx];
-  const displayImage = currentSkin?.image_url || form.avatar_url || '/assets/images/character/blank.png';
+  const displayImage = currentSkin?.image_url || form.full_url || '/assets/images/character/blank.png';
   const skills = form.combat_info?.skills || [];
   const talents = form.combat_info?.talents || [];
   const modules = form.combat_info?.modules || [];
@@ -297,7 +330,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Class</label>
               <div className={styles.selectWithAdd}>
-                <select className={styles.formSelect} value={form.class_id || ''} onChange={e => setField('class_id', parseInt(e.target.value) || null)}>
+                <select className={styles.formSelect} value={form.class_id || ''} onChange={e => setField('class_id', e.target.value || null)}>
                   <option value="">-- Chọn Class --</option>
                   {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -307,7 +340,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Sub-Class</label>
               <div className={styles.selectWithAdd}>
-                <select className={styles.formSelect} value={form.subclass_id || ''} onChange={e => setField('subclass_id', parseInt(e.target.value) || null)}>
+                <select className={styles.formSelect} value={form.subclass_id || ''} onChange={e => setField('subclass_id', e.target.value || null)}>
                   <option value="">-- Chọn Sub-class --</option>
                   {subclasses.filter(sc => !form.class_id || sc.class_id === form.class_id).map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
                 </select>
@@ -340,10 +373,16 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
             </div>
           </div>
 
-          {/* Avatar URL */}
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Avatar / Portrait</label>
-            <AssetPathInput prefix={ASSET_PREFIXES.portrait} value={form.avatar_url || ''} onChange={v => setField('avatar_url', v)} placeholder="amiya_default.png" />
+          {/* Avatar & Full URL */}
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Avatar / Chân dung</label>
+              <AssetPathInput prefix={ASSET_PREFIXES.avatar} value={form.avatar_url || ''} onChange={v => setField('avatar_url', v)} placeholder="amiya_avatar.png" />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Ảnh Full (Splash Art)</label>
+              <AssetPathInput prefix={ASSET_PREFIXES.splash} value={form.full_url || ''} onChange={v => setField('full_url', v)} placeholder="amiya_full.png" />
+            </div>
           </div>
         </div>
       </div>
@@ -352,7 +391,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
       <div className={styles.accordion}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Skills</h3>
-          <button className={styles.btnSecondary} onClick={() => addCombatItem('skills', { id: `skill_${Date.now()}`, name: '', description: '', icon: '' })}>
+          <button className={styles.btnSecondary} style={{ minWidth: 150, justifyContent: 'space-between' }} onClick={() => addCombatItem('skills', { id: `skill_${Date.now()}`, name: '', description: '', icon: '' })}>
             <Plus size={14} /> Thêm Skill
           </button>
         </div>
@@ -380,7 +419,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
       <div className={styles.accordion}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Talents</h3>
-          <button className={styles.btnSecondary} onClick={() => addCombatItem('talents', { name: '', description: '' })}>
+          <button className={styles.btnSecondary} style={{ minWidth: 150, justifyContent: 'space-between' }} onClick={() => addCombatItem('talents', { name: '', description: '' })}>
             <Plus size={14} /> Thêm Talent
           </button>
         </div>
@@ -402,7 +441,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
       <div className={styles.accordion}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Modules</h3>
-          <button className={styles.btnSecondary} onClick={() => addCombatItem('modules', { id: `mod_${Date.now()}`, name: '', description: '', icon: '', image_url: '', story: '' })}>
+          <button className={styles.btnSecondary} style={{ minWidth: 150, justifyContent: 'space-between' }} onClick={() => addCombatItem('modules', { id: `mod_${Date.now()}`, name: '', description: '', icon: '', image_url: '', story: '' })}>
             <Plus size={14} /> Thêm Module
           </button>
         </div>
@@ -438,7 +477,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
       <div className={styles.accordion}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Skins</h3>
-          <button className={styles.btnSecondary} onClick={() => {
+          <button className={styles.btnSecondary} style={{ minWidth: 150, justifyContent: 'space-between' }} onClick={() => {
             const newSkins = [...skins, { skin_id: `skin_${Date.now()}`, name: '', image_url: '', description: '' }];
             setField('skins', newSkins);
           }}>
@@ -458,8 +497,8 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
                 }} placeholder="VD: Elite 2" />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Hình ảnh</label>
-                <AssetPathInput prefix={ASSET_PREFIXES.portrait} value={skin.image_url || ''} onChange={v => {
+                <label className={styles.formLabel}>Ảnh Full (Splash Art)</label>
+                <AssetPathInput prefix={ASSET_PREFIXES.splash} value={skin.image_url || ''} onChange={v => {
                   const arr = [...skins]; arr[i] = { ...arr[i], image_url: v }; setField('skins', arr);
                 }} placeholder="amiya_e2.png" />
               </div>
@@ -480,6 +519,8 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
           type={metaPopup}
           onClose={() => setMetaPopup(null)}
           onCreated={() => { setMetaPopup(null); onMetadataRefresh?.(); }}
+          defaultParentClassId={form.class_id}
+          classes={classes}
         />
       )}
     </div>
@@ -512,7 +553,7 @@ function TabProfileEditor({ form, setField }) {
     <div>
       <div className={styles.sectionHeader}>
         <h3 className={styles.sectionTitle}>Hồ sơ Operator</h3>
-        <button className={styles.btnSecondary} onClick={addProfile}>
+        <button className={styles.btnSecondary} style={{ minWidth: 130, justifyContent: 'center' }} onClick={addProfile}>
           <Plus size={14} /> Thêm mục
         </button>
       </div>
@@ -541,7 +582,7 @@ function TabProfileEditor({ form, setField }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB: Dialogues (Thoại)
 // ═══════════════════════════════════════════════════════════════════════════
-function TabDialogueEditor({ form, setField, operatorId }) {
+function TabDialogueEditor({ form, setField, operatorId, skins }) {
   const dialogues = form.dialogues || [];
 
   const addDialogue = () => {
@@ -549,6 +590,7 @@ function TabDialogueEditor({ form, setField, operatorId }) {
       _isNew: true,
       _tempId: Date.now(),
       operator_id: operatorId,
+      skin_id: null,
       title: '',
       text_content: '',
       audio_url_jp: '',
@@ -576,7 +618,7 @@ function TabDialogueEditor({ form, setField, operatorId }) {
     <div>
       <div className={styles.sectionHeader}>
         <h3 className={styles.sectionTitle}>Voice Lines</h3>
-        <button className={styles.btnSecondary} onClick={addDialogue}>
+        <button className={styles.btnSecondary} style={{ minWidth: 130, justifyContent: 'center' }} onClick={addDialogue}>
           <Plus size={14} /> Thêm thoại
         </button>
       </div>
@@ -592,9 +634,22 @@ function TabDialogueEditor({ form, setField, operatorId }) {
               defaultOpen={!!dlg._isNew}
               onRemove={() => removeDialogue(i)}
             >
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tiêu đề thoại</label>
-                <input className={styles.formInput} value={dlg.title || ''} onChange={e => updateDialogue(i, 'title', e.target.value)} placeholder="VD: Greeting" />
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Tiêu đề thoại</label>
+                  <input className={styles.formInput} value={dlg.title || ''} onChange={e => updateDialogue(i, 'title', e.target.value)} placeholder="VD: Greeting" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Liên kết với Skin</label>
+                  <select className={styles.formSelect} value={dlg.skin_id || ''} onChange={e => updateDialogue(i, 'skin_id', e.target.value ? e.target.value : null)}>
+                    <option value="">Mặc định</option>
+                    {skins.map((skin, idx) => (
+                      <option key={skin.skin_id || idx} value={skin.skin_id}>
+                        {skin.name || `Skin ${idx + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Nội dung</label>
@@ -640,6 +695,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
     class_id: null,
     subclass_id: null,
     avatar_url: '',
+    full_url: '',
     combat_info: { skills: [], talents: [], modules: [], operator_token: null },
     lore_info: { profiles: [] },
     _factionIds: [],
@@ -714,31 +770,12 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
 
       // Nhánh 2: Chuẩn bị payload tĩnh
       const { _factionIds, _isNew, dialogues, skins, ...payload } = formWithUploadedAssets;
-      
+
       // Gọi lên Manager để lưu Operator
       const savedOpId = await onSave(payload, _factionIds);
 
-      // Nhánh 3: Lưu Dialogues mới/chỉnh sửa
-      if (dialogues && savedOpId) {
-        for (const dlg of dialogues) {
-          const dlgPayload = {
-            operator_id: savedOpId,
-            title: dlg.title,
-            text_content: dlg.text_content,
-            audio_url_jp: dlg.audio_url_jp,
-            audio_url_en: dlg.audio_url_en,
-            audio_url_cn: dlg.audio_url_cn,
-            skin_id: dlg.skin_id || null,
-          };
-          if (dlg._isNew) {
-            await SupabaseAPI.createOperatorDialogue(dlgPayload);
-          } else {
-            await SupabaseAPI.updateOperatorDialogue(dlg.dialogue_id, dlgPayload);
-          }
-        }
-      }
-
-      // Nhánh 4: Lưu Skins
+      // Nhánh 3: Lưu Skins
+      const skinIdMap = {}; // mapping từ ID tạm sang ID thực tế
       if (skins && savedOpId) {
         for (const skin of skins) {
           const skinPayload = {
@@ -748,9 +785,39 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
             description: skin.description,
           };
           if (!skin.skin_id || String(skin.skin_id).startsWith('skin_')) {
-            await SupabaseAPI.createOperatorSkin(skinPayload);
+            const createdSkin = await SupabaseAPI.createOperatorSkin(skinPayload);
+            skinIdMap[skin.skin_id] = createdSkin.skin_id;
           } else {
-            await SupabaseAPI.updateOperatorSkin(skin.skin_id, skinPayload);
+            const updatedSkin = await SupabaseAPI.updateOperatorSkin(skin.skin_id, skinPayload);
+            skinIdMap[skin.skin_id] = updatedSkin.skin_id || skin.skin_id;
+          }
+        }
+      }
+
+      // Nhánh 4: Lưu Dialogues mới/chỉnh sửa
+      if (dialogues && savedOpId) {
+        for (const dlg of dialogues) {
+          // Xử lý skin_id cho Dialogue (để không bị dính Foreign Key Error)
+          let finalSkinId = dlg.skin_id;
+          if (finalSkinId && skinIdMap[finalSkinId]) {
+            finalSkinId = skinIdMap[finalSkinId];
+          } else if (finalSkinId && String(finalSkinId).startsWith('skin_')) {
+            finalSkinId = null; // Fallback an toàn
+          }
+
+          const dlgPayload = {
+            operator_id: savedOpId,
+            title: dlg.title,
+            text_content: dlg.text_content,
+            audio_url_jp: dlg.audio_url_jp,
+            audio_url_en: dlg.audio_url_en,
+            audio_url_cn: dlg.audio_url_cn,
+            skin_id: finalSkinId || null,
+          };
+          if (dlg._isNew) {
+            await SupabaseAPI.createOperatorDialogue(dlgPayload);
+          } else {
+            await SupabaseAPI.updateOperatorDialogue(dlg.dialogue_id, dlgPayload);
           }
         }
       }
@@ -848,7 +915,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
           <TabProfileEditor form={form} setField={setField} />
         )}
         {activeTab === 'dialogues' && (
-          <TabDialogueEditor form={form} setField={setField} operatorId={operator?.operator_id} />
+          <TabDialogueEditor form={form} setField={setField} operatorId={operator?.operator_id} skins={form.skins || []} />
         )}
       </div>
     </div>
