@@ -1,4 +1,4 @@
-import { getAssetUrl } from './assetUtils';
+import { getAssetUrl, getYouTubeId, getGoogleDriveId } from './assetUtils';
 
 function cx(classNames, styles) {
   if (!classNames) return '';
@@ -109,9 +109,23 @@ export const StoryRenderer = {
   },
 
   renderVideo(element, styles) {
+    const assetUrl = getAssetUrl(element.src);
+    const ytId = getYouTubeId(assetUrl);
+    const driveId = getGoogleDriveId(assetUrl);
+    
+    let videoContent = '';
+    
+    if (ytId) {
+      videoContent = `<iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; aspect-ratio: 16/9; border-radius: 8px;"></iframe>`;
+    } else if (driveId) {
+      videoContent = `<iframe src="https://drive.google.com/file/d/${driveId}/preview" title="Google Drive Video" frameborder="0" allowfullscreen style="width: 100%; min-height: 300px; border-radius: 8px;"></iframe>`;
+    } else {
+      videoContent = `<video src="${assetUrl}" controls></video>`;
+    }
+
     return `
       <div class="${cx('dialogue-video-box', styles)}" data-bgm-id="" data-bgm-intro="" data-bgm-loop="">
-        <video src="${getAssetUrl(element.src)}" controls></video>
+        ${videoContent}
       </div>
     `;
   },
@@ -173,8 +187,9 @@ export const StoryRenderer = {
       
       // We use cx to get the scoped class name from the CSS module
       const noteClass = cx('translator-note', styles);
+      const tooltipClass = cx('note-tooltip', styles);
       
-      return `<span class="${noteClass}" data-note-id="${id}" title="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}</span>`;
+      return `<span class="${noteClass}" data-note-id="${id}" data-note-content="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}<span class="${tooltipClass}">${noteContent}</span></span>`;
     });
   },
 

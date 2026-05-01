@@ -19,7 +19,8 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
     const [displayOrder, setDisplayOrder] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [bannerUrl, setBannerUrl] = useState('');
-    
+    const [wallpaperUrl, setWallpaperUrl] = useState('');
+
     // Tracking upload status for image fields
     const [uploadingFields, setUploadingFields] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +40,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDisplayOrder(initialData.display_order || '');
             setImageUrl(initialData.icon_url || initialData.image_url || '');
             setBannerUrl(initialData.banner_url || '');
+            setWallpaperUrl(initialData.wallpaper_url || '');
         } else {
             // Add Mode
             setName('');
@@ -47,6 +49,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDisplayOrder(initialDisplayOrder || '');
             setImageUrl('');
             setBannerUrl('');
+            setWallpaperUrl('');
         }
         setError(null);
     }, [isOpen, initialDisplayOrder, initialData]);
@@ -74,6 +77,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                 displayOrder: displayOrder ? parseInt(displayOrder) : 0,
                 imageUrl: imageUrl.trim() || null,
                 bannerUrl: bannerUrl.trim() || null,
+                wallpaperUrl: wallpaperUrl.trim() || null,
             }, isEditMode);
 
             // Reset
@@ -83,6 +87,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setDisplayOrder('');
             setImageUrl('');
             setBannerUrl('');
+            setWallpaperUrl('');
             onClose();
         } catch (err) {
             console.error('Submit item failed:', err);
@@ -94,14 +99,14 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
 
     const handleFileUpload = async (index, field, file) => {
         if (!file) return;
-        
+
         const fieldKey = 'imageUrl';
         setUploadingFields(prev => ({ ...prev, [fieldKey]: true }));
-        
+
         try {
             const folderPath = getFolderPath('image', 'misc');
             const result = await uploadFileToGithub(file, folderPath);
-            
+
             if (result.success) {
                 setImageUrl(result.url);
             }
@@ -194,7 +199,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
 
                     {type === 'event' && (
                         <div className={styles.formGroup}>
-                            <label>Banner (21:9)</label>
+                            <label>Banner (16:9)</label>
                             <div className={styles.imageInputRow}>
                                 <button
                                     type="button"
@@ -208,7 +213,29 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                             </div>
                             {bannerUrl && (
                                 <div className={styles.imagePreview}>
-                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ aspectRatio: '21/9', objectFit: 'cover' }} />
+                                    <img src={getAssetUrl(bannerUrl)} alt="Banner Preview" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {type === 'event' && (
+                        <div className={styles.formGroup}>
+                            <label>Wallpaper (Background)</label>
+                            <div className={styles.imageInputRow}>
+                                <button
+                                    type="button"
+                                    className={`${styles.browseBtn} ${wallpaperUrl ? styles.hasImage : ''}`}
+                                    title="Chọn ảnh wallpaper"
+                                    onClick={() => onPickAsset?.((asset) => setWallpaperUrl(asset.url), 'wallpaper')}
+                                >
+                                    <ImageIcon size={18} />
+                                    {wallpaperUrl ? 'Thay đổi wallpaper' : 'Chọn wallpaper'}
+                                </button>
+                            </div>
+                            {wallpaperUrl && (
+                                <div className={styles.imagePreview}>
+                                    <img src={getAssetUrl(wallpaperUrl)} alt="Wallpaper Preview" style={{ aspectRatio: '16/9', objectFit: 'cover', filter: 'brightness(0.7)' }} />
                                 </div>
                             )}
                         </div>
@@ -233,16 +260,16 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                     )}
 
                     <div className={styles.formActions}>
-                        <button 
-                            type="button" 
-                            className={styles.cancelBtn} 
+                        <button
+                            type="button"
+                            className={styles.cancelBtn}
                             onClick={onClose}
                             disabled={isSubmitting}
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className={styles.submitBtn}
                             disabled={isSubmitting}
                         >

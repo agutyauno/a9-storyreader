@@ -15,7 +15,8 @@ const ASSET_TYPES = [
     { value: 'banner', label: 'Banner Image', type: 'image', category: 'banner' },
     { value: 'character', label: 'Character', type: 'character', category: 'character' },
     { value: 'gallery', label: 'Gallery / Story Art', type: 'image', category: 'gallery' },
-    { value: 'video', label: 'Video (PV)', type: 'video', category: 'video' },
+    { value: 'wallpaper', label: 'Wallpaper Image', type: 'image', category: 'wallpaper' },
+    { value: 'video', label: 'Video (PV)', type: 'video', category: 'PV' },
     { value: 'bgm', label: 'BGM (audio)', type: 'audio', category: 'bgm' },
     { value: 'sfx', label: 'SFX (audio)', type: 'audio', category: 'sfx' },
 ];
@@ -34,6 +35,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
     const [description, setDescription] = useState('');
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState('');
+    const [externalUrl, setExternalUrl] = useState(''); // NEW: For video/external links
 
     // Multi-mode fields
     const [bulkFiles, setBulkFiles] = useState([]); // Array of { file, assetId, name, status: 'pending'|'uploading'|'done'|'error', error? }
@@ -61,8 +63,9 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
 
     const selectedType = ASSET_TYPES.find(t => t.value === assetValue);
     const isCharacter = assetValue === 'character';
+    const isVideo = assetValue === 'video';
     const isBulkMode = bulkFiles.length > 1;
-    const isSingleWithFile = bulkFiles.length === 1 || file;
+    const isSingleWithFile = bulkFiles.length === 1 || file || (isVideo && externalUrl);
 
     // ── File Handling ─────────────────────────────────────────────────────────
     const handleFileChange = (e) => {
@@ -166,6 +169,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         setDescription('');
         setFile(null);
         setPreviewUrl('');
+        setExternalUrl('');
         setBulkFiles([]);
         setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
         setUploadProgress({ current: 0, total: 0 });
@@ -189,8 +193,13 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
             return;
         }
 
-        if (!isCharacter && !file) {
+        if (!isCharacter && !isVideo && !file) {
             setError('Please select a file to upload');
+            return;
+        }
+
+        if (isVideo && !externalUrl.trim()) {
+            setError('Please enter a valid video URL');
             return;
         }
 
@@ -227,6 +236,18 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                         full_url: e.fullUrl
                     })),
                 });
+            } else if (isVideo) {
+                 // For videos, bypass upload and save the external URL directly
+                 const finalName = name.trim() || assetId.trim();
+                 await onSubmit({
+                     type: selectedType.type,
+                     category: selectedType.category,
+                     name: finalName,
+                     description: description.trim(),
+                     asset_id: assetId.trim(),
+                     id: assetId.trim(),
+                     url: externalUrl.trim(),
+                 });
             } else {
                 const folderPath = getFolderPath(selectedType.type, selectedType.category);
                 const uploadResult = await uploadFileToGithub(file, folderPath, assetId.trim());
@@ -363,6 +384,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         if (!assetValue) return true;
         if (isBulkMode) return bulkFiles.some(f => !f.assetId.trim());
         if (isCharacter) return false; // character has its own validation
+        if (isVideo) return !externalUrl.trim(); // video uses external URL
         return !file;
     };
 
@@ -387,6 +409,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                                 setError(null);
                                 setFile(null);
                                 setPreviewUrl('');
+                                setExternalUrl('');
                                 setBulkFiles([]);
                                 setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
                             }}
@@ -442,8 +465,8 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                         </div>
                     )}
 
-                    {/* ── File Upload Zone (non-character) ─────────────────── */}
-                    {!isCharacter && assetValue && !isBulkMode && (
+                    {/* ── File Upload Zone (non-character, non-video) ─────────────────── */}
+                    {!isCharacter && !isVideo && assetValue && !isBulkMode && (
                         <div className={styles.formGroup}>
                             <label>File Upload <span className={styles.required}>*</span></label>
                             <div
@@ -485,6 +508,21 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* ── External URL Input (Video only) ─────────────────── */}
+                    {isVideo && !isBulkMode && (
+                        <div className={styles.formGroup}>
+                            <label>Video URL (YouTube, G-Drive, v.v...) <span className={styles.required}>*</span></label>
+                            <input
+                                type="url"
+                                value={externalUrl}
+                                onChange={(e) => setExternalUrl(e.target.value)}
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                disabled={isUploading}
+                                required
+                            />
                         </div>
                     )}
 
