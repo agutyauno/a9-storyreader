@@ -1,7 +1,7 @@
 # Arknights Story Reader VN
 
 Một dự án phi lợi nhuận mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.
-Website: https://agutyauno.github.io/a9-storyreader/
+Website: https://civilighteterna.com/
 ## Giới Thiệu
 
 **Arknights Story Reader VN** là một trang web cho phép người chơi đọc các câu chuyện từ game Arknights. Dự án này được dịch và phát triển bởi cộng đồng yêu thích game Arknights tại Việt Nam.
@@ -42,7 +42,7 @@ Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE`
 # Arknights Story Reader (English Version)
 
 A non-profit project bringing the story of Arknights closer to the Vietnamese player community.
-Website: https://agutyauno.github.io/a9-storyreader/
+Website: https://civilighteterna.com/
 
 ## Introduction
 
