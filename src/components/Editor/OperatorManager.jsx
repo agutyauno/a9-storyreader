@@ -3,6 +3,7 @@ import { Plus, Search, ArrowLeft, Save, Trash2, Settings, X, Upload } from 'luci
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './OperatorManager.module.css';
+import ConfirmModal from './ConfirmModal';
 
 const ASSET_PREFIXES = {
   avatar: '/images/operators_images/avatars/',
@@ -81,20 +82,22 @@ function EditableAccordion({ title, iconUrl, children, defaultOpen = false, onRe
 }
 
 // ─── Metadata Popup (Inline create Faction/Class/Subclass) ──────────────────
-function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes }) {
-  const [name, setName] = useState('');
-  const [iconUrl, setIconUrl] = useState('');
-  const [parentClassId, setParentClassId] = useState(defaultParentClassId || '');
-  const [description, setDescription] = useState('');
+function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes, editItem }) {
+  const [name, setName] = useState(editItem?.name || '');
+  const [iconUrl, setIconUrl] = useState(editItem?.icon_url || '');
+  const [parentClassId, setParentClassId] = useState(editItem?.class_id || defaultParentClassId || '');
+  const [description, setDescription] = useState(editItem?.description || '');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const prefix = type === 'faction' ? '/images/factions/' : '/images/classes/';
 
+  const isEdit = !!editItem;
+
   const labels = {
-    faction: { title: 'Thêm Faction', namePlaceholder: 'VD: Rhodes Island' },
-    class: { title: 'Thêm Class', namePlaceholder: 'VD: Guard' },
-    subclass: { title: 'Thêm Sub-class', namePlaceholder: 'VD: Liberator' },
+    faction: { title: isEdit ? 'Sửa Faction' : 'Thêm Faction', namePlaceholder: 'VD: Rhodes Island' },
+    class: { title: isEdit ? 'Sửa Class' : 'Thêm Class', namePlaceholder: 'VD: Guard' },
+    subclass: { title: isEdit ? 'Sửa Sub-class' : 'Thêm Sub-class', namePlaceholder: 'VD: Liberator' },
   };
   const label = labels[type] || labels.faction;
 
@@ -109,12 +112,14 @@ function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes
         payload.description = description.trim();
       }
 
-      if (type === 'faction') {
-        created = await SupabaseAPI.createFaction(payload);
-      } else if (type === 'class') {
-        created = await SupabaseAPI.createOperatorClass(payload);
-      } else if (type === 'subclass') {
-        created = await SupabaseAPI.createOperatorSubclass({ ...payload, class_id: parentClassId || null });
+      if (isEdit) {
+        if (type === 'faction') created = await SupabaseAPI.updateFaction(editItem.id, payload);
+        else if (type === 'class') created = await SupabaseAPI.updateOperatorClass(editItem.id, payload);
+        else if (type === 'subclass') created = await SupabaseAPI.updateOperatorSubclass(editItem.id, { ...payload, class_id: parentClassId || null });
+      } else {
+        if (type === 'faction') created = await SupabaseAPI.createFaction(payload);
+        else if (type === 'class') created = await SupabaseAPI.createOperatorClass(payload);
+        else if (type === 'subclass') created = await SupabaseAPI.createOperatorSubclass({ ...payload, class_id: parentClassId || null });
       }
       onCreated?.(created);
       onClose();
@@ -166,7 +171,7 @@ function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
           <button className={styles.btnSecondary} onClick={onClose}>Huỷ</button>
           <button className={styles.btnPrimary} onClick={handleSave} disabled={saving || !name.trim()}>
-            <Save size={14} /> {saving ? 'Đang lưu...' : 'Tạo'}
+            <Save size={14} /> {saving ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Tạo')}
           </button>
         </div>
       </div>
@@ -175,9 +180,105 @@ function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MANAGER MODAL — For full CRUD of Factions/Classes/Subclasses
+// ═══════════════════════════════════════════════════════════════════════════
+function ClassFactionManagerModal({ onClose, classes, subclasses, factions, onRefresh }) {
+  const [activeTab, setActiveTab] = useState('factions');
+  const [editingItem, setEditingItem] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
+
+  const handleDelete = (type, id, name) => {
+    setConfirmData({
+      title: `Xoá "${name}"`,
+      message: 'Cảnh báo: Nếu đang được dùng bởi Operator, dữ liệu có thể bị lỗi hiển thị hoặc bị xoá liên kết.',
+      onConfirm: async () => {
+        try {
+          if (type === 'faction') await SupabaseAPI.deleteFaction(id);
+          else if (type === 'class') await SupabaseAPI.deleteOperatorClass(id);
+          else if (type === 'subclass') await SupabaseAPI.deleteOperatorSubclass(id);
+          onRefresh();
+        } catch (err) {
+          setConfirmData({ title: 'Lỗi', message: err.message, onConfirm: () => {} });
+          setConfirmOpen(true);
+        }
+      },
+    });
+    setConfirmOpen(true);
+  };
+
+  const renderList = (items, type) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+      {items.map(item => (
+        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'var(--color-bg-dark)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {item.icon_url && <img src={getAssetUrl(item.icon_url)} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{item.name}</div>
+              {item.description && <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{item.description}</div>}
+              {type === 'subclass' && item.class_id && (
+                <div style={{ fontSize: 11, color: 'var(--color-accent)', marginTop: 2 }}>Thuộc Class: {classes.find(c => c.id === item.class_id)?.name || item.class_id}</div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className={styles.btnSecondary} onClick={() => setEditingItem({ type, item })}>Sửa</button>
+            <button className={styles.btnDanger} onClick={() => handleDelete(type, item.id, item.name)}>Xoá</button>
+          </div>
+        </div>
+      ))}
+      {items.length === 0 && <div className={styles.emptyState}>Chưa có dữ liệu</div>}
+    </div>
+  );
+
+  return (
+    <div className={styles.popupOverlay} onClick={onClose}>
+      <div className={styles.popup} style={{ maxWidth: 600, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+        <div className={styles.popupHeader}>
+          <h4 className={styles.popupTitle}>Quản lý Class & Faction</h4>
+          <button className={styles.btnIcon} onClick={onClose}><X size={16} /></button>
+        </div>
+        
+        <div className={styles.tabBar} style={{ marginBottom: 0 }}>
+          <button className={`${styles.tabBtn} ${activeTab === 'factions' ? styles.active : ''}`} onClick={() => setActiveTab('factions')}>Factions</button>
+          <button className={`${styles.tabBtn} ${activeTab === 'classes' ? styles.active : ''}`} onClick={() => setActiveTab('classes')}>Classes</button>
+          <button className={`${styles.tabBtn} ${activeTab === 'subclasses' ? styles.active : ''}`} onClick={() => setActiveTab('subclasses')}>Subclasses</button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
+          {activeTab === 'factions' && renderList(factions, 'faction')}
+          {activeTab === 'classes' && renderList(classes, 'class')}
+          {activeTab === 'subclasses' && renderList(subclasses, 'subclass')}
+        </div>
+
+        {editingItem && (
+          <MetadataPopup
+            type={editingItem.type}
+            editItem={editingItem.item}
+            classes={classes}
+            onClose={() => setEditingItem(null)}
+            onCreated={() => { setEditingItem(null); onRefresh(); }}
+          />
+        )}
+
+        <ConfirmModal
+          isOpen={confirmOpen}
+          title={confirmData.title}
+          message={confirmData.message}
+          onConfirm={confirmData.onConfirm}
+          onClose={() => setConfirmOpen(false)}
+          type="danger"
+          confirmText="Xoá"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // DASHBOARD VIEW — Operator Grid
 // ═══════════════════════════════════════════════════════════════════════════
-function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, loading }) {
+function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, onManageMetadata, loading }) {
   const [search, setSearch] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterFaction, setFilterFaction] = useState('');
@@ -214,6 +315,9 @@ function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, l
           <option value="">Tất cả Faction</option>
           {factions.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
         </select>
+        <button className={styles.btnSecondary} onClick={onManageMetadata}>
+          Quản lý Class & Faction
+        </button>
       </div>
 
       {/* Grid */}
@@ -605,11 +709,22 @@ function TabDialogueEditor({ form, setField, operatorId, skins }) {
     setField('dialogues', arr);
   };
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => {} });
+
   const removeDialogue = (index) => {
     const dlg = dialogues[index];
     if (dlg.dialogue_id && !dlg._isNew) {
-      if (!window.confirm('Thoại này sẽ bị xoá khỏi hệ thống. Tiếp tục?')) return;
-      SupabaseAPI.deleteOperatorDialogue(dlg.dialogue_id).catch(console.error);
+      setConfirmData({
+        title: 'Xoá thoại',
+        message: 'Thoại này sẽ bị xoá khỏi hệ thống. Bạn có chắc chắn?',
+        onConfirm: () => {
+          SupabaseAPI.deleteOperatorDialogue(dlg.dialogue_id).catch(console.error);
+          setField('dialogues', dialogues.filter((_, i) => i !== index));
+        },
+      });
+      setConfirmOpen(true);
+      return;
     }
     setField('dialogues', dialogues.filter((_, i) => i !== index));
   };
@@ -673,6 +788,16 @@ function TabDialogueEditor({ form, setField, operatorId, skins }) {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        title={confirmData.title}
+        message={confirmData.message}
+        onConfirm={confirmData.onConfirm}
+        onClose={() => setConfirmOpen(false)}
+        type="danger"
+        confirmText="Xoá"
+      />
     </div>
   );
 }
@@ -830,8 +955,13 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Bạn có chắc muốn xoá Operator này?')) return;
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  const handleDelete = () => {
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
     try {
       await onDelete(operator.operator_id);
       showNotification?.('Đã xoá Operator');
@@ -918,6 +1048,16 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
           <TabDialogueEditor form={form} setField={setField} operatorId={operator?.operator_id} skins={form.skins || []} />
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        title="Xoá Operator"
+        message={`Bạn có chắc muốn xoá "${form.name || 'Operator'}"? Hành động này không thể hoàn tác.`}
+        onConfirm={executeDelete}
+        onClose={() => setConfirmDeleteOpen(false)}
+        type="danger"
+        confirmText="Xoá"
+      />
     </div>
   );
 }
@@ -928,6 +1068,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
 export default function OperatorManager({ showNotification }) {
   const [view, setView] = useState('dashboard'); // 'dashboard' | 'editor'
   const [selectedOperator, setSelectedOperator] = useState(null);
+  const [showMetaManager, setShowMetaManager] = useState(false);
 
   // Data
   const [operators, setOperators] = useState([]);
@@ -1032,8 +1173,18 @@ export default function OperatorManager({ showNotification }) {
         factions={factions}
         onSelect={handleSelectOperator}
         onCreate={handleCreateNew}
+        onManageMetadata={() => setShowMetaManager(true)}
         loading={loading}
       />
+      {showMetaManager && (
+        <ClassFactionManagerModal
+          classes={classes}
+          subclasses={subclasses}
+          factions={factions}
+          onClose={() => setShowMetaManager(false)}
+          onRefresh={loadData}
+        />
+      )}
     </div>
   );
 }
