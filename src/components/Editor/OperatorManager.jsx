@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, ArrowLeft, Save, Trash2, Settings, X, Upload } from 'lucide-react';
+import { Plus, Search, ArrowLeft, Save, Trash2, Settings, X, Upload, FileText, Edit, ExternalLink } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './OperatorManager.module.css';
 import ConfirmModal from './ConfirmModal';
+import { useNavigate } from 'react-router-dom';
 
 const ASSET_PREFIXES = {
   avatar: '/images/operators_images/avatars/',
@@ -113,9 +114,9 @@ function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes
       }
 
       if (isEdit) {
-        if (type === 'faction') created = await SupabaseAPI.updateFaction(editItem.id, payload);
-        else if (type === 'class') created = await SupabaseAPI.updateOperatorClass(editItem.id, payload);
-        else if (type === 'subclass') created = await SupabaseAPI.updateOperatorSubclass(editItem.id, { ...payload, class_id: parentClassId || null });
+        if (type === 'faction') created = await SupabaseAPI.updateFaction(editItem.name, payload);
+        else if (type === 'class') created = await SupabaseAPI.updateOperatorClass(editItem.name, payload);
+        else if (type === 'subclass') created = await SupabaseAPI.updateOperatorSubclass(editItem.name, { ...payload, class_id: parentClassId || null });
       } else {
         if (type === 'faction') created = await SupabaseAPI.createFaction(payload);
         else if (type === 'class') created = await SupabaseAPI.createOperatorClass(payload);
@@ -148,7 +149,7 @@ function MetadataPopup({ type, onClose, onCreated, defaultParentClassId, classes
               <label className={styles.formLabel}>Class cha</label>
               <select className={styles.formSelect} value={parentClassId} onChange={e => setParentClassId(e.target.value)}>
                 <option value="">-- Chọn Class cha --</option>
-                {classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {classes?.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
             </div>
             <div className={styles.formGroup}>
@@ -210,20 +211,20 @@ function ClassFactionManagerModal({ onClose, classes, subclasses, factions, onRe
   const renderList = (items, type) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
       {items.map(item => (
-        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'var(--color-bg-dark)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+        <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'var(--color-bg-dark)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {item.icon_url && <img src={getAssetUrl(item.icon_url)} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
             <div>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{item.name}</div>
               {item.description && <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{item.description}</div>}
               {type === 'subclass' && item.class_id && (
-                <div style={{ fontSize: 11, color: 'var(--color-accent)', marginTop: 2 }}>Thuộc Class: {classes.find(c => c.id === item.class_id)?.name || item.class_id}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-accent)', marginTop: 2 }}>Thuộc Class: {item.class_id}</div>
               )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className={styles.btnSecondary} onClick={() => setEditingItem({ type, item })}>Sửa</button>
-            <button className={styles.btnDanger} onClick={() => handleDelete(type, item.id, item.name)}>Xoá</button>
+            <button className={styles.btnDanger} onClick={() => handleDelete(type, item.name, item.name)}>Xoá</button>
           </div>
         </div>
       ))}
@@ -235,7 +236,19 @@ function ClassFactionManagerModal({ onClose, classes, subclasses, factions, onRe
     <div className={styles.popupOverlay} onClick={onClose}>
       <div className={styles.popup} style={{ maxWidth: 600, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
         <div className={styles.popupHeader}>
-          <h4 className={styles.popupTitle}>Quản lý Class & Faction</h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <h4 className={styles.popupTitle}>Quản lý Class & Faction</h4>
+            <button 
+              className={styles.btnPrimary} 
+              style={{ padding: '4px 8px', fontSize: 12 }}
+              onClick={() => {
+                const typeMap = { factions: 'faction', classes: 'class', subclasses: 'subclass' };
+                setEditingItem({ type: typeMap[activeTab], item: null });
+              }}
+            >
+              <Plus size={14} /> Thêm {activeTab === 'factions' ? 'Faction' : activeTab === 'classes' ? 'Class' : 'Subclass'}
+            </button>
+          </div>
           <button className={styles.btnIcon} onClick={onClose}><X size={16} /></button>
         </div>
         
@@ -286,8 +299,8 @@ function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, o
   const filtered = useMemo(() => {
     return operators.filter(op => {
       if (search && !op.name?.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filterClass && op.class_id !== parseInt(filterClass)) return false;
-      if (filterFaction && !op._factionIds?.includes(parseInt(filterFaction))) return false;
+      if (filterClass && op.class_id !== filterClass) return false;
+      if (filterFaction && !op._factionIds?.includes(filterFaction)) return false;
       return true;
     });
   }, [operators, search, filterClass, filterFaction]);
@@ -309,11 +322,11 @@ function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, o
         />
         <select className={styles.filterSelect} value={filterClass} onChange={e => setFilterClass(e.target.value)}>
           <option value="">Tất cả Class</option>
-          {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
         <select className={styles.filterSelect} value={filterFaction} onChange={e => setFilterFaction(e.target.value)}>
           <option value="">Tất cả Faction</option>
-          {factions.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          {factions.map(f => <option key={f.name} value={f.name}>{f.name}</option>)}
         </select>
         <button className={styles.btnSecondary} onClick={onManageMetadata}>
           Quản lý Class & Faction
@@ -332,9 +345,9 @@ function OperatorDashboard({ operators, classes, factions, onSelect, onCreate, o
           </button>
 
           {filtered.map(op => {
-            const cls = classes.find(c => c.id === op.class_id);
+            const cls = classes.find(c => c.name === op.class_id);
             return (
-              <button key={op.operator_id} className={styles.operatorCard} onClick={() => onSelect(op)}>
+              <button key={op.name} className={styles.operatorCard} onClick={() => onSelect(op)}>
                 <img
                   src={getAssetUrl(op.avatar_url || '/assets/images/character/blank.png')}
                   alt={op.name}
@@ -417,12 +430,8 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
             <input className={styles.formInput} value={form.name || ''} onChange={e => setField('name', e.target.value)} placeholder="VD: Amiya" />
           </div>
 
-          {/* Codename & Rarity */}
+          {/* Rarity */}
           <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Codename (ID)</label>
-              <input className={styles.formInput} value={form.codename || ''} onChange={e => setField('codename', e.target.value)} placeholder="VD: char_002_amiya" />
-            </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Rarity (1-6)</label>
               <input className={styles.formInput} type="number" min="1" max="6" value={form.rarity || ''} onChange={e => setField('rarity', parseInt(e.target.value) || null)} />
@@ -436,7 +445,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
               <div className={styles.selectWithAdd}>
                 <select className={styles.formSelect} value={form.class_id || ''} onChange={e => setField('class_id', e.target.value || null)}>
                   <option value="">-- Chọn Class --</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                 </select>
                 <button className={styles.btnIcon} onClick={() => setMetaPopup('class')} title="Thêm Class mới" type="button"><Plus size={16} /></button>
               </div>
@@ -446,7 +455,7 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
               <div className={styles.selectWithAdd}>
                 <select className={styles.formSelect} value={form.subclass_id || ''} onChange={e => setField('subclass_id', e.target.value || null)}>
                   <option value="">-- Chọn Sub-class --</option>
-                  {subclasses.filter(sc => !form.class_id || sc.class_id === form.class_id).map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+                  {subclasses.filter(sc => !form.class_id || sc.class_id === form.class_id).map(sc => <option key={sc.name} value={sc.name}>{sc.name}</option>)}
                 </select>
                 <button className={styles.btnIcon} onClick={() => setMetaPopup('subclass')} title="Thêm Sub-class mới" type="button"><Plus size={16} /></button>
               </div>
@@ -458,13 +467,13 @@ function TabGeneralEditor({ form, setField, classes, subclasses, factions, allFa
             <label className={styles.formLabel}>Factions</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {allFactions.map(f => {
-                const selected = factions.includes(f.id);
+                const selected = factions.includes(f.name);
                 return (
                   <button
-                    key={f.id}
+                    key={f.name}
                     className={`${styles.skinBtn} ${selected ? styles.active : ''}`}
                     onClick={() => {
-                      const next = selected ? factions.filter(id => id !== f.id) : [...factions, f.id];
+                      const next = selected ? factions.filter(name => name !== f.name) : [...factions, f.name];
                       setField('_factionIds', next);
                     }}
                     type="button"
@@ -693,7 +702,7 @@ function TabDialogueEditor({ form, setField, operatorId, skins }) {
     setField('dialogues', [...dialogues, {
       _isNew: true,
       _tempId: Date.now(),
-      operator_id: operatorId,
+      operator_name: operatorId,
       skin_id: null,
       title: '',
       text_content: '',
@@ -803,19 +812,204 @@ function TabDialogueEditor({ form, setField, operatorId, skins }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// TAB: RECORD EDITOR (Ngoại Truyện)
+// ═══════════════════════════════════════════════════════════════════════════
+function TabRecordEditor({ operatorId, showNotification }) {
+  const navigate = useNavigate();
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const loadRecords = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await SupabaseAPI.getOperatorRecords(operatorId);
+      setRecords(data);
+    } catch (err) {
+      console.error('Failed to load records:', err);
+      showNotification?.('Lỗi tải danh sách ngoại truyện', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [operatorId]);
+
+  useEffect(() => { loadRecords(); }, [loadRecords]);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) {
+      showNotification?.('Tên ngoại truyện không được để trống', 'error');
+      return;
+    }
+    try {
+      const recordId = `rec_${operatorId}_${Date.now()}`;
+      await SupabaseAPI.createOperatorRecord({
+        record_id: recordId,
+        operator_name: operatorId,
+        name: newName.trim(),
+        description: newDesc.trim(),
+        display_order: records.length,
+        story_content: { type: 'vns', script: '' },
+      });
+      showNotification?.(`Đã tạo "${newName.trim()}"!`);
+      setNewName('');
+      setNewDesc('');
+      setCreating(false);
+      await loadRecords();
+    } catch (err) {
+      console.error('Create record failed:', err);
+      showNotification?.('Lỗi tạo ngoại truyện: ' + err.message, 'error');
+    }
+  };
+
+  const handleDeleteRecord = async (recordId) => {
+    try {
+      await SupabaseAPI.deleteOperatorRecord(recordId);
+      showNotification?.('Đã xoá ngoại truyện');
+      setConfirmDelete(null);
+      await loadRecords();
+    } catch (err) {
+      showNotification?.('Lỗi xoá: ' + err.message, 'error');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px', color: 'var(--color-text-tertiary)' }}>
+        Đang tải danh sách ngoại truyện...
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+          Ngoại Truyện ({records.length})
+        </h3>
+        <button className={styles.btnPrimary} onClick={() => setCreating(true)} style={{ fontSize: 13 }}>
+          <Plus size={14} /> Thêm Record
+        </button>
+      </div>
+
+      {/* Create Form */}
+      {creating && (
+        <div style={{ background: 'var(--color-bg-elevated, #2a2d35)', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid var(--color-border, #3a3d45)' }}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Tên ngoại truyện *</label>
+            <input
+              type="text"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="VD: Hồi ức của Kal'tsit"
+              className={styles.input}
+              autoFocus
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Mô tả (tuỳ chọn)</label>
+            <textarea
+              value={newDesc}
+              onChange={e => setNewDesc(e.target.value)}
+              placeholder="Mô tả ngắn về ngoại truyện..."
+              className={styles.input}
+              rows={2}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className={styles.btnSecondary} onClick={() => { setCreating(false); setNewName(''); setNewDesc(''); }}>Huỷ</button>
+            <button className={styles.btnPrimary} onClick={handleCreate}><Plus size={14} /> Tạo</button>
+          </div>
+        </div>
+      )}
+
+      {/* Record List */}
+      {records.length === 0 && !creating ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--color-text-tertiary)', fontSize: 14 }}>
+          <FileText size={48} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.5 }} />
+          <p>Chưa có ngoại truyện nào. Nhấn "Thêm Record" để bắt đầu.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {records.map((rec, idx) => (
+            <div
+              key={rec.record_id}
+              style={{
+                background: 'var(--color-bg-elevated, #2a2d35)',
+                borderRadius: 10,
+                padding: '14px 16px',
+                border: '1px solid var(--color-border, #3a3d45)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                transition: 'border-color 0.2s',
+              }}
+            >
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--color-accent, #b8a9ff)', color: '#1a1d23', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                {idx + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {rec.name}
+                </div>
+                {rec.description && (
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {rec.description}
+                  </div>
+                )}
+              </div>
+              <button
+                className={styles.btnPrimary}
+                onClick={() => navigate(`/editor/record/${rec.record_id}`)}
+                style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
+                title="Soạn nội dung"
+              >
+                <Edit size={13} /> Soạn
+              </button>
+              <button
+                className={styles.btnDanger}
+                onClick={() => setConfirmDelete(rec)}
+                style={{ fontSize: 12, padding: '6px 10px', flexShrink: 0 }}
+                title="Xoá"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Xoá Ngoại Truyện"
+        message={`Bạn có chắc muốn xoá "${confirmDelete?.name}"? Nội dung kịch bản sẽ bị mất vĩnh viễn.`}
+        onConfirm={() => handleDeleteRecord(confirmDelete?.record_id)}
+        onClose={() => setConfirmDelete(null)}
+        type="danger"
+        confirmText="Xoá"
+      />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // EDITOR VIEW — Mirrors Reader's OperatorDetailPage
 // ═══════════════════════════════════════════════════════════════════════════
 const EDITOR_TABS = [
   { key: 'general', label: 'Thông tin' },
   { key: 'profiles', label: 'Hồ Sơ' },
   { key: 'dialogues', label: 'Thoại' },
+  { key: 'records', label: 'Ngoại Truyện' },
 ];
 
 function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSave, onDelete, showNotification, onMetadataRefresh }) {
-  const isNew = !operator?.operator_id;
+  const isNew = !!operator?._isNew;
   const [form, setForm] = useState(() => ({
     name: '',
-    codename: '',
     rarity: null,
     class_id: null,
     subclass_id: null,
@@ -834,10 +1028,10 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
 
   // Load Dialogues and Skins on mount
   useEffect(() => {
-    if (operator?.operator_id && !dataLoaded) {
+    if (operator?.name && !isNew && !dataLoaded) {
       Promise.all([
-        SupabaseAPI.getOperatorDialogues(operator.operator_id),
-        SupabaseAPI.getOperatorSkins(operator.operator_id)
+        SupabaseAPI.getOperatorDialogues(operator.name),
+        SupabaseAPI.getOperatorSkins(operator.name)
       ])
         .then(([dlgs, sks]) => {
           setForm(prev => ({ ...prev, dialogues: dlgs, skins: sks }));
@@ -845,7 +1039,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
         })
         .catch(err => console.error("Could not load attached data", err));
     }
-  }, [operator?.operator_id, dataLoaded]);
+  }, [operator?.name, isNew, dataLoaded]);
 
   const setField = useCallback((key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -931,7 +1125,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
           }
 
           const dlgPayload = {
-            operator_id: savedOpId,
+            operator_name: savedOpId,
             title: dlg.title,
             text_content: dlg.text_content,
             audio_url_jp: dlg.audio_url_jp,
@@ -963,15 +1157,15 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
 
   const executeDelete = async () => {
     try {
-      await onDelete(operator.operator_id);
+      await onDelete(operator.name);
       showNotification?.('Đã xoá Operator');
     } catch (err) {
       showNotification?.(`Lỗi: ${err.message}`, 'error');
     }
   };
 
-  const cls = classes.find(c => c.id === form.class_id);
-  const opFactions = factions.filter(f => form._factionIds?.includes(f.id));
+  const cls = classes.find(c => c.name === form.class_id);
+  const opFactions = factions.filter(f => form._factionIds?.includes(f.name));
 
   return (
     <div className={styles.editorInner}>
@@ -996,7 +1190,7 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
               </span>
             )}
             {opFactions.map(f => (
-              <span key={f.id} className={styles.badge}>
+              <span key={f.name} className={styles.badge}>
                 {f.icon_url && <img src={getAssetUrl(f.icon_url)} alt="" className={styles.badgeIcon} />}
                 {f.name}
               </span>
@@ -1045,7 +1239,10 @@ function OperatorEditor({ operator, classes, subclasses, factions, onBack, onSav
           <TabProfileEditor form={form} setField={setField} />
         )}
         {activeTab === 'dialogues' && (
-          <TabDialogueEditor form={form} setField={setField} operatorId={operator?.operator_id} skins={form.skins || []} />
+          <TabDialogueEditor form={form} setField={setField} operatorId={operator?.name} skins={form.skins || []} />
+        )}
+        {activeTab === 'records' && !isNew && (
+          <TabRecordEditor operatorId={operator?.name} showNotification={showNotification} />
         )}
       </div>
 
@@ -1105,8 +1302,8 @@ export default function OperatorManager({ showNotification }) {
   const handleSelectOperator = async (op) => {
     // Load factions for this operator
     try {
-      const opFactions = await SupabaseAPI.getOperatorFactions(op.operator_id);
-      setSelectedOperator({ ...op, _factionIds: opFactions.map(f => f.id) });
+      const opFactions = await SupabaseAPI.getOperatorFactions(op.name);
+      setSelectedOperator({ ...op, _factionIds: opFactions.map(f => f.name) });
       setView('editor');
     } catch {
       setSelectedOperator({ ...op, _factionIds: [] });
@@ -1119,23 +1316,24 @@ export default function OperatorManager({ showNotification }) {
     setView('editor');
   };
 
-  const handleSave = async (payload, factionIds) => {
+  const handleSave = async (payload, factionNames) => {
+    const originalName = selectedOperator?.name;
     if (selectedOperator?._isNew) {
       const created = await SupabaseAPI.createOperator(payload);
-      if (factionIds?.length) {
-        await SupabaseAPI.setOperatorFactions(created.operator_id, factionIds);
+      if (factionNames?.length) {
+        await SupabaseAPI.setOperatorFactions(created.name, factionNames);
       }
-      setSelectedOperator({ ...created, _factionIds: factionIds || [] });
+      setSelectedOperator({ ...created, _factionIds: factionNames || [] });
     } else {
-      const updated = await SupabaseAPI.updateOperator(payload.operator_id, payload);
-      await SupabaseAPI.setOperatorFactions(payload.operator_id, factionIds || []);
-      setSelectedOperator({ ...updated, _factionIds: factionIds || [] });
+      const updated = await SupabaseAPI.updateOperator(originalName, payload);
+      await SupabaseAPI.setOperatorFactions(updated.name, factionNames || []);
+      setSelectedOperator({ ...updated, _factionIds: factionNames || [] });
     }
     await loadData(); // Refresh list
   };
 
-  const handleDelete = async (operatorId) => {
-    await SupabaseAPI.deleteOperator(operatorId);
+  const handleDelete = async (operatorName) => {
+    await SupabaseAPI.deleteOperator(operatorName);
     setView('dashboard');
     setSelectedOperator(null);
     await loadData();
