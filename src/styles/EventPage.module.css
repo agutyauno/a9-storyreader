@@ -161,6 +161,7 @@
 	padding: var(--spacing-xs) 5px;
 	border-radius: var(--radius-base);
 	box-sizing: border-box;
+	text-align: center;
 }
 
 .story-selection-panel {
