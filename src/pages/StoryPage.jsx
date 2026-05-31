@@ -143,8 +143,11 @@ export default function StoryPage() {
           decisions.forEach(d => d.classList.remove(styles['selected'] || 'selected'));
           decision.classList.add(styles['selected'] || 'selected');
           responses.forEach(r => {
-            if (r.getAttribute('data-choice-response') === choiceValue) r.classList.add(styles['active'] || 'active');
-            else r.classList.remove(styles['active'] || 'active');
+            if (r.getAttribute('data-choice-response') === choiceValue) {
+              r.classList.add(styles['active'] || 'active');
+            } else {
+              r.classList.remove(styles['active'] || 'active');
+            }
           });
         });
       });

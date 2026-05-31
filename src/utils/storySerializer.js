@@ -79,13 +79,14 @@ export const StoryScriptSerializer = {
         lines.push('');
     },
 
-    serializeBackground(el, lines) {
+    serializeBackground(el, lines, indentLevel = 0) {
+        const indent = '  '.repeat(indentLevel);
         // Prefer _asset_id (original ID) over resolved image URL
         const imageId = el._asset_id || el.image || '';
-        lines.push(`@bg "${imageId}"`);
+        lines.push(`${indent}@bg "${imageId}"`);
 
         if (el.bgm && (el.bgm.id || el.bgm._id || el.bgm.intro || el.bgm.loop)) {
-            let bgmLine = '@bgm';
+            let bgmLine = `${indent}@bgm`;
             // Prefer _id (original) for the bgm id field
             const bgmId = el.bgm._id || el.bgm.id;
             if (bgmId) bgmLine += ` id="${bgmId}"`;
@@ -94,8 +95,10 @@ export const StoryScriptSerializer = {
             lines.push(bgmLine);
         }
 
-        this.serializeElements(el.dialogues || [], lines, 0);
-        lines.push('');
+        this.serializeElements(el.dialogues || [], lines, indentLevel);
+        if (indentLevel === 0) {
+            lines.push('');
+        }
     },
 
     serializeComment(el, lines, indentLevel = 0) {
@@ -124,6 +127,14 @@ export const StoryScriptSerializer = {
                     lines.push(`${indent}@sfx "${d.name || ''}" src="${sfxSrc}"`);
                     break;
                 }
+                case 'background_change': {
+                    const bgSrc = d._asset_id || d.image || '';
+                    lines.push(`${indent}@bg "${bgSrc}"`);
+                    break;
+                }
+                case 'background':
+                    this.serializeBackground(d, lines, indentLevel);
+                    break;
                 case 'decision':
                     this.serializeDecision(d, lines, indentLevel);
                     break;

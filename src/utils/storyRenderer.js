@@ -130,7 +130,7 @@ export const StoryRenderer = {
     `;
   },
 
-  renderBackground(element, styles) {
+  renderBackground(element, styles, extraAttrs = '') {
     let bgmAttrs = '';
     if (element.bgm) {
       bgmAttrs = `data-bgm-id="${element.bgm.id || ''}"`;
@@ -138,10 +138,37 @@ export const StoryRenderer = {
       if (element.bgm.loop) bgmAttrs += ` data-bgm-loop="${element.bgm.loop}"`;
     }
 
-    const dialogues = (element.dialogues || []).map((d) => this.renderDialogue(d, styles)).join('');
+    const parentDialogues = [];
+    const siblingScenes = [];
+
+    (element.dialogues || []).forEach(d => {
+      if (d.type === 'choice_response' && d.elements && d.elements.some(el => el.type === 'background')) {
+        siblingScenes.push(d);
+      } else {
+        parentDialogues.push(d);
+      }
+    });
+
+    const dialoguesHtml = parentDialogues.map((d) => this.renderDialogue(d, styles)).join('');
     const bgUrl = getAssetUrl(element.image);
-    return `
-      <section class="${cx('dialogue-background', styles)}" ${bgmAttrs}>
+
+    const siblingScenesHtml = siblingScenes.map(response => {
+      return (response.elements || []).map(el => {
+        if (el.type === 'background') {
+          return this.renderBackground(el, styles, `class="choice-response" data-choice-response="${response.choice_value}" data-choice-group="${response.group_id}"`);
+        }
+        return this.renderDialogue(el, styles);
+      }).join('');
+    }).join('');
+
+    let sectionClasses = cx('dialogue-background', styles);
+    if (extraAttrs.includes('class="choice-response"')) {
+      sectionClasses += ` ${cx('choice-response', styles)}`;
+      extraAttrs = extraAttrs.replace('class="choice-response"', '');
+    }
+
+    const parentHtml = `
+      <section class="${sectionClasses}" ${bgmAttrs} data-original-bg="${bgUrl}" ${extraAttrs}>
         <div class="${cx('background-wrapper', styles)}">
           <img class="${cx('background-blur', styles)}" src="${bgUrl}" alt="">
           <div class="${cx('image-container', styles)}">
@@ -150,10 +177,17 @@ export const StoryRenderer = {
           </div>
         </div>
         <div class="${cx('dialogue-container', styles)}">
-          ${dialogues}
+          ${dialoguesHtml}
         </div>
       </section>
     `;
+
+    return parentHtml + siblingScenesHtml;
+  },
+
+  renderBackgroundChange(bgChange, styles) {
+    const bgUrl = getAssetUrl(bgChange.image);
+    return `<div class="${cx('background-change-trigger', styles)}" data-bg-src="${bgUrl}"></div>`;
   },
 
   renderDialogue(dialogue, styles) {
@@ -168,6 +202,10 @@ export const StoryRenderer = {
         return this.renderDecision(dialogue, styles);
       case 'choice_response':
         return this.renderChoiceResponse(dialogue, styles);
+      case 'background_change':
+        return this.renderBackgroundChange(dialogue, styles);
+      case 'background':
+        return this.renderBackground(dialogue, styles);
       case 'comment':
         return '';
       default:

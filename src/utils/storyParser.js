@@ -77,9 +77,25 @@ export const StoryScriptParser = {
                     if (el.bgm.intro) assetIdsNeeded.add(el.bgm.intro);
                     if (el.bgm.loop) assetIdsNeeded.add(el.bgm.loop);
                 }
-                for (const d of (el.dialogues || [])) {
-                    if (d.type === 'sfx' && d.src) assetIdsNeeded.add(d.src);
-                }
+                const collectFromDialogues = (dialogues) => {
+                    for (const d of (dialogues || [])) {
+                        if (d.type === 'sfx' && d.src) assetIdsNeeded.add(d.src);
+                        if (d.type === 'background_change' && d.image) assetIdsNeeded.add(d.image);
+                        if (d.type === 'background') {
+                            if (d.image) assetIdsNeeded.add(d.image);
+                            if (d.bgm) {
+                                if (d.bgm.id) assetIdsNeeded.add(d.bgm.id);
+                                if (d.bgm.intro) assetIdsNeeded.add(d.bgm.intro);
+                                if (d.bgm.loop) assetIdsNeeded.add(d.bgm.loop);
+                            }
+                            collectFromDialogues(d.dialogues);
+                        }
+                        if (d.type === 'choice_response' && d.elements) {
+                            collectFromDialogues(d.elements);
+                        }
+                    }
+                };
+                collectFromDialogues(el.dialogues);
             }
         }
 
@@ -141,12 +157,35 @@ export const StoryScriptParser = {
                     if (el.bgm.intro) el.bgm.intro = resolveAssetUrl(el.bgm.intro);
                     if (el.bgm.loop) el.bgm.loop = resolveAssetUrl(el.bgm.loop);
                 }
-                for (const d of (el.dialogues || [])) {
-                    if (d.type === 'sfx' && d.src) {
-                        d._asset_id = d.src;
-                        d.src = resolveAssetUrl(d.src);
+                const resolveInDialogues = (dialogues) => {
+                    for (const d of (dialogues || [])) {
+                        if (d.type === 'sfx' && d.src) {
+                            d._asset_id = d.src;
+                            d.src = resolveAssetUrl(d.src);
+                        }
+                        if (d.type === 'background_change' && d.image) {
+                            d._asset_id = d.image;
+                            d.image = resolveAssetUrl(d.image);
+                        }
+                        if (d.type === 'background') {
+                            if (d.image) {
+                                d._asset_id = d.image;
+                                d.image = resolveAssetUrl(d.image);
+                            }
+                            if (d.bgm) {
+                                d.bgm._id = d.bgm.id;
+                                if (d.bgm.id) d.bgm.id = resolveAssetUrl(d.bgm.id);
+                                if (d.bgm.intro) d.bgm.intro = resolveAssetUrl(d.bgm.intro);
+                                if (d.bgm.loop) d.bgm.loop = resolveAssetUrl(d.bgm.loop);
+                            }
+                            resolveInDialogues(d.dialogues);
+                        }
+                        if (d.type === 'choice_response' && d.elements) {
+                            resolveInDialogues(d.elements);
+                        }
                     }
-                }
+                };
+                resolveInDialogues(el.dialogues);
             }
         }
 
@@ -223,7 +262,11 @@ export const StoryScriptParser = {
                     // Narrator blocks ignore other elements, just treat as text if not @end
                     return; 
                 }
-                top.elements.push(element);
+                if (top.type === 'response' && top.currentBackground) {
+                    top.currentBackground.dialogues.push(element);
+                } else {
+                    top.elements.push(element);
+                }
             } else if (currentBackground) {
                 currentBackground.dialogues.push(element);
             }
@@ -310,6 +353,13 @@ export const StoryScriptParser = {
             // @bg
             const bgMatch = trimmed.match(/^@bg\s+"([^"]*)"/);
             if (bgMatch) {
+                if (stack.length > 0 && stack[stack.length - 1].type === 'response') {
+                    const top = stack[stack.length - 1];
+                    const responseBg = { type: 'background', image: bgMatch[1], dialogues: [] };
+                    top.elements.push(responseBg);
+                    top.currentBackground = responseBg;
+                    continue;
+                }
                 if (currentBackground) {
                     currentSection.elements.push(currentBackground);
                 }
@@ -320,13 +370,19 @@ export const StoryScriptParser = {
 
             // @bgm
             const bgmMatch = trimmed.match(/^@bgm\s+(.*)/);
-            if (bgmMatch && currentBackground) {
-                const params = ScriptUtils.parseParams(bgmMatch[1]);
-                currentBackground.bgm = {
-                    id: params.id || '',
-                    intro: params.intro || '',
-                    loop: params.loop || ''
-                };
+            if (bgmMatch) {
+                const activeBg = (stack.length > 0 && stack[stack.length - 1].type === 'response' && stack[stack.length - 1].currentBackground) 
+                    ? stack[stack.length - 1].currentBackground 
+                    : currentBackground;
+                
+                if (activeBg) {
+                    const params = ScriptUtils.parseParams(bgmMatch[1]);
+                    activeBg.bgm = {
+                        id: params.id || '',
+                        intro: params.intro || '',
+                        loop: params.loop || ''
+                    };
+                }
                 continue;
             }
 
@@ -390,7 +446,7 @@ export const StoryScriptParser = {
                 };
                 pushToParent(response);
                 if (responseMatch[3] === '{') {
-                    stack.push({ type: 'response', elements: response.elements, target: response });
+                    stack.push({ type: 'response', elements: response.elements, target: response, currentBackground: null });
                 }
                 continue;
             }

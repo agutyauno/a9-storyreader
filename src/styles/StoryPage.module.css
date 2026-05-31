@@ -1143,3 +1143,8 @@ p {
         right: -100%;
     }
 }
+
+/* Ensure active choice background displays as grid */
+.dialogue-background.choice-response.active {
+    display: grid;
+}
