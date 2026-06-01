@@ -490,13 +490,14 @@ const SupabaseAPI_Raw = {
         const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
         return { ...char, ...link };
       });
-      return this._enrichCharactersWithExpressions(results);
+      return this._enrichCharactersWithExpressions(sortByOrder(results));
     }
 
     const { data, error } = await supabase
       .from('event_characters')
       .select('*, characters(*)')
-      .eq('event_id', eventId);
+      .eq('event_id', eventId)
+      .order('display_order');
     if (error) throw error;
 
     const characters = (data || []).map(row => ({
@@ -915,17 +916,17 @@ const SupabaseAPI_Raw = {
   // EVENT CHARACTERS
   // ===========================================================================
 
-  async addCharacterToEvent(eventId, characterId) {
+  async addCharacterToEvent(eventId, characterId, displayOrder = 0) {
     if (USE_MOCK_DB) {
       if (!mockDatabase.event_characters) mockDatabase.event_characters = [];
       const exists = mockDatabase.event_characters.find(ec => ec.event_id === eventId && ec.character_id === characterId);
       if (exists) return exists;
 
-      const newItem = { event_id: eventId, character_id: characterId };
+      const newItem = { event_id: eventId, character_id: characterId, display_order: displayOrder };
       mockDatabase.event_characters.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('event_characters').insert({ event_id: eventId, character_id: characterId }).select().single();
+    const { data, error } = await supabase.from('event_characters').insert({ event_id: eventId, character_id: characterId, display_order: displayOrder }).select().single();
     if (error) throw error;
     return data;
   },

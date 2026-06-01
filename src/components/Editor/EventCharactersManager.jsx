@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Search, Loader, User } from 'lucide-react';
+import { Plus, X, Search, Loader, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import { getAssetUrl } from '../../utils/assetUtils';
 import styles from './EventCharactersManager.module.css';
@@ -35,11 +35,18 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
 
             setLoading(true);
             try {
+                // Determine next display order
+                const currentMaxOrder = linkedCharacters.length > 0
+                    ? Math.max(...linkedCharacters.map(c => c.display_order || 0))
+                    : -1;
+
                 let addCount = 0;
+                let order = currentMaxOrder;
                 for (const char of assetList) {
                     // Check if already linked
                     if (!linkedCharacters.find(c => c.character_id === char.asset_id)) {
-                        await SupabaseAPI.addCharacterToEvent(eventId, char.asset_id);
+                        order++;
+                        await SupabaseAPI.addCharacterToEvent(eventId, char.asset_id, order);
                         addCount++;
                     }
                 }
@@ -57,6 +64,37 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
                 setLoading(false);
             }
         }, { filter: 'character', multi: true });
+    };
+
+    const handleMove = async (index, direction) => {
+        const targetIndex = direction === 'left' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= linkedCharacters.length) return;
+
+        const newLinked = [...linkedCharacters];
+        // Swap elements
+        const temp = newLinked[index];
+        newLinked[index] = newLinked[targetIndex];
+        newLinked[targetIndex] = temp;
+
+        // Optimistically update UI
+        setLinkedCharacters(newLinked);
+
+        try {
+            // Assign sequential display_order in DB
+            await Promise.all(
+                newLinked.map((char, idx) =>
+                    SupabaseAPI.updateEventCharacter(eventId, char.character_id, {
+                        display_order: idx
+                    })
+                )
+            );
+            showNotification?.('Đã cập nhật thứ tự nhân vật');
+        } catch (err) {
+            console.error('Failed to update character order:', err);
+            showNotification?.('Cập nhật thứ tự thất bại', 'error');
+            // Revert state
+            fetchData();
+        }
     };
 
     const handleRemove = async (characterId) => {
@@ -89,7 +127,7 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
                 {linkedCharacters.length === 0 ? (
                     <div className={styles.empty}>No characters linked yet.</div>
                 ) : (
-                    linkedCharacters.map(c => (
+                    linkedCharacters.map((c, index) => (
                         <div key={c.character_id} className={styles.charCard} onClick={() => onPreview?.(c, 'character')}>
                             <div className={styles.avatarWrap}>
                                 {c.avatar_url ? (
@@ -102,6 +140,34 @@ export default function EventCharactersManager({ eventId, showNotification, onPi
                                 <div className={styles.charName}>{c.name}</div>
                                 <div className={styles.charId}>{c.character_id}</div>
                             </div>
+                            
+                            {/* Order Controls */}
+                            <div className={styles.orderControls}>
+                                <button
+                                    className={styles.orderBtn}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMove(index, 'left');
+                                    }}
+                                    disabled={index === 0}
+                                    title="Di chuyển sang trái"
+                                >
+                                    <ChevronLeft size={14} />
+                                </button>
+                                <span className={styles.orderIndex}>{index + 1}</span>
+                                <button
+                                    className={styles.orderBtn}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMove(index, 'right');
+                                    }}
+                                    disabled={index === linkedCharacters.length - 1}
+                                    title="Di chuyển sang phải"
+                                >
+                                    <ChevronRight size={14} />
+                                </button>
+                            </div>
+
                             <button className={styles.removeBtn} onClick={(e) => {
                                 e.stopPropagation();
                                 handleRemove(c.character_id);
