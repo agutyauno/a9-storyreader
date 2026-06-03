@@ -1,17 +1,82 @@
 /* ================================================================================================= */
-/* Home Page Specific Styles */
+/* Home Page Specific Styles - Swiss Horizontal Retro Layout */
 /* ================================================================================================= */
 
-/* Selected Region Details Header in Swiss Style */
+/* Horizontal Events Chain Container */
+.event-chain-container-horizontal {
+    position: relative;
+    margin: 2rem 0;
+    padding: 3rem 0;
+}
+
+/* Horizontal Timeline Connector Line running behind the cards */
+.event-chain-container-horizontal::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 4px;
+    background-color: var(--color-terracotta);
+    border-top: 1px solid var(--color-charcoal);
+    border-bottom: 1px solid var(--color-charcoal);
+    z-index: 1;
+}
+
+/* Horizontal scrolling wrapper */
+.event-chain-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 5.5rem;
+    /* Space between different arcs */
+    overflow-x: auto;
+    padding: 1.5rem 0.5rem;
+    scroll-behavior: auto;
+    position: relative;
+    z-index: 2;
+    /* Sits above the connector line */
+
+    /* Constant padding to prevent layout shift of events when sidebar toggles */
+    padding-left: 2.5rem;
+    padding-right: 4.5rem;
+}
+
+/* Horizontal Scrollbar Styling */
+.event-chain-horizontal::-webkit-scrollbar {
+    height: 10px;
+}
+
+.event-chain-horizontal::-webkit-scrollbar-track {
+    background: rgba(24, 24, 24, 0.05);
+    border: var(--border-thin);
+}
+
+.event-chain-horizontal::-webkit-scrollbar-thumb {
+    background: var(--color-terracotta);
+    border: 2px solid var(--color-cream);
+}
+
+.event-chain-horizontal::-webkit-scrollbar-thumb:hover {
+    background: var(--color-crimson);
+}
+
+/* Selected Region Details Header at the top */
 .region-hero {
     border: var(--border-thick);
-    background-color: var(--color-charcoal);
+    background-color: #ffffff;
+    /* Contrast card in Swiss light layout */
     padding: 2rem;
-    margin-bottom: 3rem;
+    margin-left: 2.5rem;
+    margin-right: 4.5rem;
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+    opacity: 1;
+    visibility: visible;
+    transition: transform var(--transition-smooth);
 }
 
 .region-hero::before {
@@ -20,180 +85,230 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 6px;
+    width: 8px;
     background-color: var(--color-terracotta);
 }
 
 .region-hero-meta {
     font-family: var(--font-mono);
-    color: var(--color-ochre);
-    font-size: 0.85rem;
+    color: var(--color-terracotta);
+    font-weight: 700;
+    font-size: 0.9rem;
 }
 
 .region-hero-title {
-    font-size: 2.25rem;
-    font-weight: 700;
+    font-size: 2.5rem;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: -0.5px;
+    color: var(--color-charcoal);
 }
 
 .region-hero-desc {
-    font-size: 1.05rem;
-    color: rgba(245, 237, 220, 0.75);
-    max-width: 800px;
+    font-size: 1.1rem;
+    color: rgba(24, 24, 24, 0.8);
+    max-width: 850px;
     line-height: 1.6;
 }
 
-/* Events Chain / Timeline List */
-.event-chain-container {
-    position: relative;
-    padding-left: 3rem;
-    margin-bottom: 4rem;
-}
-
-/* The Retro Timeline Connector Line */
-.event-chain-container::before {
-    content: '';
-    position: absolute;
-    top: 1.5rem;
-    bottom: 1.5rem;
-    left: 1rem;
-    width: 4px;
-    background-color: var(--color-terracotta);
-    border-right: 2px solid var(--color-ochre);
-}
-
-.event-chain-item {
-    position: relative;
-    margin-bottom: 3rem;
-}
-
-.event-chain-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Timeline Indicator Dot (Square Retro Node) */
-.event-chain-node {
-    position: absolute;
-    left: -3rem;
-    top: 1rem;
-    width: 20px;
-    height: 20px;
-    background-color: var(--color-charcoal);
-    border: 3px solid var(--color-terracotta);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-}
-
-.event-chain-item:hover .event-chain-node {
-    background-color: var(--color-crimson);
-    border-color: var(--color-cream);
-    transform: scale(1.1);
-}
-
-/* Swiss Style Event Card */
-.event-card {
+/* Swiss Style Horizontal Event Card */
+.event-card-horizontal {
+    width: 280px;
+    height: 250px;
+    background-color: #ffffff;
     border: var(--border-thick);
-    background-color: var(--bg-panel);
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    flex-shrink: 0;
     position: relative;
-    transition: transform var(--transition-smooth), border-color var(--transition-retro);
+    text-decoration: none;
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-retro);
 }
 
-.event-card:hover {
-    transform: translate(-4px, -4px);
-    box-shadow: 6px 6px 0px var(--color-terracotta);
+.event-card-horizontal:hover {
+    transform: translateY(-8px);
     border-color: var(--color-terracotta);
 }
 
-.event-card-img-container {
-    width: 240px;
-    border-right: var(--border-thick);
-    background-color: #101010;
+.event-card-img-wrap-horizontal {
     position: relative;
+    aspect-ratio: 16/9;
     overflow: hidden;
-    flex-shrink: 0;
+    background-color: var(--color-charcoal);
+    border-bottom: var(--border-thick);
 }
 
-.event-card-img {
+.event-card-img-horizontal {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.8;
-    filter: grayscale(20%);
-    transition: opacity var(--transition-smooth);
+    opacity: 0.9;
+    filter: grayscale(10%);
+    transition: opacity var(--transition-smooth), transform var(--transition-smooth);
 }
 
-.event-card:hover .event-card-img {
+.event-card-horizontal:hover .event-card-img-horizontal {
     opacity: 1;
+    transform: scale(1.03);
     filter: grayscale(0%);
 }
 
-.event-card-body {
-    padding: 1.5rem;
+/* Swiss Metadata Tag on image */
+.event-card-index-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--color-charcoal);
+    color: var(--color-cream);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--color-cream);
+    z-index: 5;
+}
+
+/* Event Name (Bottom Block of Card) */
+.event-card-name-horizontal {
+    padding: 1rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: #ffffff;
+    color: var(--color-charcoal);
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: var(--transition-retro);
+    border-top: none;
+    line-height: 1.4;
+}
+
+.event-card-horizontal:hover .event-card-name-horizontal {
+    background-color: var(--color-terracotta);
+    color: var(--color-cream);
+}
+
+/* Empty State Card */
+.event-card-horizontal-empty {
+    width: 280px;
+    height: 250px;
+    border: var(--border-thick);
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+    flex-shrink: 0;
+    z-index: 2;
+    color: var(--color-crimson);
+}
+
+.event-card-horizontal-empty .event-card-name-horizontal {
+    color: var(--color-crimson);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+/* Arc Grouping & Metadata Cards */
+.arc-group-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    position: relative;
+}
+
+.arc-metadata-card {
+    width: 350px;
+    height: 250px;
+    background-color: #ffffff;
+    border: var(--border-thick);
+    border-left: 8px solid var(--color-terracotta);
+    box-shadow: 4px 4px 0px var(--color-charcoal);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    padding: 1.25rem;
+    flex-shrink: 0;
+    position: relative;
+    box-sizing: border-box;
 }
 
-.event-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1.5rem;
-    margin-bottom: 0.75rem;
+.arc-metadata-card::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-terracotta);
 }
 
-.event-card-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.event-card-index {
-    font-family: var(--font-mono);
-    color: var(--color-ochre);
-    font-size: 0.9rem;
-    background-color: rgba(245, 237, 220, 0.05);
-    padding: 0.15rem 0.5rem;
-    border: var(--border-thin);
-}
-
-.event-card-desc {
-    font-size: 0.95rem;
-    color: rgba(245, 237, 220, 0.75);
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
-}
-
-.event-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: var(--border-thin);
-}
-
-.event-card-tag {
+.arc-card-header {
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    color: var(--color-sage);
+    font-weight: 700;
+    color: var(--color-terracotta);
+    border-bottom: 1px solid rgba(24, 24, 24, 0.1);
+    padding-bottom: 0.5rem;
 }
 
-/* Responsive Overrides for Event Cards */
+.arc-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0.75rem 0;
+}
+
+.arc-card-title {
+    font-family: var(--font-swiss);
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.25;
+    color: var(--color-charcoal);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.arc-card-desc {
+    font-family: var(--font-swiss);
+    font-size: 0.82rem;
+    line-height: 1.2;
+    color: rgba(24, 24, 24, 0.7);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Responsive Rules for Horizontal Scroll */
 @media (max-width: 900px) {
-    .event-card {
-        flex-direction: column;
+    .event-chain-horizontal {
+        padding-left: 1.5rem;
+        gap: 3.5rem;
     }
-    
-    .event-card-img-container {
-        width: 100%;
-        height: 180px;
-        border-right: none;
-        border-bottom: var(--border-thick);
+
+    .arc-group-horizontal {
+        gap: 1.5rem;
+    }
+
+    .region-hero-card {
+        width: 300px;
+    }
+
+    .event-card-horizontal,
+    .arc-metadata-card {
+        width: 240px;
     }
 }

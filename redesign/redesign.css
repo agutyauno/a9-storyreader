@@ -14,23 +14,23 @@
     --color-sage: #5C7F71;
 
     /* Theme Mappings */
-    --bg-main: var(--color-charcoal);
-    --bg-panel: #202020;
-    --text-main: var(--color-cream);
-    
+    --bg-main: var(--color-cream);
+    --bg-panel: var(--color-cream);
+    --text-main: var(--color-charcoal);
+
     /* Typography */
     --font-swiss: 'Space Grotesk', sans-serif;
     --font-mono: 'Share Tech Mono', monospace;
 
     /* Borders (Brutalist / Technical) */
-    --border-thick: 2px solid var(--color-cream);
-    --border-thin: 1px solid rgba(245, 237, 220, 0.2);
+    --border-thick: 2px solid var(--color-charcoal);
+    --border-thin: 1px solid rgba(24, 24, 24, 0.12);
     --border-active: 2px solid var(--color-terracotta);
-    
+
     /* Layout Constants */
     --header-height: 64px;
-    --sidebar-width: 320px;
-    
+    --sidebar-width: 380px;
+
     /* Transitions */
     --transition-retro: 0.2s steps(4, end);
     --transition-smooth: 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -45,6 +45,10 @@
 
 body {
     background-color: var(--bg-main);
+    background-image:
+        radial-gradient(at 5% 15%, rgba(178, 101, 59, 0.05) 0px, transparent 30%),
+        radial-gradient(at 95% 85%, rgba(92, 127, 113, 0.05) 0px, transparent 30%);
+    background-attachment: fixed;
     color: var(--text-main);
     font-family: var(--font-swiss);
     min-height: 100vh;
@@ -61,12 +65,11 @@ body {
 
 /* Diagonal stripe pattern for retro-futuristic panels */
 .retro-stripes {
-    background-image: repeating-linear-gradient(45deg, 
-        rgba(245, 237, 220, 0.05), 
-        rgba(245, 237, 220, 0.05) 6px, 
-        transparent 6px, 
-        transparent 12px
-    );
+    background-image: repeating-linear-gradient(45deg,
+            rgba(245, 237, 220, 0.05),
+            rgba(245, 237, 220, 0.05) 6px,
+            transparent 6px,
+            transparent 12px);
 }
 
 /* App Wrapper Layout */
@@ -79,7 +82,7 @@ body {
 /* Header */
 .retro-header {
     height: var(--header-height);
-    background-color: var(--color-charcoal);
+    background-color: var(--color-terracotta);
     border-bottom: var(--border-thick);
     position: fixed;
     top: 0;
@@ -89,6 +92,7 @@ body {
     display: flex;
     align-items: center;
     padding: 0 1.5rem;
+    color: var(--color-cream);
 }
 
 .header-left {
@@ -100,21 +104,21 @@ body {
 /* Sidebar Toggle button in Swiss Style */
 .sidebar-toggle-btn {
     background: transparent;
-    border: var(--border-thick);
+    border: 1px solid var(--color-cream);
     color: var(--color-cream);
-    padding: 0.35rem 0.75rem;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     cursor: pointer;
     transition: var(--transition-retro);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
 }
 
 .sidebar-toggle-btn:hover {
     background-color: var(--color-cream);
-    color: var(--color-charcoal);
+    color: var(--color-terracotta);
 }
 
 .header-logo {
@@ -126,7 +130,7 @@ body {
 }
 
 .header-logo img {
-    height: 32px;
+    height: 40px;
     object-fit: contain;
 }
 
@@ -144,17 +148,18 @@ body {
     color: var(--color-cream);
     font-family: var(--font-mono);
     font-size: 0.95rem;
-    border-left: var(--border-thin);
+    border-left: 1px solid rgba(245, 237, 220, 0.25);
     transition: var(--transition-retro);
 }
 
-.header-nav-item:hover, .header-nav-item.active {
-    background-color: var(--color-terracotta);
+.header-nav-item:hover,
+.header-nav-item.active {
+    background-color: var(--color-charcoal);
     color: var(--color-cream);
 }
 
 .header-nav-item:last-child {
-    border-right: var(--border-thin);
+    border-right: 1px solid rgba(245, 237, 220, 0.25);
 }
 
 /* Sidebar + Content layout container */
@@ -174,11 +179,11 @@ body {
     top: var(--header-height);
     left: 0;
     z-index: 90;
-    border-right: var(--border-thick);
-    /* Left-to-right gradient, semi-transparent */
-    background: linear-gradient(to right, rgba(24, 24, 24, 0.98) 40%, rgba(24, 24, 24, 0.85) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    border-right: none;
+    /* Left-to-right gradient, semi-transparent fading to 0 */
+    background: linear-gradient(to right, rgba(24, 24, 24, 1) 10%, rgba(24, 24, 24, 0.1) 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     overflow-y: auto;
     transition: transform var(--transition-smooth);
     display: flex;
@@ -191,8 +196,8 @@ body {
 
 .sidebar-title-block {
     padding: 1.25rem;
-    border-bottom: var(--border-thick);
-    background-color: rgba(245, 237, 220, 0.03);
+    border-bottom: 2px solid rgba(245, 237, 220, 0.15);
+    background-color: rgba(245, 237, 220, 0.02);
 }
 
 .sidebar-title {
@@ -207,12 +212,8 @@ body {
     flex-direction: column;
 }
 
-.region-list-item {
-    border-bottom: var(--border-thin);
-}
-
 .region-btn {
-    width: 100%;
+    width: 90%;
     background: transparent;
     border: none;
     color: var(--color-cream);
@@ -249,19 +250,14 @@ body {
 /* Body Content Area */
 .content-area {
     flex: 1;
-    margin-left: var(--sidebar-width);
-    padding: 2.5rem;
-    transition: margin-left var(--transition-smooth);
+    margin-left: 0;
+    padding: 2.5rem 0;
+    transition: var(--transition-smooth);
     min-height: calc(100vh - var(--header-height));
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
-
-.content-area.expanded {
-    margin-left: 0;
-}
-
-
 
 /* Swiss Retro Button styles */
 .retro-link {
@@ -271,10 +267,10 @@ body {
     font-family: var(--font-mono);
     font-size: 0.9rem;
     font-weight: 700;
-    background-color: var(--color-cream);
-    color: var(--color-charcoal);
+    background-color: var(--color-charcoal);
+    color: var(--color-cream);
     padding: 0.5rem 1rem;
-    border: 2px solid var(--color-cream);
+    border: 2px solid var(--color-charcoal);
     cursor: pointer;
     transition: var(--transition-retro);
 }
@@ -316,8 +312,13 @@ body {
 }
 
 @keyframes loading-slide {
-    from { left: -40%; }
-    to { left: 100%; }
+    from {
+        left: -40%;
+    }
+
+    to {
+        left: 100%;
+    }
 }
 
 .retro-error {
@@ -329,69 +330,185 @@ body {
     color: var(--color-crimson);
 }
 
+/* Layout container */
+.redesign-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* Footer style in Swiss Grid */
 .retro-footer {
     border-top: var(--border-thick);
     background-color: var(--color-charcoal);
-    padding: 2rem 0;
+    padding: 3.5rem 0 2.5rem 0;
     margin-top: auto;
     width: 100%;
+    position: relative;
+    z-index: 95;
+    /* Sit on top of the sidebar */
+}
+
+/* Decorative Swiss striped line at the top of footer */
+.retro-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(-45deg,
+            var(--color-terracotta),
+            var(--color-terracotta) 10px,
+            var(--color-charcoal) 10px,
+            var(--color-charcoal) 20px);
+    border-bottom: 1px solid var(--color-charcoal);
 }
 
 .footer-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 4rem;
+    padding-bottom: 2rem;
 }
 
-.footer-section h4 {
+.footer-brand-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.footer-logo-block {
+    display: flex;
+    flex-direction: column;
+    border-left: 4px solid var(--color-terracotta);
+    padding-left: 1rem;
+}
+
+.footer-logo-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-cream);
+    letter-spacing: 1px;
+    line-height: 1.1;
+}
+
+.footer-logo-subtitle {
     font-family: var(--font-mono);
-    font-size: 1.05rem;
+    font-size: 0.75rem;
     color: var(--color-ochre);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
 }
 
-.footer-section p {
-    font-size: 0.9rem;
-    color: rgba(245, 237, 220, 0.7);
-    line-height: 1.6;
+.footer-brand-desc {
+    font-size: 0.85rem;
+    color: rgba(245, 237, 220, 0.6);
+    line-height: 1.5;
+    max-width: 600px;
 }
 
-.footer-section a {
-    color: var(--color-terracotta);
-    font-weight: 600;
+.footer-links-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.footer-section a:hover {
-    text-decoration: underline;
+.footer-link-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.footer-link-group .technical-text {
+    font-size: 0.8rem;
+    color: var(--color-ochre);
+}
+
+.footer-link-group .group-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-cream);
+    margin: 0;
+}
+
+.footer-contact-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-contact-link {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(245, 237, 220, 0.15);
+    background-color: rgba(245, 237, 220, 0.02);
+    padding: 0.5rem 0.75rem;
+    color: rgba(245, 237, 220, 0.7) !important;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: var(--transition-retro);
+}
+
+.footer-contact-link:hover {
+    border-color: var(--color-terracotta);
+    background-color: rgba(178, 101, 59, 0.08);
+    color: var(--color-cream) !important;
+}
+
+.footer-contact-link .link-label {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-ochre);
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.footer-contact-link .link-val {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .footer-bottom {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: var(--border-thin);
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(245, 237, 220, 0.1);
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
-    color: rgba(245, 237, 220, 0.4);
-    font-family: var(--font-mono);
+    align-items: center;
+    font-size: 0.75rem;
+    color: rgba(245, 237, 220, 0.35);
+}
+
+.copyright-text {
+    max-width: 70%;
+    line-height: 1.4;
+}
+
+.status-tag {
+    color: var(--color-sage);
+    font-weight: 700;
 }
 
 /* Responsive Rules */
 @media (max-width: 900px) {
     .retro-sidebar {
         transform: translateX(-100%);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
     }
-    
+
     .retro-sidebar.open {
         transform: translateX(0);
     }
-    
+
     .content-area {
         margin-left: 0 !important;
         padding: 1.5rem;
     }
 
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
 }

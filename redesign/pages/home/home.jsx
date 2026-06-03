@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react'
-import {
-    ArrowRight,
-    Info,
-    ExternalLink
-} from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
+import Header from '../../components/Header'
+import Sidebar from '../../components/Sidebar'
+import Footer from '../../components/Footer'
 import './home.css'
 
 export default function RedesignHomePage() {
     const [regions, setRegions] = useState([])
     const [selectedRegion, setSelectedRegion] = useState(null)
-    const [events, setEvents] = useState([])
+    const [arcsWithEvents, setArcsWithEvents] = useState([])
 
     const [loadingRegions, setLoadingRegions] = useState(true)
     const [loadingEvents, setLoadingEvents] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [error, setError] = useState(null)
+
+    const timelineRef = useRef(null)
 
     // Vite base path for redirecting to original app page
     const BASE_URL = import.meta.env.BASE_URL || '/'
@@ -63,21 +63,15 @@ export default function RedesignHomePage() {
                     const eventsPromises = arcs.map(arc => SupabaseAPI.getEventsByArc(arc.arc_id))
                     const eventsLists = await Promise.all(eventsPromises)
 
-                    // Flatten and match events with their parent arc name
-                    const compiledEvents = []
-                    eventsLists.forEach((list, idx) => {
-                        const arc = arcs[idx]
-                        list.forEach(evt => {
-                            compiledEvents.push({
-                                ...evt,
-                                arcName: arc.name
-                            })
-                        })
-                    })
+                    // Zip arcs and events
+                    const compiledArcs = arcs.map((arc, idx) => ({
+                        ...arc,
+                        events: eventsLists[idx] || []
+                    }))
 
-                    setEvents(compiledEvents)
+                    setArcsWithEvents(compiledArcs)
                 } else {
-                    setEvents([])
+                    setArcsWithEvents([])
                 }
             } catch (err) {
                 console.error('Error loading events:', err)
@@ -90,79 +84,78 @@ export default function RedesignHomePage() {
         loadEventsForRegion()
     }, [selectedRegion])
 
+    // Enable horizontal scroll on mouse wheel
+    useEffect(() => {
+        const container = timelineRef.current
+        if (!container) return
+
+        const handleWheel = (e) => {
+            if (e.deltaY !== 0) {
+                // Only intercept wheel scroll if horizontal scrolling is actually available
+                if (container.scrollWidth > container.clientWidth + 1) {
+                    e.preventDefault()
+                    container.scrollLeft += e.deltaY
+                }
+            }
+        }
+
+        container.addEventListener('wheel', handleWheel, { passive: false })
+        return () => {
+            container.removeEventListener('wheel', handleWheel)
+        }
+    }, [arcsWithEvents, loadingEvents])
+
+    // Close sidebar when clicking outside of it
+    useEffect(() => {
+        if (!sidebarOpen) return
+
+        const handleClickOutside = () => {
+            setSidebarOpen(false)
+        }
+
+        document.addEventListener('click', handleClickOutside)
+        return () => {
+            document.removeEventListener('click', handleClickOutside)
+        }
+    }, [sidebarOpen])
+
     return (
         <div className="app-wrapper">
             {/* Swiss Retro Header */}
-            <header className="retro-header">
-                <div className="header-left">
-                    <button
-                        className="sidebar-toggle-btn"
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                    >
-                        {sidebarOpen ? '[ HIDE_SIDEBAR ]' : '[ SHOW_SIDEBAR ]'}
-                    </button>
-
-                    <div className="header-logo">
-                        <img
-                            src={getAssetUrl('/assets/images/icon/rhodes_island.png')}
-                            alt="Rhodes Island Logo"
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.style.display = 'none';
-                            }}
-                        />
-                        <span className="technical-text">CIVILIGHT_ETERNA_DATABASE</span>
-                    </div>
-                </div>
-
-                <nav className="header-nav">
-                    <a href="#/operator" className="header-nav-item">OPERATOR</a>
-                    <a href="#/is-story" className="header-nav-item">IS STORY</a>
-                    <a href={`${BASE_URL}#`} className="header-nav-item">MAIN_APP</a>
-                </nav>
-            </header>
+            <Header
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                BASE_URL={BASE_URL}
+            />
 
             {/* Main Layout: Sidebar + Content */}
             <div className="main-layout">
                 {/* Sidebar */}
-                <aside className={`retro-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-                    <div className="sidebar-title-block retro-stripes">
-                        <span className="sidebar-title technical-text">SYS.REGIONS_DIRECTORY</span>
-                    </div>
-
-                    {loadingRegions ? (
-                        <div className="retro-loading">
-                            <div className="loading-bar-container">
-                                <div className="loading-bar"></div>
-                            </div>
-                            <span className="technical-text">POLLING_REGIONS...</span>
-                        </div>
-                    ) : (
-                        <ul className="region-list">
-                            {regions.map(region => (
-                                <li key={region.region_id} className="region-list-item">
-                                    <button
-                                        className={`region-btn ${selectedRegion?.region_id === region.region_id ? 'active' : ''}`}
-                                        onClick={() => setSelectedRegion(region)}
-                                    >
-                                        <img
-                                            src={getAssetUrl(region.icon_url || '/assets/images/icon/rhodes_island.png')}
-                                            alt={region.name}
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
-                                            }}
-                                        />
-                                        <span>{region.name}</span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                <Sidebar
+                    title="SYS.REGIONS_DIRECTORY"
+                    sidebarOpen={sidebarOpen}
+                    items={regions}
+                    selectedItemId={selectedRegion?.region_id}
+                    onItemSelect={setSelectedRegion}
+                    loading={loadingRegions}
+                    itemKey="region_id"
+                    renderItem={(region) => (
+                        <>
+                            <img
+                                src={getAssetUrl(region.icon_url || '/assets/images/icon/rhodes_island.png')}
+                                alt={region.name}
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
+                                }}
+                            />
+                            <span>{region.name}</span>
+                        </>
                     )}
-                </aside>
+                />
 
                 {/* Content Area */}
-                <div className={`content-area ${sidebarOpen ? '' : 'expanded'}`}>
+                <div className={`content-area ${sidebarOpen ? 'sidebar-active' : 'expanded'}`}>
                     {selectedRegion ? (
                         <>
                             {/* Region Hero */}
@@ -172,7 +165,7 @@ export default function RedesignHomePage() {
                                 </div>
                                 <h2 className="region-hero-title">{selectedRegion.name}</h2>
                                 <p className="region-hero-desc">
-                                    {selectedRegion.description || 'Không tìm thấy dữ liệu mô tả cụ thể cho khu vực này trong hệ thống lưu trữ.'}
+                                    {selectedRegion.description || 'Không tìm thấy dữ liệu mô tả cụ thể cho khu vực này.'}
                                 </p>
                             </div>
 
@@ -188,55 +181,62 @@ export default function RedesignHomePage() {
                                 <div className="retro-error">
                                     <p className="technical-text">SYS_ERROR: {error}</p>
                                 </div>
-                            ) : events.length === 0 ? (
-                                <div className="retro-error" style={{ borderColor: 'var(--color-ochre)', color: 'var(--color-ochre)' }}>
-                                    <p className="technical-text">STATUS_NO_DATA: Khu vực này chưa có bản ghi sự kiện nào.</p>
-                                </div>
                             ) : (
-                                <div className="event-chain-container">
-                                    {events.map((event, index) => (
-                                        <div key={event.event_id} className="event-chain-item">
-                                            {/* Timeline Dot Node */}
-                                            <div className="event-chain-node"></div>
-
-                                            {/* Event Card */}
-                                            <div className="event-card">
-                                                <div className="event-card-img-container">
-                                                    <img
-                                                        className="event-card-img"
-                                                        src={getAssetUrl(event.image_url || '/assets/images/icon/rhodes_island.png')}
-                                                        alt={event.name}
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
-                                                        }}
-                                                    />
-                                                </div>
-
-                                                <div className="event-card-body">
-                                                    <div>
-                                                        <div className="event-card-header">
-                                                            <h3 className="event-card-title">{event.name}</h3>
-                                                            <span className="event-card-index">EVT.{index < 9 ? `0${index + 1}` : index + 1}</span>
-                                                        </div>
-                                                        <p className="event-card-desc">{event.description || 'Không có mô tả chi tiết cho sự kiện này.'}</p>
-                                                    </div>
-
-                                                    <div className="event-card-footer">
-                                                        <span className="event-card-tag technical-text">
-                                                            [ARC_GROUP: {event.arcName || 'N/A'}]
-                                                        </span>
-                                                        <a
-                                                            href={`${BASE_URL}#/event/${event.event_id}`}
-                                                            className="retro-link"
-                                                        >
-                                                            READ STORY <ArrowRight size={14} />
-                                                        </a>
-                                                    </div>
+                                <div className="event-chain-container-horizontal">
+                                    <div className="event-chain-horizontal" ref={timelineRef}>
+                                        {arcsWithEvents.length === 0 || arcsWithEvents.every(arc => (arc.events || []).length === 0) ? (
+                                            <div className="event-card-horizontal-empty">
+                                                <div className="event-card-name-horizontal">
+                                                    CHƯA CÓ BẢN GHI SỰ KIỆN
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ) : (
+                                            arcsWithEvents.map((arc, arcIdx) => (
+                                                <div key={arc.arc_id} className="arc-group-horizontal">
+                                                    {/* Arc Metadata Card */}
+                                                    <div className="arc-metadata-card">
+                                                        <div className="arc-card-header technical-text">
+                                                            SYS.ARC_NODE // 0{arcIdx + 1}
+                                                        </div>
+                                                        <div className="arc-card-body">
+                                                            <h3 className="arc-card-title">{arc.name}</h3>
+                                                            <p className="arc-card-desc">
+                                                                {arc.description || 'Hồ sơ diễn biến sự kiện của chương này. Chọn sự kiện để xem chi tiết.'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Arc Events */}
+                                                    {(arc.events || []).map((event, index) => (
+                                                        <a
+                                                            key={event.event_id}
+                                                            href={`${BASE_URL}#/event/${event.event_id}`}
+                                                            className="event-card-horizontal"
+                                                        >
+                                                            <div className="event-card-img-wrap-horizontal">
+                                                                <img
+                                                                    className="event-card-img-horizontal"
+                                                                    src={getAssetUrl(event.image_url || '/assets/images/icon/rhodes_island.png')}
+                                                                    alt={event.name}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
+                                                                    }}
+                                                                />
+                                                                <div className="event-card-index-tag">
+                                                                    EVT.{index < 9 ? `0${index + 1}` : index + 1}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="event-card-name-horizontal">
+                                                                {event.name}
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </>
@@ -249,28 +249,8 @@ export default function RedesignHomePage() {
             </div>
 
             {/* Footer */}
-            <footer className="retro-footer">
-                <div className="redesign-container footer-grid">
-                    <div className="footer-section">
-                        <h4 className="technical-text">[TRANSLATION_GROUP]</h4>
-                        <p>Cơ Sở Dữ Liệu Civilight Eterna</p>
-                        <p>Email: <a href="mailto:civilighteterna2771@gmail.com">civilighteterna2771@gmail.com</a></p>
-                        <p>Facebook: <a href="https://www.facebook.com/profile.php?id=61559583986412" target="_blank" rel="noopener noreferrer">Cơ Sở Dữ Liệu Civilight Eterna</a></p>
-                    </div>
-
-                    <div className="footer-section">
-                        <h4 className="technical-text">[WEBSITE_INFO]</h4>
-                        <p>Dự án phi lợi nhuận biên dịch cốt truyện Arknights sang Tiếng Việt.</p>
-                        <p>Mã nguồn hệ thống được phát triển bởi Agutyauno.</p>
-                        <p>Giao diện thiết kế theo hệ thống lưới Swiss kết hợp Retro Futuristic.</p>
-                    </div>
-                </div>
-
-                <div className="redesign-container footer-bottom">
-                    <span>&copy; ARKNIGHTS FAN PROJECT. ALL ASSETS BELONG TO HYPERGRYPH/YOSTAR.</span>
-                    <span>SYS_STATUS: ONLINE_NODE_V2.0</span>
-                </div>
-            </footer>
+            {/* Footer */}
+            <Footer />
         </div>
     )
 }
