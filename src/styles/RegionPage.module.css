@@ -2,11 +2,11 @@
 /* Region Page Specific Styles */
 /* ================================================================================================= */
 .selection-panel-item {
-	background-color: var(--color-border);
+    background-color: var(--color-border);
 }
 
 .info-description {
-	white-space: pre-wrap;
+    white-space: pre-wrap;
 }
 
 
@@ -15,84 +15,84 @@
 /* ================================================================================================= */
 
 .arc-sections-container {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-3xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3xl);
 }
 
 .arc-section {
-	display: flex;
-	flex-direction: column;
-	background-color: var(--color-bg-secondary);
-	border: 2px solid var(--color-border);
-	border-radius: var(--radius-base);
-	box-shadow: var(--shadow-lg);
-	transition: var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition-base);
 }
 
 /* Arc Header */
 .arc-header {
-	display: flex;
-	flex-direction: column;
-	padding: var(--spacing-sm);
-	background-color: var(--color-bg-primary);
-	border: 1px solid var(--color-border);
-	box-shadow: var(--shadow-md);
-	width: 100%;
-	box-sizing: border-box;
-	justify-content: center;
-	align-items: center;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
 }
 
 .arc-info {
-	display: flex;
-	justify-content: center;
+    display: flex;
+    justify-content: center;
 }
 
 .arc-name {
-	margin: 0 0 var(--spacing-sm) 0;
-	font-size: var(--font-size-xl);
-	font-weight: 700;
-	color: var(--color-accent);
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-accent);
 }
 
 .arc-description {
-	margin: 0;
-	font-size: var(--font-size-xs);
-	color: var(--color-text-secondary);
-	line-height: 1.6;
-	text-align: center;
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    text-align: center;
 }
 
 /* Arc Items */
 .arc-items {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-lg);
-	margin: 0;
-	padding: var(--spacing-lg) var(--spacing-3xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin: 0;
+    padding: var(--spacing-lg) var(--spacing-3xl);
 }
 
 /* Arc Suggestion */
 .arc-suggestion {
-	padding: var(--spacing-xl);
-	background-color: var(--color-bg-primary);
-	border-radius: var(--radius-base);
-	box-shadow: var(--shadow-md);
+    padding: var(--spacing-xl);
+    background-color: var(--color-bg-primary);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-md);
 }
 
 .suggestion-text {
-	display: block;
-	margin: 0;
-	font-size: var(--font-size-sm);
-	color: var(--color-accent-light);
-	font-weight: 500;
-	transition: var(--transition-base);
-	text-decoration: none;
+    display: block;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-accent-light);
+    font-weight: 500;
+    transition: var(--transition-base);
+    text-decoration: none;
 }
 
 .suggestion-text:hover {
-	color: var(--color-accent);
+    color: var(--color-accent);
 }
 
 /* ================================================================================================= */
@@ -100,26 +100,26 @@
 /* ================================================================================================= */
 
 @media (max-width: 768px) {
-	.arc-sections-container {
-		gap: var(--spacing-xl);
-	}
+    .arc-sections-container {
+        gap: var(--spacing-xl);
+    }
 
-	.arc-header {
-		padding: var(--spacing-base);
-	}
+    .arc-header {
+        padding: var(--spacing-base);
+    }
 
-	.arc-items {
-		padding: var(--spacing-lg) var(--spacing-base);
-	}
+    .arc-items {
+        padding: var(--spacing-lg) var(--spacing-base);
+    }
 
-	.arc-suggestion {
-		padding: var(--spacing-base);
-	}
+    .arc-suggestion {
+        padding: var(--spacing-base);
+    }
 
-	.selection-panel-item img {
-		width: 100px;
-		height: auto;
-		aspect-ratio: 16 / 9;
-		object-fit: cover;
-	}
+    .selection-panel-item img {
+        width: 100px;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
 }

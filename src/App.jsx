@@ -14,7 +14,6 @@ import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import { Navigate } from 'react-router-dom';
-
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -48,13 +47,13 @@ function AppLayout() {
           <Route path="/story/:id" element={<StoryPage />} />
           <Route path="/region/:id" element={<RegionPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/editor/:storyId?" 
+          <Route
+            path="/editor/:storyId?"
             element={
               <ProtectedRoute>
                 <EditorPage />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </main>

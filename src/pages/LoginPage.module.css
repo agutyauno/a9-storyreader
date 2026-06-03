@@ -2,7 +2,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 6rem); /* Subtract header height if applicable */
+  min-height: calc(100vh - 6rem);
+  /* Subtract header height if applicable */
   padding: var(--spacing-2xl);
   background: linear-gradient(135deg, var(--color-bg-dark) 0%, var(--color-bg-primary) 100%);
 }
@@ -19,8 +20,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loginHeader {
@@ -153,8 +161,13 @@
 }
 
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loginFooter {

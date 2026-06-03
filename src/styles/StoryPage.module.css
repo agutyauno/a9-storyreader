@@ -388,7 +388,8 @@ p {
     line-height: 1.4;
     box-shadow: var(--shadow-lg);
     font-weight: normal;
-    text-decoration: none; /* Prevent underline inheritance */
+    text-decoration: none;
+    /* Prevent underline inheritance */
 }
 
 .note-tooltip::after {
@@ -461,7 +462,8 @@ p {
 .note-popup-text {
     margin: 0;
     color: var(--color-text-primary);
-    font-size: var(--font-size-base); /* Increased from sm */
+    font-size: var(--font-size-base);
+    /* Increased from sm */
     line-height: 1.6;
     white-space: pre-wrap;
 }
