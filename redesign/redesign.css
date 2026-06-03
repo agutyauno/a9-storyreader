@@ -1,16 +1,397 @@
 /* ================================================================================================= */
-/* Redesign Global Stylesheet - Loaded only on redesign.html */
+/* Redesign Global Stylesheet - Swiss Style & Retro-Futuristic */
 /* ================================================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-body {
+:root {
+    /* Color Palette */
+    --color-cream: #F5EDDC;
+    --color-terracotta: #B2653B;
+    --color-charcoal: #181818;
+    --color-ochre: #BA8530;
+    --color-crimson: #802520;
+    --color-sage: #5C7F71;
+
+    /* Theme Mappings */
+    --bg-main: var(--color-charcoal);
+    --bg-panel: #202020;
+    --text-main: var(--color-cream);
+    
+    /* Typography */
+    --font-swiss: 'Space Grotesk', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+
+    /* Borders (Brutalist / Technical) */
+    --border-thick: 2px solid var(--color-cream);
+    --border-thin: 1px solid rgba(245, 237, 220, 0.2);
+    --border-active: 2px solid var(--color-terracotta);
+    
+    /* Layout Constants */
+    --header-height: 64px;
+    --sidebar-width: 320px;
+    
+    /* Transitions */
+    --transition-retro: 0.2s steps(4, end);
+    --transition-smooth: 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Reset & Base Rules */
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-swiss);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+}
+
+/* Monospace text */
+.technical-text {
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Diagonal stripe pattern for retro-futuristic panels */
+.retro-stripes {
+    background-image: repeating-linear-gradient(45deg, 
+        rgba(245, 237, 220, 0.05), 
+        rgba(245, 237, 220, 0.05) 6px, 
+        transparent 6px, 
+        transparent 12px
+    );
+}
+
+/* App Wrapper Layout */
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
 }
 
-#redesign-root {
+/* Header */
+.retro-header {
+    height: var(--header-height);
+    background-color: var(--color-charcoal);
+    border-bottom: var(--border-thick);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Sidebar Toggle button in Swiss Style */
+.sidebar-toggle-btn {
+    background: transparent;
+    border: var(--border-thick);
+    color: var(--color-cream);
+    padding: 0.35rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-retro);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: var(--color-cream);
+    color: var(--color-charcoal);
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.header-logo img {
+    height: 32px;
+    object-fit: contain;
+}
+
+.header-nav {
+    margin-left: auto;
+    display: flex;
+    gap: 1rem;
+    height: 100%;
+}
+
+.header-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    color: var(--color-cream);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    border-left: var(--border-thin);
+    transition: var(--transition-retro);
+}
+
+.header-nav-item:hover, .header-nav-item.active {
+    background-color: var(--color-terracotta);
+    color: var(--color-cream);
+}
+
+.header-nav-item:last-child {
+    border-right: var(--border-thin);
+}
+
+/* Sidebar + Content layout container */
+.main-layout {
+    display: flex;
+    padding-top: var(--header-height);
+    flex: 1;
+    position: relative;
+    width: 100vw;
+}
+
+/* Sidebar */
+.retro-sidebar {
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--header-height));
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    z-index: 90;
+    border-right: var(--border-thick);
+    /* Left-to-right gradient, semi-transparent */
+    background: linear-gradient(to right, rgba(24, 24, 24, 0.98) 40%, rgba(24, 24, 24, 0.85) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    overflow-y: auto;
+    transition: transform var(--transition-smooth);
+    display: flex;
+    flex-direction: column;
+}
+
+.retro-sidebar.closed {
+    transform: translateX(-100%);
+}
+
+.sidebar-title-block {
+    padding: 1.25rem;
+    border-bottom: var(--border-thick);
+    background-color: rgba(245, 237, 220, 0.03);
+}
+
+.sidebar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-ochre);
+}
+
+.region-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.region-list-item {
+    border-bottom: var(--border-thin);
+}
+
+.region-btn {
     width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--color-cream);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-swiss);
+    font-size: 1rem;
+    font-weight: 500;
+    transition: var(--transition-retro);
+}
+
+.region-btn:hover {
+    background-color: rgba(245, 237, 220, 0.05);
+    padding-left: 1.5rem;
+}
+
+.region-btn.active {
+    background-color: var(--color-terracotta);
+    border-left: 6px solid var(--color-crimson);
+}
+
+.region-btn img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(245, 237, 220, 0.15);
+}
+
+/* Body Content Area */
+.content-area {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 2.5rem;
+    transition: margin-left var(--transition-smooth);
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+}
+
+.content-area.expanded {
+    margin-left: 0;
+}
+
+
+
+/* Swiss Retro Button styles */
+.retro-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    background-color: var(--color-cream);
+    color: var(--color-charcoal);
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--color-cream);
+    cursor: pointer;
+    transition: var(--transition-retro);
+}
+
+.retro-link:hover {
+    background-color: var(--color-terracotta);
+    color: var(--color-cream);
+    border-color: var(--color-terracotta);
+}
+
+/* Loading & States */
+.retro-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 0;
+    font-family: var(--font-mono);
+    color: var(--color-ochre);
+    gap: 1.5rem;
+}
+
+.loading-bar-container {
+    width: 200px;
+    height: 8px;
+    border: 2px solid var(--color-cream);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 40%;
+    background-color: var(--color-crimson);
+    animation: loading-slide 1.2s infinite steps(10);
+}
+
+@keyframes loading-slide {
+    from { left: -40%; }
+    to { left: 100%; }
+}
+
+.retro-error {
+    border: 2px solid var(--color-crimson);
+    background-color: rgba(128, 37, 32, 0.05);
+    padding: 2rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    color: var(--color-crimson);
+}
+
+/* Footer style in Swiss Grid */
+.retro-footer {
+    border-top: var(--border-thick);
+    background-color: var(--color-charcoal);
+    padding: 2rem 0;
+    margin-top: auto;
+    width: 100%;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.footer-section h4 {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    color: var(--color-ochre);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+}
+
+.footer-section p {
+    font-size: 0.9rem;
+    color: rgba(245, 237, 220, 0.7);
+    line-height: 1.6;
+}
+
+.footer-section a {
+    color: var(--color-terracotta);
+    font-weight: 600;
+}
+
+.footer-section a:hover {
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: var(--border-thin);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: rgba(245, 237, 220, 0.4);
+    font-family: var(--font-mono);
+}
+
+/* Responsive Rules */
+@media (max-width: 900px) {
+    .retro-sidebar {
+        transform: translateX(-100%);
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    }
+    
+    .retro-sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .content-area {
+        margin-left: 0 !important;
+        padding: 1.5rem;
+    }
+
 }
