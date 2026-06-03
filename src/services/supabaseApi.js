@@ -52,26 +52,45 @@ const cleanUrl = (url) => {
   return cleaned;
 };
 
+let regionsPromise = null;
+let arcsByRegionPromises = {};
+let eventsByArcPromises = {};
+
 const SupabaseAPI_Raw = {
   // ===========================================================================
   // REGIONS
   // ===========================================================================
   async getRegions() {
-    if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
-    const { data, error } = await supabase.from('regions').select('*').order('display_order');
-    if (error) throw error;
-    return data || [];
+    if (regionsPromise) return regionsPromise;
+
+    regionsPromise = (async () => {
+      try {
+        if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
+        const { data, error } = await supabase.from('regions').select('*').order('display_order');
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        regionsPromise = null; // Clear cache on error
+        throw err;
+      }
+    })();
+
+    return regionsPromise;
   },
 
   async getRegion(regionId) {
     if (USE_MOCK_DB)
       return mockDatabase.regions.find(r => r.region_id === regionId) || null;
-    const { data, error } = await supabase.from('regions').select('*').eq('region_id', regionId).limit(1);
-    if (error) throw error;
-    return data?.[0] || null;
+    try {
+      const regions = await this.getRegions();
+      return regions.find(r => r.region_id === regionId) || null;
+    } catch (err) {
+      throw err;
+    }
   },
 
   async createRegion(payload) {
+    regionsPromise = null; // Clear cache on mutation
     if (USE_MOCK_DB) {
       const newItem = { region_id: genId('region'), display_order: 0, ...payload };
       mockDatabase.regions.push(newItem);
@@ -86,6 +105,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateRegion(regionId, payload) {
+    regionsPromise = null; // Clear cache on mutation
     if (USE_MOCK_DB) {
       const idx = mockDatabase.regions.findIndex(r => r.region_id === regionId);
       if (idx < 0) throw new Error('not-found');
@@ -101,6 +121,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteRegion(regionId) {
+    regionsPromise = null; // Clear cache on mutation
     if (USE_MOCK_DB) {
       mockDatabase.regions = mockDatabase.regions.filter(r => r.region_id !== regionId);
       return;
@@ -113,11 +134,22 @@ const SupabaseAPI_Raw = {
   // ARCS
   // ===========================================================================
   async getArcsByRegion(regionId) {
-    if (USE_MOCK_DB)
-      return sortByOrder(mockDatabase.arcs.filter(a => a.region_id === regionId));
-    const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order');
-    if (error) throw error;
-    return data || [];
+    if (arcsByRegionPromises[regionId]) return arcsByRegionPromises[regionId];
+
+    arcsByRegionPromises[regionId] = (async () => {
+      try {
+        if (USE_MOCK_DB)
+          return sortByOrder(mockDatabase.arcs.filter(a => a.region_id === regionId));
+        const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order');
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        delete arcsByRegionPromises[regionId]; // Clear cache on error
+        throw err;
+      }
+    })();
+
+    return arcsByRegionPromises[regionId];
   },
 
   async getArcs() {
@@ -136,6 +168,7 @@ const SupabaseAPI_Raw = {
   },
 
   async createArc(payload) {
+    arcsByRegionPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       const newItem = { arc_id: genId('arc'), display_order: 0, ...payload };
       mockDatabase.arcs.push(newItem);
@@ -147,6 +180,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateArc(arcId, payload) {
+    arcsByRegionPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       const idx = mockDatabase.arcs.findIndex(a => a.arc_id === arcId);
       if (idx < 0) throw new Error('not-found');
@@ -159,6 +193,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteArc(arcId) {
+    arcsByRegionPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       mockDatabase.arcs = mockDatabase.arcs.filter(a => a.arc_id !== arcId);
       return;
@@ -171,11 +206,22 @@ const SupabaseAPI_Raw = {
   // EVENTS
   // ===========================================================================
   async getEventsByArc(arcId) {
-    if (USE_MOCK_DB)
-      return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId));
-    const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
-    if (error) throw error;
-    return data || [];
+    if (eventsByArcPromises[arcId]) return eventsByArcPromises[arcId];
+
+    eventsByArcPromises[arcId] = (async () => {
+      try {
+        if (USE_MOCK_DB)
+          return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId));
+        const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        delete eventsByArcPromises[arcId]; // Clear cache on error
+        throw err;
+      }
+    })();
+
+    return eventsByArcPromises[arcId];
   },
 
   async getEvents() {
@@ -194,6 +240,7 @@ const SupabaseAPI_Raw = {
   },
 
   async createEvent(payload) {
+    eventsByArcPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       const newItem = { event_id: genId('event'), display_order: 0, ...payload };
       mockDatabase.events.push(newItem);
@@ -210,6 +257,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateEvent(eventId, payload) {
+    eventsByArcPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       const idx = mockDatabase.events.findIndex(e => e.event_id === eventId);
       if (idx < 0) throw new Error('not-found');
@@ -227,6 +275,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteEvent(eventId) {
+    eventsByArcPromises = {}; // Invalidate cache on mutation
     if (USE_MOCK_DB) {
       mockDatabase.events = mockDatabase.events.filter(e => e.event_id !== eventId);
       return;
