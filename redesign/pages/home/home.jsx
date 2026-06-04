@@ -4,6 +4,7 @@ import { getAssetUrl } from '../../../src/utils/assetUtils'
 import Header from '../../components/Header'
 import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
+import Loading from '../../components/Loading'
 import './home.css'
 
 export default function RedesignHomePage() {
@@ -23,7 +24,8 @@ export default function RedesignHomePage() {
 
     // Load all regions on mount
     useEffect(() => {
-        document.title = 'Civilight Eterna Database - Retro Redesign'
+        document.title = 'Civilight Eterna Database'
+        document.querySelector('link[rel="icon"]').href = '/assets/images/logo/ced_white.png'
 
         async function loadRegions() {
             try {
@@ -170,15 +172,10 @@ export default function RedesignHomePage() {
                             </div>
 
                             {/* Event Chain Body */}
-                            {loadingEvents ? (
-                                <div className="retro-loading">
-                                    <div className="loading-bar-container">
-                                        <div className="loading-bar"></div>
-                                    </div>
-                                    <span className="technical-text">RESOLVING_DATA_CHAIN_SEQUENCE...</span>
-                                </div>
+                             {loadingEvents ? (
+                                <Loading text="RESOLVING_DATA_CHAIN_SEQUENCE..." />
                             ) : error ? (
-                                <div className="retro-error">
+                                <div className="error-container">
                                     <p className="technical-text">SYS_ERROR: {error}</p>
                                 </div>
                             ) : (
@@ -241,9 +238,7 @@ export default function RedesignHomePage() {
                             )}
                         </>
                     ) : (
-                        <div className="retro-loading">
-                            <span className="technical-text">AWAITING_REGION_SELECTION...</span>
-                        </div>
+                        <Loading text="AWAITING_REGION_SELECTION..." showBar={false} />
                     )}
                 </div>
             </div>

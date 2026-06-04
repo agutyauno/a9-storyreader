@@ -1,4 +1,5 @@
 import React from 'react'
+import Loading from './Loading'
 
 export default function Sidebar({
     title = 'SYS.DIRECTORY',
@@ -15,20 +16,15 @@ export default function Sidebar({
 
     return (
         <aside 
-            className={`retro-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
+            className={`sidebar-container ${sidebarOpen ? 'open' : 'closed'}`}
             onClick={(e) => e.stopPropagation()}
         >
-            <div className="sidebar-title-block retro-stripes">
+            <div className="sidebar-title-block panel-stripes">
                 <span className="sidebar-title technical-text">{title}</span>
             </div>
 
             {loading ? (
-                <div className="retro-loading">
-                    <div className="loading-bar-container">
-                        <div className="loading-bar"></div>
-                    </div>
-                    <span className="technical-text">POLLING_DATA...</span>
-                </div>
+                <Loading text="POLLING_DATA..." />
             ) : (
                 <ul className="region-list">
                     {items.map(item => {

@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function Footer() {
     return (
-        <footer className="retro-footer">
+        <footer className="app-footer">
             <div className="redesign-container footer-grid">
                 {/* Brand / Logo Section */}
                 <div className="footer-brand-section">

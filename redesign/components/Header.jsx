@@ -4,7 +4,7 @@ import { getAssetUrl } from '../../src/utils/assetUtils'
 
 export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) {
     return (
-        <header className="retro-header">
+        <header className="app-header">
             <div className="header-left">
                 {setSidebarOpen && (
                     <button
@@ -35,7 +35,9 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
 
             <nav className="header-nav">
                 <a href="#/operator" className="header-nav-item">OPERATOR</a>
+                <div className="header-nav-separator"></div>
                 <a href="#/is-story" className="header-nav-item">IS STORY</a>
+                <div className="header-nav-separator"></div>
                 <a href={`${BASE_URL}#`} className="header-nav-item">MAIN_APP</a>
             </nav>
         </header>
