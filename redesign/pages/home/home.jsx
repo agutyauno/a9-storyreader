@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import Header from '../../components/Header'
@@ -18,6 +19,7 @@ export default function RedesignHomePage() {
     const [error, setError] = useState(null)
 
     const timelineRef = useRef(null)
+    const location = useLocation()
 
     // Vite base path for redirecting to original app page
     const BASE_URL = import.meta.env.BASE_URL || '/'
@@ -33,8 +35,10 @@ export default function RedesignHomePage() {
                 const data = await SupabaseAPI.getRegions()
                 setRegions(data)
                 if (data && data.length > 0) {
-                    // Set first region as selected by default
-                    setSelectedRegion(data[0])
+                    // Set first region as selected by default, or check routing state/query param
+                    const targetRegionId = location.state?.regionId || new URLSearchParams(location.search).get('region')
+                    const targetRegion = targetRegionId ? data.find(r => r.region_id === targetRegionId) : null
+                    setSelectedRegion(targetRegion || data[0])
                 }
             } catch (err) {
                 console.error('Error loading regions:', err)
@@ -205,9 +209,10 @@ export default function RedesignHomePage() {
 
                                                     {/* Arc Events */}
                                                     {(arc.events || []).map((event, index) => (
-                                                        <a
+                                                        <Link
                                                             key={event.event_id}
-                                                            href={`${BASE_URL}#/event/${event.event_id}`}
+                                                            to={`/event/${event.event_id}`}
+                                                            state={{ regionId: selectedRegion?.region_id }}
                                                             className="event-card-horizontal"
                                                         >
                                                             <div className="event-card-img-wrap-horizontal">
@@ -228,7 +233,7 @@ export default function RedesignHomePage() {
                                                             <div className="event-card-name-horizontal">
                                                                 {event.name}
                                                             </div>
-                                                        </a>
+                                                        </Link>
                                                     ))}
                                                 </div>
                                             ))

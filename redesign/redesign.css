@@ -183,7 +183,7 @@ body {
     z-index: 90;
     border-right: none;
     /* Left-to-right gradient, semi-transparent fading to 0 */
-    background: linear-gradient(to right, rgba(24, 24, 24, 1) 10%, rgba(24, 24, 24, 0.1) 100%);
+    background: linear-gradient(to right, rgba(24, 24, 24, 1) 0%, rgba(24, 24, 24, 0.4) 80%, rgba(24, 24, 24, 0.0) 100%);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     overflow-y: auto;
@@ -771,6 +771,7 @@ body {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
