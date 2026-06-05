@@ -35,8 +35,11 @@ export default function RedesignHomePage() {
                 const data = await SupabaseAPI.getRegions()
                 setRegions(data)
                 if (data && data.length > 0) {
-                    // Set first region as selected by default, or check routing state/query param
-                    const targetRegionId = location.state?.regionId || new URLSearchParams(location.search).get('region')
+                    // Ưu tiên: 1. state từ router, 2. query param, 3. region của event vừa rời đi/chọn cuối cùng
+                    const targetRegionId = location.state?.regionId || 
+                                           new URLSearchParams(location.search).get('region') ||
+                                           localStorage.getItem('lastActiveRegionId') ||
+                                           localStorage.getItem('selectedRegionId')
                     const targetRegion = targetRegionId ? data.find(r => r.region_id === targetRegionId) : null
                     setSelectedRegion(targetRegion || data[0])
                 }
@@ -49,6 +52,14 @@ export default function RedesignHomePage() {
         }
         loadRegions()
     }, [])
+
+    // Lưu region đang chọn vào localStorage
+    useEffect(() => {
+        if (selectedRegion) {
+            localStorage.setItem('selectedRegionId', selectedRegion.region_id)
+            localStorage.setItem('lastActiveRegionId', selectedRegion.region_id)
+        }
+    }, [selectedRegion])
 
     // Load arcs and events when selectedRegion changes
     useEffect(() => {
@@ -163,7 +174,7 @@ export default function RedesignHomePage() {
                 {/* Content Area */}
                 <div className={`content-area ${sidebarOpen ? 'sidebar-active' : 'expanded'}`}>
                     {selectedRegion ? (
-                        <>
+                        <div key={selectedRegion.region_id} className="page-fade-in">
                             {/* Region Hero */}
                             <div className="region-hero">
                                 <div className="region-hero-meta technical-text">
@@ -241,7 +252,7 @@ export default function RedesignHomePage() {
                                     </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     ) : (
                         <Loading text="AWAITING_REGION_SELECTION..." showBar={false} />
                     )}

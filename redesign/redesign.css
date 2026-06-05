@@ -63,6 +63,22 @@ body {
     text-transform: uppercase;
 }
 
+/* Page transition — fade + slide up nhẹ */
+@keyframes page-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-fade-in {
+    animation: page-fade-up 0.22s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+}
+
 /* Diagonal stripe pattern for panels */
 .panel-stripes {
     background-image: repeating-linear-gradient(45deg,
@@ -127,6 +143,14 @@ body {
     gap: 0.75rem;
     font-weight: 700;
     font-size: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: var(--transition-step);
+}
+
+.header-logo:hover {
+    opacity: 0.85;
 }
 
 .header-logo img {
@@ -728,6 +752,11 @@ body {
     padding: 2rem 1.5rem;
     overflow-y: auto;
     max-height: 70vh;
+    scrollbar-width: none;
+}
+
+.modal-body::-webkit-scrollbar {
+    display: none;
 }
 
 .modal-footer {

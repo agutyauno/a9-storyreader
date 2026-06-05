@@ -20,7 +20,7 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                     </button>
                 )}
 
-                <div className="header-logo">
+                <a href="#/" className="header-logo" title="Về trang chủ">
                     <img
                         src={getAssetUrl('/assets/images/logo/ced_white.png')}
                         alt="Rhodes Island Logo"
@@ -30,7 +30,7 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                         }}
                     />
                     <span className="technical-text">CIVILIGHT_ETERNA_DATABASE</span>
-                </div>
+                </a>
             </div>
 
             <nav className="header-nav">

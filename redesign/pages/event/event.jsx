@@ -7,8 +7,20 @@ import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
+import Tabs from '../../components/Tabs'
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
 import './event.css'
+
+const EVENT_TABS = [
+    { id: 'stories', label: '[01] HỒ SƠ TRUYỆN' },
+    { id: 'characters', label: '[02] NHÂN VẬT' },
+    { id: 'gallery', label: '[03] THƯ VIỆN' },
+]
+
+// ─── Cache ───
+const eventCache = new Map()  // event_id → { event, stories, characters, gallery }
+const arcCache = new Map()  // arc_id   → arcData
+const regionCache = new Map()  // region_id → regionData
 
 export default function RedesignEventPage() {
     const { id } = useParams()
@@ -24,14 +36,15 @@ export default function RedesignEventPage() {
     const [error, setError] = useState(null)
 
     // Sidebar & Region States
-    const [sidebarOpen, setSidebarOpen] = useState(false
-
-    )
+    const [sidebarOpen, setSidebarOpen] = useState(false)
     const [sidebarEvents, setSidebarEvents] = useState([])
     const [loadingSidebar, setLoadingSidebar] = useState(true)
     const [loadedRegionId, setLoadedRegionId] = useState(null)
     const [arc, setArc] = useState(null)
     const [region, setRegion] = useState(null)
+
+    // Tab State
+    const [activeTab, setActiveTab] = useState('stories')
 
     // Modal States
     const [selectedCharacter, setSelectedCharacter] = useState(null)
@@ -45,14 +58,35 @@ export default function RedesignEventPage() {
         async function loadEventData() {
             if (!id) return
 
-            // Only show loader if we don't have the event details yet
-            if (!event || event.event_id !== id) {
-                setLoading(true)
+            // --- Cache hit: restore ngay, không fetch lại ---
+            if (eventCache.has(id)) {
+                const cached = eventCache.get(id)
+                setEvent(cached.event)
+                setStories(cached.stories)
+                setCharacters(cached.characters)
+                setGallery(cached.gallery)
+                document.title = `${cached.event.name} // Civilight Eterna Database`
+
+                // Restore arc & region từ cache nếu có
+                if (cached.event.arc_id) {
+                    const cachedArc = arcCache.get(cached.event.arc_id)
+                    if (cachedArc) {
+                        setArc(cachedArc)
+                        const cachedRegion = regionCache.get(cachedArc.region_id)
+                        if (cachedRegion) setRegion(cachedRegion)
+                    }
+                }
+
+                setLoading(false)
+                setError(null)
+                return
             }
+
+            // --- Cache miss: fetch từ Supabase ---
+            setLoading(true)
             setError(null)
 
             try {
-                // Fetch event core content
                 const [ev, st, ch, ga] = await Promise.all([
                     SupabaseAPI.getEvent(id),
                     SupabaseAPI.getStoriesByEvent(id),
@@ -66,33 +100,44 @@ export default function RedesignEventPage() {
                     return
                 }
 
-                setEvent(ev)
-                document.title = `${ev.name} // Civilight Eterna Database`
-
                 const AVATAR_FALLBACK = '/assets/images/character/blank.png'
-                setStories(st)
-                setCharacters(ch.map((c, idx) => ({
+                const mappedCharacters = ch.map((c, idx) => ({
                     id: c.character_id || `char-${idx}`,
                     name: c.name,
                     avatar: getAssetUrl(c.avatar_url || AVATAR_FALLBACK),
                     fullImage: getAssetUrl(c.image_url || AVATAR_FALLBACK),
                     description: c.description
-                })))
-                setGallery(ga.map((g, idx) => ({
+                }))
+                const mappedGallery = ga.map((g, idx) => ({
                     id: g.gallery_id || `img-${idx}`,
                     title: g.title,
                     image: getAssetUrl(g.image_url || '/assets/images/icon/default.png')
-                })))
+                }))
 
-                // Fetch Arc & Region hierarchy details
+                // Lưu vào cache
+                eventCache.set(id, { event: ev, stories: st, characters: mappedCharacters, gallery: mappedGallery })
+
+                setEvent(ev)
+                document.title = `${ev.name} // Civilight Eterna Database`
+                setStories(st)
+                setCharacters(mappedCharacters)
+                setGallery(mappedGallery)
+
+                // Fetch Arc & Region (có cache ringêng)
                 if (ev.arc_id) {
-                    const arcData = await SupabaseAPI.getArc(ev.arc_id)
+                    let arcData = arcCache.get(ev.arc_id)
+                    if (!arcData) {
+                        arcData = await SupabaseAPI.getArc(ev.arc_id)
+                        if (arcData) arcCache.set(ev.arc_id, arcData)
+                    }
                     if (arcData) {
                         setArc(arcData)
-                        const regionData = await SupabaseAPI.getRegion(arcData.region_id)
-                        if (regionData) {
-                            setRegion(regionData)
+                        let regionData = regionCache.get(arcData.region_id)
+                        if (!regionData) {
+                            regionData = await SupabaseAPI.getRegion(arcData.region_id)
+                            if (regionData) regionCache.set(arcData.region_id, regionData)
                         }
+                        if (regionData) setRegion(regionData)
                     }
                 }
             } catch (err) {
@@ -119,12 +164,19 @@ export default function RedesignEventPage() {
                 const arcIdsInRegion = arcs.map(a => a.arc_id)
                 const regionEvents = allEvents.filter(e => arcIdsInRegion.includes(e.arc_id))
 
-                // Map arc names for visual grouping in sidebar
-                const arcMap = Object.fromEntries(arcs.map(a => [a.arc_id, a.name]))
+                // Map arc names + arc display_order for visual grouping in sidebar
+                const arcMap = Object.fromEntries(arcs.map(a => [a.arc_id, { name: a.name, order: a.display_order ?? 0 }]))
                 const enrichedEvents = regionEvents.map(e => ({
                     ...e,
-                    arc_name: arcMap[e.arc_id] || 'SYS.ARC'
+                    arc_name: arcMap[e.arc_id]?.name || 'SYS.ARC',
+                    _arc_order: arcMap[e.arc_id]?.order ?? 0,
                 }))
+
+                // Sort: arc thứ tự → event thứ tự trong arc
+                enrichedEvents.sort((a, b) => {
+                    if (a._arc_order !== b._arc_order) return a._arc_order - b._arc_order
+                    return (a.display_order ?? 0) - (b.display_order ?? 0)
+                })
 
                 setSidebarEvents(enrichedEvents)
                 setLoadedRegionId(arc.region_id)
@@ -137,19 +189,25 @@ export default function RedesignEventPage() {
         loadRegionEvents()
     }, [arc, loadedRegionId])
 
-    // 3. Close sidebar on click outside (standard redesign logic)
+    // 3. Close sidebar on click outside
     useEffect(() => {
         if (!sidebarOpen) return
-
-        const handleClickOutside = () => {
-            setSidebarOpen(false)
-        }
-
+        const handleClickOutside = () => setSidebarOpen(false)
         document.addEventListener('click', handleClickOutside)
-        return () => {
-            document.removeEventListener('click', handleClickOutside)
-        }
+        return () => document.removeEventListener('click', handleClickOutside)
     }, [sidebarOpen])
+
+    // Reset tab when navigating to a new event
+    useEffect(() => {
+        setActiveTab('stories')
+    }, [id])
+
+    // Lưu lại region của event hiện tại khi nó được load xong
+    useEffect(() => {
+        if (region && region.region_id) {
+            localStorage.setItem('lastActiveRegionId', region.region_id)
+        }
+    }, [region])
 
     // Compute navigation indexes
     const currentIndex = sidebarEvents.findIndex(e => e.event_id === id)
@@ -205,60 +263,79 @@ export default function RedesignEventPage() {
                                 />
                             )}
 
-                            <div className="event-container">
-                                {/* Top Navigation Bar */}
-                                <div className="event-top-nav">
-                                    {prevEvent ? (
+                            <div key={id} className="event-container page-fade-in">
+                                {/* ── HERO SECTION ── */}
+                                <div className="event-hero-panel">
+                                    {/* Floating PREV/NEXT arrow buttons */}
+                                    {prevEvent && (
                                         <Link
                                             to={`/event/${prevEvent.event_id}`}
                                             state={{ regionId: arc?.region_id }}
-                                            className="event-nav-btn prev"
+                                            className="event-float-nav prev"
+                                            title={prevEvent.name}
                                         >
-                                            <ArrowLeft size={16} />
-                                            <span>PREV</span>
+                                            <ArrowLeft size={20} />
                                         </Link>
-                                    ) : (
-                                        <div className="event-nav-placeholder" />
                                     )}
-
-                                    {arc ? (
-                                        <Link
-                                            to="/"
-                                            state={{ regionId: arc.region_id }}
-                                            className="event-nav-btn center"
-                                        >
-                                            VỀ {region?.name || 'KHU VỰC'}
-                                        </Link>
-                                    ) : (
-                                        <div className="event-nav-placeholder" />
-                                    )}
-
-                                    {nextEvent ? (
+                                    {nextEvent && (
                                         <Link
                                             to={`/event/${nextEvent.event_id}`}
                                             state={{ regionId: arc?.region_id }}
-                                            className="event-nav-btn next"
+                                            className="event-float-nav next"
+                                            title={nextEvent.name}
                                         >
-                                            <span>NEXT</span>
-                                            <ArrowRight size={16} />
+                                            <ArrowRight size={20} />
                                         </Link>
-                                    ) : (
-                                        <div className="event-nav-placeholder" />
                                     )}
-                                </div>
 
-                                {/* Event Hero panel */}
-                                <div className="event-hero-panel">
+                                    {/* Info Column */}
                                     <div className="event-hero-info">
+                                        <div className="event-hero-breadcrumb technical-text">
+                                            {arc && (
+                                                <Link
+                                                    to="/"
+                                                    state={{ regionId: arc.region_id }}
+                                                    className="event-breadcrumb-link"
+                                                >
+                                                    ← VỀ {region?.name || 'KHU VỰC'}
+                                                </Link>
+                                            )}
+                                        </div>
                                         <div className="event-hero-meta technical-text">
                                             SYS.EVENT_RECORD // {event.event_id}
                                         </div>
                                         <h2 className="event-hero-title">{event.name}</h2>
                                         <p className="event-hero-desc">{event.description}</p>
+
+                                        {/* Quick stats row */}
+                                        <div className="event-hero-stats">
+                                            <div className="event-stat-item">
+                                                <span className="event-stat-value technical-text">{stories.length}</span>
+                                                <span className="event-stat-label technical-text">STORIES</span>
+                                            </div>
+                                            <div className="event-stat-divider" />
+                                            <div className="event-stat-item">
+                                                <span className="event-stat-value technical-text">{characters.length}</span>
+                                                <span className="event-stat-label technical-text">CHARS</span>
+                                            </div>
+                                            <div className="event-stat-divider" />
+                                            <div className="event-stat-item">
+                                                <span className="event-stat-value technical-text">{gallery.length}</span>
+                                                <span className="event-stat-label technical-text">MEDIA</span>
+                                            </div>
+                                        </div>
                                     </div>
 
+                                    {/* Banner Image Column */}
                                     {event.banner_url && (
-                                        <div className="event-hero-image-wrap">
+                                        <div 
+                                            className="event-hero-image-wrap"
+                                            onClick={() => setSelectedGalleryImage({
+                                                image: getAssetUrl(event.banner_url),
+                                                title: event.name
+                                            })}
+                                            title="Xem ảnh đầy đủ"
+                                        >
                                             <img
                                                 className="event-hero-image"
                                                 src={getAssetUrl(event.banner_url)}
@@ -272,106 +349,120 @@ export default function RedesignEventPage() {
                                     )}
                                 </div>
 
-                                {/* Chapters / Story Sections */}
-                                <section className="event-page-section">
-                                    <h3 className="event-section-title technical-text">
-                                        <span>[01] HỒ SƠ TRUYỆN</span>
-                                    </h3>
-                                    {stories.length === 0 ? (
-                                        <p style={{ opacity: 0.7 }}>Không tìm thấy ghi chép cốt truyện cho sự kiện này.</p>
-                                    ) : (
-                                        <div className="chapters-grid">
-                                            {stories.map((story, index) => (
-                                                <a
-                                                    key={story.story_id}
-                                                    href={`${BASE_URL}#/story/${story.story_id}`}
-                                                    className="chapter-card"
-                                                    title="Mở trình đọc truyện (Original App)"
-                                                >
-                                                    <div className="chapter-meta technical-text">
-                                                        STORY_NODE // 0{index + 1}
-                                                    </div>
-                                                    <div className="chapter-title">
-                                                        {story.name}
-                                                    </div>
-                                                    <div className="technical-text" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                        READ_STORY <ExternalLink size={12} />
-                                                    </div>
-                                                </a>
-                                            ))}
-                                        </div>
-                                    )}
-                                </section>
+                                {/* ── TAB BAR ── */}
+                                <div className="event-tab-bar-wrap">
+                                    <Tabs
+                                        tabs={EVENT_TABS}
+                                        activeTabId={activeTab}
+                                        onChange={setActiveTab}
+                                        className="event-tabs"
+                                    />
+                                </div>
 
-                                {/* Operatives / Characters Section */}
-                                <section className="event-page-section">
-                                    <h3 className="event-section-title technical-text">
-                                        <span>[02] NHÂN VẬT LIÊN QUAN</span>
-                                    </h3>
-                                    {characters.length === 0 ? (
-                                        <p style={{ opacity: 0.7 }}>Không tìm thấy ghi chép nhân vật liên quan.</p>
-                                    ) : (
-                                        <div className="operatives-grid">
-                                            {characters.map(char => (
-                                                <div
-                                                    key={char.id}
-                                                    className="operative-card"
-                                                    onClick={() => setSelectedCharacter(char)}
-                                                >
-                                                    <div className="operative-avatar-wrap">
-                                                        <img
-                                                            className="operative-avatar"
-                                                            src={char.avatar}
-                                                            alt={char.name}
-                                                            onError={(e) => {
-                                                                e.target.onerror = null
-                                                                e.target.src = '/assets/images/character/blank.png'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="operative-name">
-                                                        {char.name}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </section>
+                                {/* ── TAB CONTENT PANEL ── */}
+                                <div className="event-tab-content">
 
-                                {/* Media / Gallery Section */}
-                                <section className="event-page-section">
-                                    <h3 className="event-section-title technical-text">
-                                        <span>[03] THƯ VIỆN HÌNH ẢNH</span>
-                                    </h3>
-                                    {gallery.length === 0 ? (
-                                        <p style={{ opacity: 0.7 }}>Không tìm thấy ghi chép hình ảnh thư viện.</p>
-                                    ) : (
-                                        <div className="media-grid">
-                                            {gallery.map(item => (
-                                                <div
-                                                    key={item.id}
-                                                    className="media-card"
-                                                    onClick={() => setSelectedGalleryImage(item)}
-                                                >
-                                                    <div className="media-img-wrap">
-                                                        <img
-                                                            className="media-img"
-                                                            src={item.image}
-                                                            alt={item.title}
-                                                            onError={(e) => {
-                                                                e.target.onerror = null
-                                                                e.target.src = '/assets/images/icon/default.png'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="media-title">
-                                                        {item.title || 'RECORDED_MEDIA'}
-                                                    </div>
+                                    {/* TAB: Stories */}
+                                    {activeTab === 'stories' && (
+                                        <div className="tab-panel" key="stories">
+                                            {stories.length === 0 ? (
+                                                <p className="tab-empty-msg">Không tìm thấy ghi chép cốt truyện cho sự kiện này.</p>
+                                            ) : (
+                                                <div className="chapters-grid">
+                                                    {stories.map((story, index) => (
+                                                        <a
+                                                            key={story.story_id}
+                                                            href={`${BASE_URL}#/story/${story.story_id}`}
+                                                            className="chapter-card"
+                                                            title="Mở trình đọc truyện (Original App)"
+                                                        >
+                                                            <div className="chapter-meta technical-text">
+                                                                STORY_NODE // 0{index + 1}
+                                                            </div>
+                                                            <div className="chapter-title">
+                                                                {story.name}
+                                                            </div>
+                                                            <div className="technical-text" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                                READ_STORY <ExternalLink size={12} />
+                                                            </div>
+                                                        </a>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     )}
-                                </section>
+
+                                    {/* TAB: Characters */}
+                                    {activeTab === 'characters' && (
+                                        <div className="tab-panel" key="characters">
+                                            {characters.length === 0 ? (
+                                                <p className="tab-empty-msg">Không tìm thấy ghi chép nhân vật liên quan.</p>
+                                            ) : (
+                                                <div className="operatives-grid">
+                                                    {characters.map(char => (
+                                                        <div
+                                                            key={char.id}
+                                                            className="operative-card"
+                                                            onClick={() => setSelectedCharacter(char)}
+                                                        >
+                                                            <div className="operative-avatar-wrap">
+                                                                <img
+                                                                    className="operative-avatar"
+                                                                    src={char.avatar}
+                                                                    alt={char.name}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null
+                                                                        e.target.src = '/assets/images/character/blank.png'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="operative-name">
+                                                                {char.name}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* TAB: Gallery */}
+                                    {activeTab === 'gallery' && (
+                                        <div className="tab-panel" key="gallery">
+                                            {gallery.length === 0 ? (
+                                                <p className="tab-empty-msg">Không tìm thấy ghi chép hình ảnh thư viện.</p>
+                                            ) : (
+                                                <div className="media-grid">
+                                                    {gallery.map(item => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="media-card"
+                                                            onClick={() => setSelectedGalleryImage(item)}
+                                                        >
+                                                            <div className="media-img-wrap">
+                                                                <img
+                                                                    className="media-img"
+                                                                    src={item.image}
+                                                                    alt={item.title}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null
+                                                                        e.target.src = '/assets/images/icon/default.png'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="media-title">
+                                                                {item.title || 'RECORDED_MEDIA'}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                </div>
+                                {/* ── END TAB CONTENT ── */}
+
                             </div>
                         </>
                     )}
