@@ -12,8 +12,8 @@
     z-index: 0;
     background-size: cover;
     background-position: center;
-    filter: grayscale(80%) blur(8px) brightness(0.3);
-    opacity: 0.15;
+    filter: grayscale(10%) blur(15px) brightness(0.85);
+    opacity: 0.8;
     pointer-events: none;
 }
 

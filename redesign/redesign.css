@@ -2,7 +2,8 @@
 /* Redesign Global Stylesheet - Swiss Style & Retro-Futuristic */
 /* ================================================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
 
 :root {
     /* Color Palette */
@@ -20,7 +21,7 @@
 
     /* Typography */
     --font-swiss: 'Space Grotesk', sans-serif;
-    --font-mono: 'Share Tech Mono', monospace;
+    --font-mono: 'Source Code Pro', monospace;
 
     /* Borders (Brutalist / Technical) */
     --border-thick: 2px solid var(--color-charcoal);
@@ -69,6 +70,7 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -186,6 +188,17 @@ body {
 .header-nav-item.active {
     background-color: var(--color-cream);
     color: var(--color-terracotta);
+}
+
+button.settings-trigger-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    gap: 0.4rem;
+    height: 100%;
 }
 
 /* Sidebar + Content layout container */
@@ -1018,4 +1031,163 @@ body {
             rgba(245, 237, 220, 0.03) 6px,
             transparent 6px,
             transparent 12px);
+}
+
+/* ================================================================================================= */
+/* Settings Panel & Custom Brutalist Controls */
+/* ================================================================================================= */
+
+.modal-container.settings-modal-custom {
+    max-width: 520px;
+    background-color: var(--color-charcoal);
+    color: var(--color-cream);
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: 1.5rem;
+    border-bottom: var(--border-thin);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-item-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.settings-item-icon {
+    color: var(--color-ochre);
+    margin-top: 2px;
+}
+
+.settings-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.settings-item-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-cream);
+    letter-spacing: 0.5px;
+}
+
+.settings-item-desc {
+    font-size: 0.8rem;
+    color: rgba(245, 237, 220, 0.6);
+    line-height: 1.4;
+}
+
+.settings-item-control {
+    display: flex;
+    align-items: center;
+    padding-left: 2.2rem;
+}
+
+/* Custom Brutalist Toggle Switch */
+.ced-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.ced-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ced-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    border: 2px solid var(--color-cream);
+    transition: .2s ease;
+}
+
+.ced-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--color-cream);
+    transition: .2s ease;
+}
+
+.ced-switch input:checked + .ced-slider {
+    background-color: var(--color-terracotta);
+    border-color: var(--color-terracotta);
+}
+
+.ced-switch input:checked + .ced-slider:before {
+    transform: translateX(24px);
+    background-color: var(--color-charcoal);
+}
+
+/* Custom Brutalist Slider */
+.ced-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.ced-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(245, 237, 220, 0.2);
+    outline: none;
+    border: 1px solid rgba(245, 237, 220, 0.4);
+}
+
+.ced-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-ochre);
+    border: 2px solid var(--color-charcoal);
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--color-cream);
+    transition: transform 0.1s;
+}
+
+.ced-range::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.ced-range-value {
+    font-size: 0.85rem;
+    color: var(--color-ochre);
+    font-weight: 700;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Hide wallpaper class dynamically applied on body */
+body.settings-hide-wallpaper .event-page-wallpaper {
+    display: none !important;
 }

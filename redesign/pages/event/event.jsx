@@ -328,7 +328,7 @@ export default function RedesignEventPage() {
 
                                     {/* Banner Image Column */}
                                     {event.banner_url && (
-                                        <div 
+                                        <div
                                             className="event-hero-image-wrap"
                                             onClick={() => setSelectedGalleryImage({
                                                 image: getAssetUrl(event.banner_url),

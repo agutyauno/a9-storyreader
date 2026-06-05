@@ -1,8 +1,11 @@
-import React from 'react'
-import { ChevronsLeft, ChevronsRight } from 'lucide-react'
+import React, { useState } from 'react'
+import { ChevronsLeft, ChevronsRight, Settings } from 'lucide-react'
 import { getAssetUrl } from '../../src/utils/assetUtils'
+import SettingsModal from './SettingsModal'
 
 export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) {
+    const [settingsOpen, setSettingsOpen] = useState(false)
+
     return (
         <header className="app-header">
             <div className="header-left">
@@ -39,7 +42,21 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                 <a href="#/is-story" className="header-nav-item">IS STORY</a>
                 <div className="header-nav-separator"></div>
                 <a href={`${BASE_URL}#`} className="header-nav-item">MAIN_APP</a>
+                <div className="header-nav-separator"></div>
+                <button 
+                    onClick={() => setSettingsOpen(true)} 
+                    className="header-nav-item settings-trigger-btn"
+                    title="Cài đặt hệ thống"
+                >
+                    <Settings size={15} />
+                    <span>SETTING</span>
+                </button>
             </nav>
+
+            <SettingsModal 
+                isOpen={settingsOpen} 
+                onClose={() => setSettingsOpen(false)} 
+            />
         </header>
     )
 }

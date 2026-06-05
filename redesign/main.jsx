@@ -5,7 +5,11 @@ import RedesignHomePage from './pages/home/home.jsx'
 import TestPage from './pages/test/test.jsx'
 import RedesignEventPage from './pages/event/event.jsx'
 import { NotificationProvider } from './components/Notification'
+import { initializeSettings } from './utils/settings'
 import './redesign.css'
+
+// Initialize app settings (wallpaper visibility, sound volume, etc.)
+initializeSettings()
 
 ReactDOM.createRoot(document.getElementById('redesign-root')).render(
   <React.StrictMode>
