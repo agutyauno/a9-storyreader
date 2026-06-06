@@ -370,11 +370,11 @@ export default function RedesignEventPage() {
                                             ) : (
                                                 <div className="chapters-grid">
                                                     {stories.map((story, index) => (
-                                                        <a
+                                                        <Link
                                                             key={story.story_id}
-                                                            href={`${BASE_URL}#/story/${story.story_id}`}
+                                                            to={`/story/${story.story_id}`}
                                                             className="chapter-card"
-                                                            title="Mở trình đọc truyện (Original App)"
+                                                            title="Mở trình đọc truyện"
                                                         >
                                                             <div className="chapter-meta technical-text">
                                                                 STORY_NODE // 0{index + 1}
@@ -385,7 +385,7 @@ export default function RedesignEventPage() {
                                                             <div className="technical-text" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                                                 READ_STORY <ExternalLink size={12} />
                                                             </div>
-                                                        </a>
+                                                        </Link>
                                                     ))}
                                                 </div>
                                             )}

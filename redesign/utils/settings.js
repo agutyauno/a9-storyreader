@@ -19,14 +19,47 @@ export const SETTINGS_SCHEMA = [
   {
     id: 'soundVolume',
     label: 'ÂM LƯỢNG HỆ THỐNG',
-    description: 'Điều chỉnh âm lượng nhạc nền và hiệu ứng âm thanh.',
+    description: 'Điều chỉnh âm lượng chung.',
     type: 'slider',
     min: 0,
     max: 100,
     defaultValue: 50,
     onChange: (value) => {
-      // Dispatch custom event for volume change
       window.dispatchEvent(new CustomEvent('cedVolumeChange', { detail: { volume: value } }))
+    }
+  },
+  {
+    id: 'bgmVolume',
+    label: 'ÂM LƯỢNG NHẠC NỀN',
+    description: 'Điều chỉnh âm lượng nhạc nền (BGM) của câu chuyện.',
+    type: 'slider',
+    min: 0,
+    max: 100,
+    defaultValue: 80,
+    onChange: (value) => {
+      window.dispatchEvent(new CustomEvent('cedBgmVolumeChange', { detail: { volume: value } }))
+    }
+  },
+  {
+    id: 'sfxVolume',
+    label: 'ÂM LƯỢNG HIỆU ỨNG',
+    description: 'Điều chỉnh âm lượng hiệu ứng âm thanh (SFX) khi đọc.',
+    type: 'slider',
+    min: 0,
+    max: 100,
+    defaultValue: 80,
+    onChange: (value) => {
+      window.dispatchEvent(new CustomEvent('cedSfxVolumeChange', { detail: { volume: value } }))
+    }
+  },
+  {
+    id: 'soundMuted',
+    label: 'TẮT TOÀN BỘ ÂM THANH',
+    description: 'Tắt tiếng tất cả nhạc nền và hiệu ứng âm thanh.',
+    type: 'toggle',
+    defaultValue: false,
+    onChange: (value) => {
+      window.dispatchEvent(new CustomEvent('cedMuteChange', { detail: { muted: value } }))
     }
   }
 ]
@@ -58,8 +91,8 @@ export function getSetting(id) {
       const parsed = JSON.parse(saved)
       if (parsed[id] !== undefined) return parsed[id]
     }
-  } catch (e) {}
-  
+  } catch (e) { }
+
   const item = SETTINGS_SCHEMA.find(i => i.id === id)
   return item ? item.defaultValue : null
 }
@@ -70,11 +103,11 @@ export function saveSetting(id, value) {
   let currentSettings = {}
   try {
     if (saved) currentSettings = JSON.parse(saved)
-  } catch (e) {}
-  
+  } catch (e) { }
+
   currentSettings[id] = value
   localStorage.setItem('ced_app_settings', JSON.stringify(currentSettings))
-  
+
   const item = SETTINGS_SCHEMA.find(i => i.id === id)
   if (item && item.onChange) {
     item.onChange(value)
@@ -88,8 +121,8 @@ export function useSettings() {
     let parsed = {}
     try {
       if (saved) parsed = JSON.parse(saved)
-    } catch (e) {}
-    
+    } catch (e) { }
+
     // Fill defaults
     const result = {}
     SETTINGS_SCHEMA.forEach(item => {

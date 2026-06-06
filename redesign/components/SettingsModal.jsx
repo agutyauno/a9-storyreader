@@ -1,7 +1,7 @@
 import React from 'react'
 import Modal from './Modal'
 import { useSettings, SETTINGS_SCHEMA } from '../utils/settings'
-import { Settings, Volume2, Image, Sliders } from 'lucide-react'
+import { Settings, Volume2, Image, Sliders, Music, VolumeX } from 'lucide-react'
 
 export default function SettingsModal({ isOpen, onClose }) {
   const [settings, updateSetting] = useSettings()
@@ -12,6 +12,12 @@ export default function SettingsModal({ isOpen, onClose }) {
         return <Image size={18} />
       case 'soundVolume':
         return <Volume2 size={18} />
+      case 'bgmVolume':
+        return <Music size={18} />
+      case 'sfxVolume':
+        return <Volume2 size={18} /> // Or another volume icon
+      case 'soundMuted':
+        return <VolumeX size={18} />
       default:
         return <Sliders size={18} />
     }
