@@ -41,10 +41,9 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                 <div className="header-nav-separator"></div>
                 <a href="#/is-story" className="header-nav-item">IS STORY</a>
                 <div className="header-nav-separator"></div>
-                <a href={`${BASE_URL}#`} className="header-nav-item">MAIN_APP</a>
-                <div className="header-nav-separator"></div>
-                <button 
-                    onClick={() => setSettingsOpen(true)} 
+
+                <button
+                    onClick={() => setSettingsOpen(true)}
                     className="header-nav-item settings-trigger-btn"
                     title="Cài đặt hệ thống"
                 >
@@ -53,9 +52,9 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                 </button>
             </nav>
 
-            <SettingsModal 
-                isOpen={settingsOpen} 
-                onClose={() => setSettingsOpen(false)} 
+            <SettingsModal
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
             />
         </header>
     )

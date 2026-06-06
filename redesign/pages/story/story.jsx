@@ -194,7 +194,7 @@ export default function RedesignStoryPage() {
           const choiceValue = decision.getAttribute('data-choice-value')
           decisions.forEach(d => d.classList.remove('selected'))
           decision.classList.add('selected')
-          
+
           responses.forEach(r => {
             if (r.getAttribute('data-choice-response') === choiceValue) {
               r.classList.add('active')
@@ -272,7 +272,7 @@ export default function RedesignStoryPage() {
       const storyTitle = story ? story.name : ''
       const eventTitle = eventData ? eventData.name : storyTitle
       const infoBottom = infoSection.offsetTop + infoSection.offsetHeight
-      
+
       const shouldShowStoryTitle = window.scrollY >= (infoBottom - 64)
       headerName.textContent = shouldShowStoryTitle ? storyTitle : eventTitle
     }
@@ -400,8 +400,23 @@ export default function RedesignStoryPage() {
 
         {/* Content Area */}
         <div className={`content-area story-page-wrapper ${sidebarOpen ? 'sidebar-active' : 'expanded'}`}>
+          {/* Dynamic header details overlay */}
+          {eventData ? (
+            <Link to={`/event/${eventData.event_id}`} className="header-meta-bar panel-stripes" title={`Đi tới hồ sơ sự kiện: ${eventData.name}`}>
+              <span className="technical-text header-dynamic-title">
+                {eventData?.name || story?.name || ''}
+              </span>
+            </Link>
+          ) : (
+            <div className="header-meta-bar panel-stripes">
+              <span className="technical-text header-dynamic-title">
+                {story?.name || ''}
+              </span>
+            </div>
+          )}
+
           <div className="redesign-container story-reader-container page-fade-in">
-            
+
             {/* Top Navigation / Breadcrumb */}
             <div className="story-breadcrumb technical-text">
               {eventData ? (
@@ -413,13 +428,6 @@ export default function RedesignStoryPage() {
                   ← VỀ TRANG CHỦ
                 </Link>
               )}
-            </div>
-
-            {/* Dynamic header details overlay */}
-            <div className="header-meta-bar panel-stripes">
-              <span className="technical-text header-dynamic-title">
-                {eventData?.name || story.name}
-              </span>
             </div>
 
             {/* Story Information Intro Card */}
@@ -437,16 +445,16 @@ export default function RedesignStoryPage() {
 
             {/* Top Chapter Nav Buttons */}
             <div className="chapter-nav-buttons top-nav">
-              <button 
-                className="btn-chapter-nav" 
-                disabled={!prevStory} 
+              <button
+                className="btn-chapter-nav"
+                disabled={!prevStory}
                 onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}
               >
                 ← CHƯƠNG TRƯỚC
               </button>
-              <button 
-                className="btn-chapter-nav" 
-                disabled={!nextStory} 
+              <button
+                className="btn-chapter-nav"
+                disabled={!nextStory}
                 onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}
               >
                 CHƯƠNG SAU →
@@ -458,16 +466,16 @@ export default function RedesignStoryPage() {
 
             {/* Bottom Chapter Nav Buttons */}
             <div className="chapter-nav-buttons bottom-nav">
-              <button 
-                className="btn-chapter-nav" 
-                disabled={!prevStory} 
+              <button
+                className="btn-chapter-nav"
+                disabled={!prevStory}
                 onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}
               >
                 ← CHƯƠNG TRƯỚC
               </button>
-              <button 
-                className="btn-chapter-nav" 
-                disabled={!nextStory} 
+              <button
+                className="btn-chapter-nav"
+                disabled={!nextStory}
                 onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}
               >
                 CHƯƠNG SAU →

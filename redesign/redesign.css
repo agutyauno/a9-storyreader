@@ -227,6 +227,11 @@ button.settings-trigger-btn {
     transition: transform var(--transition-smooth);
     display: flex;
     flex-direction: column;
+    scrollbar-width: none;
+}
+
+.sidebar-container::-webkit-scrollbar {
+    display: none;
 }
 
 .sidebar-container.closed {
@@ -1135,12 +1140,12 @@ button.settings-trigger-btn {
     transition: .2s ease;
 }
 
-.ced-switch input:checked + .ced-slider {
+.ced-switch input:checked+.ced-slider {
     background-color: var(--color-terracotta);
     border-color: var(--color-terracotta);
 }
 
-.ced-switch input:checked + .ced-slider:before {
+.ced-switch input:checked+.ced-slider:before {
     transform: translateX(24px);
     background-color: var(--color-charcoal);
 }
