@@ -5,6 +5,8 @@ import RedesignHomePage from './pages/home/home.jsx'
 import TestPage from './pages/test/test.jsx'
 import RedesignEventPage from './pages/event/event.jsx'
 import RedesignStoryPage from './pages/story/story.jsx'
+import OperatorListPage from './pages/operator/operatorList.jsx'
+import OperatorDetailPage from './pages/operator/operatorDetail.jsx'
 import { NotificationProvider } from './components/Notification'
 import { initializeSettings } from './utils/settings'
 import './redesign.css'
@@ -21,6 +23,8 @@ ReactDOM.createRoot(document.getElementById('redesign-root')).render(
           <Route path="/test" element={<TestPage />} />
           <Route path="/event/:id" element={<RedesignEventPage />} />
           <Route path="/story/:id" element={<RedesignStoryPage />} />
+          <Route path="/operator" element={<OperatorListPage />} />
+          <Route path="/operator/:id" element={<OperatorDetailPage />} />
         </Routes>
       </HashRouter>
     </NotificationProvider>
