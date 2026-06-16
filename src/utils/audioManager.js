@@ -142,6 +142,19 @@ export class BGMManager {
     this.introAudio.currentTime = 0;
     this.loopAudio.pause();
     this.loopAudio.currentTime = 0;
+
+    // Remove document click listener for first interaction unlock
+    document.removeEventListener('click', this.handleFirstClick);
+
+    // Disconnect scroll triggers to avoid leaks and unexpected plays
+    if (this.scrollObserver) {
+      this.scrollObserver.disconnect();
+      this.scrollObserver = null;
+    }
+
+    // Reset current track so that audio won't be auto-resumed later
+    this.currentTrack = null;
+
     this.updateUI();
   }
 

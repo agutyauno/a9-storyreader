@@ -417,32 +417,6 @@ export default function RedesignStoryPage() {
 
           <div className="redesign-container story-reader-container page-fade-in">
 
-            {/* Top Navigation / Breadcrumb */}
-            <div className="story-breadcrumb technical-text">
-              {eventData ? (
-                <Link to={`/event/${eventData.event_id}`} className="story-back-link">
-                  ← QUAY LẠI HỒ SƠ SỰ KIỆN: {eventData.name}
-                </Link>
-              ) : (
-                <Link to="/" className="story-back-link">
-                  ← VỀ TRANG CHỦ
-                </Link>
-              )}
-            </div>
-
-            {/* Story Information Intro Card */}
-            <div id="info" className="story-intro-panel">
-              <div className="story-intro-header">
-                <div className="story-intro-meta technical-text">
-                  SEC.STORY_NODE // ID: {story.story_id}
-                </div>
-                <h2 className="story-intro-title">{story.name}</h2>
-              </div>
-              {story.description && (
-                <p className="story-intro-desc">{story.description}</p>
-              )}
-            </div>
-
             {/* Top Chapter Nav Buttons */}
             <div className="chapter-nav-buttons top-nav">
               <button
@@ -459,6 +433,19 @@ export default function RedesignStoryPage() {
               >
                 CHƯƠNG SAU →
               </button>
+            </div>
+
+            {/* Story Information Intro Card */}
+            <div id="info" className="story-intro-panel">
+              <div className="story-intro-header">
+                <div className="story-intro-meta technical-text">
+                  SEC.STORY_NODE // ID: {story.story_id}
+                </div>
+                <h2 className="story-intro-title">{story.name}</h2>
+              </div>
+              {story.description && (
+                <p className="story-intro-desc">{story.description}</p>
+              )}
             </div>
 
             {/* Core Story Dialogue Scroller */}

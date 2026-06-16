@@ -103,6 +103,7 @@ export default function StoryPage() {
     // Cleanup audio on unmount
     return () => {
       if (window.bgmManager) window.bgmManager.stop();
+      if (window.sfxManager) window.sfxManager.destroy();
     };
   }, [id, location.search]);
 
