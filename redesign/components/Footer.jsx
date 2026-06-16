@@ -11,8 +11,7 @@ export default function Footer() {
                         <span className="footer-logo-subtitle">DATABASE REDESIGN // V2.0</span>
                     </div>
                     <p className="footer-brand-desc">
-                        Dự án phi lợi nhuận biên dịch cốt truyện Arknights sang Tiếng Việt. Giao diện được thiết kế theo phong cách Swiss Grid kết hợp Retro Futuristic.
-                    </p>
+                        Civilight Eterna Database là một dự án phi lợi nhuận nhằm mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.                    </p>
                 </div>
 
                 {/* Links & Contact Section */}
@@ -21,7 +20,7 @@ export default function Footer() {
                         <span className="technical-text">[TRANSLATION_GROUP]</span>
                         <p className="group-name">Cơ Sở Dữ Liệu Civilight Eterna</p>
                     </div>
-                    
+
                     <div className="footer-contact-grid">
                         <a href="mailto:civilighteterna2771@gmail.com" className="footer-contact-link">
                             <span className="link-label">EMAIL:</span>

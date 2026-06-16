@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronsLeft, ChevronsRight, Settings } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, Settings, Users, BookOpen } from 'lucide-react'
 import { getAssetUrl } from '../../src/utils/assetUtils'
 import SettingsModal from './SettingsModal'
 
@@ -37,9 +37,15 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
             </div>
 
             <nav className="header-nav">
-                <a href="#/operator" className="header-nav-item">OPERATOR</a>
+                <a href="#/operator" className="header-nav-item" title="Operator">
+                    <Users size={16} className="header-nav-icon" />
+                    <span className="header-nav-text">OPERATOR</span>
+                </a>
                 <div className="header-nav-separator"></div>
-                <a href="#/is-story" className="header-nav-item">IS STORY</a>
+                <a href="#/is-story" className="header-nav-item" title="IS Story">
+                    <BookOpen size={16} className="header-nav-icon" />
+                    <span className="header-nav-text">IS STORY</span>
+                </a>
                 <div className="header-nav-separator"></div>
 
                 <button
@@ -47,8 +53,8 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                     className="header-nav-item settings-trigger-btn"
                     title="Cài đặt hệ thống"
                 >
-                    <Settings size={15} />
-                    <span>SETTING</span>
+                    <Settings size={15} className="header-nav-icon" />
+                    <span className="header-nav-text">SETTING</span>
                 </button>
             </nav>
 

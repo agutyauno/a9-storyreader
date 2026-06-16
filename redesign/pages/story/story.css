@@ -13,7 +13,7 @@
 }
 
 .story-reader-container {
-  max-width: 1050px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 2.5rem 2.5rem 6rem 2.5rem;
   width: 100%;
@@ -282,7 +282,7 @@ a.header-meta-bar:hover {
 }
 
 .dialogue-content {
-  background-color: rgba(24, 24, 24, 0.7);
+  background-color: rgba(0, 0, 0, 0.7);
   padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -309,7 +309,7 @@ a.header-meta-bar:hover {
   font-family: sans-serif;
   font-size: 1.05rem;
   line-height: 1.6;
-  color: rgba(245, 237, 220, 0.95);
+  color: #f0f0f0;
 }
 
 /* ─────────────────────────────────────────────────────
@@ -328,7 +328,7 @@ a.header-meta-bar:hover {
 }
 
 .narrator-text {
-  color: var(--color-cream);
+  color: #f0f0f0;
   font-family: sans-serif;
   font-size: 1.05rem;
   line-height: 1.6;
@@ -413,30 +413,23 @@ a.header-meta-bar:hover {
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.3;
-  color: var(--color-cream);
+  color: #f0f0f0;
   background-color: var(--color-charcoal);
   border: 2px solid rgba(245, 237, 220, 0.2);
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
   transition: all 0.15s ease;
-  text-transform: uppercase;
 }
 
 .decision:hover {
   border-color: var(--color-terracotta);
   background-color: rgba(178, 101, 59, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 4px 4px 0px var(--color-charcoal);
 }
 
 .decision.selected {
   border-color: var(--color-terracotta);
-  background-color: var(--color-terracotta);
-  color: var(--color-cream);
-  box-shadow: 4px 4px 0px var(--color-charcoal);
-  transform: none;
+  background-color: rgba(178, 101, 59, 0.15);
 }
 
 /* Choice response animations */
@@ -668,6 +661,11 @@ a.header-meta-bar:hover {
    RESPONSIVE LAYOUTS
    ───────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .story-page-wrapper.content-area {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .story-reader-container {
     padding: 1.5rem 1.5rem 5rem 1.5rem;
   }
@@ -689,22 +687,27 @@ a.header-meta-bar:hover {
   }
 
   .character_avt {
-    width: 4rem;
-    height: 4rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
   .dialogue-content {
-    padding: 1rem;
-    min-height: 4rem;
+    padding: 0.75rem;
+    min-height: 3.5rem;
   }
 
-  .dialogue {
-    font-size: 0.98rem;
+  .dialogue,
+  .character_name {
+    font-size: 0.88rem;
   }
 
   .narrator-box {
-    padding: 0 4.85rem;
-    /* avt size + gap */
+    padding: 0 4.35rem;
+    /* avt size (3.5rem) + gap (0.85rem) */
+  }
+
+  .narrator-text {
+    font-size: 0.88rem;
   }
 
   .btn-chapter-nav {
@@ -719,53 +722,62 @@ a.header-meta-bar:hover {
 }
 
 @media (max-width: 600px) {
-  .story-reader-container {
-    padding: 1rem 1rem 4rem 1rem;
+  .story-reader-container.redesign-container {
+    padding: 1rem 0 4rem 0;
   }
 
-  .dialogue-box {
-    flex-wrap: wrap;
-    background-color: rgba(24, 24, 24, 0.92);
-    border: var(--border-thick);
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
-    padding: 1rem;
-    gap: 0.75rem;
-    border-radius: 4px;
+  .dialogue-container {
+    width: calc(100% - 1.5rem);
   }
 
-  .character_avt {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  /* When wrapped in mobile, show left avatar, dialogue content in middle, right avatar next to it */
-  .dialogue-content {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    min-height: auto;
-  }
-
-  .narrator-box {
-    padding: 0;
-  }
-
-  .narrator-box .dialogue-content {
-    background-color: transparent;
-    border-left: none;
-    padding: 0;
-  }
-
-  .narrator-box .narrator-text {
-    font-size: 0.95rem;
-    border-left: 3px solid var(--color-terracotta);
-    padding-left: 0.75rem;
-    text-align: left;
+  .story-intro-panel {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+    padding: 1.25rem;
   }
 
   .chapter-nav-buttons {
     flex-direction: column;
     gap: 0.75rem;
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .character_avt {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+
+  .dialogue-box {
+    gap: 0.6rem;
+  }
+
+  .dialogue-content {
+    padding: 0.6rem;
+    min-height: 2.8rem;
+  }
+
+  .dialogue,
+  .character_name {
+    font-size: 0.8rem;
+  }
+
+  .narrator-box {
+    padding: 0 3.4rem;
+    /* avt size (2.8rem) + gap (0.6rem) */
+  }
+
+  .narrator-text {
+    font-size: 0.8rem;
+  }
+
+  .story-intro-panel {
+    padding: 1.25rem;
+  }
+
+  .story-intro-title {
+    font-size: 1.4rem;
   }
 }

@@ -1208,6 +1208,10 @@
 
     .operator-right-col {
         border-left: var(--border-thick);
+        position: relative;
+        top: auto;
+        max-height: none;
+        min-height: auto;
     }
 
     .operator-back-link {
@@ -1220,6 +1224,7 @@
 
     .operator-tab-content {
         padding: 1.25rem;
+        overflow-y: visible;
     }
 
     .operator-stats-grid {

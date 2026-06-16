@@ -543,7 +543,6 @@ button.settings-trigger-btn {
 @media (max-width: 900px) {
     .sidebar-container {
         transform: translateX(-100%);
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
     }
 
     .sidebar-container.open {
@@ -1195,4 +1194,49 @@ button.settings-trigger-btn {
 /* Hide wallpaper class dynamically applied on body */
 body.settings-hide-wallpaper .event-page-wallpaper {
     display: none !important;
+}
+
+/* ===========================================================================
+   ADDITIONAL MOBILE RESPONSIVENESS
+   =========================================================================== */
+
+.header-nav-item {
+    gap: 0.4rem;
+}
+
+.header-nav-icon {
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .header-logo span {
+        display: none;
+    }
+
+    .header-nav-text {
+        display: none;
+    }
+
+    .header-nav-separator {
+        display: none;
+    }
+
+    .header-nav-item {
+        padding: 0 0.5rem;
+    }
+
+    .header-nav {
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-toggle-btn {
+        width: 36px;
+        height: 36px;
+    }
 }

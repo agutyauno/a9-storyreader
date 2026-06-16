@@ -710,10 +710,15 @@
         grid-template-columns: 1fr;
         padding: 1.5rem;
         gap: 1.5rem;
+        height: auto;
     }
 
     .event-hero-desc {
         max-height: 180px;
+    }
+
+    .event-hero-stats {
+        margin-top: 1.25rem;
     }
 
     .event-float-nav.prev {
@@ -743,9 +748,31 @@
         padding: 0.75rem 0.5rem;
     }
 
+    /* Character modal on mobile */
+    .modal-container.char-modal-large .modal-body {
+        overflow-y: auto;
+        max-height: 80vh;
+    }
+
     .modal-character-body {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+    }
+
+    .modal-char-image-wrap {
+        height: 350px;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .modal-char-info {
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+        padding: 1rem 0;
+        background: transparent;
+        border: none;
     }
 }
 

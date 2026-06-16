@@ -292,23 +292,61 @@
     overflow: hidden;
 }
 
-/* Responsive Rules for Horizontal Scroll */
+/* Responsive Rules for Horizontal Scroll -> Vertical on Mobile */
 @media (max-width: 900px) {
+    .event-chain-container-horizontal {
+        padding: 1.5rem 0;
+    }
+    
+    .event-chain-container-horizontal::before {
+        display: none; /* Hide horizontal timeline line */
+    }
+
     .event-chain-horizontal {
-        padding-left: 1.5rem;
-        gap: 3.5rem;
+        flex-direction: column;
+        gap: 2.5rem;
+        overflow-x: visible;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 
     .arc-group-horizontal {
-        gap: 1.5rem;
+        flex-direction: column;
+        gap: 1.25rem;
+        align-items: center;
+        width: 100%;
     }
 
-    .region-hero-card {
-        width: 300px;
+    .region-hero {
+        max-width: 380px;
+        margin: 0 auto;
+        padding: 1.25rem;
+        gap: 0.75rem;
+    }
+
+    .region-hero-title {
+        font-size: 1.5rem;
+    }
+
+    .region-hero-desc {
+        font-size: 0.9rem;
+        line-height: 1.4;
     }
 
     .event-card-horizontal,
+    .arc-metadata-card,
+    .event-card-horizontal-empty {
+        width: 100%;
+        max-width: 380px;
+        height: auto;
+        margin: 0 auto;
+    }
+
     .arc-metadata-card {
-        width: 240px;
+        min-height: 150px;
+    }
+
+    .arc-card-title {
+        font-size: 1.15rem;
     }
 }
