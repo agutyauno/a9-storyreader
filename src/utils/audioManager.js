@@ -74,9 +74,9 @@ export class BGMManager {
       // If it's a full URL or data URI, getAssetUrl will handle it
       // If it's a relative path (doesn't start with / or http), prepend basePath
       if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
-        return getAssetUrl(this.basePath + src);
+        return getAssetUrl(this.basePath + src, 'audio');
       }
-      return getAssetUrl(src);
+      return getAssetUrl(src, 'audio');
     };
 
     if (track.intro) {
@@ -453,7 +453,7 @@ export class SFXManager {
       if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
         finalSrc = this.basePath + sfxSrc;
       }
-      audio.src = getAssetUrl(finalSrc);
+      audio.src = getAssetUrl(finalSrc, 'audio');
       audio.volume = this.volume;
       this.currentAudio = audio;
 

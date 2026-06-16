@@ -17,55 +17,62 @@ export function getAssetUrl(path, type = null) {
   if (!path) return '';
 
   const isVideo = type === 'video' || path.match(/\.(mp4|webm|ogg)$/i);
+  const isAudio = type === 'audio' || type === 'bgm' || type === 'sfx' || path.match(/\.(mp3|wav|flac)$/i) || path.includes('/audio/bgm/') || path.includes('/audio/sfx/');
+
+  // Redirect local audio asset paths to external repository paths if we want them raw from GitHub
+  let processedPath = path;
+  if (isAudio && processedPath.startsWith('/assets/')) {
+    processedPath = processedPath.replace('/assets/', '/');
+  }
 
   // If it is already an absolute URL or a data URI
-  if (path.startsWith('http') || path.startsWith('data:')) {
+  if (processedPath.startsWith('http') || processedPath.startsWith('data:')) {
     const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
     const GITHUB_RAW_READER = 'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/';
     const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
 
-    if (isVideo) {
-      // Do not convert to jsDelivr for videos. If it's already jsdelivr, convert to raw.
-      if (path.startsWith(JSDELIVR_CDN)) {
-        return path.replace(JSDELIVR_CDN, GITHUB_RAW_DATA);
+    if (isVideo || isAudio) {
+      // Do not convert to jsDelivr for videos and audios. If it's already jsdelivr, convert to raw.
+      if (processedPath.startsWith(JSDELIVR_CDN)) {
+        return processedPath.replace(JSDELIVR_CDN, GITHUB_RAW_DATA);
       }
-      return path;
+      return processedPath;
     }
 
     // Legacy support: Convert any full GitHub Raw URLs to jsDelivr CDN
-    if (path.startsWith(GITHUB_RAW_DATA)) {
-      return path.replace(GITHUB_RAW_DATA, JSDELIVR_CDN);
+    if (processedPath.startsWith(GITHUB_RAW_DATA)) {
+      return processedPath.replace(GITHUB_RAW_DATA, JSDELIVR_CDN);
     }
-    if (path.startsWith(GITHUB_RAW_READER)) {
+    if (processedPath.startsWith(GITHUB_RAW_READER)) {
       // Some old assets might be in the reader repo's public folder
-      return path.replace(GITHUB_RAW_READER, 'https://cdn.jsdelivr.net/gh/agutyauno/a9-storyreader@main/');
+      return processedPath.replace(GITHUB_RAW_READER, 'https://cdn.jsdelivr.net/gh/agutyauno/a9-storyreader@main/');
     }
 
-    return path;
+    return processedPath;
   }
 
   // Handle absolute-style relative paths (e.g. /images/...) targeting our data CDN
-  if (path.startsWith('/')) {
+  if (processedPath.startsWith('/')) {
     // If it's a local Vite asset (starts with /assets/), handle normally
-    if (path.startsWith('/assets/')) {
+    if (processedPath.startsWith('/assets/')) {
         const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-        const cleanPath = path.slice(1);
+        const cleanPath = processedPath.slice(1);
         return `${cleanBase}${cleanPath}`;
     }
     
     // Otherwise, assume it's a relative path to our shared DATA repository
-    if (isVideo) {
+    if (isVideo || isAudio) {
       const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
-      return `${GITHUB_RAW_DATA}${path.slice(1)}`;
+      return `${GITHUB_RAW_DATA}${processedPath.slice(1)}`;
     } else {
       const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
-      return `${JSDELIVR_CDN}${path.slice(1)}`;
+      return `${JSDELIVR_CDN}${processedPath.slice(1)}`;
     }
   }
 
   // Fallback for any other relative paths
   const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const cleanPath = processedPath.startsWith('/') ? processedPath.slice(1) : processedPath;
   return `${cleanBase}${cleanPath}`;
 }
 
