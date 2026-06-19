@@ -9,7 +9,11 @@ import OperatorListPage from './pages/operator/operatorList.jsx'
 import OperatorDetailPage from './pages/operator/operatorDetail.jsx'
 import { NotificationProvider } from './components/Notification'
 import { initializeSettings } from './utils/settings'
+import { setupAssetFallback } from '../src/utils/assetFallback.js'
 import './redesign.css'
+
+// Initialize the global asset fallback error handler
+setupAssetFallback()
 
 // Initialize app settings (wallpaper visibility, sound volume, etc.)
 initializeSettings()

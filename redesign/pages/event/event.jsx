@@ -256,11 +256,13 @@ export default function RedesignEventPage() {
                         <>
                             {/* Backdrop Wallpaper */}
                             {(event.wallpaper_url || event.banner_url) && (
-                                <div
-                                    className="event-page-wallpaper"
-                                    style={{ backgroundImage: `url(${getAssetUrl(event.wallpaper_url || event.banner_url)})` }}
-                                    aria-hidden="true"
-                                />
+                                <div className="event-page-wallpaper" aria-hidden="true">
+                                    <img
+                                        src={getAssetUrl(event.wallpaper_url || event.banner_url)}
+                                        alt=""
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+                                    />
+                                </div>
                             )}
 
                             <div key={id} className="event-container page-fade-in">

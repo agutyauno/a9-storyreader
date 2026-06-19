@@ -294,9 +294,13 @@ export default function EventPage() {
       {wallpaperUrl && (
         <div 
           className={`${styles.pageWallpaper} ${isWallpaperFallback ? styles.pageWallpaperBlurred : ''}`} 
-          style={{ backgroundImage: `url(${wallpaperUrl})` }}
           aria-hidden="true"
         >
+          <img
+            src={wallpaperUrl}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+          />
           <div className={styles.wallpaperOverlay} />
         </div>
       )}
