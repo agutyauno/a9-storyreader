@@ -10,8 +10,8 @@ export class BGMManager {
     this.currentTrack = null;
     this.isPlaying = false;
     this.isEnabled = true;
-    this.isEnabled = true;
     this.isIntroPlaying = false;
+    this.isNewTrack = true;
     this.playToken = 0;
     this.onIntroEnded = this.onIntroEnded.bind(this);
     this.setupAudioElements();
@@ -28,6 +28,24 @@ export class BGMManager {
   }
 
   loadState() {
+    try {
+      const savedSettings = localStorage.getItem('ced_app_settings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.soundMuted !== undefined) this.isEnabled = !parsed.soundMuted;
+        
+        const masterVol = parsed.soundVolume ?? 50;
+        const bgmVol = parsed.bgmVolume ?? 80;
+        this.volume = (masterVol / 100) * (bgmVol / 100);
+        
+        this.introAudio.volume = this.volume;
+        this.loopAudio.volume = this.volume;
+        return;
+      }
+    } catch (e) {
+      console.warn("BGMManager: Failed to parse global settings, falling back to legacy keys.");
+    }
+
     const savedEnabled = localStorage.getItem('audio_enabled');
     const savedVolume = localStorage.getItem('audio_volume');
     if (savedEnabled !== null) this.isEnabled = savedEnabled === 'true';
@@ -66,13 +84,12 @@ export class BGMManager {
 
   loadTrack(track) {
     if (this.currentTrack && this.currentTrack.id === track.id) return;
-    this.stop(false);
+    this.stopAudio();
     this.currentTrack = track;
+    this.isNewTrack = true;
 
     const resolvePath = (src) => {
       if (!src) return '';
-      // If it's a full URL or data URI, getAssetUrl will handle it
-      // If it's a relative path (doesn't start with / or http), prepend basePath
       if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
         return getAssetUrl(this.basePath + src, 'audio');
       }
@@ -83,13 +100,15 @@ export class BGMManager {
       this.introAudio.src = resolvePath(track.intro);
       this.introAudio.load();
     } else {
-      this.introAudio.src = '';
+      this.introAudio.removeAttribute('src');
+      this.introAudio.load();
     }
     if (track.loop) {
       this.loopAudio.src = resolvePath(track.loop);
       this.loopAudio.load();
     } else {
-      this.loopAudio.src = '';
+      this.loopAudio.removeAttribute('src');
+      this.loopAudio.load();
     }
   }
 
@@ -99,11 +118,22 @@ export class BGMManager {
     this.updateUI();
     try {
       if (this.currentTrack.intro && this.introAudio.src && this.introAudio.src !== window.location.href) {
-        this.isIntroPlaying = true;
-        this.introAudio.currentTime = 0;
-        await this.introAudio.play();
+        if (this.isNewTrack) {
+          this.isNewTrack = false;
+          this.isIntroPlaying = true;
+          this.introAudio.currentTime = 0;
+          await this.introAudio.play();
+        } else {
+          if (this.isIntroPlaying) {
+            await this.introAudio.play();
+          } else {
+            await this.loopAudio.play();
+          }
+        }
       } else {
-        this.startLoop();
+        this.isNewTrack = false;
+        this.isIntroPlaying = false;
+        await this.startLoop();
       }
     } catch (error) {
       console.error('BGMManager: Playback failed', error);
@@ -120,7 +150,9 @@ export class BGMManager {
   async startLoop() {
     if (!this.currentTrack || !this.currentTrack.loop) return;
     try {
-      this.loopAudio.currentTime = 0;
+      if (this.isNewTrack) {
+        this.loopAudio.currentTime = 0;
+      }
       await this.loopAudio.play();
     } catch (error) {
       console.error('BGMManager: Loop playback failed', error);
@@ -134,27 +166,27 @@ export class BGMManager {
     this.updateUI();
   }
 
-  stop(cancelPending = true) {
-    if (cancelPending) this.playToken++;
+  stopAudio() {
     this.isPlaying = false;
     this.isIntroPlaying = false;
     this.introAudio.pause();
     this.introAudio.currentTime = 0;
     this.loopAudio.pause();
     this.loopAudio.currentTime = 0;
+  }
 
-    // Remove document click listener for first interaction unlock
+  stop(cancelPending = true) {
+    if (cancelPending) this.playToken++;
+    this.stopAudio();
+
     document.removeEventListener('click', this.handleFirstClick);
 
-    // Disconnect scroll triggers to avoid leaks and unexpected plays
     if (this.scrollObserver) {
       this.scrollObserver.disconnect();
       this.scrollObserver = null;
     }
 
-    // Reset current track so that audio won't be auto-resumed later
     this.currentTrack = null;
-
     this.updateUI();
   }
 
@@ -167,8 +199,7 @@ export class BGMManager {
     const currentToken = ++this.playToken;
 
     if (!track.id && !track.intro && !track.loop) {
-      // Stop audio if it's an empty track (e.g., video block or empty bgm)
-      if (fadeTransition && this.isPlaying) await this.fadeOut();
+      if (fadeTransition && this.isPlaying) await this.fadeOut(currentToken);
       if (this.playToken === currentToken) {
         this.stop();
         this.currentTrack = null;
@@ -176,26 +207,34 @@ export class BGMManager {
       return;
     }
 
-    if (fadeTransition && this.isPlaying) await this.fadeOut();
+    if (fadeTransition && this.isPlaying) await this.fadeOut(currentToken);
 
-    if (this.playToken !== currentToken) return; // Abort if stopped or changed
+    if (this.playToken !== currentToken) return;
 
     this.loadTrack(track);
+    
+    this.introAudio.volume = this.volume;
+    this.loopAudio.volume = this.volume;
+
     await this.play();
 
     if (this.playToken !== currentToken) {
-      this.pause(); // Just in case it started playing, stop it again
+      this.pause();
       return;
     }
 
-    if (fadeTransition) await this.fadeIn();
+    if (fadeTransition) await this.fadeIn(currentToken);
   }
 
-  fadeOut() {
+  fadeOut(token) {
     return new Promise((resolve) => {
-      const startVolume = this.volume;
+      const startVolume = this.introAudio.volume;
       const startTime = Date.now();
       const fade = () => {
+        if (token !== this.playToken) {
+          resolve();
+          return;
+        }
         const elapsed = Date.now() - startTime;
         const progress = Math.min(1, elapsed / this.fadeTime);
         const currentVolume = startVolume * (1 - progress);
@@ -211,13 +250,17 @@ export class BGMManager {
     });
   }
 
-  fadeIn() {
+  fadeIn(token) {
     return new Promise((resolve) => {
       const targetVolume = this.volume;
       const startTime = Date.now();
       this.introAudio.volume = 0;
       this.loopAudio.volume = 0;
       const fade = () => {
+        if (token !== this.playToken) {
+          resolve();
+          return;
+        }
         const elapsed = Date.now() - startTime;
         const progress = Math.min(1, elapsed / this.fadeTime);
         const currentVolume = targetVolume * progress;
@@ -250,14 +293,6 @@ export class BGMManager {
     document.removeEventListener('click', this.handleFirstClick);
   }
 
-  handleFirstClick = () => {
-    // Resume BGM on first interaction if blocked by autoplay policy
-    this.userInteracted = true;
-    if (this.currentTrack && !this.isPlaying && this.isEnabled) {
-      this.play();
-    }
-  }
-
   setupScrollTriggers(options = {}) {
     if (this.scrollObserver) {
       this.scrollObserver.disconnect();
@@ -274,7 +309,6 @@ export class BGMManager {
       return;
     }
 
-    // Autoplay policy unlocker
     document.addEventListener('click', this.handleFirstClick, { once: true });
 
     this.intersectingElements = new Set();
@@ -288,7 +322,6 @@ export class BGMManager {
         }
       });
 
-      // Determine active scene based on the lowest visible element in DOM
       if (this.intersectingElements.size > 0) {
         let activeElement = null;
         for (const el of triggerElements) {
