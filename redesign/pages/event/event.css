@@ -592,7 +592,7 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    object-position: top;
+    object-position: center;
     display: block;
 }
 
@@ -796,7 +796,7 @@
 
     .modal-character-body {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 0rem;
     }
 
     .modal-char-image-wrap {
@@ -813,6 +813,10 @@
         padding: 1rem 0;
         background: transparent;
         border: none;
+    }
+
+    .modal-body {
+        padding: 1rem 0 !important;
     }
 }
 

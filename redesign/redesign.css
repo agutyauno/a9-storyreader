@@ -716,7 +716,6 @@ button.settings-trigger-btn {
     max-width: 600px;
     background-color: var(--color-charcoal);
     border: var(--border-thick);
-    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     animation: scale-up 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
