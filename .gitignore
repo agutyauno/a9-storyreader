@@ -6,3 +6,6 @@ dist-ssr
 legacy/
 .DS_Store
 task/
+.agents/
+agent/
+skills-lock.json

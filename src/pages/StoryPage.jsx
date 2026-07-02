@@ -98,7 +98,6 @@ export default function StoryPage() {
     }
 
     fetchStoryData();
-    window.scrollTo({ top: 0, behavior: 'instant' });
 
     // Cleanup audio on unmount
     return () => {
@@ -129,6 +128,8 @@ export default function StoryPage() {
   // Re-run DOM manipulator effects when HTML content updates
   useEffect(() => {
     if (!htmlContent || !contentRef.current) return;
+
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     const contentDiv = contentRef.current;
 

@@ -38,10 +38,9 @@ export default function RedesignStoryPage() {
   const contentRef = useRef(null)
   const BASE_URL = import.meta.env.BASE_URL || '/'
 
-  // Auto-close sidebar and scroll top when story ID changes
+  // Auto-close sidebar when story ID changes
   useEffect(() => {
     setSidebarOpen(false)
-    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [id])
 
   // 1. Fetch Story & Event Details
@@ -179,6 +178,8 @@ export default function RedesignStoryPage() {
   // 3. Bind DOM events for Decisions, Avatar Expand, notes popup & Audio scroll triggers
   useEffect(() => {
     if (!htmlContent || !contentRef.current) return
+
+    window.scrollTo({ top: 0, behavior: 'instant' })
 
     const contentDiv = contentRef.current
 

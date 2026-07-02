@@ -15,18 +15,21 @@ import {
 import './operator.css'
 
 // ─── Collapsible Component ─────────────────────────────────────────────────────
-function Collapsible({ icon, title, subtitle, children, defaultOpen = false }) {
+function Collapsible({ icon, title, subtitle, children, defaultOpen = false, variant = 'default', headerContent = null }) {
     const [expanded, setExpanded] = useState(defaultOpen)
 
     return (
-        <div className={`collapsible-item ${expanded ? 'expanded' : ''}`}>
+        <div className={`collapsible-item variant-${variant} ${expanded ? 'expanded' : ''}`}>
             <div className="collapsible-header" onClick={() => setExpanded(!expanded)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded) } }}>
                 {icon && (
                     <div className="collapsible-icon">
                         {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
                     </div>
                 )}
-                <span className="collapsible-title">{title}</span>
+                <div className="collapsible-title-group">
+                    <span className="collapsible-title">{title}</span>
+                    {headerContent}
+                </div>
                 {subtitle && <span className="collapsible-subtitle">{subtitle}</span>}
                 <ChevronDown size={16} className="collapsible-chevron" />
             </div>
@@ -52,7 +55,7 @@ const getSubclassIconUrl = (subclass, clazz) => {
     if (!subclass || !clazz) return '';
     const subName = subclass.name.replace(/\s+/g, '_');
     const className = clazz.name.replace(/\s+/g, '_');
-    
+
     let filename = subName;
     if (!subName.endsWith(className)) {
         filename = `${subName}_${className}`;
@@ -73,9 +76,9 @@ function SkillTab({ operator }) {
                     <span className="operator-class-label">Class</span>
                     <div className="operator-class-value-with-icon">
                         {classIconUrl && (
-                            <img 
-                                src={classIconUrl} 
-                                alt={operator.class.name} 
+                            <img
+                                src={classIconUrl}
+                                alt={operator.class.name}
                                 className="operator-class-icon-inline-img"
                                 onError={(e) => { e.target.style.display = 'none'; }}
                             />
@@ -87,9 +90,9 @@ function SkillTab({ operator }) {
                     <span className="operator-class-label">Subclass</span>
                     <div className="operator-class-value-with-icon">
                         {subclassIconUrl && (
-                            <img 
-                                src={subclassIconUrl} 
-                                alt={operator.subclass.name} 
+                            <img
+                                src={subclassIconUrl}
+                                alt={operator.subclass.name}
                                 className="operator-class-icon-inline-img"
                                 onError={(e) => { e.target.style.display = 'none'; }}
                             />
@@ -108,11 +111,12 @@ function SkillTab({ operator }) {
                     <div className="operator-section-title">Talents</div>
                     {operator.talents.map((talent, idx) => (
                         <Collapsible
-                             key={idx}
-                             icon={null}
-                             title={talent.name}
-                             subtitle={`Talent ${idx + 1}`}
-                             defaultOpen={idx === 0}
+                            key={idx}
+                            icon={null}
+                            title={talent.name}
+                            subtitle={`Talent ${idx + 1}`}
+                            defaultOpen={idx === 0}
+                            variant="talent"
                         >
                             <p className="skill-description">{talent.description}</p>
                         </Collapsible>
@@ -131,20 +135,23 @@ function SkillTab({ operator }) {
                             title={skill.name}
                             subtitle={`S${idx + 1}`}
                             defaultOpen={idx === 0}
+                            variant="skill"
+                            headerContent={
+                                <div className="skill-meta-row">
+                                    <span className="skill-meta-tag">Duration: {skill.duration}</span>
+                                    <span className="skill-meta-tag highlight">SP: {skill.spCost}</span>
+                                    <span className="skill-meta-tag">Init SP: {skill.initialSp}</span>
+                                    <span className="skill-meta-tag">
+                                        {skill.activationType === 'auto' ? 'Auto Trigger' : 'Manual Trigger'}
+                                    </span>
+                                    <span className="skill-meta-tag">
+                                        {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
+                                            skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
+                                                'Defensive Recovery'}
+                                    </span>
+                                </div>
+                            }
                         >
-                            <div className="skill-meta-row">
-                                <span className="skill-meta-tag">Duration: {skill.duration}</span>
-                                <span className="skill-meta-tag highlight">SP: {skill.spCost}</span>
-                                <span className="skill-meta-tag">Init SP: {skill.initialSp}</span>
-                                <span className="skill-meta-tag">
-                                    {skill.activationType === 'auto' ? 'Auto Trigger' : 'Manual Trigger'}
-                                </span>
-                                <span className="skill-meta-tag">
-                                    {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
-                                     skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
-                                     'Defensive Recovery'}
-                                </span>
-                            </div>
                             <p className="skill-description">{skill.description}</p>
                         </Collapsible>
                     ))}
@@ -161,6 +168,7 @@ function SkillTab({ operator }) {
                             icon={<Package size={16} />}
                             title={mod.name}
                             subtitle={`Module ${idx + 1}`}
+                            variant="module"
                         >
                             <div className="module-collapsible-content">
                                 {mod.imageUrl && (
@@ -250,6 +258,7 @@ function ProfileTab({ operator }) {
                     title={profile.title}
                     subtitle={`File ${String(idx + 1).padStart(2, '0')}`}
                     defaultOpen={idx === 0}
+                    variant="profile"
                 >
                     <div className="skill-description" style={{ whiteSpace: 'pre-wrap' }}>
                         {profile.content}
@@ -332,6 +341,7 @@ function DialogueTab({ operator, selectedSkinId }) {
                             }
                             title={dialogue.title}
                             subtitle={isSkinVariant ? '✦ SKIN' : undefined}
+                            variant="dialogue"
                         >
                             <p className="skill-description">
                                 {displayContent}
@@ -490,20 +500,20 @@ export default function OperatorDetailPage() {
                                     <h1 className="operator-detail-name">{operator.name}</h1>
                                     <span className="operator-detail-appellation">
                                         {classIconUrl && (
-                                            <img 
-                                                src={classIconUrl} 
-                                                alt={operator.class.name} 
-                                                className="operator-appellation-icon-img" 
+                                            <img
+                                                src={classIconUrl}
+                                                alt={operator.class.name}
+                                                className="operator-appellation-icon-img"
                                                 title={operator.class.name}
                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                             />
                                         )}
                                         <span className="operator-detail-separator">//</span>
                                         {subclassIconUrl && (
-                                            <img 
-                                                src={subclassIconUrl} 
-                                                alt={operator.subclass.name} 
-                                                className="operator-appellation-icon-img" 
+                                            <img
+                                                src={subclassIconUrl}
+                                                alt={operator.subclass.name}
+                                                className="operator-appellation-icon-img"
                                                 title={operator.subclass.name}
                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                             />

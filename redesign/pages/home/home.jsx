@@ -15,7 +15,7 @@ export default function RedesignHomePage() {
 
     const [loadingRegions, setLoadingRegions] = useState(true)
     const [loadingEvents, setLoadingEvents] = useState(false)
-    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 900)
     const [error, setError] = useState(null)
 
     const timelineRef = useRef(null)
