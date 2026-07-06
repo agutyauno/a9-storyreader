@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom'
 import { MOCK_OPERATORS, FACTIONS, CLASSES } from './mockOperatorData'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import { Search, Grid, List, Star, UserX } from 'lucide-react'
+import { Search, Grid, List, Star, UserX, Filter } from 'lucide-react'
 import './operator.css'
 
 export default function OperatorListPage() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedFaction, setSelectedFaction] = useState(null)
     const [selectedClass, setSelectedClass] = useState(null)
+    const [selectedSubclass, setSelectedSubclass] = useState(null)
     const [viewMode, setViewMode] = useState('grid') // 'grid' | 'list'
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
     const BASE_URL = import.meta.env.BASE_URL || '/'
 
@@ -39,10 +41,15 @@ export default function OperatorListPage() {
             result = result.filter(op => op.class.id === selectedClass)
         }
 
-        return result
-    }, [searchQuery, selectedFaction, selectedClass])
+        // Subclass filter
+        if (selectedSubclass) {
+            result = result.filter(op => op.subclass && op.subclass.id === selectedSubclass)
+        }
 
-    // Get unique factions and classes from data
+        return result
+    }, [searchQuery, selectedFaction, selectedClass, selectedSubclass])
+
+    // Get unique factions, classes and subclasses from data
     const availableFactions = useMemo(() => {
         const set = new Set(MOCK_OPERATORS.map(op => op.faction.id))
         return FACTIONS.filter(f => set.has(f.id))
@@ -52,6 +59,49 @@ export default function OperatorListPage() {
         const set = new Set(MOCK_OPERATORS.map(op => op.class.id))
         return CLASSES.filter(c => set.has(c.id))
     }, [])
+
+    const availableSubclasses = useMemo(() => {
+        const subclassesMap = new Map()
+        MOCK_OPERATORS.forEach(op => {
+            if (op.subclass) {
+                if (!selectedClass || op.class.id === selectedClass) {
+                    subclassesMap.set(op.subclass.id, {
+                        id: op.subclass.id,
+                        name: op.subclass.name
+                    })
+                }
+            }
+        })
+        return Array.from(subclassesMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [selectedClass])
+
+    const handleClassChange = (classId) => {
+        setSelectedClass(classId)
+        
+        // If changing class, check if current selectedSubclass belongs to the new class. If not, reset it.
+        if (selectedSubclass && classId) {
+            const belongs = MOCK_OPERATORS.some(op => 
+                op.class.id === classId && op.subclass && op.subclass.id === selectedSubclass
+            )
+            if (!belongs) {
+                setSelectedSubclass(null)
+            }
+        }
+    }
+
+    const handleSubclassChange = (subclassId) => {
+        if (!subclassId) {
+            setSelectedSubclass(null)
+            return
+        }
+        setSelectedSubclass(subclassId)
+        
+        // If a subclass is selected, automatically select the corresponding class
+        const foundOp = MOCK_OPERATORS.find(op => op.subclass && op.subclass.id === subclassId)
+        if (foundOp && selectedClass !== foundOp.class.id) {
+            setSelectedClass(foundOp.class.id)
+        }
+    }
 
     const renderStars = (rarity) => {
         return Array.from({ length: rarity }, (_, i) => (
@@ -78,71 +128,103 @@ export default function OperatorListPage() {
 
                     {/* Toolbar: Search + Filters + View Toggle */}
                     <div className="operator-toolbar">
-                        {/* Search */}
-                        <div className="operator-search-box">
-                            <Search size={16} />
-                            <input
-                                id="operator-search"
-                                type="text"
-                                className="operator-search-input"
-                                placeholder="SEARCH_OPERATOR_NAME..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
+                        <div className="operator-toolbar-main">
+                            {/* Search */}
+                            <div className="operator-search-box">
+                                <Search size={16} />
+                                <input
+                                    id="operator-search"
+                                    type="text"
+                                    className="operator-search-input"
+                                    placeholder="SEARCH_OPERATOR_NAME..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
 
-                        {/* Faction Filter */}
-                        <div className="operator-filter-group">
-                            <label htmlFor="faction-select" className="operator-filter-label">Faction:</label>
-                            <select
-                                id="faction-select"
-                                className="operator-select-dropdown"
-                                value={selectedFaction || ''}
-                                onChange={(e) => setSelectedFaction(e.target.value || null)}
-                            >
-                                <option value="">ALL FACTIONS</option>
-                                {availableFactions.map(f => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Class Filter */}
-                        <div className="operator-filter-group">
-                            <label htmlFor="class-select" className="operator-filter-label">Class:</label>
-                            <select
-                                id="class-select"
-                                className="operator-select-dropdown"
-                                value={selectedClass || ''}
-                                onChange={(e) => setSelectedClass(e.target.value || null)}
-                            >
-                                <option value="">ALL CLASSES</option>
-                                {availableClasses.map(c => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* View Toggle */}
-                        <div className="operator-view-toggle">
+                            {/* Mobile Filters Toggle Button */}
                             <button
-                                className={`operator-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                                onClick={() => setViewMode('grid')}
-                                title="Grid view"
+                                className={`operator-mobile-filter-btn ${mobileFiltersOpen ? 'active' : ''}`}
+                                onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+                                title="Toggle filters"
                             >
-                                <Grid size={16} />
+                                <Filter size={16} />
                             </button>
-                            <button
-                                className={`operator-view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                                onClick={() => setViewMode('list')}
-                                title="List view"
-                            >
-                                <List size={16} />
-                            </button>
+
+                            {/* View Toggle */}
+                            <div className="operator-view-toggle">
+                                <button
+                                    className={`operator-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                                    onClick={() => setViewMode('grid')}
+                                    title="Grid view"
+                                >
+                                    <Grid size={16} />
+                                </button>
+                                <button
+                                    className={`operator-view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                                    onClick={() => setViewMode('list')}
+                                    title="List view"
+                                >
+                                    <List size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Filters Panel */}
+                        <div className={`operator-filters-panel ${mobileFiltersOpen ? 'open' : ''}`}>
+                            {/* Faction Filter */}
+                            <div className="operator-filter-group">
+                                <label htmlFor="faction-select" className="operator-filter-label">Faction:</label>
+                                <select
+                                    id="faction-select"
+                                    className="operator-select-dropdown"
+                                    value={selectedFaction || ''}
+                                    onChange={(e) => setSelectedFaction(e.target.value || null)}
+                                >
+                                    <option value="">ALL FACTIONS</option>
+                                    {availableFactions.map(f => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Class Filter */}
+                            <div className="operator-filter-group">
+                                <label htmlFor="class-select" className="operator-filter-label">Class:</label>
+                                <select
+                                    id="class-select"
+                                    className="operator-select-dropdown"
+                                    value={selectedClass || ''}
+                                    onChange={(e) => handleClassChange(e.target.value || null)}
+                                >
+                                    <option value="">ALL CLASSES</option>
+                                    {availableClasses.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Subclass Filter */}
+                            <div className="operator-filter-group">
+                                <label htmlFor="subclass-select" className="operator-filter-label">Subclass:</label>
+                                <select
+                                    id="subclass-select"
+                                    className="operator-select-dropdown"
+                                    value={selectedSubclass || ''}
+                                    onChange={(e) => handleSubclassChange(e.target.value || null)}
+                                >
+                                    <option value="">ALL SUBCLASSES</option>
+                                    {availableSubclasses.map(s => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 

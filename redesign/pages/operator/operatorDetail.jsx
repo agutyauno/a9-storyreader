@@ -10,12 +10,12 @@ import {
     Heart, Swords, Shield, Sparkles,
     Timer, Coins, Square, Zap,
     Home, Package,
-    Crosshair, Flame, PlusCircle, Flag, Target, Activity, HelpCircle
+    Crosshair, Flame, PlusCircle, Flag, Target, Activity, HelpCircle, Clock
 } from 'lucide-react'
 import './operator.css'
 
 // ─── Collapsible Component ─────────────────────────────────────────────────────
-function Collapsible({ icon, title, subtitle, children, defaultOpen = false, variant = 'default', headerContent = null }) {
+function Collapsible({ icon, title, children, defaultOpen = false, variant = 'default', headerContent = null }) {
     const [expanded, setExpanded] = useState(defaultOpen)
 
     return (
@@ -30,7 +30,6 @@ function Collapsible({ icon, title, subtitle, children, defaultOpen = false, var
                     <span className="collapsible-title">{title}</span>
                     {headerContent}
                 </div>
-                {subtitle && <span className="collapsible-subtitle">{subtitle}</span>}
                 <ChevronDown size={16} className="collapsible-chevron" />
             </div>
             <div className="collapsible-body">
@@ -128,33 +127,71 @@ function SkillTab({ operator }) {
             {operator.skills.length > 0 && (
                 <div className="operator-section">
                     <div className="operator-section-title">Skills ({operator.skills.length})</div>
-                    {operator.skills.map((skill, idx) => (
-                        <Collapsible
-                            key={idx}
-                            icon={skill.icon ? skill.icon : <Zap size={16} />}
-                            title={skill.name}
-                            subtitle={`S${idx + 1}`}
-                            defaultOpen={idx === 0}
-                            variant="skill"
-                            headerContent={
-                                <div className="skill-meta-row">
-                                    <span className="skill-meta-tag">Duration: {skill.duration}</span>
-                                    <span className="skill-meta-tag highlight">SP: {skill.spCost}</span>
-                                    <span className="skill-meta-tag">Init SP: {skill.initialSp}</span>
-                                    <span className="skill-meta-tag">
-                                        {skill.activationType === 'auto' ? 'Auto Trigger' : 'Manual Trigger'}
-                                    </span>
-                                    <span className="skill-meta-tag">
-                                        {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
-                                            skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
-                                                'Defensive Recovery'}
-                                    </span>
-                                </div>
-                            }
-                        >
-                            <p className="skill-description">{skill.description}</p>
-                        </Collapsible>
-                    ))}
+                    {operator.skills.map((skill, idx) => {
+                        const hasInitSp = skill.initialSp !== undefined && skill.initialSp !== null && skill.initialSp !== '-' && skill.initialSp !== 0;
+                        const hasSpCost = skill.spCost !== undefined && skill.spCost !== null && skill.spCost !== '-' && skill.spCost !== 0;
+
+                        return (
+                            <Collapsible
+                                key={idx}
+                                icon={
+                                    <div className="skill-icon-inner">
+                                        {skill.icon ? (
+                                            <img src={skill.icon} alt="" className="skill-icon-img" />
+                                        ) : (
+                                            <Zap className="skill-icon-placeholder" />
+                                        )}
+                                        {(hasInitSp || hasSpCost) && (
+                                            <div className="skill-icon-sp-wrapper">
+                                                {hasInitSp && (
+                                                    <span className="skill-icon-badge init-sp-badge">
+                                                        <Play size={10} className="badge-icon init-sp-icon" fill="currentColor" strokeWidth={0} />
+                                                        {skill.initialSp}
+                                                    </span>
+                                                )}
+                                                {hasSpCost && (
+                                                    <span className="skill-icon-badge sp-cost-badge">
+                                                        <Zap size={10} className="badge-icon sp-cost-icon" fill="currentColor" strokeWidth={0} />
+                                                        {skill.spCost}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                }
+                                title={skill.name}
+                                defaultOpen={idx === 0}
+                                variant="skill"
+                                headerContent={
+                                    <div className="skill-meta-row">
+                                        <div className="skill-meta-group primary-group">
+                                            {skill.activationType && (
+                                                <span className={`skill-meta-tag activation-tag type-${skill.activationType}`}>
+                                                    {skill.activationType === 'auto' ? 'Auto' : 'Manual'}
+                                                </span>
+                                            )}
+                                            {skill.spRecoveryType && skill.spRecoveryType !== '-' && skill.activationType !== 'passive' && (
+                                                <span className={`skill-meta-tag recovery-tag type-${skill.spRecoveryType}`}>
+                                                    {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
+                                                        skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' : 'Defensive Recovery'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="skill-meta-group secondary-group">
+                                            <span className="skill-meta-tag duration-tag">
+                                                <Clock size={12} className="meta-icon" />
+                                                {(!skill.duration ||
+                                                    skill.duration.toString().toLowerCase() === 'instant' ||
+                                                    skill.duration === '∞') ? '-' : skill.duration}
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            >
+                                <p className="skill-description">{skill.description}</p>
+                            </Collapsible>
+                        )
+                    })}
                 </div>
             )}
 
@@ -182,7 +219,6 @@ function SkillTab({ operator }) {
                                             <em>"{mod.lore}"</em>
                                         </p>
                                     )}
-                                    <p className="skill-description">{mod.description}</p>
                                     {mod.stats && (
                                         <div className="module-stats-grid">
                                             {Object.entries(mod.stats).map(([key, val]) => (
@@ -192,6 +228,7 @@ function SkillTab({ operator }) {
                                             ))}
                                         </div>
                                     )}
+                                    <p className="skill-description">{mod.description}</p>
                                     {mod.skillDescription && (
                                         <p className="skill-description" style={{ marginTop: '0.5rem' }}>
                                             <strong>Talent Enhancement:</strong> {mod.skillDescription}
@@ -393,6 +430,7 @@ export default function OperatorDetailPage() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('skill')
     const [selectedSkinId, setSelectedSkinId] = useState('default')
+    const [isPortraitModalOpen, setIsPortraitModalOpen] = useState(false)
 
     const BASE_URL = import.meta.env.BASE_URL || '/'
 
@@ -467,11 +505,11 @@ export default function OperatorDetailPage() {
             <Header BASE_URL={BASE_URL} />
 
             <div className="main-layout">
-                <div className="content-area operator-page-wrapper expanded page-fade-in">
+                <div className="content-area operator-page-wrapper operator-detail-page expanded page-fade-in">
                     {/* Back link */}
                     <Link to="/operator" className="operator-back-link">
                         <ArrowLeft size={14} />
-                        ← QUAY LẠI DANH SÁCH OPERATOR
+                        QUAY LẠI DANH SÁCH OPERATOR
                     </Link>
 
                     {/* Two-column layout */}
@@ -484,6 +522,7 @@ export default function OperatorDetailPage() {
                                     className="operator-portrait-img"
                                     src={currentPortrait}
                                     alt={operator.name}
+                                    onClick={() => setIsPortraitModalOpen(true)}
                                     onError={(e) => {
                                         e.target.onerror = null
                                         e.target.style.opacity = '0.3'
@@ -575,6 +614,21 @@ export default function OperatorDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Portrait Preview Modal */}
+            {isPortraitModalOpen && (
+                <div className="operator-portrait-modal" onClick={() => setIsPortraitModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close-btn" onClick={() => setIsPortraitModalOpen(false)}>
+                            &times;
+                        </button>
+                        <img src={currentPortrait} alt={operator.name} className="modal-portrait-img" />
+                        <div className="modal-caption technical-text">
+                            {operator.name} // {operator.skins.find(s => s.id === selectedSkinId)?.name || 'Default'}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>
