@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, Check, Loader2, AlertCircle, Plus, Trash2, Image as ImageIcon, CheckCircle2, XCircle } from 'lucide-react';
 import styles from './AddItemModal.module.css';
-import { uploadFileToGithub, uploadFilesToGithub, getFolderPath } from '../../services/githubService';
+import { uploadFileToGithub, uploadFilesToGithub, getFolderPath, purgeJsDelivrCache } from '../../services/githubService';
 
 /**
  * Modal dialog for creating Assets.
@@ -150,9 +150,11 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
             const category = field === 'avatarUrl' ? 'char_avatar' : 'character';
             const folderPath = getFolderPath('image', category);
             const result = await uploadFileToGithub(file, folderPath);
-            if (result.success) {
-                updateExpression(index, field, result.url);
+            if (!result.success) {
+                throw new Error(result.error || 'GitHub upload failed');
             }
+            updateExpression(index, field, result.url);
+            await purgeJsDelivrCache(result.url);
         } catch (err) {
             console.error('Expr upload failed:', err);
             setError(`Upload expressions failed: ${err.message}`);

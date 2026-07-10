@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, Check, AlertCircle } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
-import { uploadFileToGithub, getFolderPath } from '../../services/githubService';
+import { uploadFileToGithub, getFolderPath, purgeJsDelivrCache } from '../../services/githubService';
 import ConfirmModal from './ConfirmModal';
 import { getAssetUrl, getYouTubeId, getGoogleDriveId } from '../../utils/assetUtils';
 import styles from './AssetDetailModal.module.css';
@@ -56,7 +56,8 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             // If the DB doesn't provide an 'id', we generate one.
             const dataWithIds = data.map((e, index) => ({
                 ...e,
-                id: e.id || `db-${index}-${Date.now()}`
+                id: e.id || `db-${index}-${Date.now()}`,
+                originalName: e.name // Preserve original name
             }));
             setExpressions(dataWithIds);
         } catch (err) {
@@ -76,6 +77,23 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         try {
             const charId = asset.character_id || asset.asset_id;
             if (isCharacter) {
+                // Client-side validation: check empty name
+                const hasEmptyName = expressions.some(e => !e.name || !e.name.trim());
+                if (hasEmptyName) {
+                    setError('Tên biểu cảm không được để trống.');
+                    setSaving(false);
+                    return;
+                }
+
+                // Client-side validation: check duplicates
+                const names = expressions.map(e => e.name.trim().toLowerCase());
+                const uniqueNames = new Set(names);
+                if (uniqueNames.size !== names.length) {
+                    setError('Tên biểu cảm không được trùng nhau.');
+                    setSaving(false);
+                    return;
+                }
+
                 // 1. Update character name & description
                 await SupabaseAPI.updateCharacter(charId, { 
                     name: name.trim(),
@@ -90,24 +108,44 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 }
 
                 // 3. Add/Update expressions
+                const updatedExpressions = [];
                 for (const expr of expressions) {
                     const exprData = {
                         character_id: charId,
-                        name: expr.name,
+                        name: expr.name.trim(),
                         avatar_url: expr.avatar_url,
                         full_url: expr.full_url
                     };
 
+                    let dbResult;
                     if (expr.isNew) {
-                        await SupabaseAPI.createExpression(exprData);
+                        dbResult = await SupabaseAPI.createExpression(exprData);
                     } else {
-                        await SupabaseAPI.updateExpression(charId, expr.name, exprData);
+                        // Match with originalName or name to handle renaming
+                        dbResult = await SupabaseAPI.updateExpression(charId, expr.originalName || expr.name, exprData);
                     }
+                    updatedExpressions.push({
+                        ...expr,
+                        ...dbResult,
+                        isNew: false,
+                        originalName: expr.name.trim() // Reset originalName to current name
+                    });
                 }
+                setExpressions(updatedExpressions);
                 setDeletedExprNames(new Set());
             } else if (asset.category === 'gallery') {
-                // Gallery items have a 'title' column in the gallery table
                 const payload = { title: name.trim() };
+                if (file) {
+                    const folder = getFolderPath('image', 'gallery');
+                    const targetFileName = asset.asset_id;
+                    const res = await uploadFileToGithub(file, folder, targetFileName);
+                    if (!res?.success) {
+                        throw new Error(res?.error || 'GitHub upload failed');
+                    }
+                    payload.image_url = res.url;
+                    setFile(null);
+                    await purgeJsDelivrCache(res.url);
+                }
                 await SupabaseAPI.updateGallery(asset.asset_id, payload);
             } else {
                 // Table 'assets' only has: asset_id, type, category, url. 'name' is NOT a column.
@@ -115,6 +153,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 if (category && category !== asset.category) payload.category = category;
                 if (asset.type === 'video' && externalUrl !== asset.url) {
                     payload.url = externalUrl.trim();
+                }
+                if (file) {
+                    const folder = getFolderPath(asset.type || (category === 'background' ? 'image' : 'image'), category);
+                    const targetFileName = asset.asset_id;
+                    const res = await uploadFileToGithub(file, folder, targetFileName);
+                    if (!res?.success) {
+                        throw new Error(res?.error || 'GitHub upload failed');
+                    }
+                    payload.url = res.url;
+                    setFile(null);
+                    await purgeJsDelivrCache(res.url);
                 }
                 
                 if (Object.keys(payload).length > 0) {
@@ -150,15 +199,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             // Use asset_id as the filename to ensure overwrite/update on GitHub
             const targetFileName = asset.asset_id;
             const res = await uploadFileToGithub(file, folder, targetFileName);
-            if (res?.success) {
-                if (asset.category === 'gallery') {
-                    await SupabaseAPI.updateGallery(asset.asset_id, { image_url: res.url });
-                } else {
-                    await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
-                }
-                onUpdated?.();
-                showNotification('Upload và thay thế thành công!', 'success');
+            if (!res?.success) {
+                throw new Error(res?.error || 'GitHub upload failed');
             }
+            if (asset.category === 'gallery') {
+                await SupabaseAPI.updateGallery(asset.asset_id, { image_url: res.url });
+            } else {
+                await SupabaseAPI.updateAsset(asset.asset_id, { url: res.url });
+            }
+            await purgeJsDelivrCache(res.url);
+            onUpdated?.();
+            showNotification('Upload và thay thế thành công!', 'success');
         } catch (err) {
             setError(`Upload thất bại: ${err.message}`);
         } finally {
@@ -173,7 +224,11 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             message: `Bạn có chắc chắn muốn xoá asset "${asset.name || asset.asset_id}"? Hành động này không thể hoàn tác.`,
             onConfirm: async () => {
                 try {
-                    await SupabaseAPI.deleteAsset(asset.asset_id);
+                    if (asset.category === 'gallery') {
+                        await SupabaseAPI.deleteGallery(asset.asset_id);
+                    } else {
+                        await SupabaseAPI.deleteAsset(asset.asset_id);
+                    }
                     showNotification('Đã xoá asset!', 'success');
                     onUpdated?.();
                     onClose?.();
@@ -224,9 +279,11 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             const customName = `${charId}_${exprId}_${field === 'avatar_url' ? 'avatar' : 'full'}`;
             
             const result = await uploadFileToGithub(file, folderPath, customName);
-            if (result.success) {
-                handleExpressionChange(exprId, field, result.url);
+            if (!result.success) {
+                throw new Error(result.error || 'GitHub upload failed');
             }
+            handleExpressionChange(exprId, field, result.url);
+            await purgeJsDelivrCache(result.url);
         } catch (err) {
             console.error('Expr upload failed:', err);
             setError(`Upload failed: ${err.message}`);
@@ -254,7 +311,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             onConfirm: () => {
                 setExpressions(expressions.filter(e => e !== expr));
                 if (!expr.isNew) {
-                    setDeletedExprNames(prev => new Set(prev).add(expr.name));
+                    setDeletedExprNames(prev => new Set(prev).add(expr.originalName || expr.name));
                 }
             }
         });
@@ -356,31 +413,31 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                     </div>
 
                     {/* Preview (for non-character assets) */}
-                    {!isCharacter && asset.url && (
+                    {!isCharacter && (asset.url || externalUrl) && (
                         <div className={styles.section}>
                             <h4>Preview</h4>
                             <div className={styles.previewContainer}>
                                 {asset.type === 'image' && <img src={getAssetUrl(asset.url)} alt={asset.name} />}
                                 {asset.type === 'video' && (
-                                    getYouTubeId(asset.url) ? (
+                                    getYouTubeId(externalUrl) ? (
                                         <iframe 
-                                            src={`https://www.youtube.com/embed/${getYouTubeId(asset.url)}`}
+                                            src={`https://www.youtube.com/embed/${getYouTubeId(externalUrl)}`}
                                             title="YouTube video player"
                                             frameBorder="0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                             allowFullScreen
                                             style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px' }}
                                         ></iframe>
-                                    ) : getGoogleDriveId(asset.url) ? (
+                                    ) : getGoogleDriveId(externalUrl) ? (
                                         <iframe 
-                                            src={`https://drive.google.com/file/d/${getGoogleDriveId(asset.url)}/preview`}
+                                            src={`https://drive.google.com/file/d/${getGoogleDriveId(externalUrl)}/preview`}
                                             title="Google Drive Video"
                                             frameBorder="0"
                                             allowFullScreen
                                             style={{ width: '100%', minHeight: '300px', borderRadius: '8px' }}
                                         ></iframe>
                                     ) : (
-                                        <video src={getAssetUrl(asset.url)} controls style={{ width: '100%' }} />
+                                        <video src={getAssetUrl(externalUrl || asset.url)} controls style={{ width: '100%' }} />
                                     )
                                 )}
                                 {asset.type === 'audio' && <audio src={getAssetUrl(asset.url)} controls style={{ width: '100%' }} />}

@@ -752,9 +752,10 @@ const SupabaseAPI_Raw = {
         const errTxt = String(res.error || '').toLowerCase();
         const isAlreadyGone = errTxt.includes('404') || errTxt.includes('not found') || errTxt.includes('not exist');
         if (!isAlreadyGone) {
-          throw new Error(`GitHub delete failed: ${res.error}`);
+          console.warn(`Warning: GitHub delete failed for ${asset.url}: ${res.error}`);
+        } else {
+          console.warn(`GitHub file already missing, allowing DB delete: ${asset.url}`);
         }
-        console.warn(`GitHub file already missing, allowing DB delete: ${asset.url}`);
       }
     }
     // 2. Delete from DB

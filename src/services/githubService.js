@@ -226,3 +226,43 @@ export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
     }
 };
 
+/**
+ * Purges the jsDelivr CDN cache for a given URL or relative path.
+ * Uses no-cors mode to fire-and-forget, bypassing CORS policy.
+ * @param {string} urlOrPath 
+ */
+export const purgeJsDelivrCache = async (urlOrPath) => {
+    if (!urlOrPath) return { success: true };
+    try {
+        let cleanPath = urlOrPath;
+        const prefixes = [
+            'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/',
+            'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/',
+            'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/',
+            'https://cdn.jsdelivr.net/gh/agutyauno/a9-storyreader@main/'
+        ];
+
+        for (const p of prefixes) {
+            if (cleanPath.startsWith(p)) {
+                cleanPath = cleanPath.slice(p.length);
+                break;
+            }
+        }
+
+        if (cleanPath.startsWith('/')) {
+            cleanPath = cleanPath.slice(1);
+        }
+
+        const purgeUrl = `https://purge.jsdelivr.net/gh/agutyauno/a9sr-data@main/${cleanPath}`;
+        console.log('Triggering jsDelivr cache purge for:', purgeUrl);
+        
+        // Use no-cors to bypass CORS block on the browser
+        await fetch(purgeUrl, { mode: 'no-cors' });
+        
+        return { success: true };
+    } catch (err) {
+        console.warn('Failed to purge jsDelivr cache:', err);
+        return { success: false, error: err.message };
+    }
+};
+

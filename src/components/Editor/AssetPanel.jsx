@@ -21,10 +21,18 @@ const CATEGORIES = [
 ];
 
 // ─── Asset Card ───────────────────────────────────────────────────────────────
-function AssetCard({ asset, onDelete, onDetail }) {
+function AssetCard({ asset, onDelete, onDetail, isPlaying, onTogglePlay }) {
     const [copied, setCopied] = useState(false);
     const audioRef = useRef(null);
-    const [playing, setPlaying] = useState(false);
+
+    React.useEffect(() => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.play().catch(() => {});
+        } else {
+            audioRef.current.pause();
+        }
+    }, [isPlaying]);
 
     const copyId = (e) => {
         e.stopPropagation();
@@ -35,9 +43,7 @@ function AssetCard({ asset, onDelete, onDetail }) {
 
     const toggleAudio = (e) => {
         e.stopPropagation();
-        if (!audioRef.current) return;
-        if (playing) { audioRef.current.pause(); setPlaying(false); }
-        else { audioRef.current.play(); setPlaying(true); }
+        onTogglePlay?.(asset.asset_id);
     };
 
     const isImage = asset.type === 'image';
@@ -55,10 +61,10 @@ function AssetCard({ asset, onDelete, onDetail }) {
                     </div>
                 )}
                 {isAudio && (
-                    <div className={`${styles.audioThumb} ${playing ? styles.playing : ''}`}>
+                    <div className={`${styles.audioThumb} ${isPlaying ? styles.playing : ''}`}>
                         <Music size={20} />
-                        {playing && <span className={styles.playingDot} />}
-                        <audio ref={audioRef} src={getAssetUrl(asset.url)} loop={false} onEnded={() => setPlaying(false)} />
+                        {isPlaying && <span className={styles.playingDot} />}
+                        <audio ref={audioRef} src={getAssetUrl(asset.url)} loop={false} onEnded={() => onTogglePlay?.(asset.asset_id)} />
                     </div>
                 )}
             </div>
@@ -132,6 +138,12 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
     const [detailOpen, setDetailOpen] = useState(false);
     const [detailTarget, setDetailTarget] = useState(null);
     const [detailKind, setDetailKind] = useState('asset');
+    const [playingAudioId, setPlayingAudioId] = useState(null);
+
+    // Stop playing audio when changing tab or typing search
+    useEffect(() => {
+        setPlayingAudioId(null);
+    }, [activeCategory, search]);
 
     // Confirm modal
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -148,7 +160,6 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
             setAssets(assetData);
             setCharacters(charData);
             setGallery(galleryData);
-
         } catch (err) {
             console.error('Failed to load assets/characters:', err);
         } finally {
@@ -169,7 +180,7 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
             onConfirm: async () => {
                 try {
                     if (isChar) await SupabaseAPI.deleteCharacter(id);
-                    else if (activeCategory === 'gallery') await SupabaseAPI.deleteGallery(item.asset_id);
+                    else if (item.category === 'gallery') await SupabaseAPI.deleteGallery(item.asset_id);
                     else await SupabaseAPI.deleteAsset(id);
                     
                     showNotification(`Đã xoá ${isChar ? 'nhân vật' : 'asset'} thành công`, 'success');
@@ -301,6 +312,8 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
                                     asset={item} 
                                     onDelete={handleDelete} 
                                     onDetail={openAssetDetail} 
+                                    isPlaying={playingAudioId === item.asset_id}
+                                    onTogglePlay={(id) => setPlayingAudioId(prev => prev === id ? null : id)}
                                 />
                             )
                         ))
