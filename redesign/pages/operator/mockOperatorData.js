@@ -41,26 +41,26 @@ export const MOCK_OPERATORS = [
     tagList: ['DPS', 'Support'],
     faction: { id: 'karlan', name: 'Karlan Trade' },
     class: { id: 'guard', name: 'Guard' },
-    subclass: { 
-      id: 'rangedguard', 
-      name: 'Lord', 
-      description: 'Can attack aerial enemies. Has extended attack range when skill is active.' 
+    subclass: {
+      id: 'rangedguard',
+      name: 'Lord',
+      description: 'Can attack aerial enemies. Has extended attack range when skill is active.'
     },
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_172_svrash_1.png',
-    
+
     skins: [
-      { 
-        id: 'default', 
-        name: 'Default', 
+      {
+        id: 'default',
+        name: 'Default',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_172_svrash_1.png',
-        description: 'Standard uniform.' 
+        description: 'Standard uniform.'
       },
-      { 
-        id: 'epoque_1', 
-        name: 'Époque - Shining Steps', 
+      {
+        id: 'epoque_1',
+        name: 'Époque - Shining Steps',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_172_svrash_epoque%231.png',
-        description: '"The snow may fall endlessly, but Kjerag\'s heir strides forward with a dancer\'s grace."' 
+        description: '"The snow may fall endlessly, but Kjerag\'s heir strides forward with a dancer\'s grace."'
       },
     ],
 
@@ -76,9 +76,9 @@ export const MOCK_OPERATORS = [
     },
 
     talents: [
-      { 
-        name: 'Leader', 
-        description: 'When deployed, all allies gain ATK +6%. If SilverAsh is in the squad but not deployed, all allies gain ATK +3%.' 
+      {
+        name: 'Leader',
+        description: 'When deployed, all allies gain ATK +6%. If SilverAsh is in the squad but not deployed, all allies gain ATK +3%.'
       },
       {
         name: 'Eagle Eye',
@@ -111,8 +111,8 @@ export const MOCK_OPERATORS = [
         name: 'Truesilver Slash',
         icon: null,
         duration: '25s',
-        spCost: 90,
-        initialSp: 70,
+        spCost: 110,
+        initialSp: 110,
         activationType: 'manual',
         spRecoveryType: 'auto',
         description: 'Attack range greatly expands, ATK +200%, attacks deal Physical damage to all enemies in range. Can hit aerial units.',
@@ -148,70 +148,70 @@ export const MOCK_OPERATORS = [
     ],
 
     dialogues: [
-      { 
-        title: 'Appointed as Assistant', 
+      {
+        title: 'Appointed as Assistant',
         content: 'Doctor, you called for me? Good. I have a number of issues I\'d like to discuss with you as well.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 1', 
+      {
+        title: 'Talk 1',
         content: 'The scenery here reminds me of Kjerag sometimes. The mountain wind, the scent of pine... But here, I can let my guard down, if only slightly.',
         skinVariants: {
           'epoque_1': 'Every step on the dance floor is a calculated move, Doctor. Not unlike the political stage, wouldn\'t you say?'
         },
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 2', 
+      {
+        title: 'Talk 2',
         content: 'My sisters are doing well, I hope? Rhodes Island has been good to them. For that, you have my gratitude — and my continued cooperation.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 3', 
+      {
+        title: 'Talk 3',
         content: 'A leader does not ask others to make sacrifices he himself is unwilling to endure. That is the principle I was raised on, and one I intend to uphold.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk after Promotion 1', 
+      {
+        title: 'Talk after Promotion 1',
         content: 'You wish to know more about Kjerag? Very well. Ask, and I shall tell you what I can. Some secrets, however, are best left buried in the snow.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk after Promotion 2', 
+      {
+        title: 'Talk after Promotion 2',
         content: 'I won\'t pretend that our alliance is purely altruistic, Doctor. But I believe our interests are aligned — and that is a stronger foundation than any oath.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Title Drop', 
+      {
+        title: 'Title Drop',
         content: 'Arknights.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Greeting', 
+      {
+        title: 'Greeting',
         content: 'Good day, Doctor. Shall we review today\'s strategy?',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Deployed (Battle)', 
+      {
+        title: 'Deployed (Battle)',
         content: 'SilverAsh, deploying.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Skill Activated (Battle)', 
+      {
+        title: 'Skill Activated (Battle)',
         content: 'Truesilver Slash!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Defeated (Battle)', 
+      {
+        title: 'Defeated (Battle)',
         content: 'Not yet... Kjerag still needs me...',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
@@ -236,26 +236,26 @@ export const MOCK_OPERATORS = [
     tagList: ['DPS'],
     faction: { id: 'penguin_logistics', name: 'Penguin Logistics' },
     class: { id: 'sniper', name: 'Sniper' },
-    subclass: { 
-      id: 'marksman', 
-      name: 'Marksman', 
-      description: 'Prioritizes attacking aerial enemies. Low DP cost.' 
+    subclass: {
+      id: 'marksman',
+      name: 'Marksman',
+      description: 'Prioritizes attacking aerial enemies. Low DP cost.'
     },
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_103_angel_1.png',
-    
+
     skins: [
-      { 
-        id: 'default', 
-        name: 'Default', 
+      {
+        id: 'default',
+        name: 'Default',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_103_angel_1.png',
-        description: 'Standard uniform.' 
+        description: 'Standard uniform.'
       },
-      { 
-        id: 'epoque_1', 
-        name: 'Époque - Exotic Sweetness', 
+      {
+        id: 'epoque_1',
+        name: 'Époque - Exotic Sweetness',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_103_angel_epoque%231.png',
-        description: '"Sweet things and even sweeter smiles — that\'s what makes the world go round!"' 
+        description: '"Sweet things and even sweeter smiles — that\'s what makes the world go round!"'
       },
     ],
 
@@ -271,9 +271,9 @@ export const MOCK_OPERATORS = [
     },
 
     talents: [
-      { 
-        name: 'Angel\'s Halo', 
-        description: 'ATK +8%. When attacking, 20% chance to deal an additional hit dealing 50% ATK as Physical damage.' 
+      {
+        name: 'Angel\'s Halo',
+        description: 'ATK +8%. When attacking, 20% chance to deal an additional hit dealing 50% ATK as Physical damage.'
       },
     ],
 
@@ -337,46 +337,46 @@ export const MOCK_OPERATORS = [
     ],
 
     dialogues: [
-      { 
-        title: 'Appointed as Assistant', 
+      {
+        title: 'Appointed as Assistant',
         content: 'Doctor! I brought apple pie! Want some? I made extra just in case~',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 1', 
+      {
+        title: 'Talk 1',
         content: 'Wanna hear about Penguin Logistics? We\'re the best courier service around! Fast delivery, guaranteed results! ...What? The exploding packages? Those were one-time incidents!',
         skinVariants: {
           'epoque_1': 'This outfit is SO cute, right?! The baker lady at the shop made it for me. She said I\'m her best customer — I wonder why!'
         },
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 2', 
+      {
+        title: 'Talk 2',
         content: 'Texas doesn\'t smile much, but that\'s okay! I smile enough for both of us! Although she did almost smile when I shared my apple pie with her... almost.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 3', 
+      {
+        title: 'Talk 3',
         content: 'Laterano? It\'s a beautiful place! Lots of sunshine, great food... I miss it sometimes. But my work is here now, and I\'ve made so many friends!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Deployed (Battle)', 
+      {
+        title: 'Deployed (Battle)',
         content: 'Bang bang bang!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Skill Activated (Battle)', 
+      {
+        title: 'Skill Activated (Battle)',
         content: 'Full burst!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Defeated (Battle)', 
+      {
+        title: 'Defeated (Battle)',
         content: 'Oww... I need to eat more apple pie to recover...',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
@@ -400,20 +400,20 @@ export const MOCK_OPERATORS = [
     tagList: ['DPS', 'Support'],
     faction: { id: 'rhodes_island', name: 'Rhodes Island' },
     class: { id: 'caster', name: 'Caster' },
-    subclass: { 
-      id: 'corecaster', 
-      name: 'Core Caster', 
-      description: 'Deals Arts damage to a single target. Standard Caster archetype.' 
+    subclass: {
+      id: 'corecaster',
+      name: 'Core Caster',
+      description: 'Deals Arts damage to a single target. Standard Caster archetype.'
     },
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_002_amiya_1.png',
-    
+
     skins: [
-      { 
-        id: 'default', 
-        name: 'Default', 
+      {
+        id: 'default',
+        name: 'Default',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_002_amiya_1.png',
-        description: 'Standard Rhodes Island uniform.' 
+        description: 'Standard Rhodes Island uniform.'
       },
       {
         id: 'epoque_1',
@@ -435,9 +435,9 @@ export const MOCK_OPERATORS = [
     },
 
     talents: [
-      { 
-        name: 'Chimera', 
-        description: 'ATK +14%. Every 4 attacks, the next attack deals 225% ATK as Arts damage.' 
+      {
+        name: 'Chimera',
+        description: 'ATK +14%. Every 4 attacks, the next attack deals 225% ATK as Arts damage.'
       },
       {
         name: 'Emotional Absorption',
@@ -496,46 +496,46 @@ export const MOCK_OPERATORS = [
     ],
 
     dialogues: [
-      { 
-        title: 'Appointed as Assistant', 
+      {
+        title: 'Appointed as Assistant',
         content: 'Doctor! I\'ve finished compiling today\'s mission briefings. Shall we go over them together?',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 1', 
+      {
+        title: 'Talk 1',
         content: 'Even though I\'m the leader of Rhodes Island... sometimes I still feel like a child playing at being grown-up. But then I remember all the people counting on me, and I know I can\'t give up.',
         skinVariants: {
           'epoque_1': 'Read all about it! The Rhodes Island Daily Gazette! ...Hehe, just kidding. But wouldn\'t it be fun to have a newspaper?'
         },
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 2', 
+      {
+        title: 'Talk 2',
         content: 'Doctor, have you eaten yet? Closure told me you\'ve been working for twelve hours straight again. Please take care of yourself...',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 3', 
+      {
+        title: 'Talk 3',
         content: 'My dream? It\'s simple, really. A world where no one has to suffer because of Oripathy. Where infected and non-infected can live together in peace. That\'s what Rhodes Island is fighting for.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Deployed (Battle)', 
+      {
+        title: 'Deployed (Battle)',
         content: 'Amiya, engaging!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Skill Activated (Battle)', 
+      {
+        title: 'Skill Activated (Battle)',
         content: 'I won\'t let anyone else get hurt!',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Defeated (Battle)', 
+      {
+        title: 'Defeated (Battle)',
         content: 'Doctor... I\'m sorry... I wasn\'t strong enough...',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
@@ -561,20 +561,20 @@ export const MOCK_OPERATORS = [
     tagList: ['Healing', 'Summon', 'Support'],
     faction: { id: 'rhodes_island', name: 'Rhodes Island' },
     class: { id: 'medic', name: 'Medic' },
-    subclass: { 
-      id: 'incantationmedic', 
-      name: 'Incantation Medic', 
-      description: 'Heals allies and attacks enemies simultaneously using Mon3tr. Multi-functional tactical medic.' 
+    subclass: {
+      id: 'incantationmedic',
+      name: 'Incantation Medic',
+      description: 'Heals allies and attacks enemies simultaneously using Mon3tr. Multi-functional tactical medic.'
     },
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_003_kalts_1.png',
-    
+
     skins: [
-      { 
-        id: 'default', 
-        name: 'Default', 
+      {
+        id: 'default',
+        name: 'Default',
         portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_003_kalts_1.png',
-        description: 'Standard Rhodes Island Director uniform.' 
+        description: 'Standard Rhodes Island Director uniform.'
       },
     ],
 
@@ -590,9 +590,9 @@ export const MOCK_OPERATORS = [
     },
 
     talents: [
-      { 
-        name: 'Regenerative Cells', 
-        description: 'Mon3tr gains +20% Max HP and restores 4% of max HP every second.' 
+      {
+        name: 'Regenerative Cells',
+        description: 'Mon3tr gains +20% Max HP and restores 4% of max HP every second.'
       },
       {
         name: 'Supreme Command',
@@ -666,50 +666,50 @@ export const MOCK_OPERATORS = [
     ],
 
     dialogues: [
-      { 
-        title: 'Appointed as Assistant', 
+      {
+        title: 'Appointed as Assistant',
         content: 'Doctor. I trust you have a productive reason for summoning me, and not simply because Amiya asked you to "check in" on me.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 1', 
+      {
+        title: 'Talk 1',
         content: 'Mon3tr isn\'t a pet, Doctor. It would be wise of you not to attempt to pet it again. The medical bills from your last attempt should serve as sufficient reminder.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 2', 
+      {
+        title: 'Talk 2',
         content: 'I have dedicated longer than you can imagine to the fight against Oripathy. I will not see that work undone by carelessness, incompetence, or sentimentality.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk 3', 
+      {
+        title: 'Talk 3',
         content: 'You ask me if I trust you, Doctor? Trust is irrelevant. What matters is whether you can be useful. So far, the answer has been... adequate.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Talk after Promotion 1', 
+      {
+        title: 'Talk after Promotion 1',
         content: 'You\'ve regained some of the competence I remember from Babel, Doctor. Don\'t let it go to your head. You still have a very long way to go before I consider you an equal.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Deployed (Battle)', 
+      {
+        title: 'Deployed (Battle)',
         content: 'Mon3tr, deploy.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Skill Activated (Battle)', 
+      {
+        title: 'Skill Activated (Battle)',
         content: 'Tactical formation. Execute.',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },
       },
-      { 
-        title: 'Defeated (Battle)', 
+      {
+        title: 'Defeated (Battle)',
         content: 'This... is unacceptable...',
         skinVariants: {},
         voiceLines: { JP: null, CN: null, EN: null },

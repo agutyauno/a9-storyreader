@@ -965,7 +965,7 @@
 .skill-icon-sp-wrapper {
     position: absolute;
     bottom: -8px;
-    right: -6px;
+    right: -10px;
     display: flex;
     align-items: center;
     gap: 0px;
@@ -1850,4 +1850,181 @@
         transform: scale(1);
         opacity: 1;
     }
+}
+
+/* Custom Dropdown Styling (Swiss Brutalist) */
+.ced-dropdown {
+    position: relative;
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* On desktop, keep the same fixed widths to prevent shifting */
+@media (min-width: 901px) {
+    #faction-select-dropdown {
+        width: 250px;
+    }
+
+    #class-select-dropdown {
+        width: 180px;
+    }
+
+    #subclass-select-dropdown {
+        width: 220px;
+    }
+
+    #rarity-select-dropdown {
+        width: 180px;
+    }
+}
+
+@media (max-width: 900px) {
+    .ced-dropdown {
+        width: 100%;
+    }
+}
+
+.ced-dropdown-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-charcoal);
+    background-color: #ffffff;
+    border: 2px solid var(--color-charcoal);
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    border-radius: 0;
+    outline: none;
+    transition: var(--transition-step);
+    text-align: left;
+}
+
+.ced-dropdown-toggle:hover,
+.ced-dropdown-toggle:focus,
+.ced-dropdown-toggle.open {
+    border-color: var(--color-terracotta);
+    box-shadow: 2px 2px 0px var(--color-charcoal);
+}
+
+.ced-dropdown-value {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    gap: 0.5rem;
+}
+
+.ced-dropdown-caret {
+    display: flex;
+    align-items: center;
+    color: var(--color-charcoal);
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.ced-dropdown-toggle.open .ced-dropdown-caret {
+    transform: rotate(180deg);
+}
+
+.ced-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border: 2px solid var(--color-charcoal);
+    box-shadow: 3px 3px 0px var(--color-charcoal);
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    border-radius: 0;
+}
+
+.ced-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    color: var(--color-charcoal);
+    transition: var(--transition-step);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.ced-dropdown-item:hover {
+    background-color: rgba(178, 101, 59, 0.08); /* 8% terracotta tint */
+    color: var(--color-terracotta);
+}
+
+.ced-dropdown-item.selected {
+    background-color: var(--color-terracotta);
+    color: #ffffff;
+}
+
+/* Option-specific content styling */
+.class-option-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.class-option-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(0); /* Force white PNGs to be black by default */
+    transition: var(--transition-step);
+}
+
+.ced-dropdown-item.selected .class-option-img {
+    filter: brightness(0) invert(1); /* Invert to make it white when active */
+}
+
+.class-option-icon {
+    flex-shrink: 0;
+}
+
+.rarity-option-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rarity-number {
+    font-weight: 700;
+}
+
+.rarity-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    color: var(--color-ochre);
+}
+
+/* Scrollbar styling for custom dropdown menus to match the theme */
+.ced-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ced-dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ced-dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(24, 24, 24, 0.2);
+}
+
+.ced-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(24, 24, 24, 0.4);
 }

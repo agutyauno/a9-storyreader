@@ -107,7 +107,7 @@ function SkillTab({ operator }) {
             {/* Talents */}
             {operator.talents.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Talents</div>
+                    <div className="operator-section-title">Tài Năng</div>
                     {operator.talents.map((talent, idx) => (
                         <Collapsible
                             key={idx}
@@ -126,7 +126,7 @@ function SkillTab({ operator }) {
             {/* Skills */}
             {operator.skills.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Skills ({operator.skills.length})</div>
+                    <div className="operator-section-title">Kĩ Năng ({operator.skills.length})</div>
                     {operator.skills.map((skill, idx) => {
                         const hasInitSp = skill.initialSp !== undefined && skill.initialSp !== null && skill.initialSp !== '-' && skill.initialSp !== 0;
                         const hasSpCost = skill.spCost !== undefined && skill.spCost !== null && skill.spCost !== '-' && skill.spCost !== 0;
@@ -244,7 +244,7 @@ function SkillTab({ operator }) {
             {/* Base Skills */}
             {operator.baseSkills.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Base Skills</div>
+                    <div className="operator-section-title">Kĩ năng hậu cần</div>
                     {operator.baseSkills.map((bs, idx) => (
                         <div key={idx} className="base-skill-item">
                             <div className="base-skill-icon">
@@ -262,7 +262,7 @@ function SkillTab({ operator }) {
             {/* Token */}
             {operator.token && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Operator Token</div>
+                    <div className="operator-section-title">Tín vật</div>
                     <div className="operator-token-card">
                         {operator.token.imageUrl ? (
                             <img className="operator-token-img" src={operator.token.imageUrl} alt={operator.token.name || 'Token'} />
@@ -288,7 +288,7 @@ function SkillTab({ operator }) {
 function ProfileTab({ operator }) {
     return (
         <div className="operator-section">
-            <div className="operator-section-title">Operator Files</div>
+            <div className="operator-section-title">Hồ Sơ Cán Viên</div>
             {operator.profiles.map((profile, idx) => (
                 <Collapsible
                     key={idx}
@@ -331,7 +331,7 @@ function DialogueTab({ operator, selectedSkinId }) {
         <>
             {/* Language Selector */}
             <div className="dialogue-lang-selector">
-                <span className="dialogue-lang-label">Voice:</span>
+                <span className="dialogue-lang-label">Ngôn ngữ lồng tiếng:</span>
                 {['JP', 'CN', 'EN'].map(lang => (
                     <button
                         key={lang}
@@ -352,7 +352,7 @@ function DialogueTab({ operator, selectedSkinId }) {
             )}
 
             <div className="operator-section">
-                <div className="operator-section-title">Dialogue Lines</div>
+                <div className="operator-section-title">Lời thoại</div>
                 {operator.dialogues.map((dialogue, idx) => {
                     // Use skin-specific content if available
                     const displayContent = (selectedSkinId && dialogue.skinVariants?.[selectedSkinId])
@@ -396,7 +396,7 @@ function RecordTab({ operator }) {
     if (!operator.records || operator.records.length === 0) {
         return (
             <div className="operator-section">
-                <div className="operator-section-title">Operator Records</div>
+                <div className="operator-section-title">Kí sự</div>
                 <div className="operator-empty-state" style={{ margin: 0, border: 'var(--border-thin)' }}>
                     <span className="operator-empty-text technical-text">
                         NO_RECORDS_AVAILABLE // DATA_NOT_FOUND
@@ -408,7 +408,7 @@ function RecordTab({ operator }) {
 
     return (
         <div className="operator-section">
-            <div className="operator-section-title">Operator Records ({operator.records.length})</div>
+            <div className="operator-section-title">Kí sự ({operator.records.length})</div>
             {operator.records.map((record, idx) => (
                 <div key={record.id || idx} className="record-item">
                     <span className="record-item-meta">REC.{String(idx + 1).padStart(2, '0')} // {record.id}</span>
@@ -458,10 +458,10 @@ export default function OperatorDetailPage() {
     }
 
     const TABS = [
-        { id: 'skill', label: 'Skill' },
+        { id: 'skill', label: 'Kĩ năng' },
         { id: 'profile', label: 'Hồ Sơ' },
         { id: 'dialogue', label: 'Lời Thoại' },
-        { id: 'record', label: 'Record' },
+        { id: 'record', label: 'Kí sự' },
     ]
 
     if (loading) {
