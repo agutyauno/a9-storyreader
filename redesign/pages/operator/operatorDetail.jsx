@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getOperatorById } from './mockOperatorData'
+import { getOperatorById, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './mockOperatorData'
+import { getAssetUrl } from '../../../src/utils/assetUtils'
 import { useNotification } from '../../components/Notification'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -42,24 +43,16 @@ function Collapsible({ icon, title, children, defaultOpen = false, variant = 'de
 }
 
 // ─── Class & Subclass Icon Helpers ──────────────────────────────────────────────
-const BASE_URL = import.meta.env.BASE_URL || '/'
-
-const getClassIconUrl = (clazz) => {
-    if (!clazz) return '';
-    const className = clazz.name.replace(/\s+/g, '_');
-    return `${BASE_URL}assets/images/icon/class/${className}.png`;
+const getClassIconUrl = (classId) => {
+    const clazz = CLASSES_MAP[classId];
+    return clazz ? getAssetUrl(clazz.icon) : '';
 }
 
-const getSubclassIconUrl = (subclass, clazz) => {
-    if (!subclass || !clazz) return '';
-    const subName = subclass.name.replace(/\s+/g, '_');
-    const className = clazz.name.replace(/\s+/g, '_');
-
-    let filename = subName;
-    if (!subName.endsWith(className)) {
-        filename = `${subName}_${className}`;
-    }
-    return `${BASE_URL}assets/images/icon/class/${filename}.png`;
+const getSubclassIconUrl = (subclassId, classId) => {
+    const subclass = SUBCLASSES_MAP[subclassId];
+    if (subclass) return getAssetUrl(subclass.icon);
+    const clazz = CLASSES_MAP[classId];
+    return clazz ? getAssetUrl(clazz.icon) : '';
 }
 
 // ─── Skill Tab Content ─────────────────────────────────────────────────────────
@@ -77,12 +70,12 @@ function SkillTab({ operator }) {
                         {classIconUrl && (
                             <img
                                 src={classIconUrl}
-                                alt={operator.class.name}
+                                alt={CLASSES_MAP[operator.class]?.name}
                                 className="operator-class-icon-inline-img"
                                 onError={(e) => { e.target.style.display = 'none'; }}
                             />
                         )}
-                        <span className="operator-class-name">{operator.class.name}</span>
+                        <span className="operator-class-name">{CLASSES_MAP[operator.class]?.name}</span>
                     </div>
                 </div>
                 <div className="operator-class-block">
@@ -91,15 +84,15 @@ function SkillTab({ operator }) {
                         {subclassIconUrl && (
                             <img
                                 src={subclassIconUrl}
-                                alt={operator.subclass.name}
+                                alt={SUBCLASSES_MAP[operator.subclass]?.name}
                                 className="operator-class-icon-inline-img"
                                 onError={(e) => { e.target.style.display = 'none'; }}
                             />
                         )}
-                        <span className="operator-class-name">{operator.subclass.name}</span>
+                        <span className="operator-class-name">{SUBCLASSES_MAP[operator.subclass]?.name}</span>
                     </div>
-                    {operator.subclass.description && (
-                        <span className="operator-subclass-desc">{operator.subclass.description}</span>
+                    {SUBCLASSES_MAP[operator.subclass]?.description && (
+                        <span className="operator-subclass-desc">{SUBCLASSES_MAP[operator.subclass].description}</span>
                     )}
                 </div>
             </div>
@@ -541,9 +534,9 @@ export default function OperatorDetailPage() {
                                         {classIconUrl && (
                                             <img
                                                 src={classIconUrl}
-                                                alt={operator.class.name}
+                                                alt={CLASSES_MAP[operator.class]?.name}
                                                 className="operator-appellation-icon-img"
-                                                title={operator.class.name}
+                                                title={CLASSES_MAP[operator.class]?.name}
                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                             />
                                         )}
@@ -551,9 +544,9 @@ export default function OperatorDetailPage() {
                                         {subclassIconUrl && (
                                             <img
                                                 src={subclassIconUrl}
-                                                alt={operator.subclass.name}
+                                                alt={SUBCLASSES_MAP[operator.subclass]?.name}
                                                 className="operator-appellation-icon-img"
-                                                title={operator.subclass.name}
+                                                title={SUBCLASSES_MAP[operator.subclass]?.name}
                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                             />
                                         )}
@@ -562,7 +555,15 @@ export default function OperatorDetailPage() {
 
                                 {/* Faction */}
                                 <div className="operator-faction-row">
-                                    <span className="operator-faction-name">{operator.faction.name}</span>
+                                    {FACTIONS_MAP[operator.faction]?.icon && (
+                                        <img
+                                            src={getAssetUrl(FACTIONS_MAP[operator.faction].icon)}
+                                            alt={FACTIONS_MAP[operator.faction].name}
+                                            className="operator-faction-icon-img"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
+                                    )}
+                                    <span className="operator-faction-name">{FACTIONS_MAP[operator.faction]?.name}</span>
                                 </div>
 
                                 {/* Skin Selector */}

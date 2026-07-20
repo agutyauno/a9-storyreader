@@ -41,11 +41,11 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                     <Users size={16} className="header-nav-icon" />
                     <span className="header-nav-text">OPERATOR</span>
                 </a>
-                <div className="header-nav-separator"></div>
+                {/* <div className="header-nav-separator"></div>
                 <a href="#/is-story" className="header-nav-item" title="IS Story">
                     <BookOpen size={16} className="header-nav-icon" />
                     <span className="header-nav-text">IS STORY</span>
-                </a>
+                </a> */}
                 <div className="header-nav-separator"></div>
 
                 <button

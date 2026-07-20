@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { MOCK_OPERATORS, FACTIONS, CLASSES } from './mockOperatorData'
+import { MOCK_OPERATORS, FACTIONS, CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, getOperatorFactionIds, getHierarchicalFactions } from './mockOperatorData'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { Search, Grid, List, Star, UserX, Filter, ChevronDown } from 'lucide-react'
@@ -10,8 +10,8 @@ import './operator.css'
 // Custom renderer for class options with PNG icons
 const renderClassOption = (opt) => {
     if (!opt.value) return opt.label
-    const className = opt.value.charAt(0).toUpperCase() + opt.value.slice(1)
-    const iconUrl = getAssetUrl(`/assets/images/icon/class/${className}.png`)
+    const clazz = CLASSES_MAP[opt.value]
+    const iconUrl = clazz ? getAssetUrl(clazz.icon) : ''
     return (
         <span className="class-option-content">
             <img
@@ -30,10 +30,8 @@ const renderClassOption = (opt) => {
 // Custom renderer for subclass options with PNG icons
 const renderSubclassOption = (opt) => {
     if (!opt.value) return opt.label
-    const cleanSubclass = opt.subclassName.replace(/\s+/g, '_')
-    const cleanClass = opt.className.replace(/\s+/g, '_')
-    const filename = `${cleanSubclass}_${cleanClass}.png`
-    const iconUrl = getAssetUrl(`/assets/images/icon/class/${filename}`)
+    const subclass = SUBCLASSES_MAP[opt.value]
+    const iconUrl = subclass ? getAssetUrl(subclass.icon) : ''
     return (
         <span className="class-option-content">
             <img
@@ -42,10 +40,33 @@ const renderSubclassOption = (opt) => {
                 className="class-option-img"
                 onError={(e) => {
                     e.target.onerror = null;
-                    const fallbackName = opt.className.replace(/\s+/g, '_')
-                    e.target.src = getAssetUrl(`/assets/images/icon/class/${fallbackName}.png`);
+                    const parentClassId = subclass?.classId
+                    const parentClass = parentClassId ? CLASSES_MAP[parentClassId] : null
+                    e.target.src = parentClass ? getAssetUrl(parentClass.icon) : '';
                 }}
             />
+            <span>{opt.label}</span>
+        </span>
+    )
+}
+
+// Custom renderer for faction options with PNG icons
+const renderFactionOption = (opt) => {
+    if (!opt.value) return opt.label
+    const faction = FACTIONS_MAP[opt.value]
+    const iconUrl = faction ? getAssetUrl(faction.icon) : ''
+    return (
+        <span className="class-option-content faction-option-content">
+            {iconUrl && (
+                <img
+                    src={iconUrl}
+                    alt={opt.label}
+                    className="class-option-img faction-option-img"
+                    onError={(e) => {
+                        e.target.style.display = 'none';
+                    }}
+                />
+            )}
             <span>{opt.label}</span>
         </span>
     )
@@ -118,7 +139,7 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
                     {options.map((opt) => (
                         <div
                             key={opt.value}
-                            className={`ced-dropdown-item ${value === opt.value ? 'selected' : ''}`}
+                            className={`ced-dropdown-item ${value === opt.value ? 'selected' : ''} ${opt.className || ''}`}
                             onClick={() => handleSelect(opt.value)}
                         >
                             {renderOption ? renderOption(opt) : opt.label}
@@ -151,24 +172,24 @@ export default function OperatorListPage() {
             result = result.filter(op =>
                 op.name.toLowerCase().includes(q) ||
                 op.appellation.toLowerCase().includes(q) ||
-                op.faction.name.toLowerCase().includes(q) ||
-                op.class.name.toLowerCase().includes(q)
+                (FACTIONS_MAP[op.faction]?.name || '').toLowerCase().includes(q) ||
+                (CLASSES_MAP[op.class]?.name || '').toLowerCase().includes(q)
             )
         }
 
         // Faction filter
         if (selectedFaction) {
-            result = result.filter(op => op.faction.id === selectedFaction)
+            result = result.filter(op => getOperatorFactionIds(op).includes(selectedFaction))
         }
 
         // Class filter
         if (selectedClass) {
-            result = result.filter(op => op.class.id === selectedClass)
+            result = result.filter(op => op.class === selectedClass)
         }
 
         // Subclass filter
         if (selectedSubclass) {
-            result = result.filter(op => op.subclass && op.subclass.id === selectedSubclass)
+            result = result.filter(op => op.subclass === selectedSubclass)
         }
 
         // Rarity filter
@@ -181,12 +202,16 @@ export default function OperatorListPage() {
 
     // Get unique factions, classes and subclasses from data
     const availableFactions = useMemo(() => {
-        const set = new Set(MOCK_OPERATORS.map(op => op.faction.id))
-        return FACTIONS.filter(f => set.has(f.id))
+        const activeFactionIds = new Set()
+        MOCK_OPERATORS.forEach(op => {
+            getOperatorFactionIds(op).forEach(fId => activeFactionIds.add(fId))
+        })
+        const hierarchical = getHierarchicalFactions()
+        return hierarchical.filter(f => activeFactionIds.has(f.id))
     }, [])
 
     const availableClasses = useMemo(() => {
-        const set = new Set(MOCK_OPERATORS.map(op => op.class.id))
+        const set = new Set(MOCK_OPERATORS.map(op => op.class))
         return CLASSES.filter(c => set.has(c.id))
     }, [])
 
@@ -194,11 +219,13 @@ export default function OperatorListPage() {
         const subclassesMap = new Map()
         MOCK_OPERATORS.forEach(op => {
             if (op.subclass) {
-                if (!selectedClass || op.class.id === selectedClass) {
-                    subclassesMap.set(op.subclass.id, {
-                        id: op.subclass.id,
-                        name: op.subclass.name,
-                        className: op.class.name
+                const sub = SUBCLASSES_MAP[op.subclass]
+                const parentClass = CLASSES_MAP[op.class]
+                if (sub && parentClass && (!selectedClass || op.class === selectedClass)) {
+                    subclassesMap.set(op.subclass, {
+                        id: sub.id,
+                        name: sub.name,
+                        className: parentClass.name
                     })
                 }
             }
@@ -207,7 +234,11 @@ export default function OperatorListPage() {
     }, [selectedClass])
 
     // Map datasets into option arrays for CustomSelect dropdowns
-    const factionOptions = useMemo(() => availableFactions.map(f => ({ value: f.id, label: f.name })), [availableFactions])
+    const factionOptions = useMemo(() => availableFactions.map(f => ({
+        value: f.id,
+        label: f.displayName || f.name,
+        className: f.parentId ? 'sub-faction-option' : 'parent-faction-option'
+    })), [availableFactions])
     const classOptions = useMemo(() => availableClasses.map(c => ({ value: c.id, label: c.name })), [availableClasses])
     const subclassOptions = useMemo(() => availableSubclasses.map(s => ({
         value: s.id,
@@ -230,7 +261,7 @@ export default function OperatorListPage() {
         // If changing class, check if current selectedSubclass belongs to the new class. If not, reset it.
         if (selectedSubclass && classId) {
             const belongs = MOCK_OPERATORS.some(op =>
-                op.class.id === classId && op.subclass && op.subclass.id === selectedSubclass
+                op.class === classId && op.subclass === selectedSubclass
             )
             if (!belongs) {
                 setSelectedSubclass(null)
@@ -246,9 +277,9 @@ export default function OperatorListPage() {
         setSelectedSubclass(subclassId)
 
         // If a subclass is selected, automatically select the corresponding class
-        const foundOp = MOCK_OPERATORS.find(op => op.subclass && op.subclass.id === subclassId)
-        if (foundOp && selectedClass !== foundOp.class.id) {
-            setSelectedClass(foundOp.class.id)
+        const foundOp = MOCK_OPERATORS.find(op => op.subclass === subclassId)
+        if (foundOp && selectedClass !== foundOp.class) {
+            setSelectedClass(foundOp.class)
         }
     }
 
@@ -330,6 +361,7 @@ export default function OperatorListPage() {
                                     onChange={setSelectedFaction}
                                     options={factionOptions}
                                     placeholder="ALL FACTIONS"
+                                    renderOption={renderFactionOption}
                                 />
                             </div>
 
@@ -413,12 +445,12 @@ export default function OperatorListPage() {
                                             {renderStars(op.rarity)}
                                         </div>
                                         <div className="operator-card-class">
-                                            {op.class.name}
+                                            {CLASSES_MAP[op.class]?.name}
                                         </div>
                                     </div>
                                     <div className="operator-card-info">
                                         <span className="operator-card-name">{op.name}</span>
-                                        <span className="operator-card-faction">{op.faction.name}</span>
+                                        <span className="operator-card-faction">{FACTIONS_MAP[op.faction]?.name}</span>
                                     </div>
                                 </Link>
                             ))}
@@ -450,8 +482,8 @@ export default function OperatorListPage() {
                                         }}
                                     />
                                     <span className="operator-list-name">{op.name}</span>
-                                    <span className="operator-list-faction">{op.faction.name}</span>
-                                    <span className="operator-list-class">{op.class.name}</span>
+                                    <span className="operator-list-faction">{FACTIONS_MAP[op.faction]?.name}</span>
+                                    <span className="operator-list-class">{CLASSES_MAP[op.class]?.name}</span>
                                     <span className="operator-list-rarity">{renderStars(op.rarity)}</span>
                                 </Link>
                             ))}

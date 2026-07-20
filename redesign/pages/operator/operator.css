@@ -618,10 +618,17 @@
     border: 1px solid rgba(245, 237, 220, 0.1);
 }
 
+.operator-faction-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .operator-faction-name {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-family: var(--font-swiss);
+    font-size: 1.2rem;
+    font-weight: 700;
     color: var(--color-ochre);
     text-transform: uppercase;
 }
@@ -1962,7 +1969,8 @@
 }
 
 .ced-dropdown-item:hover {
-    background-color: rgba(178, 101, 59, 0.08); /* 8% terracotta tint */
+    background-color: rgba(178, 101, 59, 0.08);
+    /* 8% terracotta tint */
     color: var(--color-terracotta);
 }
 
@@ -1983,12 +1991,12 @@
     height: 16px;
     object-fit: contain;
     flex-shrink: 0;
-    filter: brightness(0); /* Force white PNGs to be black by default */
+    filter: invert(100);
     transition: var(--transition-step);
 }
 
 .ced-dropdown-item.selected .class-option-img {
-    filter: brightness(0) invert(1); /* Invert to make it white when active */
+    filter: invert(0);
 }
 
 .class-option-icon {
@@ -2027,4 +2035,51 @@
 
 .ced-dropdown-menu::-webkit-scrollbar-thumb:hover {
     background: rgba(24, 24, 24, 0.4);
+}
+
+/* Faction-specific dropdown styling */
+.ced-dropdown-item.parent-faction-option {
+    background-color: rgba(24, 24, 24, 0.08);
+    /* Darker grey background */
+    font-weight: 700;
+    border-left: 4px solid var(--color-terracotta);
+    /* Terracotta left border indicator */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ced-dropdown-item.parent-faction-option:hover {
+    background-color: rgba(178, 101, 59, 0.12);
+}
+
+.ced-dropdown-item.parent-faction-option.selected {
+    background-color: var(--color-terracotta);
+    color: #ffffff;
+    border-left-color: var(--color-charcoal);
+}
+
+.ced-dropdown-item.sub-faction-option {
+    padding-left: 2rem;
+    /* Increased indentation for subfactions */
+}
+
+.faction-option-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.faction-option-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: invert(100);
+    /* Make logos flat black for high contrast on light background */
+    transition: var(--transition-step);
+}
+
+.ced-dropdown-item.selected .faction-option-img {
+    filter: invert(0);
+    /* Invert to white when selected */
 }

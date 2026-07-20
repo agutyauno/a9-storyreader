@@ -3,29 +3,27 @@
 // Hardcoded placeholder data for UI development. Replace with API calls later.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Factions ────────────────────────────────────────────────────────────────
-export const FACTIONS = [
-  { id: 'rhodes_island', name: 'Rhodes Island' },
-  { id: 'karlan', name: 'Karlan Trade' },
-  { id: 'penguin_logistics', name: 'Penguin Logistics' },
-  { id: 'babel', name: 'Babel' },
-  { id: 'glasgow', name: 'Glasgow' },
-  { id: 'lungmen', name: 'Lungmen Guard' },
-  { id: 'ursus', name: 'Ursus Student Self-Governing Group' },
-  { id: 'abyssal_hunters', name: 'Abyssal Hunters' },
-]
+import {
+  CLASSES,
+  CLASSES_MAP,
+  SUBCLASSES,
+  SUBCLASSES_MAP,
+  FACTIONS,
+  FACTIONS_MAP,
+  getOperatorFactionIds,
+  getHierarchicalFactions
+} from './operatorMapping'
 
-// ─── Classes ────────────────────────────────────────────────────────────────
-export const CLASSES = [
-  { id: 'guard', name: 'Guard' },
-  { id: 'sniper', name: 'Sniper' },
-  { id: 'caster', name: 'Caster' },
-  { id: 'medic', name: 'Medic' },
-  { id: 'defender', name: 'Defender' },
-  { id: 'supporter', name: 'Supporter' },
-  { id: 'vanguard', name: 'Vanguard' },
-  { id: 'specialist', name: 'Specialist' },
-]
+export {
+  CLASSES,
+  CLASSES_MAP,
+  SUBCLASSES,
+  SUBCLASSES_MAP,
+  FACTIONS,
+  FACTIONS_MAP,
+  getOperatorFactionIds,
+  getHierarchicalFactions
+}
 
 // ─── Operator Data ──────────────────────────────────────────────────────────
 export const MOCK_OPERATORS = [
@@ -39,13 +37,10 @@ export const MOCK_OPERATORS = [
     rarity: 6,
     position: 'Melee',
     tagList: ['DPS', 'Support'],
-    faction: { id: 'karlan', name: 'Karlan Trade' },
-    class: { id: 'guard', name: 'Guard' },
-    subclass: {
-      id: 'rangedguard',
-      name: 'Lord',
-      description: 'Can attack aerial enemies. Has extended attack range when skill is active.'
-    },
+    faction: 'karlan_trade',
+    factions: ['karlan_trade'],
+    class: 'guard',
+    subclass: 'lord',
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_172_svrash_1.png',
 
@@ -234,13 +229,10 @@ export const MOCK_OPERATORS = [
     rarity: 6,
     position: 'Ranged',
     tagList: ['DPS'],
-    faction: { id: 'penguin_logistics', name: 'Penguin Logistics' },
-    class: { id: 'sniper', name: 'Sniper' },
-    subclass: {
-      id: 'marksman',
-      name: 'Marksman',
-      description: 'Prioritizes attacking aerial enemies. Low DP cost.'
-    },
+    faction: 'penguin_logistics',
+    factions: ['penguin_logistics', 'laterano'],
+    class: 'sniper',
+    subclass: 'marksman',
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_103_angel_1.png',
 
@@ -398,13 +390,10 @@ export const MOCK_OPERATORS = [
     rarity: 5,
     position: 'Ranged',
     tagList: ['DPS', 'Support'],
-    faction: { id: 'rhodes_island', name: 'Rhodes Island' },
-    class: { id: 'caster', name: 'Caster' },
-    subclass: {
-      id: 'corecaster',
-      name: 'Core Caster',
-      description: 'Deals Arts damage to a single target. Standard Caster archetype.'
-    },
+    faction: 'rhodes_island',
+    factions: ['rhodes_island'],
+    class: 'caster',
+    subclass: 'corecaster',
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_002_amiya_1.png',
 
@@ -559,13 +548,10 @@ export const MOCK_OPERATORS = [
     rarity: 6,
     position: 'Ranged',
     tagList: ['Healing', 'Summon', 'Support'],
-    faction: { id: 'rhodes_island', name: 'Rhodes Island' },
-    class: { id: 'medic', name: 'Medic' },
-    subclass: {
-      id: 'incantationmedic',
-      name: 'Incantation Medic',
-      description: 'Heals allies and attacks enemies simultaneously using Mon3tr. Multi-functional tactical medic.'
-    },
+    faction: 'rhodes_island',
+    factions: ['rhodes_island'],
+    class: 'medic',
+    subclass: 'incantationmedic',
 
     portraitUrl: 'https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/char_003_kalts_1.png',
 
@@ -730,20 +716,23 @@ export function getOperatorById(id) {
 }
 
 export function getOperatorsByFaction(factionId) {
-  return MOCK_OPERATORS.filter(op => op.faction.id === factionId)
+  return MOCK_OPERATORS.filter(op => getOperatorFactionIds(op).includes(factionId))
 }
 
 export function getOperatorsByClass(classId) {
-  return MOCK_OPERATORS.filter(op => op.class.id === classId)
+  return MOCK_OPERATORS.filter(op => op.class === classId)
 }
 
 export function searchOperators(query) {
   const q = query.toLowerCase().trim()
   if (!q) return MOCK_OPERATORS
-  return MOCK_OPERATORS.filter(op =>
-    op.name.toLowerCase().includes(q) ||
-    op.appellation.toLowerCase().includes(q) ||
-    op.faction.name.toLowerCase().includes(q) ||
-    op.class.name.toLowerCase().includes(q)
-  )
+  return MOCK_OPERATORS.filter(op => {
+    const matchesFactionName = getOperatorFactionIds(op).some(fId => 
+      (FACTIONS_MAP[fId]?.name || '').toLowerCase().includes(q)
+    )
+    return op.name.toLowerCase().includes(q) ||
+      op.appellation.toLowerCase().includes(q) ||
+      matchesFactionName ||
+      (CLASSES_MAP[op.class]?.name || '').toLowerCase().includes(q)
+  })
 }
