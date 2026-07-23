@@ -4,22 +4,22 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.88);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: 4000;
     animation: fadeIn 0.1s ease-out;
 }
 
 .modal {
     width: 90%;
-    max-width: 500px;
-    background: #1e2128;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 24px;
+    max-width: 520px;
+    background: #141414;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
+    padding: 2.25rem 2.5rem;
     animation: scaleIn 0.1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

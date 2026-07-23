@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getOperatorById, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './mockOperatorData'
+import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import { useNotification } from '../../components/Notification'
 import Header from '../../components/Header'
@@ -428,17 +429,35 @@ export default function OperatorDetailPage() {
     const BASE_URL = import.meta.env.BASE_URL || '/'
 
     useEffect(() => {
-        setLoading(true)
-        const data = getOperatorById(id)
-        setOperator(data)
+        async function fetchOperatorDetail() {
+            try {
+                setLoading(true)
+                const data = await SupabaseAPI.getOperator(id)
+                if (data) {
+                    setOperator(data)
+                    document.title = `${data.name} // Civilight Eterna Database`
+                } else {
+                    const mockData = getOperatorById(id)
+                    setOperator(mockData)
+                    if (mockData) {
+                        document.title = `${mockData.name} // Civilight Eterna Database`
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load operator from Supabase:", err)
+                const mockData = getOperatorById(id)
+                setOperator(mockData)
+                if (mockData) {
+                    document.title = `${mockData.name} // Civilight Eterna Database`
+                }
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchOperatorDetail()
         setSelectedSkinId('default')
         setActiveTab('skill')
-        setLoading(false)
         window.scrollTo({ top: 0, behavior: 'instant' })
-
-        if (data) {
-            document.title = `${data.name} // Civilight Eterna Database`
-        }
     }, [id])
 
     // Get current portrait based on selected skin

@@ -264,21 +264,6 @@
     background-color: rgba(24, 24, 24, 0.06);
 }
 
-.operator-results-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 1rem 2.5rem 0 2.5rem;
-    padding: 0.5rem 0;
-}
-
-.operator-results-count {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: rgba(24, 24, 24, 0.5);
-    font-weight: 600;
-}
-
 /* Grid View */
 .operator-grid {
     display: grid;

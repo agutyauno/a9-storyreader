@@ -1,33 +1,33 @@
 .overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.88);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
+    z-index: 3000;
+    backdrop-filter: blur(6px);
 }
 
 .modal {
     width: 95%;
     max-width: 1000px;
     height: 85vh;
-    background-color: var(--color-bg-dark);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    background-color: #141414;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
 }
 
 .modalHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border);
+    padding: 1.25rem 2.25rem;
+    border-bottom: 1px solid rgba(245, 237, 220, 0.2);
 }
 
 .addBtn {
@@ -52,7 +52,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-base) var(--spacing-xl);
+    padding: 1.25rem 2.25rem;
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-bg-secondary);
 }
@@ -79,7 +79,7 @@
 }
 
 .toolbar {
-    padding: var(--spacing-base) var(--spacing-xl);
+    padding: 1.25rem 2.25rem;
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -98,20 +98,27 @@
 
 .searchInput {
     width: 100%;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    background-color: #0a0a0a;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     padding: 10px 14px 10px 40px;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-primary);
-    font-family: inherit;
+    font-size: 13px;
+    color: #f5eddc;
+    font-family: var(--font-mono, monospace);
     box-sizing: border-box;
+    transition: all 0.15s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--color-terracotta, #b2653b);
+    box-shadow: 0 0 0 2px rgba(178, 101, 59, 0.25);
 }
 
 .categories {
     display: flex;
-    gap: 8px;
-    padding: var(--spacing-sm) var(--spacing-xl);
+    gap: 10px;
+    padding: 0.85rem 2.25rem;
     background-color: var(--color-bg-secondary);
     border-bottom: 1px solid var(--color-border);
     overflow-x: auto;
@@ -148,46 +155,77 @@
 .grid {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-xl);
+    padding: 2.25rem 2.5rem;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--spacing-xl);
     justify-content: center;
-    scrollbar-width: thin;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }
 
-.grid::-webkit-scrollbar {
-    display: block;
-    width: 6px;
-}
-
-.grid::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 10px;
+.grid::-webkit-scrollbar,
+.grid *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .card {
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    position: relative;
+    background: rgba(18, 18, 18, 0.85);
+    border: 1px solid rgba(245, 237, 220, 0.22);
+    border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
-    transition: var(--transition-base);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     display: flex;
     flex-direction: column;
     min-height: 180px !important;
     height: auto !important;
 }
 
+.card::before,
+.card::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-style: solid;
+    border-color: var(--color-terracotta, #b2653b);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.card::before {
+    top: 3px;
+    left: 3px;
+    border-width: 1.5px 0 0 1.5px;
+}
+
+.card::after {
+    bottom: 3px;
+    right: 3px;
+    border-width: 0 1.5px 1.5px 0;
+}
+
 .card:hover {
-    border-color: var(--color-accent-light);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-color: var(--color-terracotta, #b2653b);
+    background: rgba(26, 24, 22, 0.95);
+    box-shadow: 0 4px 16px rgba(178, 101, 59, 0.15), 0 0 0 1px rgba(178, 101, 59, 0.3);
+}
+
+.card:hover::before,
+.card:hover::after {
+    opacity: 1;
 }
 
 .cardSelected {
-    border-color: var(--color-accent-light);
-    box-shadow: 0 0 0 2px var(--color-accent-light);
-    background-color: rgba(184, 169, 255, 0.1);
+    border-color: var(--color-terracotta, #b2653b);
+    box-shadow: 0 0 0 2px var(--color-terracotta, #b2653b);
+    background-color: rgba(178, 101, 59, 0.15);
 }
 
 .cardSelected .cardPreview::after {
@@ -197,7 +235,7 @@
     right: 8px;
     width: 20px;
     height: 20px;
-    background: var(--color-accent-light);
+    background: var(--color-terracotta, #b2653b);
     color: white;
     border-radius: 50%;
     display: flex;

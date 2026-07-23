@@ -4,6 +4,25 @@
     flex: 1;
     overflow: auto; /* allow scrolling when content exceeds height */
     min-height: 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.panel::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+    width: 0;
+    height: 0;
+}
+
+.panel * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.panel *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 /* ─── Search row ──────────────────────────────────────────────────────────── */
@@ -128,39 +147,80 @@
 
 /* ─── Asset Card ─────────────────────────────────────────────────────────── */
 .card {
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    position: relative;
+    background: rgba(18, 18, 18, 0.85);
+    border: 1px solid rgba(245, 237, 220, 0.22);
+    border-radius: 4px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: border-color 0.15s;
+    height: 165px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Retro-Tech Corner Bracket Highlights on Hover */
+.card::before,
+.card::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-style: solid;
+    border-color: var(--color-terracotta, #b2653b);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.card::before {
+    top: 3px;
+    left: 3px;
+    border-width: 1.5px 0 0 1.5px;
+}
+
+.card::after {
+    bottom: 3px;
+    right: 3px;
+    border-width: 0 1.5px 1.5px 0;
 }
 
 .card:hover {
-    border-color: var(--color-accent-light, #a78bfa);
+    border-color: var(--color-terracotta, #b2653b);
+    background: rgba(26, 24, 22, 0.95);
+    box-shadow: 0 4px 16px rgba(178, 101, 59, 0.15), 0 0 0 1px rgba(178, 101, 59, 0.3);
+}
+
+.card:hover::before,
+.card:hover::after {
+    opacity: 1;
 }
 
 /* Preview */
-.card {
-    height: 150px; 
-}
-
 .cardPreview {
     width: 100%;
-    aspect-ratio: 16 / 9; 
-    background: var(--color-bg-primary);
+    height: 95px;
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 1px solid rgba(245, 237, 220, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    cursor: default;
+    position: relative;
+    cursor: pointer;
 }
 
 .cardPreview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .cardPreview img {
+    transform: scale(1.04);
 }
 
 .videoThumb,
@@ -172,23 +232,24 @@
     gap: 6px;
     width: 100%;
     height: 100%;
-    color: var(--color-text-tertiary);
+    color: rgba(245, 237, 220, 0.6);
     cursor: pointer;
-    transition: color 0.15s;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .audioThumb:hover {
-    color: var(--color-accent);
+    color: var(--color-terracotta, #b2653b);
+    background-color: rgba(178, 101, 59, 0.1);
 }
 
 .audioThumb.playing {
-    color: var(--color-accent);
+    color: var(--color-terracotta, #b2653b);
 }
 
 .playingDot {
     width: 6px;
     height: 6px;
-    background: var(--color-accent);
+    background: var(--color-terracotta, #b2653b);
     border-radius: 50%;
     animation: pulse 1s infinite;
 }
@@ -207,58 +268,64 @@
 
 /* Info */
 .cardInfo {
-    padding: 10px 12px 8px;
+    padding: 6px 8px 4px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     min-width: 0;
+    flex: 1;
 }
 
 .cardName {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-secondary, #f5eddc);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 .cardId {
-    font-size: 13px;
-    color: var(--color-text-tertiary);
+    font-size: 0.65rem;
+    color: rgba(245, 237, 220, 0.45);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono, monospace);
 }
 
 /* Actions */
 .cardActions {
     display: flex;
-    gap: 3px;
-    padding: 4px 7px 6px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 2px 6px 6px;
 }
 
 .cardBtn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 6px;
-    font-size: 12px;
-    background: transparent;
-    border: 1px solid var(--color-border);
+    padding: 3px 6px;
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(245, 237, 220, 0.18);
     border-radius: 3px;
     cursor: pointer;
-    color: var(--color-text-tertiary);
-    transition: var(--transition-base);
+    color: rgba(245, 237, 220, 0.7);
+    transition: all 0.15s ease;
 }
 
 .cardBtn:hover {
-    color: var(--color-text-primary);
-    background: rgba(255, 255, 255, 0.05);
+    color: #f5eddc;
+    border-color: rgba(245, 237, 220, 0.4);
+    background: rgba(245, 237, 220, 0.12);
 }
 
 .cardBtn.danger:hover {
     color: #f87171;
-    border-color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.15);
 }

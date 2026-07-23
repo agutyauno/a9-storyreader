@@ -242,6 +242,10 @@ a.header-meta-bar:hover {
   transition: opacity var(--transition-step), transform var(--transition-step);
 }
 
+.live-preview-container .expand-icon {
+  display: none !important;
+}
+
 .image-container:hover .expand-icon {
   opacity: 1;
   transform: scale(1.1);

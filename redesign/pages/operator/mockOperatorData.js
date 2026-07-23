@@ -251,17 +251,6 @@ export const MOCK_OPERATORS = [
       },
     ],
 
-    stats: {
-      hp: 1629,
-      atk: 626,
-      def: 150,
-      res: 0,
-      redeployTime: '70s',
-      dpCost: 13,
-      block: 1,
-      attackInterval: '1.0s',
-    },
-
     talents: [
       {
         name: 'Angel\'s Halo',
@@ -412,17 +401,6 @@ export const MOCK_OPERATORS = [
       },
     ],
 
-    stats: {
-      hp: 1775,
-      atk: 676,
-      def: 129,
-      res: 10,
-      redeployTime: '70s',
-      dpCost: 21,
-      block: 1,
-      attackInterval: '1.6s',
-    },
-
     talents: [
       {
         name: 'Chimera',
@@ -563,17 +541,6 @@ export const MOCK_OPERATORS = [
         description: 'Standard Rhodes Island Director uniform.'
       },
     ],
-
-    stats: {
-      hp: 2178,
-      atk: 569,
-      def: 190,
-      res: 15,
-      redeployTime: '70s',
-      dpCost: 28,
-      block: 1,
-      attackInterval: '2.85s',
-    },
 
     talents: [
       {
@@ -727,7 +694,7 @@ export function searchOperators(query) {
   const q = query.toLowerCase().trim()
   if (!q) return MOCK_OPERATORS
   return MOCK_OPERATORS.filter(op => {
-    const matchesFactionName = getOperatorFactionIds(op).some(fId => 
+    const matchesFactionName = getOperatorFactionIds(op).some(fId =>
       (FACTIONS_MAP[fId]?.name || '').toLowerCase().includes(q)
     )
     return op.name.toLowerCase().includes(q) ||

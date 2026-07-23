@@ -1,0 +1,220 @@
+/* ================================================================================================= */
+/* Redesign Editor Hub Styles - Swiss Brutalist & Retro-Futuristic */
+/* ================================================================================================= */
+
+.hub-container {
+    position: relative;
+    background-color: var(--bg-main);
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 3rem 2rem;
+}
+
+.hub-content {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Header styling */
+.hub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: var(--border-thick);
+    padding-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.hub-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.hub-logo-img {
+    height: 48px;
+    filter: invert(1);
+}
+
+.hub-logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.hub-logo-text .logo-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--color-charcoal);
+}
+
+.hub-logo-text .logo-subtitle {
+    font-size: 0.75rem;
+    color: var(--color-terracotta);
+    font-weight: 700;
+}
+
+.hub-user-panel {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border: var(--border-thick);
+    background-color: var(--bg-panel);
+    padding: 0.5rem 1rem;
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+}
+
+.hub-user-email {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-charcoal);
+}
+
+.hub-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--color-crimson);
+    color: var(--color-cream);
+    border: none;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-step);
+}
+
+.hub-logout-btn:hover {
+    background-color: var(--color-charcoal);
+}
+
+/* Status Bar */
+.hub-status-bar {
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--color-charcoal);
+    color: rgba(245, 237, 220, 0.7);
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Cards Grid */
+.hub-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.hub-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border: var(--border-thick);
+    box-shadow: 6px 6px 0px var(--color-charcoal);
+    cursor: pointer;
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+
+.hub-card:hover:not(.locked) {
+    transform: translate(-3px, -3px);
+    box-shadow: 9px 9px 0px var(--color-terracotta);
+}
+
+.hub-card-icon-wrap {
+    background-color: var(--color-charcoal);
+    color: var(--color-cream);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: var(--border-thick);
+    transition: background-color var(--transition-smooth);
+}
+
+.hub-card:hover:not(.locked) .hub-card-icon-wrap {
+    background-color: var(--color-terracotta);
+}
+
+.hub-card-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 1rem;
+}
+
+.hub-card-meta {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(24, 24, 24, 0.5);
+}
+
+.hub-card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-charcoal);
+    margin-bottom: 0.25rem;
+}
+
+.hub-card-desc {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(24, 24, 24, 0.8);
+    flex-grow: 1;
+}
+
+/* Locked Card Specific Styles */
+.hub-card.locked {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.hub-card.locked .hub-card-icon-wrap {
+    background-color: rgba(24, 24, 24, 0.8);
+}
+
+/* Return to database */
+.hub-footer {
+    display: flex;
+    justify-content: center;
+    border-top: var(--border-thin);
+    padding-top: 1.5rem;
+    margin-top: 2rem;
+}
+
+.hub-back-btn {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--color-terracotta);
+    transition: var(--transition-smooth);
+}
+
+.hub-back-btn:hover {
+    color: var(--color-charcoal);
+}
+
+@media (max-width: 768px) {
+    .hub-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hub-user-panel {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

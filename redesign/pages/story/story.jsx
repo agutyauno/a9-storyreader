@@ -14,7 +14,7 @@ import Modal from '../../components/Modal'
 import { Volume2, VolumeX, ArrowLeft, ArrowRight, ChevronUp } from 'lucide-react'
 import './story.css'
 
-export default function RedesignStoryPage() {
+export default function RedesignStoryPage({ isRecord = false }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -73,25 +73,59 @@ export default function RedesignStoryPage() {
       try {
         setLoading(true)
         setError(null)
-        const fetchedStory = await SupabaseAPI.getStory(id)
+        
+        let fetchedStory = null
+        if (isRecord) {
+          const record = await SupabaseAPI.getOperatorRecord(id)
+          if (record) {
+            fetchedStory = {
+              ...record,
+              story_id: record.record_id,
+              name: record.name,
+              description: record.description
+            }
+            
+            // Load operator details and record list
+            if (record.operator_id) {
+              const [op, recs] = await Promise.all([
+                SupabaseAPI.getOperator(record.operator_id),
+                SupabaseAPI.getOperatorRecords(record.operator_id)
+              ])
+              if (op) {
+                setEventData({
+                  event_id: `operator/${record.operator_id}`,
+                  name: `Kí Sự Cán Viên: ${op.name}`
+                })
+              }
+              const mappedStories = (recs || []).map(r => ({
+                ...r,
+                story_id: r.record_id,
+                name: r.name,
+                display_order: r.display_order
+              }))
+              setAllStories(mappedStories)
+            }
+          }
+        } else {
+          fetchedStory = await SupabaseAPI.getStory(id)
+          if (fetchedStory && fetchedStory.event_id) {
+            const [ev, stories] = await Promise.all([
+              SupabaseAPI.getEvent(fetchedStory.event_id),
+              SupabaseAPI.getStoriesByEvent(fetchedStory.event_id)
+            ])
+            setEventData(ev)
+            setAllStories(stories || [])
+          }
+        }
 
         if (!fetchedStory) {
-          setError('Không tìm thấy cốt truyện này.')
+          setError(isRecord ? 'Không tìm thấy kí sự cán viên này.' : 'Không tìm thấy cốt truyện này.')
           setLoading(false)
           return
         }
 
         setStory(fetchedStory)
         document.title = `${fetchedStory.name} // Civilight Eterna Database`
-
-        if (fetchedStory.event_id) {
-          const [ev, stories] = await Promise.all([
-            SupabaseAPI.getEvent(fetchedStory.event_id),
-            SupabaseAPI.getStoriesByEvent(fetchedStory.event_id)
-          ])
-          setEventData(ev)
-          setAllStories(stories || [])
-        }
 
         let contentToRender = fetchedStory.story_content
         if (contentToRender && contentToRender.type === 'vns') {
@@ -387,7 +421,7 @@ export default function RedesignStoryPage() {
           sidebarOpen={sidebarOpen}
           items={allStories}
           selectedItemId={id}
-          onItemSelect={(s) => navigate(`/story/${s.story_id}`)}
+          onItemSelect={(s) => navigate(isRecord ? `/operator-record/${s.story_id}` : `/story/${s.story_id}`)}
           itemKey="story_id"
           renderItem={(s) => (
             <div className="sidebar-chapter-item">
@@ -402,7 +436,13 @@ export default function RedesignStoryPage() {
         {/* Content Area */}
         <div className={`content-area story-page-wrapper ${sidebarOpen ? 'sidebar-active' : 'expanded'}`}>
           {/* Dynamic header details overlay */}
-          {eventData ? (
+          {isRecord ? (
+            <Link to={`/operator/${story?.operator_id}`} className="header-meta-bar panel-stripes" title={`Đi tới hồ sơ cán viên: ${story?.operator_id}`}>
+              <span className="technical-text header-dynamic-title">
+                {eventData?.name || story?.name || ''}
+              </span>
+            </Link>
+          ) : eventData ? (
             <Link to={`/event/${eventData.event_id}`} className="header-meta-bar panel-stripes" title={`Đi tới hồ sơ sự kiện: ${eventData.name}`}>
               <span className="technical-text header-dynamic-title">
                 {eventData?.name || story?.name || ''}
@@ -423,14 +463,14 @@ export default function RedesignStoryPage() {
               <button
                 className="btn-chapter-nav"
                 disabled={!prevStory}
-                onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}
+                onClick={() => prevStory && navigate(isRecord ? `/operator-record/${prevStory.story_id}` : `/story/${prevStory.story_id}`)}
               >
                 ← CHƯƠNG TRƯỚC
               </button>
               <button
                 className="btn-chapter-nav"
                 disabled={!nextStory}
-                onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}
+                onClick={() => nextStory && navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
               >
                 CHƯƠNG SAU →
               </button>
@@ -457,14 +497,14 @@ export default function RedesignStoryPage() {
               <button
                 className="btn-chapter-nav"
                 disabled={!prevStory}
-                onClick={() => prevStory && navigate(`/story/${prevStory.story_id}`)}
+                onClick={() => prevStory && navigate(isRecord ? `/operator-record/${prevStory.story_id}` : `/story/${prevStory.story_id}`)}
               >
                 ← CHƯƠNG TRƯỚC
               </button>
               <button
                 className="btn-chapter-nav"
                 disabled={!nextStory}
-                onClick={() => nextStory && navigate(`/story/${nextStory.story_id}`)}
+                onClick={() => nextStory && navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
               >
                 CHƯƠNG SAU →
               </button>

@@ -1,40 +1,42 @@
 .overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.88);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
+    z-index: 3000;
+    backdrop-filter: blur(6px);
 }
 
 .modal {
     width: 90%;
     max-width: 1000px;
     height: 85vh;
-    background-color: var(--color-bg-dark);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    background-color: #141414;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
 }
 
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-base) var(--spacing-xl);
-    border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-bg-secondary);
+    padding: 1.25rem 2.25rem;
+    border-bottom: 1px solid rgba(245, 237, 220, 0.2);
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 .header h3 {
     margin: 0;
-    font-size: var(--font-size-lg);
-    color: var(--color-accent);
+    font-size: 1.1rem;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-terracotta, #b2653b);
+    font-weight: 700;
 }
 
 .closeBtn {
@@ -55,20 +57,24 @@
 .body {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-xl);
-    scrollbar-width: none;
+    padding: 2.25rem 2.5rem;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }
 
-.body::-webkit-scrollbar {
-    display: none;
+.body::-webkit-scrollbar,
+.body *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .section {
-    margin-bottom: var(--spacing-3xl);
+    margin-bottom: 2.25rem;
 }
 
 .section h4 {
-    margin: 0 0 var(--spacing-base) 0;
+    margin: 0 0 1rem 0;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
     font-size: 12px;
@@ -79,7 +85,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-base);
+    margin-bottom: 1rem;
 }
 
 .sectionHeader h4 {
@@ -89,28 +95,44 @@
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-base);
-    margin-bottom: var(--spacing-base);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .formGroup {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .formGroup label {
-    font-size: 11px;
-    color: var(--color-text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-terracotta, #b2653b);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.formGroup input {
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+    background-color: #0a0a0a;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     padding: 8px 12px;
-    color: var(--color-text-primary);
-    font-size: var(--font-size-sm);
+    color: #f5eddc;
+    font-size: 13px;
+    font-family: var(--font-mono, monospace);
+    transition: all 0.15s ease;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+    outline: none;
+    border-color: var(--color-terracotta, #b2653b);
+    box-shadow: 0 0 0 2px rgba(178, 101, 59, 0.25);
 }
 
 .saveBtn {
@@ -223,18 +245,21 @@
 
 .expNameInput {
     flex: 1;
-    background-color: var(--color-bg-dark);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
+    background-color: #0a0a0a;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     padding: 6px 12px;
-    color: var(--color-text-primary);
+    color: #f5eddc;
     font-weight: 600;
     font-size: 13px;
+    font-family: var(--font-mono, monospace);
+    transition: all 0.15s ease;
 }
 
 .expNameInput:focus {
     outline: none;
-    border-color: var(--color-accent-light);
+    border-color: var(--color-terracotta, #b2653b);
+    box-shadow: 0 0 0 2px rgba(178, 101, 59, 0.25);
 }
 
 .deleteBtn {
@@ -264,8 +289,28 @@
 }
 
 .expInputGroup label {
-    font-size: 10px;
-    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-terracotta, #b2653b);
+    text-transform: uppercase;
+}
+
+.expInputGroup input {
+    background-color: #0a0a0a;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #f5eddc;
+    font-size: 12px;
+    font-family: var(--font-mono, monospace);
+    transition: all 0.15s ease;
+}
+
+.expInputGroup input:focus {
+    outline: none;
+    border-color: var(--color-terracotta, #b2653b);
+    box-shadow: 0 0 0 2px rgba(178, 101, 59, 0.25);
 }
 
 .expInputGroup input {

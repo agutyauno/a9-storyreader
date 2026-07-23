@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { MOCK_OPERATORS, FACTIONS, CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, getOperatorFactionIds, getHierarchicalFactions } from './mockOperatorData'
+import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { Search, Grid, List, Star, UserX, Filter, ChevronDown } from 'lucide-react'
@@ -152,6 +153,8 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
 }
 
 export default function OperatorListPage() {
+    const [operators, setOperators] = useState(MOCK_OPERATORS)
+    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedFaction, setSelectedFaction] = useState(null)
     const [selectedClass, setSelectedClass] = useState(null)
@@ -162,9 +165,26 @@ export default function OperatorListPage() {
 
     const BASE_URL = import.meta.env.BASE_URL || '/'
 
+    // Fetch operators on mount
+    useEffect(() => {
+        async function fetchOps() {
+            try {
+                const data = await SupabaseAPI.getOperators()
+                if (data && data.length > 0) {
+                    setOperators(data)
+                }
+            } catch (err) {
+                console.error('Failed to load operators from Supabase:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchOps()
+    }, [])
+
     // Filter operators
     const filteredOperators = useMemo(() => {
-        let result = MOCK_OPERATORS
+        let result = operators
 
         // Search
         if (searchQuery.trim()) {
@@ -198,26 +218,26 @@ export default function OperatorListPage() {
         }
 
         return result
-    }, [searchQuery, selectedFaction, selectedClass, selectedSubclass, selectedRarity])
+    }, [operators, searchQuery, selectedFaction, selectedClass, selectedSubclass, selectedRarity])
 
     // Get unique factions, classes and subclasses from data
     const availableFactions = useMemo(() => {
         const activeFactionIds = new Set()
-        MOCK_OPERATORS.forEach(op => {
+        operators.forEach(op => {
             getOperatorFactionIds(op).forEach(fId => activeFactionIds.add(fId))
         })
         const hierarchical = getHierarchicalFactions()
         return hierarchical.filter(f => activeFactionIds.has(f.id))
-    }, [])
+    }, [operators])
 
     const availableClasses = useMemo(() => {
-        const set = new Set(MOCK_OPERATORS.map(op => op.class))
+        const set = new Set(operators.map(op => op.class))
         return CLASSES.filter(c => set.has(c.id))
-    }, [])
+    }, [operators])
 
     const availableSubclasses = useMemo(() => {
         const subclassesMap = new Map()
-        MOCK_OPERATORS.forEach(op => {
+        operators.forEach(op => {
             if (op.subclass) {
                 const sub = SUBCLASSES_MAP[op.subclass]
                 const parentClass = CLASSES_MAP[op.class]
@@ -231,7 +251,7 @@ export default function OperatorListPage() {
             }
         })
         return Array.from(subclassesMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [selectedClass])
+    }, [operators, selectedClass])
 
     // Map datasets into option arrays for CustomSelect dropdowns
     const factionOptions = useMemo(() => availableFactions.map(f => ({
@@ -260,7 +280,7 @@ export default function OperatorListPage() {
 
         // If changing class, check if current selectedSubclass belongs to the new class. If not, reset it.
         if (selectedSubclass && classId) {
-            const belongs = MOCK_OPERATORS.some(op =>
+            const belongs = operators.some(op =>
                 op.class === classId && op.subclass === selectedSubclass
             )
             if (!belongs) {
@@ -277,7 +297,7 @@ export default function OperatorListPage() {
         setSelectedSubclass(subclassId)
 
         // If a subclass is selected, automatically select the corresponding class
-        const foundOp = MOCK_OPERATORS.find(op => op.subclass === subclassId)
+        const foundOp = operators.find(op => op.subclass === subclassId)
         if (foundOp && selectedClass !== foundOp.class) {
             setSelectedClass(foundOp.class)
         }
@@ -298,7 +318,7 @@ export default function OperatorListPage() {
                     {/* Hero Section */}
                     <div className="operator-hero">
                         <div className="operator-hero-meta technical-text">
-                            SYS.OPERATOR_DATABASE // SEC.PERSONNEL_REGISTRY
+                            SYS.OPERATOR_LIST
                         </div>
                         <h1 className="operator-hero-title">Danh sách cán viên</h1>
                         <p className="operator-hero-desc">
@@ -404,13 +424,6 @@ export default function OperatorListPage() {
                                 />
                             </div>
                         </div>
-                    </div>
-
-                    {/* Results Count */}
-                    <div className="operator-results-bar">
-                        <span className="operator-results-count technical-text">
-                            SYS.RESULTS: {filteredOperators.length} OPERATOR{filteredOperators.length !== 1 ? 'S' : ''} FOUND
-                        </span>
                     </div>
 
                     {/* Operator Display */}

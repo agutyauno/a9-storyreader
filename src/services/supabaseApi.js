@@ -1128,6 +1128,277 @@ const SupabaseAPI_Raw = {
       })
     );
   },
+
+  // ===========================================================================
+  // OPERATORS
+  // ===========================================================================
+  async getOperators() {
+    if (USE_MOCK_DB) return [];
+    
+    // 1. Fetch operators
+    const { data: ops, error: opsErr } = await supabase.from('operators').select('*').order('name');
+    if (opsErr) throw opsErr;
+    if (!ops || ops.length === 0) return [];
+
+    // 2. Fetch default skins
+    const opIds = ops.map(o => o.operator_id);
+    const { data: skins, error: skinsErr } = await supabase
+      .from('operator_skins')
+      .select('*')
+      .in('operator_id', opIds)
+      .eq('is_default', true);
+    
+    if (skinsErr) {
+      console.warn('Failed to fetch default skins:', skinsErr.message);
+    }
+
+    const skinMap = {};
+    (skins || []).forEach(s => {
+      skinMap[s.operator_id] = s;
+    });
+
+    // 3. Map together
+    return ops.map(o => {
+      const defSkin = skinMap[o.operator_id] || {};
+      return {
+        ...o,
+        id: o.operator_id,
+        class: o.class_id,
+        subclass: o.sub_class_id,
+        portraitUrl: defSkin.full_url || defSkin.avatar_url || '',
+        avatarUrl: defSkin.avatar_url || '',
+        faction: o.factions?.[0] || '',
+        factions: o.factions || []
+      };
+    });
+  },
+
+  async getOperator(operatorId) {
+    if (USE_MOCK_DB) return null;
+    
+    // Fetch operator
+    const { data: o, error: oErr } = await supabase.from('operators').select('*').eq('operator_id', operatorId).maybeSingle();
+    if (oErr) throw oErr;
+    if (!o) return null;
+
+    // Fetch associated skins, dialogues, records in parallel
+    const [skinsRes, dialoguesRes, recordsRes] = await Promise.all([
+      supabase.from('operator_skins').select('*').eq('operator_id', operatorId).order('created_at'),
+      supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('created_at'),
+      supabase.from('operator_records').select('*').eq('operator_id', operatorId).order('display_order')
+    ]);
+
+    if (skinsRes.error) throw skinsRes.error;
+    if (dialoguesRes.error) throw dialoguesRes.error;
+    if (recordsRes.error) throw recordsRes.error;
+
+    const skins = skinsRes.data || [];
+    const dialogues = dialoguesRes.data || [];
+    const records = recordsRes.data || [];
+    
+    const defSkin = skins.find(s => s.is_default) || skins[0] || {};
+
+    // Map profiles from lore_info
+    const profiles = o.lore_info?.profiles || [];
+
+    // Map combat info (talents, skills, modules, base skills)
+    const combat = o.combat_info || {};
+    const talents = combat.talents || [];
+    const skills = combat.skills || [];
+    const modules = combat.modules || [];
+    const baseSkills = combat.baseSkills || [];
+
+    // Map dialogues back to the nested variants expected by the frontend
+    const mappedDialogues = [];
+    const grouped = {};
+    dialogues.forEach(d => {
+      if (!grouped[d.title]) {
+        grouped[d.title] = {
+          title: d.title,
+          content: '',
+          voiceLines: { JP: d.audio_url_jp || '', EN: d.audio_url_en || '', CN: d.audio_url_cn || '' },
+          skinVariants: {}
+        };
+      }
+      
+      const g = grouped[d.title];
+      if (d.skin_id === null || d.skin_id === 'default' || d.skin_id === '') {
+        g.content = d.text_content;
+        g.voiceLines = { JP: d.audio_url_jp || '', EN: d.audio_url_en || '', CN: d.audio_url_cn || '' };
+      } else {
+        g.skinVariants[d.skin_id] = d.text_content;
+        g.voiceLines = {
+          JP: d.audio_url_jp || g.voiceLines.JP,
+          EN: d.audio_url_en || g.voiceLines.EN,
+          CN: d.audio_url_cn || g.voiceLines.CN
+        };
+      }
+    });
+    
+    Object.keys(grouped).forEach(k => {
+      mappedDialogues.push(grouped[k]);
+    });
+
+    const mappedSkins = skins.map(s => ({
+      id: s.skin_id,
+      name: s.name,
+      portraitUrl: s.full_url || s.avatar_url || '',
+      avatarUrl: s.avatar_url || '',
+      description: s.description || ''
+    }));
+
+    const mappedRecords = records.map(r => ({
+      id: r.record_id,
+      title: r.name,
+      description: r.description || '',
+      display_order: r.display_order,
+      story_content: r.story_content
+    }));
+
+    return {
+      ...o,
+      id: o.operator_id,
+      class: o.class_id,
+      subclass: o.sub_class_id,
+      portraitUrl: defSkin.full_url || defSkin.avatar_url || '',
+      avatarUrl: defSkin.avatar_url || '',
+      faction: o.factions?.[0] || '',
+      factions: o.factions || [],
+      skins: mappedSkins,
+      dialogues: mappedDialogues,
+      records: mappedRecords,
+      profiles,
+      talents,
+      skills,
+      modules,
+      baseSkills
+    };
+  },
+
+  async createOperator(payload) {
+    if (USE_MOCK_DB) return { operator_id: payload.operator_id, ...payload };
+    const cleanPayload = { ...payload };
+    const { data, error } = await supabase.from('operators').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperator(operatorId, payload) {
+    if (USE_MOCK_DB) return { operator_id: operatorId, ...payload };
+    const cleanPayload = { ...payload };
+    const { data, error } = await supabase.from('operators').update(cleanPayload).eq('operator_id', operatorId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperator(operatorId) {
+    if (USE_MOCK_DB) return;
+    const { error } = await supabase.from('operators').delete().eq('operator_id', operatorId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR SKINS
+  // ===========================================================================
+  async getOperatorSkins(operatorId) {
+    if (USE_MOCK_DB) return [];
+    const { data, error } = await supabase.from('operator_skins').select('*').eq('operator_id', operatorId).order('created_at');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorSkin(payload) {
+    if (USE_MOCK_DB) return { skin_id: genId('skin'), ...payload };
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+    const { data, error } = await supabase.from('operator_skins').insert(cleanPayload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorSkin(skinId, payload) {
+    if (USE_MOCK_DB) return { skin_id: skinId, ...payload };
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+    const { data, error } = await supabase.from('operator_skins').update(cleanPayload).eq('skin_id', skinId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorSkin(skinId) {
+    if (USE_MOCK_DB) return;
+    const { error } = await supabase.from('operator_skins').delete().eq('skin_id', skinId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR DIALOGUES
+  // ===========================================================================
+  async getOperatorDialogues(operatorId) {
+    if (USE_MOCK_DB) return [];
+    const { data, error } = await supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('created_at');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async createOperatorDialogue(payload) {
+    if (USE_MOCK_DB) return { dialogue_id: genId('dialogue'), ...payload };
+    const { data, error } = await supabase.from('operator_dialogues').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorDialogue(dialogueId, payload) {
+    if (USE_MOCK_DB) return { dialogue_id: dialogueId, ...payload };
+    const { data, error } = await supabase.from('operator_dialogues').update(payload).eq('dialogue_id', dialogueId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorDialogue(dialogueId) {
+    if (USE_MOCK_DB) return;
+    const { error } = await supabase.from('operator_dialogues').delete().eq('dialogue_id', dialogueId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR RECORDS
+  // ===========================================================================
+  async getOperatorRecords(operatorId) {
+    if (USE_MOCK_DB) return [];
+    const { data, error } = await supabase.from('operator_records').select('*').eq('operator_id', operatorId).order('display_order');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getOperatorRecord(recordId) {
+    if (USE_MOCK_DB) return null;
+    const { data, error } = await supabase.from('operator_records').select('*').eq('record_id', recordId).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
+  async createOperatorRecord(payload) {
+    if (USE_MOCK_DB) return { record_id: payload.record_id, ...payload };
+    const { data, error } = await supabase.from('operator_records').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorRecord(recordId, payload) {
+    if (USE_MOCK_DB) return { record_id: recordId, ...payload };
+    const { data, error } = await supabase.from('operator_records').update(payload).eq('record_id', recordId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorRecord(recordId) {
+    if (USE_MOCK_DB) return;
+    const { error } = await supabase.from('operator_records').delete().eq('record_id', recordId);
+    if (error) throw error;
+  },
 };
 
 // Proxy to wrap all SupabaseAPI methods with auth error handling

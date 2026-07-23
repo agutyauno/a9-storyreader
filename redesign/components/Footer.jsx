@@ -7,8 +7,8 @@ export default function Footer() {
                 {/* Brand / Logo Section */}
                 <div className="footer-brand-section">
                     <div className="footer-logo-block">
-                        <span className="footer-logo-title technical-text">CIVILIGHT_ETERNA</span>
-                        <span className="footer-logo-subtitle">DATABASE REDESIGN // V2.0</span>
+                        <span className="footer-logo-title technical-text">CIVILIGHT_ETERNA_DATABASE</span>
+                        <span className="footer-logo-subtitle">REDESIGN // V2.0</span>
                     </div>
                     <p className="footer-brand-desc">
                         Civilight Eterna Database là một dự án phi lợi nhuận nhằm mang cốt truyện của Arknights đến gần hơn với cộng đồng người chơi Việt Nam.                    </p>

@@ -1,12 +1,12 @@
 .overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.92);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2500;
+    z-index: 3500;
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -15,12 +15,12 @@
     width: 95%;
     max-width: 560px;
     max-height: 85vh;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-bright);
-    border-radius: 16px;
+    background-color: #141414;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
     overflow: hidden;
     animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

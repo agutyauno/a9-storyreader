@@ -60,7 +60,7 @@ export const SUBCLASSES_MAP = SUBCLASSES.reduce((acc, item) => {
 export const FACTIONS = [
   // Parent Factions / Nations
   { id: 'rhodes_island', name: 'Rhodes Island', icon: '/assets/images/icon/factions/Rhodes_Island.png' },
-  { id: 'karlan', name: 'Karlan', icon: '/assets/images/icon/factions/Kjerag.png' },
+  { id: 'kjerag', name: 'Kjerag', icon: '/assets/images/icon/factions/Kjerag.png' },
   { id: 'yan', name: 'Yan', icon: '/assets/images/icon/factions/Yan.png' },
   { id: 'victoria', name: 'Victoria', icon: '/assets/images/icon/factions/Victoria.png' },
   { id: 'ursus', name: 'Ursus', icon: '/assets/images/icon/factions/Ursus.png' },
@@ -70,7 +70,7 @@ export const FACTIONS = [
   { id: 'babel', name: 'Babel', icon: '/assets/images/icon/factions/Babel.png' },
 
   // Subfactions
-  { id: 'karlan_trade', name: 'Karlan Trade', parentId: 'karlan', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
+  { id: 'karlan_trade', name: 'Karlan Trade', parentId: 'kjerag', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
   { id: 'penguin_logistics', name: 'Penguin Logistics', parentId: 'yan', icon: '/assets/images/icon/factions/Penguin_Logistics.png' },
   { id: 'glasgow', name: 'Glasgow Gang', parentId: 'victoria', icon: '/assets/images/icon/factions/Glasgow.png' },
   { id: 'lungmen', name: 'Lungmen Guard', parentId: 'yan', icon: '/assets/images/icon/factions/Lungmen.png' },
