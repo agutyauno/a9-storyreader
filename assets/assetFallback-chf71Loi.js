@@ -123,13 +123,13 @@ ${y}`}class Ze extends Error{constructor({message:e,code:n,cause:r,name:i}){var 
           ${o}
         </div>
       </section>
-    `+l},renderBackgroundChange(t,e){const n=ke(t.image);return`<div class="${xe("background-change-trigger",e)}" data-bg-src="${n}"></div>`},renderDialogue(t,e){switch(t.type){case"dialogue":return this.renderDialogueBox(t,e);case"narrator":return this.renderNarrator(t,e);case"sfx":return this.renderSFX(t,e);case"decision":return this.renderDecision(t,e);case"choice_response":return this.renderChoiceResponse(t,e);case"background_change":return this.renderBackgroundChange(t,e);case"background":return this.renderBackground(t,e);case"comment":return"";default:return""}},processNotes(t,e){return t?t.replace(/\[([^|\]]+)\|([^\]]+)\]/g,(n,r,i)=>{const s=i.trim(),o=this.notes[s]||"",a=r.trim(),l=xe("translator-note",e),c=xe("note-tooltip",e);return`<span class="${l}" data-note-id="${s}" data-note-content="${o.replace(/"/g,"&quot;")}">${a}<span class="${c}">${o}</span></span>`}):""},renderNarrator(t,e){if(!t||!t.text)return"";const n=t.text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);return n.length===0?"":n.map(r=>`
+    `+l},renderBackgroundChange(t,e){const n=ke(t.image);return`<div class="${xe("background-change-trigger",e)}" data-bg-src="${n}"></div>`},renderDialogue(t,e){switch(t.type){case"dialogue":return this.renderDialogueBox(t,e);case"narrator":return this.renderNarrator(t,e);case"sfx":return this.renderSFX(t,e);case"decision":return this.renderDecision(t,e);case"choice_response":return this.renderChoiceResponse(t,e);case"background_change":return this.renderBackgroundChange(t,e);case"background":return this.renderBackground(t,e);case"comment":return"";default:return""}},processNotes(t,e){return t?t.replace(/\[([^|\]]+)\|([^\]]+)\]/g,(n,r,i)=>{const s=i.trim(),o=this.notes[s]||"",a=r.trim(),l=xe("translator-note",e),c=xe("note-tooltip",e);return`<span class="${l}" data-note-id="${s}" data-note-content="${o.replace(/"/g,"&quot;")}">${a}<span class="${c}">${o}</span></span>`}):""},renderNarrator(t,e){return`
       <div class="${xe("dialogue-box narrator-box",e)}">
         <div class="${xe("dialogue-content",e)}">
-          <p class="${xe("narrator-text",e)}">${this.processNotes(r,e)}</p>
+          <p class="${xe("narrator-text",e)}">${this.processNotes(t.text,e)}</p>
         </div>
       </div>
-    `).join("")},renderDialogueBox(t,e){const n=this.getAvatar(t.left),r=this.getAvatar(t.right),i=this.getFullImage(t.left),s=this.getFullImage(t.right);return`
+    `},renderDialogueBox(t,e){const n=this.getAvatar(t.left),r=this.getAvatar(t.right),i=this.getFullImage(t.left),s=this.getFullImage(t.right);return`
       <div class="${xe("dialogue-box",e)}">
         <img class="${xe(`character_avt ${i?"":"no-click"}`,e)}" src="${n}" ${i?`data-full-image="${i}"`:""} alt="">
         <div class="${xe("dialogue-content",e)}">
