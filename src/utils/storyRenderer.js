@@ -8,16 +8,16 @@ function cx(classNames, styles) {
 export const StoryRenderer = {
   characters: {},
   notes: {},
-  
+
   _resolveCharAndExpr(nameWithExpr) {
     if (!nameWithExpr) return { char: null, expr: null };
     const nameLower = nameWithExpr.toLowerCase();
-    
+
     // 1. Try full match first (e.g. "Dr.Ami")
     if (this.characters[nameLower]) {
       return { char: this.characters[nameLower], expr: null };
     }
-    
+
     // 2. Try splitting at the last dot (e.g. "Ms Ami.smile" -> "Ms Ami" + "smile")
     const lastDot = nameWithExpr.lastIndexOf('.');
     if (lastDot !== -1) {
@@ -28,7 +28,7 @@ export const StoryRenderer = {
         return { char, expr };
       }
     }
-    
+
     return { char: null, expr: null };
   },
 
@@ -46,21 +46,21 @@ export const StoryRenderer = {
         this.characters[name.toLowerCase()] = data;
       });
     }
-    
+
     this.notes = storyContent.notes || {};
-    
+
     return storyContent.sections.map((section) => this.renderSection(section, styles)).join('');
   },
 
   getAvatar(nameWithExpr) {
     const transparentPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const defaultAvt = transparentPixel; // Use transparent pixel instead of potentially missing blank.png
-    
+
     if (!nameWithExpr || nameWithExpr.trim() === '') return defaultAvt;
     if (nameWithExpr.includes('/')) return getAssetUrl(nameWithExpr);
 
     const { char, expr } = this._resolveCharAndExpr(nameWithExpr);
-    
+
     if (char) {
       if (expr && char.expressions?.[expr]) {
         const exprData = char.expressions[expr];
@@ -112,9 +112,9 @@ export const StoryRenderer = {
     const assetUrl = getAssetUrl(element.src);
     const ytId = getYouTubeId(assetUrl);
     const driveId = getGoogleDriveId(assetUrl);
-    
+
     let videoContent = '';
-    
+
     if (ytId) {
       videoContent = `<iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; aspect-ratio: 16/9; border-radius: 8px;"></iframe>`;
     } else if (driveId) {
@@ -222,26 +222,23 @@ export const StoryRenderer = {
       const id = noteId.trim();
       const noteContent = this.notes[id] || '';
       const cleanWord = word.trim();
-      
+
       // We use cx to get the scoped class name from the CSS module
       const noteClass = cx('translator-note', styles);
       const tooltipClass = cx('note-tooltip', styles);
-      
+
       return `<span class="${noteClass}" data-note-id="${id}" data-note-content="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}<span class="${tooltipClass}">${noteContent}</span></span>`;
     });
   },
 
   renderNarrator(narrator, styles) {
-    if (!narrator || !narrator.text) return '';
-    const lines = narrator.text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return '';
-    return lines.map(line => `
+    return `
       <div class="${cx('dialogue-box narrator-box', styles)}">
         <div class="${cx('dialogue-content', styles)}">
-          <p class="${cx('narrator-text', styles)}">${this.processNotes(line, styles)}</p>
+          <p class="${cx('narrator-text', styles)}">${this.processNotes(narrator.text, styles)}</p>
         </div>
       </div>
-    `).join('');
+    `;
   },
 
   renderDialogueBox(dialogue, styles) {
@@ -255,11 +252,11 @@ export const StoryRenderer = {
         <img class="${cx(`character_avt ${!leftFull ? 'no-click' : ''}`, styles)}" src="${leftAvatar}" ${leftFull ? `data-full-image="${leftFull}"` : ''} alt="">
         <div class="${cx('dialogue-content', styles)}">
           ${(() => {
-            const { char } = this._resolveCharAndExpr(dialogue.name);
-            const nameColor = dialogue.color || char?.color;
-            const colorStyle = nameColor ? `style="color: ${nameColor}"` : '';
-            return `<p class="${cx('character_name', styles)}" ${colorStyle}>${dialogue.name || ''}</p>`;
-          })()}
+        const { char } = this._resolveCharAndExpr(dialogue.name);
+        const nameColor = dialogue.color || char?.color;
+        const colorStyle = nameColor ? `style="color: ${nameColor}"` : '';
+        return `<p class="${cx('character_name', styles)}" ${colorStyle}>${dialogue.name || ''}</p>`;
+      })()}
           <p class="${cx('dialogue', styles)}">${this.processNotes(dialogue.text, styles)}</p>
         </div>
         <img class="${cx(`character_avt ${!rightFull ? 'no-click' : ''}`, styles)}" src="${rightAvatar}" ${rightFull ? `data-full-image="${rightFull}"` : ''} alt="">
@@ -301,7 +298,7 @@ export const StoryRenderer = {
   renderChoiceResponse(response, styles) {
     // A response is now a container for other dialogue elements
     const elements = (response.elements || []).map(el => this.renderDialogue(el, styles)).join('');
-    
+
     return `
       <div class="${cx('choice-response choice-response-container', styles)}" 
            data-choice-response="${response.choice_value}" 
