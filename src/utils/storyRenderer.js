@@ -232,13 +232,16 @@ export const StoryRenderer = {
   },
 
   renderNarrator(narrator, styles) {
-    return `
+    if (!narrator || !narrator.text) return '';
+    const lines = narrator.text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return '';
+    return lines.map(line => `
       <div class="${cx('dialogue-box narrator-box', styles)}">
         <div class="${cx('dialogue-content', styles)}">
-          <p class="${cx('narrator-text', styles)}">${this.processNotes(narrator.text, styles)}</p>
+          <p class="${cx('narrator-text', styles)}">${this.processNotes(line, styles)}</p>
         </div>
       </div>
-    `;
+    `).join('');
   },
 
   renderDialogueBox(dialogue, styles) {

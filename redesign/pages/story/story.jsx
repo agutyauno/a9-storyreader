@@ -11,7 +11,7 @@ import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
-import { Volume2, VolumeX, ArrowLeft, ArrowRight, ChevronUp } from 'lucide-react'
+import { Volume2, VolumeX, ArrowLeft, ArrowRight, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import './story.css'
 
 export default function RedesignStoryPage({ isRecord = false }) {
@@ -31,6 +31,32 @@ export default function RedesignStoryPage({ isRecord = false }) {
   const [modalData, setModalData] = useState(null) // { type: 'character'|'background', src: '' }
   const [activeNote, setActiveNote] = useState(null) // { word: string, content: string }
   const [showBackTop, setShowBackTop] = useState(false)
+
+  // Hide Dialogues state (hover 0.5s OR click pin)
+  const [isPinnedHideDialogues, setIsPinnedHideDialogues] = useState(false)
+  const [isHoverHideDialogues, setIsHoverHideDialogues] = useState(false)
+  const hoverTimerRef = useRef(null)
+
+  const isHideDialogues = isPinnedHideDialogues || isHoverHideDialogues
+
+  const handleHideMouseEnter = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = setTimeout(() => {
+      setIsHoverHideDialogues(true)
+    }, 500)
+  }
+
+  const handleHideMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+    setIsHoverHideDialogues(false)
+  }
+
+  const handleToggleHideDialogues = () => {
+    setIsPinnedHideDialogues(prev => !prev)
+  }
 
   // Audio settings state
   const [isMuted, setIsMuted] = useState(() => !!getSetting('soundMuted'))
@@ -434,7 +460,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
         />
 
         {/* Content Area */}
-        <div className={`content-area story-page-wrapper ${sidebarOpen ? 'sidebar-active' : 'expanded'}`}>
+        <div className={`content-area story-page-wrapper ${sidebarOpen ? 'sidebar-active' : 'expanded'} ${isHideDialogues ? 'hide-dialogues-mode' : ''}`}>
           {/* Dynamic header details overlay */}
           {isRecord ? (
             <Link to={`/operator/${story?.operator_id}`} className="header-meta-bar panel-stripes" title={`Đi tới hồ sơ cán viên: ${story?.operator_id}`}>
@@ -519,6 +545,17 @@ export default function RedesignStoryPage({ isRecord = false }) {
 
       {/* Floating Action Buttons */}
       <div className="floating-controls-stack">
+        {/* Toggle Hide Dialogues Action Button */}
+        <button
+          className={`floating-control-btn hide-dialogues-btn ${isHideDialogues ? 'is-active' : ''}`}
+          onClick={handleToggleHideDialogues}
+          onMouseEnter={handleHideMouseEnter}
+          onMouseLeave={handleHideMouseLeave}
+          title={isHideDialogues ? "Hiện lại toàn bộ hộp thoại (Click để bật/tắt, Hover 0.5s để xem thử)" : "Ẩn toàn bộ hộp thoại (Click để bật/tắt, Hover 0.5s để xem thử)"}
+        >
+          {isHideDialogues ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+
         {/* Quick Mute Action Button */}
         <button
           className={`floating-control-btn audio-toggle-btn ${isMuted ? 'is-muted' : ''}`}
