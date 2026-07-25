@@ -408,27 +408,31 @@ a.header-meta-bar:hover {
 /* ─────────────────────────────────────────────────────
    VISUAL NOVEL CHOICE / DECISION SELECTORS
    ───────────────────────────────────────────────────── */
+.dialogue-content.decision-choice {
+  padding: 0.6rem;
+}
+
 .decision-choice {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
+  gap: 0.6rem;
 }
 
 .decision {
   margin: 0;
-  padding: 0.85rem 1.25rem;
+  padding: 0.75rem 1.1rem;
   font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 1.3rem;
-  font-weight: normal;
-  line-height: 1.6;
+  font-size: 1.15rem;
+  font-weight: 450;
+  line-height: 1.5;
   color: #f0f0f0;
   background-color: var(--color-charcoal);
-  border: 2px solid rgba(245, 237, 220, 0.2);
+  border: 2px solid rgba(245, 237, 220, 0.25);
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
   transition: all 0.15s ease;
+  text-align: center;
 }
 
 .decision:hover {
@@ -438,15 +442,20 @@ a.header-meta-bar:hover {
 
 .decision.selected {
   border-color: var(--color-terracotta);
-  background-color: rgba(178, 101, 59, 0.15);
+  background-color: rgba(178, 101, 59, 0.25);
+  color: var(--color-cream);
 }
 
-/* Choice response animations */
+/* Choice response container & layout */
 .choice-response-container {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .choice-response {
@@ -455,6 +464,14 @@ a.header-meta-bar:hover {
 
 .choice-response.active {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.dialogue-background.choice-response.active {
+  display: grid;
 }
 
 /* Video blocks */
