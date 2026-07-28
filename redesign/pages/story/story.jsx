@@ -40,10 +40,13 @@ export default function RedesignStoryPage({ isRecord = false }) {
   const isHideDialogues = isPinnedHideDialogues || isHoverHideDialogues
 
   const handleHideMouseEnter = () => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
-    hoverTimerRef.current = setTimeout(() => {
-      setIsHoverHideDialogues(true)
-    }, 500)
+    // Only enable hover preview on desktop/mouse devices
+    if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = setTimeout(() => {
+        setIsHoverHideDialogues(true)
+      }, 500)
+    }
   }
 
   const handleHideMouseLeave = () => {

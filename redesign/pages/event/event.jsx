@@ -8,7 +8,7 @@ import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
 import Tabs from '../../components/Tabs'
-import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ExternalLink, Sparkles } from 'lucide-react'
 import './event.css'
 
 const EVENT_TABS = [
@@ -25,13 +25,13 @@ const regionCache = new Map()  // region_id → regionData
 export default function RedesignEventPage() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const location = useLocation()
 
     // Page States
     const [event, setEvent] = useState(null)
     const [stories, setStories] = useState([])
     const [characters, setCharacters] = useState([])
     const [gallery, setGallery] = useState([])
+    const [suggestedEvents, setSuggestedEvents] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -65,6 +65,7 @@ export default function RedesignEventPage() {
                 setStories(cached.stories)
                 setCharacters(cached.characters)
                 setGallery(cached.gallery)
+                setSuggestedEvents(cached.suggestedEvents || [])
                 document.title = `${cached.event.name} // Civilight Eterna Database`
 
                 // Restore arc & region từ cache nếu có
@@ -114,16 +115,52 @@ export default function RedesignEventPage() {
                     image: getAssetUrl(g.image_url || '/assets/images/icon/default.png')
                 }))
 
+                // Fetch Suggestions specifically for this event in its Arc
+                let resolvedSuggs = []
+                if (ev.arc_id) {
+                    try {
+                        const [rawSuggs, arcEvents] = await Promise.all([
+                            SupabaseAPI.getSuggestionsByArc(ev.arc_id),
+                            SupabaseAPI.getEventsByArc(ev.arc_id)
+                        ])
+
+                        if (rawSuggs && rawSuggs.length > 0 && arcEvents && arcEvents.length > 0) {
+                            // Sort arcEvents by display_order to find 0-based index of current event
+                            const sortedArcEvs = [...arcEvents].sort((x, y) => (x.display_order ?? 0) - (y.display_order ?? 0))
+                            const evIndex = sortedArcEvs.findIndex(e => e.event_id === ev.event_id)
+
+                            if (evIndex !== -1) {
+                                // position is 1-based index in arc (e.g. position 6 means after the 6th event)
+                                const event1BasedPos = evIndex + 1
+                                const matchedRaw = rawSuggs.filter(s => s.position === event1BasedPos)
+                                if (matchedRaw.length > 0) {
+                                    const allEvtsMap = await SupabaseAPI.getEvents().then(evts =>
+                                        Object.fromEntries((evts || []).map(e => [e.event_id, e]))
+                                    ).catch(() => ({}))
+
+                                    resolvedSuggs = matchedRaw.map(s => {
+                                        const target = allEvtsMap[s.target_event_id]
+                                        return target ? { ...target, suggestionId: s.id, suggestionPosition: s.position } : null
+                                    }).filter(Boolean)
+                                }
+                            }
+                        }
+                    } catch (suggErr) {
+                        console.warn('Could not load suggestions for event arc:', suggErr)
+                    }
+                }
+
                 // Lưu vào cache
-                eventCache.set(id, { event: ev, stories: st, characters: mappedCharacters, gallery: mappedGallery })
+                eventCache.set(id, { event: ev, stories: st, characters: mappedCharacters, gallery: mappedGallery, suggestedEvents: resolvedSuggs })
 
                 setEvent(ev)
                 document.title = `${ev.name} // Civilight Eterna Database`
                 setStories(st)
                 setCharacters(mappedCharacters)
                 setGallery(mappedGallery)
+                setSuggestedEvents(resolvedSuggs)
 
-                // Fetch Arc & Region (có cache ringêng)
+                // Fetch Arc & Region (có cache riêng)
                 if (ev.arc_id) {
                     let arcData = arcCache.get(ev.arc_id)
                     if (!arcData) {
@@ -150,7 +187,7 @@ export default function RedesignEventPage() {
         loadEventData()
     }, [id])
 
-    // 2. Fetch Region Events for Sidebar (runs only when region_id changes)
+    // 2. Fetch Region Events & Suggestions for Sidebar
     useEffect(() => {
         async function loadRegionEvents() {
             if (!arc || arc.region_id === loadedRegionId) return
@@ -159,26 +196,62 @@ export default function RedesignEventPage() {
                 setLoadingSidebar(true)
                 const arcs = await SupabaseAPI.getArcsByRegion(arc.region_id)
                 const allEvents = await SupabaseAPI.getEvents()
+                const allEventsMap = Object.fromEntries(allEvents.map(e => [e.event_id, e]))
 
-                // Filter events that belong to arcs in the current region
-                const arcIdsInRegion = arcs.map(a => a.arc_id)
-                const regionEvents = allEvents.filter(e => arcIdsInRegion.includes(e.arc_id))
+                // Fetch suggestions for all arcs in region
+                const suggestionsLists = await Promise.all(
+                    arcs.map(a => SupabaseAPI.getSuggestionsByArc(a.arc_id).catch(() => []))
+                )
 
-                // Map arc names + arc display_order for visual grouping in sidebar
                 const arcMap = Object.fromEntries(arcs.map(a => [a.arc_id, { name: a.name, order: a.display_order ?? 0 }]))
-                const enrichedEvents = regionEvents.map(e => ({
-                    ...e,
-                    arc_name: arcMap[e.arc_id]?.name || 'SYS.ARC',
-                    _arc_order: arcMap[e.arc_id]?.order ?? 0,
-                }))
+                const finalSidebarItems = []
 
-                // Sort: arc thứ tự → event thứ tự trong arc
-                enrichedEvents.sort((a, b) => {
-                    if (a._arc_order !== b._arc_order) return a._arc_order - b._arc_order
-                    return (a.display_order ?? 0) - (b.display_order ?? 0)
+                // Sort arcs by display_order
+                const sortedArcs = [...arcs].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+
+                sortedArcs.forEach((a) => {
+                    const originalArcIdx = arcs.findIndex(orig => orig.arc_id === a.arc_id)
+                    const arcEvents = allEvents.filter(e => e.arc_id === a.arc_id)
+                        .sort((x, y) => (x.display_order ?? 0) - (y.display_order ?? 0))
+
+                    const suggs = suggestionsLists[originalArcIdx] || []
+                    const suggsByPos = new Map()
+                    suggs.forEach(s => {
+                        const target = allEventsMap[s.target_event_id]
+                        if (target) {
+                            if (!suggsByPos.has(s.position)) suggsByPos.set(s.position, [])
+                            suggsByPos.get(s.position).push({
+                                ...target,
+                                arc_name: a.name,
+                                isSuggestion: true,
+                                suggestionPosition: s.position
+                            })
+                        }
+                    })
+
+                    const insertedPositions = new Set()
+                    arcEvents.forEach((evt, evtIdx) => {
+                        suggsByPos.forEach((sList, pos) => {
+                            if (!insertedPositions.has(pos) && pos <= evtIdx) {
+                                finalSidebarItems.push(...sList)
+                                insertedPositions.add(pos)
+                            }
+                        })
+                        finalSidebarItems.push({
+                            ...evt,
+                            arc_name: a.name
+                        })
+                    })
+
+                    suggsByPos.forEach((sList, pos) => {
+                        if (!insertedPositions.has(pos)) {
+                            finalSidebarItems.push(...sList)
+                            insertedPositions.add(pos)
+                        }
+                    })
                 })
 
-                setSidebarEvents(enrichedEvents)
+                setSidebarEvents(finalSidebarItems)
                 setLoadedRegionId(arc.region_id)
             } catch (err) {
                 console.error('Error loading sidebar events:', err)
@@ -209,10 +282,11 @@ export default function RedesignEventPage() {
         }
     }, [region])
 
-    // Compute navigation indexes
-    const currentIndex = sidebarEvents.findIndex(e => e.event_id === id)
-    const prevEvent = currentIndex > 0 ? sidebarEvents[currentIndex - 1] : null
-    const nextEvent = currentIndex >= 0 && currentIndex < sidebarEvents.length - 1 ? sidebarEvents[currentIndex + 1] : null
+    // Compute navigation indexes (filtering only actual non-suggestion events for next/prev)
+    const normalSidebarEvents = sidebarEvents.filter(e => !e.isSuggestion)
+    const currentIndex = normalSidebarEvents.findIndex(e => e.event_id === id)
+    const prevEvent = currentIndex > 0 ? normalSidebarEvents[currentIndex - 1] : null
+    const nextEvent = currentIndex >= 0 && currentIndex < normalSidebarEvents.length - 1 ? normalSidebarEvents[currentIndex + 1] : null
 
     return (
         <div className="app-wrapper">
@@ -235,11 +309,11 @@ export default function RedesignEventPage() {
                     loading={loadingSidebar}
                     itemKey="event_id"
                     renderItem={(evt) => (
-                        <div className="sidebar-event-item-content">
-                            <span className="technical-text" style={{ fontSize: '0.72rem', opacity: 0.6 }}>
-                                {evt.arc_name}
+                        <div className={`sidebar-event-item-content ${evt.isSuggestion ? 'is-suggestion' : ''}`}>
+                            <span className="technical-text" style={{ fontSize: '0.72rem', opacity: evt.isSuggestion ? 0.9 : 0.6, color: evt.isSuggestion ? 'var(--color-terracotta)' : 'inherit', fontWeight: evt.isSuggestion ? 700 : 400 }}>
+                                {evt.isSuggestion ? 'SYS.SUGGESTION' : evt.arc_name}
                             </span>
-                            <span style={{ fontWeight: 500 }}>{evt.name}</span>
+                            <span style={{ fontWeight: 500 }}>{evt.isSuggestion ? `[Gợi Ý] ${evt.name}` : evt.name}</span>
                         </div>
                     )}
                 />
@@ -274,7 +348,7 @@ export default function RedesignEventPage() {
                                             to={`/event/${prevEvent.event_id}`}
                                             state={{ regionId: arc?.region_id }}
                                             className="event-float-nav prev"
-                                            title={prevEvent.name}
+                                            title={`Chương trước: ${prevEvent.name}`}
                                         >
                                             <ArrowLeft size={20} />
                                         </Link>
@@ -284,69 +358,95 @@ export default function RedesignEventPage() {
                                             to={`/event/${nextEvent.event_id}`}
                                             state={{ regionId: arc?.region_id }}
                                             className="event-float-nav next"
-                                            title={nextEvent.name}
+                                            title={`Chương sau: ${nextEvent.name}`}
                                         >
                                             <ArrowRight size={20} />
                                         </Link>
                                     )}
 
-                                    {/* Info Column */}
-                                    <div className="event-hero-info">
-                                        <div className="event-hero-breadcrumb technical-text">
-                                            {arc && (
-                                                <Link
-                                                    to="/"
-                                                    state={{ regionId: arc.region_id }}
-                                                    className="event-breadcrumb-link"
-                                                >
-                                                    ← VỀ {region?.name || 'KHU VỰC'}
-                                                </Link>
-                                            )}
-                                        </div>
-                                        <div className="event-hero-meta technical-text">
-                                            SYS.EVENT_RECORD // {event.event_id}
-                                        </div>
-                                        <h2 className="event-hero-title">{event.name}</h2>
-                                        <p className="event-hero-desc">{event.description}</p>
+                                    {/* Main Hero Body */}
+                                    <div className={`event-hero-body ${suggestedEvents.length > 0 ? 'has-suggestion' : ''}`}>
+                                        {/* Info Column */}
+                                        <div className="event-hero-info">
+                                            <div className="event-hero-breadcrumb technical-text">
+                                                {arc && (
+                                                    <Link
+                                                        to="/"
+                                                        state={{ regionId: arc.region_id }}
+                                                        className="event-breadcrumb-link"
+                                                    >
+                                                        ← VỀ {region?.name || 'KHU VỰC'}
+                                                    </Link>
+                                                )}
+                                            </div>
+                                            <div className="event-hero-meta technical-text">
+                                                SYS.EVENT_RECORD // {event.event_id}
+                                            </div>
+                                            <h2 className="event-hero-title">{event.name}</h2>
+                                            <p className="event-hero-desc">{event.description}</p>
 
-                                        {/* Quick stats row */}
-                                        <div className="event-hero-stats">
-                                            <div className="event-stat-item">
-                                                <span className="event-stat-value technical-text">{stories.length}</span>
-                                                <span className="event-stat-label technical-text">STORIES</span>
-                                            </div>
-                                            <div className="event-stat-divider" />
-                                            <div className="event-stat-item">
-                                                <span className="event-stat-value technical-text">{characters.length}</span>
-                                                <span className="event-stat-label technical-text">CHARS</span>
-                                            </div>
-                                            <div className="event-stat-divider" />
-                                            <div className="event-stat-item">
-                                                <span className="event-stat-value technical-text">{gallery.length}</span>
-                                                <span className="event-stat-label technical-text">MEDIA</span>
+                                            {/* Quick stats row */}
+                                            <div className="event-hero-stats">
+                                                <div className="event-stat-item">
+                                                    <span className="event-stat-value technical-text">{stories.length}</span>
+                                                    <span className="event-stat-label technical-text">STORIES</span>
+                                                </div>
+                                                <div className="event-stat-divider" />
+                                                <div className="event-stat-item">
+                                                    <span className="event-stat-value technical-text">{characters.length}</span>
+                                                    <span className="event-stat-label technical-text">CHARS</span>
+                                                </div>
+                                                <div className="event-stat-divider" />
+                                                <div className="event-stat-item">
+                                                    <span className="event-stat-value technical-text">{gallery.length}</span>
+                                                    <span className="event-stat-label technical-text">MEDIA</span>
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {/* Banner Image Column */}
+                                        {event.banner_url && (
+                                            <div
+                                                className="event-hero-image-wrap"
+                                                onClick={() => setSelectedGalleryImage({
+                                                    image: getAssetUrl(event.banner_url),
+                                                    title: event.name
+                                                })}
+                                                title="Xem ảnh đầy đủ"
+                                            >
+                                                <img
+                                                    className="event-hero-image"
+                                                    src={getAssetUrl(event.banner_url)}
+                                                    alt={event.name}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null
+                                                        e.target.style.display = 'none'
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Banner Image Column */}
-                                    {event.banner_url && (
-                                        <div
-                                            className="event-hero-image-wrap"
-                                            onClick={() => setSelectedGalleryImage({
-                                                image: getAssetUrl(event.banner_url),
-                                                title: event.name
-                                            })}
-                                            title="Xem ảnh đầy đủ"
-                                        >
-                                            <img
-                                                className="event-hero-image"
-                                                src={getAssetUrl(event.banner_url)}
-                                                alt={event.name}
-                                                onError={(e) => {
-                                                    e.target.onerror = null
-                                                    e.target.style.display = 'none'
-                                                }}
-                                            />
+                                    {/* Suggestion Footer Bar inside Unified Hero Panel */}
+                                    {suggestedEvents.length > 0 && (
+                                        <div className="event-suggestion-banner">
+                                            <div className="sugg-banner-left">
+                                                <span className="sugg-banner-tag technical-text">
+                                                    SEC.NEXT_RECOMMENDATION // GỢI Ý SỰ KIỆN TIẾP THEO
+                                                </span>
+                                                <span className="sugg-banner-title">
+                                                    {suggestedEvents[0].name}
+                                                </span>
+                                            </div>
+                                            <Link
+                                                to={`/event/${suggestedEvents[0].event_id}`}
+                                                state={{ regionId: arc?.region_id }}
+                                                className="sugg-banner-btn"
+                                                title={`Chuyển tới sự kiện gợi ý: ${suggestedEvents[0].name}`}
+                                            >
+                                                <span>XEM SỰ KIỆN NÀY</span>
+                                                <ArrowRight size={16} />
+                                            </Link>
                                         </div>
                                     )}
                                 </div>

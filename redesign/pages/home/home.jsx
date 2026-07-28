@@ -36,10 +36,10 @@ export default function RedesignHomePage() {
                 setRegions(data)
                 if (data && data.length > 0) {
                     // Ưu tiên: 1. state từ router, 2. query param, 3. region của event vừa rời đi/chọn cuối cùng
-                    const targetRegionId = location.state?.regionId || 
-                                           new URLSearchParams(location.search).get('region') ||
-                                           localStorage.getItem('lastActiveRegionId') ||
-                                           localStorage.getItem('selectedRegionId')
+                    const targetRegionId = location.state?.regionId ||
+                        new URLSearchParams(location.search).get('region') ||
+                        localStorage.getItem('lastActiveRegionId') ||
+                        localStorage.getItem('selectedRegionId')
                     const targetRegion = targetRegionId ? data.find(r => r.region_id === targetRegionId) : null
                     setSelectedRegion(targetRegion || data[0])
                 }
@@ -76,15 +76,61 @@ export default function RedesignHomePage() {
                 const arcs = await SupabaseAPI.getArcsByRegion(selectedRegion.region_id)
 
                 if (arcs && arcs.length > 0) {
-                    // Fetch events for all arcs in parallel
-                    const eventsPromises = arcs.map(arc => SupabaseAPI.getEventsByArc(arc.arc_id))
-                    const eventsLists = await Promise.all(eventsPromises)
+                    // Fetch all events for resolving target_event_id in suggestions
+                    const allEventsMap = await SupabaseAPI.getEvents().then(evts =>
+                        Object.fromEntries((evts || []).map(e => [e.event_id, e]))
+                    ).catch(() => ({}))
 
-                    // Zip arcs and events
-                    const compiledArcs = arcs.map((arc, idx) => ({
-                        ...arc,
-                        events: eventsLists[idx] || []
-                    }))
+                    // Fetch events and suggestions for all arcs in parallel
+                    const [eventsLists, suggestionsLists] = await Promise.all([
+                        Promise.all(arcs.map(arc => SupabaseAPI.getEventsByArc(arc.arc_id))),
+                        Promise.all(arcs.map(arc => SupabaseAPI.getSuggestionsByArc(arc.arc_id).catch(() => [])))
+                    ])
+
+                    // Zip arcs, events, and suggestions into position-ordered sequence
+                    const compiledArcs = arcs.map((arc, idx) => {
+                        const rawEvents = eventsLists[idx] || []
+                        const rawSuggestions = suggestionsLists[idx] || []
+
+                        const suggsByPos = new Map()
+                        rawSuggestions.forEach(s => {
+                            const target = allEventsMap[s.target_event_id]
+                            if (target) {
+                                if (!suggsByPos.has(s.position)) suggsByPos.set(s.position, [])
+                                suggsByPos.get(s.position).push({
+                                    ...target,
+                                    isSuggestion: true,
+                                    suggestionId: s.id,
+                                    suggestionPosition: s.position
+                                })
+                            }
+                        })
+
+                        const mergedEvents = []
+                        const insertedPositions = new Set()
+
+                        rawEvents.forEach((evt, evtIdx) => {
+                            suggsByPos.forEach((suggs, pos) => {
+                                if (!insertedPositions.has(pos) && pos <= evtIdx) {
+                                    mergedEvents.push(...suggs)
+                                    insertedPositions.add(pos)
+                                }
+                            })
+                            mergedEvents.push(evt)
+                        })
+
+                        suggsByPos.forEach((suggs, pos) => {
+                            if (!insertedPositions.has(pos)) {
+                                mergedEvents.push(...suggs)
+                                insertedPositions.add(pos)
+                            }
+                        })
+
+                        return {
+                            ...arc,
+                            events: mergedEvents
+                        }
+                    })
 
                     setArcsWithEvents(compiledArcs)
                 } else {
@@ -187,7 +233,7 @@ export default function RedesignHomePage() {
                             </div>
 
                             {/* Event Chain Body */}
-                             {loadingEvents ? (
+                            {loadingEvents ? (
                                 <Loading text="RESOLVING_DATA_CHAIN_SEQUENCE..." />
                             ) : error ? (
                                 <div className="error-container">
@@ -218,13 +264,14 @@ export default function RedesignHomePage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Arc Events */}
+                                                    {/* Arc Events & Suggestions */}
                                                     {(arc.events || []).map((event, index) => (
                                                         <Link
-                                                            key={event.event_id}
+                                                            key={event.isSuggestion ? `sug-${event.suggestionId || event.event_id}-${index}` : event.event_id}
                                                             to={`/event/${event.event_id}`}
                                                             state={{ regionId: selectedRegion?.region_id }}
-                                                            className="event-card-horizontal"
+                                                            className={`event-card-horizontal ${event.isSuggestion ? 'is-suggestion' : ''}`}
+                                                            title={event.isSuggestion ? `Gợi ý sự kiện: ${event.name}` : event.name}
                                                         >
                                                             <div className="event-card-img-wrap-horizontal">
                                                                 <img
@@ -236,12 +283,13 @@ export default function RedesignHomePage() {
                                                                         e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
                                                                     }}
                                                                 />
-                                                                <div className="event-card-index-tag">
-                                                                    EVT.{index < 9 ? `0${index + 1}` : index + 1}
+                                                                <div className={`event-card-index-tag ${event.isSuggestion ? 'suggestion-tag' : ''}`}>
+                                                                    {event.isSuggestion ? 'SUGGESTION' : `EVT.${index < 9 ? `0${index + 1}` : index + 1}`}
                                                                 </div>
                                                             </div>
 
                                                             <div className="event-card-name-horizontal">
+                                                                {event.isSuggestion && <span className="suggestion-badge-label">GỢI Ý:</span>}
                                                                 {event.name}
                                                             </div>
                                                         </Link>

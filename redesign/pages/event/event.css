@@ -39,19 +39,29 @@
    HERO PANEL — 2-column layout with floating nav arrows
 ───────────────────────────────────────────────────── */
 .event-hero-panel {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    /* info: còn lại | image: tự tính từ aspect-ratio */
-    gap: 2.5rem;
+    display: flex;
+    flex-direction: column;
     background-color: #ffffff;
     border: var(--border-thick);
     box-shadow: 6px 6px 0px var(--color-charcoal);
-    padding: 2.5rem;
+    padding: 0;
     margin-bottom: 0;
     position: relative;
     overflow: visible;
-    height: 430px;
+}
+
+.event-hero-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2.5rem;
+    padding: 2.5rem;
     align-items: stretch;
+    height: 430px;
+    box-sizing: border-box;
+}
+
+.event-hero-body.has-suggestion {
+    padding-bottom: 0;
 }
 
 .event-hero-panel::before {
@@ -236,7 +246,6 @@
 .event-tab-bar-wrap {
     display: flex;
     align-items: stretch;
-    border: var(--border-thick);
     border-top: none;
     background-color: var(--color-charcoal);
     margin-bottom: 2rem;
@@ -722,6 +731,10 @@
         box-shadow: none;
     }
 
+    .event-hero-media-col {
+        width: 100%;
+    }
+
     .event-hero-image-wrap {
         order: -1;
         width: calc(100% + 3rem);
@@ -833,3 +846,82 @@
         top: calc(28.125vw - 9px);
     }
 }
+
+/* ─────────────────────────────────────────────────────
+   EVENT SUGGESTIONS STYLES
+───────────────────────────────────────────────────── */
+
+.event-suggestion-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.9rem 2.5rem;
+    margin: 0;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+}
+
+.sugg-banner-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow: hidden;
+}
+
+.sugg-banner-tag {
+    color: var(--color-terracotta);
+    font-weight: 700;
+    font-size: 0.76rem;
+    letter-spacing: 0.5px;
+}
+
+.sugg-banner-title {
+    font-family: var(--font-swiss);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--color-charcoal);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sugg-banner-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    background-color: var(--color-terracotta);
+    color: var(--color-cream);
+    border: var(--border-thick);
+    box-shadow: 3px 3px 0px var(--color-charcoal);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: var(--transition-smooth);
+    flex-shrink: 0;
+}
+
+.sugg-banner-btn:hover {
+    background-color: var(--color-ochre);
+    transform: translateY(-2px);
+    box-shadow: 5px 5px 0px var(--color-charcoal);
+}
+
+@media (max-width: 768px) {
+    .event-suggestion-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .sugg-banner-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+

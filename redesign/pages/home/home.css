@@ -356,3 +356,36 @@
         font-size: 1.15rem;
     }
 }
+
+/* Event Suggestion Card Styles */
+.event-card-horizontal.is-suggestion {
+    border: 3px dashed var(--color-terracotta);
+    background-color: var(--color-sand);
+    box-shadow: 4px 4px 0px rgba(178, 101, 59, 0.35);
+}
+
+.event-card-horizontal.is-suggestion:hover {
+    border-style: solid;
+    border-color: var(--color-terracotta);
+    box-shadow: 6px 6px 0px rgba(178, 101, 59, 0.35);
+}
+
+.event-card-index-tag.suggestion-tag {
+    background-color: var(--color-terracotta);
+    color: var(--color-cream);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.suggestion-badge-label {
+    color: var(--color-terracotta);
+    font-weight: 700;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    transition: color var(--transition-step);
+    margin-right: 7px;
+}
+
+.event-card-horizontal.is-suggestion:hover .suggestion-badge-label {
+    color: var(--color-charcoal);
+}
