@@ -4,8 +4,7 @@
     padding: 20px;
     margin-top: 24px;
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    max-width: 600px;
     border: 1px solid var(--color-border);
 }
 
@@ -49,14 +48,14 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
 }
 
 .charCard {
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(245, 237, 220, 0.22);
-    border-radius: 4px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
     padding: 12px;
     text-align: center;
     position: relative;
@@ -65,10 +64,9 @@
 }
 
 .charCard:hover {
-    border-color: var(--color-terracotta, #b2653b);
-    background: rgba(18, 18, 18, 0.85);
+    border-color: var(--color-accent-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(178, 101, 59, 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .avatarWrap {

@@ -4,23 +4,23 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 4000;
+    z-index: 2000;
     animation: fadeIn 0.15s ease-out;
 }
 
 .modal {
-    background: #141414;
-    border: 1px solid rgba(245, 237, 220, 0.25);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
-    width: 420px;
+    background: #1e1e26;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    width: 380px;
     max-width: 90%;
-    padding: 2.25rem 2.25rem;
+    padding: 24px;
     position: relative;
     overflow: hidden;
     animation: modalIn 0.2s ease-out;

@@ -4,25 +4,6 @@
     flex: 1;
     overflow: auto; /* allow scrolling when content exceeds height */
     min-height: 0;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-}
-
-.panel::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-    width: 0;
-    height: 0;
-}
-
-.panel * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.panel *::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
 }
 
 /* ─── Search row ──────────────────────────────────────────────────────────── */
@@ -147,80 +128,39 @@
 
 /* ─── Asset Card ─────────────────────────────────────────────────────────── */
 .card {
-    position: relative;
-    background: rgba(18, 18, 18, 0.85);
-    border: 1px solid rgba(245, 237, 220, 0.22);
-    border-radius: 4px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 165px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-/* Retro-Tech Corner Bracket Highlights on Hover */
-.card::before,
-.card::after {
-    content: '';
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-style: solid;
-    border-color: var(--color-terracotta, #b2653b);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-    z-index: 10;
-}
-
-.card::before {
-    top: 3px;
-    left: 3px;
-    border-width: 1.5px 0 0 1.5px;
-}
-
-.card::after {
-    bottom: 3px;
-    right: 3px;
-    border-width: 0 1.5px 1.5px 0;
+    transition: border-color 0.15s;
 }
 
 .card:hover {
-    border-color: var(--color-terracotta, #b2653b);
-    background: rgba(26, 24, 22, 0.95);
-    box-shadow: 0 4px 16px rgba(178, 101, 59, 0.15), 0 0 0 1px rgba(178, 101, 59, 0.3);
-}
-
-.card:hover::before,
-.card:hover::after {
-    opacity: 1;
+    border-color: var(--color-accent-light, #a78bfa);
 }
 
 /* Preview */
+.card {
+    height: 150px; 
+}
+
 .cardPreview {
     width: 100%;
-    height: 95px;
-    background: rgba(0, 0, 0, 0.6);
-    border-bottom: 1px solid rgba(245, 237, 220, 0.12);
+    aspect-ratio: 16 / 9; 
+    background: var(--color-bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    position: relative;
-    cursor: pointer;
+    cursor: default;
 }
 
 .cardPreview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.card:hover .cardPreview img {
-    transform: scale(1.04);
 }
 
 .videoThumb,
@@ -232,24 +172,23 @@
     gap: 6px;
     width: 100%;
     height: 100%;
-    color: rgba(245, 237, 220, 0.6);
+    color: var(--color-text-tertiary);
     cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition: color 0.15s;
 }
 
 .audioThumb:hover {
-    color: var(--color-terracotta, #b2653b);
-    background-color: rgba(178, 101, 59, 0.1);
+    color: var(--color-accent);
 }
 
 .audioThumb.playing {
-    color: var(--color-terracotta, #b2653b);
+    color: var(--color-accent);
 }
 
 .playingDot {
     width: 6px;
     height: 6px;
-    background: var(--color-terracotta, #b2653b);
+    background: var(--color-accent);
     border-radius: 50%;
     animation: pulse 1s infinite;
 }
@@ -268,64 +207,58 @@
 
 /* Info */
 .cardInfo {
-    padding: 6px 8px 4px;
+    padding: 10px 12px 8px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
-    flex: 1;
 }
 
 .cardName {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-text-secondary, #f5eddc);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.2;
 }
 
 .cardId {
-    font-size: 0.65rem;
-    color: rgba(245, 237, 220, 0.45);
+    font-size: 13px;
+    color: var(--color-text-tertiary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: var(--font-mono, monospace);
+    font-family: 'JetBrains Mono', monospace;
 }
 
 /* Actions */
 .cardActions {
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 4px;
-    padding: 2px 6px 6px;
+    gap: 3px;
+    padding: 4px 7px 6px;
 }
 
 .cardBtn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3px 6px;
-    font-size: 11px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(245, 237, 220, 0.18);
+    padding: 2px 6px;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--color-border);
     border-radius: 3px;
     cursor: pointer;
-    color: rgba(245, 237, 220, 0.7);
-    transition: all 0.15s ease;
+    color: var(--color-text-tertiary);
+    transition: var(--transition-base);
 }
 
 .cardBtn:hover {
-    color: #f5eddc;
-    border-color: rgba(245, 237, 220, 0.4);
-    background: rgba(245, 237, 220, 0.12);
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .cardBtn.danger:hover {
     color: #f87171;
-    border-color: rgba(248, 113, 113, 0.5);
-    background: rgba(248, 113, 113, 0.15);
+    border-color: #f87171;
 }

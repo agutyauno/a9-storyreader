@@ -1,22 +1,21 @@
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 3000;
+    z-index: 1000;
 }
 
 .modal {
-    background: #141414;
-    border: 1px solid rgba(245, 237, 220, 0.25);
-    border-radius: 4px;
+    background: var(--color-bg-dark);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
     min-width: 450px;
     max-width: 700px;
     width: 90%;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
     color: var(--color-text-primary);
     display: flex;
     flex-direction: column;
@@ -27,7 +26,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 2.25rem;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -52,23 +51,20 @@
 }
 
 .modalBody {
-    padding: 2.25rem 2.5rem;
+    padding: 20px 24px;
     overflow-y: auto;
     flex: 1;
 }
 
 .formGroup {
-    margin-bottom: 1.25rem;
+    margin-bottom: 14px;
 }
 
 .formGroup label {
     display: block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    color: var(--color-terracotta, #b2653b);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
     margin-bottom: 6px;
 }
 
@@ -81,22 +77,22 @@
 .formGroup select {
     width: 100%;
     box-sizing: border-box;
-    background: #0a0a0a;
-    border: 1px solid rgba(245, 237, 220, 0.25);
-    border-radius: 4px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
     padding: 10px 14px;
-    font-size: 13px;
-    color: #f5eddc;
-    font-family: var(--font-mono, monospace);
-    transition: all 0.15s ease;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    transition: var(--transition-base);
 }
 
 .formGroup input:focus,
 .formGroup textarea:focus,
 .formGroup select:focus {
     outline: none;
-    border-color: var(--color-terracotta, #b2653b);
-    box-shadow: 0 0 0 2px rgba(178, 101, 59, 0.25);
+    border-color: var(--color-accent-light);
+    box-shadow: 0 0 0 3px rgba(184, 169, 255, 0.1);
 }
 
 .formGroup textarea {
