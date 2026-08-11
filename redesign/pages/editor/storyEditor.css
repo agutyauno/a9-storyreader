@@ -9,8 +9,8 @@
     --text-main: #F5EDDC;
     --border-thick: 2px solid #F5EDDC;
     --border-thin: 1px solid rgba(245, 237, 220, 0.15);
-    --color-charcoal: #F5EDDC;
-    --color-cream: #181818;
+    --color-charcoal: #181818;
+    --color-cream: #F5EDDC;
 
     display: flex;
     flex-direction: column;

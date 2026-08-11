@@ -30,7 +30,7 @@ function ProtectedRoute({ children }) {
 
   if (loading) return null; // Wait for session load
 
-  if (!user) {
+  if (!user && !import.meta.env.DEV) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

@@ -3,20 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../src/contexts/AuthContext'
 import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut } from 'lucide-react'
 
-import EditorSidebar from '../../../src/components/Editor/EditorSidebar'
-import EditorToolbar from '../../../src/components/Editor/EditorToolbar'
+import EditorSidebar from './components/sidebar/EditorSidebar'
+import EditorToolbar from './components/EditorToolbar'
 import ScriptEditor from './components/ScriptEditor'
 import LivePreview from './components/LivePreview'
 
-import SuggestionsManager from '../../../src/components/Editor/SuggestionsManager'
-import EventCharactersManager from '../../../src/components/Editor/EventCharactersManager'
-import EventGalleryManager from '../../../src/components/Editor/EventGalleryManager'
+import SuggestionsManager from './components/managers/SuggestionsManager'
+import EventCharactersManager from './components/managers/EventCharactersManager'
+import EventGalleryManager from './components/managers/EventGalleryManager'
 
-import AssetPickerModal from '../../../src/components/Editor/AssetPickerModal'
-import AssetDetailModal from '../../../src/components/Editor/AssetDetailModal'
-import AssetPreviewModal from '../../../src/components/Editor/AssetPreviewModal'
-import NotificationToast from '../../../src/components/Editor/NotificationToast'
-import UnsavedChangesModal from '../../../src/components/Editor/UnsavedChangesModal'
+import AssetPickerModal from './components/modals/AssetPickerModal'
+import AssetDetailModal from './components/modals/AssetDetailModal'
+import AssetPreviewModal from './components/modals/AssetPreviewModal'
+import NotificationToast from './components/NotificationToast'
+import UnsavedChangesModal from './components/modals/UnsavedChangesModal'
 
 import { StoryScriptParser } from '../../../src/utils/storyParser'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
@@ -400,14 +400,17 @@ export default function RedesignStoryEditorPage() {
         window.open('#/story/preview?preview=1', '_blank')
     }
 
-    const handleEntitySelect = (node) => {
+    const handleEntitySelect = (storyIdOrNode, nodeObj) => {
+        const targetNode = nodeObj || (typeof storyIdOrNode === 'object' ? storyIdOrNode : null)
+        const storyId = typeof storyIdOrNode === 'string' ? storyIdOrNode : (targetNode?.story_id || targetNode?.id)
+
         const action = () => {
-            if (node.type === 'story') {
-                navigate(`/editor/story/${node.story_id || node.id}`)
+            if (targetNode?.type === 'story' || (storyId && (!targetNode || targetNode.type === 'story'))) {
+                if (storyId) navigate(`/editor/story/${storyId}`)
                 setEditorMode('story')
                 setSelectedEntity(null)
-            } else {
-                setSelectedEntity(node)
+            } else if (targetNode) {
+                setSelectedEntity(targetNode)
                 setEditorMode(null)
             }
         }

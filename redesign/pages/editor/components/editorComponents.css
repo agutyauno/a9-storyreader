@@ -1,0 +1,529 @@
+/* ========================================================================== */
+/* Redesign Editor Components & Modals CSS - Arknights Brutalist Style        */
+/* ========================================================================== */
+
+/* --- Common Editor Modal Overlay --- */
+.redesign-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+    animation: fadeIn 0.15s ease-out;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-modal-card {
+    background-color: var(--color-charcoal, #181818);
+    border: 2px solid var(--color-cream, #F5EDDC);
+    color: var(--color-cream, #F5EDDC);
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+.redesign-modal-card.large {
+    max-width: 900px;
+}
+
+.redesign-modal-card.wide {
+    max-width: 1100px;
+}
+
+.redesign-modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 2px solid var(--color-cream, #F5EDDC);
+    background-color: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.redesign-modal-title {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--color-cream, #F5EDDC);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.redesign-modal-close {
+    background: transparent;
+    border: 1px solid rgba(245, 237, 220, 0.3);
+    color: var(--color-cream, #F5EDDC);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.redesign-modal-close:hover {
+    background-color: var(--color-terracotta, #B2653B);
+    border-color: var(--color-terracotta, #B2653B);
+    color: #FFF;
+}
+
+.redesign-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-modal-footer {
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid rgba(245, 237, 220, 0.2);
+    background-color: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* --- Form Control Elements --- */
+.redesign-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.redesign-form-group.row {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+}
+
+.redesign-label {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(245, 237, 220, 0.75);
+}
+
+.redesign-input,
+.redesign-textarea,
+.redesign-select {
+    background-color: #101010;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    color: var(--color-cream, #F5EDDC);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.redesign-input:focus,
+.redesign-textarea:focus,
+.redesign-select:focus {
+    border-color: var(--color-terracotta, #B2653B);
+    box-shadow: 0 0 0 1px var(--color-terracotta, #B2653B);
+}
+
+.redesign-textarea {
+    min-height: 85px;
+    resize: vertical;
+}
+
+/* --- Buttons --- */
+.redesign-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.95rem;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--color-cream, #F5EDDC);
+    background-color: transparent;
+    color: var(--color-cream, #F5EDDC);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.redesign-btn:hover:not(:disabled) {
+    background-color: var(--color-cream, #F5EDDC);
+    color: var(--color-charcoal, #181818);
+}
+
+.redesign-btn.primary {
+    background-color: var(--color-terracotta, #B2653B);
+    border-color: var(--color-terracotta, #B2653B);
+    color: #FFF;
+}
+
+.redesign-btn.primary:hover:not(:disabled) {
+    background-color: #9C532D;
+    border-color: #9C532D;
+}
+
+.redesign-btn.danger {
+    border-color: #802520;
+    color: #FF6B6B;
+}
+
+.redesign-btn.danger:hover:not(:disabled) {
+    background-color: #802520;
+    color: #FFF;
+}
+
+.redesign-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Editor Toolbar --- */
+.redesign-editor-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.45rem 0.85rem;
+    background-color: #141414;
+    border-bottom: 2px solid var(--color-cream, #F5EDDC);
+    overflow-x: auto;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.redesign-toolbar-group-label {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 0.2rem 0.4rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.group-scene .redesign-toolbar-group-label {
+    color: #FF9E80;
+    background-color: rgba(178, 101, 59, 0.2);
+}
+
+.group-audio .redesign-toolbar-group-label {
+    color: #FFE082;
+    background-color: rgba(186, 133, 48, 0.2);
+}
+
+.group-content .redesign-toolbar-group-label {
+    color: #A5D6A7;
+    background-color: rgba(92, 127, 113, 0.2);
+}
+
+.redesign-toolbar-divider {
+    width: 1px;
+    height: 22px;
+    background-color: rgba(245, 237, 220, 0.2);
+    margin: 0 0.2rem;
+}
+
+.redesign-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    padding: 0.3rem 0.6rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #1A1A1A;
+    border: 1px solid rgba(245, 237, 220, 0.2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+/* Scene Buttons */
+.tool-scene {
+    color: #FFD7C2;
+    border-color: rgba(178, 101, 59, 0.4);
+}
+.tool-scene .tool-icon {
+    color: #B2653B;
+}
+.tool-scene:hover {
+    background-color: #B2653B;
+    color: #FFF;
+    border-color: #B2653B;
+}
+.tool-scene:hover .tool-icon {
+    color: #FFF;
+}
+
+/* Audio Buttons */
+.tool-audio {
+    color: #FFE5B4;
+    border-color: rgba(186, 133, 48, 0.4);
+}
+.tool-audio .tool-icon {
+    color: #BA8530;
+}
+.tool-audio:hover {
+    background-color: #BA8530;
+    color: #FFF;
+    border-color: #BA8530;
+}
+.tool-audio:hover .tool-icon {
+    color: #FFF;
+}
+
+/* Content Buttons */
+.tool-content {
+    color: #C8E6C9;
+    border-color: rgba(92, 127, 113, 0.4);
+}
+.tool-content .tool-icon {
+    color: #5C7F71;
+}
+.tool-content:hover {
+    background-color: #5C7F71;
+    color: #FFF;
+    border-color: #5C7F71;
+}
+.tool-content:hover .tool-icon {
+    color: #FFF;
+}
+
+/* --- Notification Toast --- */
+.redesign-toast-wrapper {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 2000;
+    pointer-events: none;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-toast {
+    pointer-events: auto;
+    min-width: 280px;
+    padding: 0.75rem 1.1rem;
+    background-color: var(--color-charcoal, #181818);
+    border: 2px solid var(--color-cream, #F5EDDC);
+    color: var(--color-cream, #F5EDDC);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    font-size: 0.85rem;
+    animation: slideUp 0.2s ease-out;
+}
+
+.redesign-toast.success { border-color: #5C7F71; }
+.redesign-toast.error { border-color: #802520; }
+.redesign-toast.warning { border-color: #BA8530; }
+
+/* --- Sidebar & Tree --- */
+.redesign-sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: #141414;
+    border-right: 2px solid var(--color-cream, #F5EDDC);
+    overflow: hidden;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-sidebar-tabs {
+    display: flex;
+    width: 100%;
+    border-bottom: 2px solid var(--color-cream, #F5EDDC);
+    background-color: #101010;
+}
+
+.redesign-sidebar-tab {
+    flex: 1;
+    width: 50%;
+    padding: 0.7rem 0.5rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(245, 237, 220, 0.55);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.redesign-sidebar-tab.active {
+    color: var(--color-cream, #F5EDDC) !important;
+    font-weight: 700;
+    border-bottom-color: var(--color-terracotta, #B2653B);
+    background-color: rgba(178, 101, 59, 0.18);
+}
+
+.redesign-tree-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.redesign-tree-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.38rem 0.5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.84rem;
+    user-select: none;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-tree-node:hover {
+    background-color: rgba(245, 237, 220, 0.08);
+    border-color: rgba(245, 237, 220, 0.2);
+}
+
+.redesign-tree-node.selected {
+    background-color: rgba(178, 101, 59, 0.28);
+    border-color: var(--color-terracotta, #B2653B);
+    color: #FFF;
+    font-weight: 600;
+}
+
+.redesign-tree-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.redesign-tree-node:hover .redesign-tree-actions {
+    opacity: 1;
+}
+
+.redesign-tree-btn {
+    background: transparent;
+    border: none;
+    color: rgba(245, 237, 220, 0.7);
+    padding: 2px 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.redesign-tree-btn:hover {
+    color: var(--color-cream, #F5EDDC);
+}
+
+.redesign-tree-btn.danger:hover {
+    color: #FF6B6B;
+}
+
+/* --- Asset Grid --- */
+.redesign-asset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    gap: 0.65rem;
+    padding: 0.65rem;
+}
+
+.redesign-asset-card {
+    background-color: #1A1A1A;
+    border: 1px solid rgba(245, 237, 220, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s ease;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+}
+
+.redesign-asset-card:hover {
+    border-color: var(--color-terracotta, #B2653B);
+    transform: translateY(-2px);
+}
+
+.redesign-asset-thumb {
+    height: 95px;
+    background-color: #0E0E0E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.redesign-asset-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.redesign-asset-info {
+    padding: 0.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    background-color: #141414;
+}
+
+.redesign-asset-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.redesign-asset-id {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.62rem;
+    color: rgba(245, 237, 220, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
