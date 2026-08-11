@@ -866,19 +866,20 @@ const SupabaseAPI_Raw = {
     const events = [];
     for (const s of suggestions) {
       const ev = await this.getEvent(s.target_event_id);
-      if (ev) events.push({ ...ev, suggestion_position: s.position, suggestion_id: s.id });
+      if (ev) events.push({ ...ev, suggestion_position: s.position, suggestion_type: s.type || 'next', suggestion_id: s.id });
     }
     return events;
   },
 
   async createSuggestion(payload) {
+    const cleanPayload = { type: 'next', ...payload };
     if (USE_MOCK_DB) {
-      const newItem = { id: genNumericId(), position: 0, ...payload };
+      const newItem = { id: genNumericId(), position: 0, ...cleanPayload };
       if (!mockDatabase.suggestions) mockDatabase.suggestions = [];
       mockDatabase.suggestions.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('suggestions').insert(payload).select().single();
+    const { data, error } = await supabase.from('suggestions').insert(cleanPayload).select().single();
     if (error) throw error;
     return data;
   },

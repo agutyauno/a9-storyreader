@@ -101,7 +101,8 @@ export default function RedesignHomePage() {
                                     ...target,
                                     isSuggestion: true,
                                     suggestionId: s.id,
-                                    suggestionPosition: s.position
+                                    suggestionPosition: s.position,
+                                    suggestionType: s.type || 'next'
                                 })
                             }
                         })
@@ -110,18 +111,27 @@ export default function RedesignHomePage() {
                         const insertedPositions = new Set()
 
                         rawEvents.forEach((evt, evtIdx) => {
-                            suggsByPos.forEach((suggs, pos) => {
-                                if (!insertedPositions.has(pos) && pos <= evtIdx) {
-                                    mergedEvents.push(...suggs)
-                                    insertedPositions.add(pos)
-                                }
-                            })
+                            const currentPos = evtIdx + 1
+                            const suggsForCurrent = suggsByPos.get(currentPos) || []
+
+                            // 1. Insert "Prev" (Đọc trước) suggestions BEFORE this event
+                            const prevSuggs = suggsForCurrent.filter(s => s.suggestionType === 'prev')
+                            mergedEvents.push(...prevSuggs)
+
+                            // 2. Insert the actual event
                             mergedEvents.push(evt)
+
+                            // 3. Insert "Next" (Tiếp theo) suggestions AFTER this event
+                            const nextSuggs = suggsForCurrent.filter(s => (s.suggestionType || 'next') === 'next')
+                            mergedEvents.push(...nextSuggs)
+
+                            insertedPositions.add(currentPos)
                         })
 
-                        suggsByPos.forEach((suggs, pos) => {
+                        // 4. Remaining suggestions (for positions beyond rawEvents count)
+                        suggsByPos.forEach((suggsList, pos) => {
                             if (!insertedPositions.has(pos)) {
-                                mergedEvents.push(...suggs)
+                                mergedEvents.push(...suggsList)
                                 insertedPositions.add(pos)
                             }
                         })
@@ -265,35 +275,42 @@ export default function RedesignHomePage() {
                                                     </div>
 
                                                     {/* Arc Events & Suggestions */}
-                                                    {(arc.events || []).map((event, index) => (
-                                                        <Link
-                                                            key={event.isSuggestion ? `sug-${event.suggestionId || event.event_id}-${index}` : event.event_id}
-                                                            to={`/event/${event.event_id}`}
-                                                            state={{ regionId: selectedRegion?.region_id }}
-                                                            className={`event-card-horizontal ${event.isSuggestion ? 'is-suggestion' : ''}`}
-                                                            title={event.isSuggestion ? `Gợi ý sự kiện: ${event.name}` : event.name}
-                                                        >
-                                                            <div className="event-card-img-wrap-horizontal">
-                                                                <img
-                                                                    className="event-card-img-horizontal"
-                                                                    src={getAssetUrl(event.image_url || '/assets/images/icon/rhodes_island.png')}
-                                                                    alt={event.name}
-                                                                    onError={(e) => {
-                                                                        e.target.onerror = null;
-                                                                        e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
-                                                                    }}
-                                                                />
-                                                                <div className={`event-card-index-tag ${event.isSuggestion ? 'suggestion-tag' : ''}`}>
-                                                                    {event.isSuggestion ? 'SUGGESTION' : `EVT.${index < 9 ? `0${index + 1}` : index + 1}`}
+                                                    {(arc.events || []).map((event, index) => {
+                                                        const isPrev = event.isSuggestion && event.suggestionType === 'prev';
+                                                        return (
+                                                            <Link
+                                                                key={event.isSuggestion ? `sug-${event.suggestionId || event.event_id}-${index}` : event.event_id}
+                                                                to={`/event/${event.event_id}`}
+                                                                state={{ regionId: selectedRegion?.region_id }}
+                                                                className={`event-card-horizontal ${event.isSuggestion ? (isPrev ? 'is-suggestion prev-sugg' : 'is-suggestion next-sugg') : ''}`}
+                                                                title={event.isSuggestion ? `Gợi ý sự kiện (${isPrev ? 'Đọc trước' : 'Tiếp theo'}): ${event.name}` : event.name}
+                                                            >
+                                                                <div className="event-card-img-wrap-horizontal">
+                                                                    <img
+                                                                        className="event-card-img-horizontal"
+                                                                        src={getAssetUrl(event.image_url || '/assets/images/icon/rhodes_island.png')}
+                                                                        alt={event.name}
+                                                                        onError={(e) => {
+                                                                            e.target.onerror = null;
+                                                                            e.target.src = getAssetUrl('/assets/images/icon/rhodes_island.png');
+                                                                        }}
+                                                                    />
+                                                                    <div className={`event-card-index-tag ${event.isSuggestion ? (isPrev ? 'suggestion-tag prev-tag' : 'suggestion-tag next-tag') : ''}`}>
+                                                                        {event.isSuggestion ? (isPrev ? 'ĐỌC TRƯỚC' : 'TIẾP THEO') : `EVT.${index < 9 ? `0${index + 1}` : index + 1}`}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="event-card-name-horizontal">
-                                                                {event.isSuggestion && <span className="suggestion-badge-label">GỢI Ý:</span>}
-                                                                {event.name}
-                                                            </div>
-                                                        </Link>
-                                                    ))}
+                                                                <div className="event-card-name-horizontal">
+                                                                    {event.isSuggestion && (
+                                                                        <span className={`suggestion-badge-label ${isPrev ? 'prev-label' : ''}`}>
+                                                                            {isPrev ? 'ĐỌC TRƯỚC:' : 'TIẾP THEO:'}
+                                                                        </span>
+                                                                    )}
+                                                                    {event.name}
+                                                                </div>
+                                                            </Link>
+                                                        )
+                                                    })}
                                                 </div>
                                             ))
                                         )}
@@ -307,7 +324,6 @@ export default function RedesignHomePage() {
                 </div>
             </div>
 
-            {/* Footer */}
             {/* Footer */}
             <Footer />
         </div>

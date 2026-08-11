@@ -364,10 +364,21 @@
     box-shadow: 4px 4px 0px rgba(178, 101, 59, 0.35);
 }
 
+.event-card-horizontal.is-suggestion.prev-sugg {
+    border: 3px dashed #1E88E5;
+    box-shadow: 4px 4px 0px rgba(30, 136, 229, 0.35);
+}
+
 .event-card-horizontal.is-suggestion:hover {
     border-style: solid;
     border-color: var(--color-terracotta);
     box-shadow: 6px 6px 0px rgba(178, 101, 59, 0.35);
+}
+
+.event-card-horizontal.is-suggestion.prev-sugg:hover {
+    border-style: solid;
+    border-color: #1E88E5;
+    box-shadow: 6px 6px 0px rgba(30, 136, 229, 0.35);
 }
 
 .event-card-index-tag.suggestion-tag {
@@ -377,6 +388,10 @@
     letter-spacing: 0.5px;
 }
 
+.event-card-index-tag.suggestion-tag.prev-tag {
+    background-color: #1565C0;
+}
+
 .suggestion-badge-label {
     color: var(--color-terracotta);
     font-weight: 700;
@@ -384,6 +399,10 @@
     font-family: var(--font-mono);
     transition: color var(--transition-step);
     margin-right: 7px;
+}
+
+.suggestion-badge-label.prev-label {
+    color: #1565C0;
 }
 
 .event-card-horizontal.is-suggestion:hover .suggestion-badge-label {

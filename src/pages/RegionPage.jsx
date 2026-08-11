@@ -112,23 +112,22 @@ export default function RegionPage() {
     const regionParam = id ? `?region=${id}` : '';
 
     arc.events.forEach((event, index) => {
-      // Insert suggestions before or at this position
-      arc.suggestionsByPos.forEach((suggs, pos) => {
-        if (!insertedPositions.has(pos) && pos <= index) {
-          suggs.forEach((s, idx) => {
-            elements.push(
-              <div key={`sug_before_${pos}_${idx}`} className={cx("arc-suggestion")}>
-                <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
-                  {s.targetEvent ? `Gợi ý: ${s.targetEvent.name}` : 'Sự kiện liên quan'}
-                </Link>
-              </div>
-            );
-          });
-          insertedPositions.add(pos);
-        }
+      const currentPos = index + 1;
+      const suggsForCurrent = arc.suggestionsByPos.get(currentPos) || [];
+
+      // 1. Insert "Prev" (Đọc trước) suggestions BEFORE this event
+      const prevSuggs = suggsForCurrent.filter(s => s.type === 'prev');
+      prevSuggs.forEach((s, idx) => {
+        elements.push(
+          <div key={`sug_prev_${currentPos}_${idx}`} className={cx("arc-suggestion", "suggestion-prev")}>
+            <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text", "prev-text")}>
+              {s.targetEvent ? `Gợi ý [Đọc trước]: ${s.targetEvent.name}` : `Gợi ý [Đọc trước]`}
+            </Link>
+          </div>
+        );
       });
 
-      // Insert the actual event
+      // 2. Insert the actual event card
       elements.push(
         <Link key={event.event_id} className={cx("selection-panel-item")} to={`/event/${event.event_id}${regionParam}`}>
           <img src={getAssetUrl(event.image_url || '/assets/images/icon/default.png')} alt={event.name} />
@@ -138,16 +137,31 @@ export default function RegionPage() {
           </div>
         </Link>
       );
+
+      // 3. Insert "Next" (Tiếp theo) suggestions AFTER this event
+      const nextSuggs = suggsForCurrent.filter(s => (s.type || 'next') === 'next');
+      nextSuggs.forEach((s, idx) => {
+        elements.push(
+          <div key={`sug_next_${currentPos}_${idx}`} className={cx("arc-suggestion", "suggestion-next")}>
+            <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text", "next-text")}>
+              {s.targetEvent ? `Gợi ý [Tiếp theo]: ${s.targetEvent.name}` : `Gợi ý [Tiếp theo]`}
+            </Link>
+          </div>
+        );
+      });
+
+      insertedPositions.add(currentPos);
     });
 
-    // Insert remaining suggestions at the end
+    // 4. Insert remaining suggestions at the end
     arc.suggestionsByPos.forEach((suggs, pos) => {
       if (!insertedPositions.has(pos)) {
         suggs.forEach((s, idx) => {
+          const isPrev = s.type === 'prev';
           elements.push(
-            <div key={`sug_end_${pos}_${idx}`} className={cx("arc-suggestion")}>
-              <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text")}>
-                {s.targetEvent ? `Gợi ý: ${s.targetEvent.name}` : 'Sự kiện liên quan'}
+            <div key={`sug_end_${pos}_${idx}`} className={cx("arc-suggestion", isPrev ? "suggestion-prev" : "suggestion-next")}>
+              <Link to={`/event/${s.target_event_id}${regionParam}`} className={cx("suggestion-text", isPrev ? "prev-text" : "next-text")}>
+                {s.targetEvent ? `Gợi ý ${isPrev ? '[Đọc trước]' : '[Tiếp theo]'}: ${s.targetEvent.name}` : `Gợi ý ${isPrev ? '[Đọc trước]' : '[Tiếp theo]'}`}
               </Link>
             </div>
           );

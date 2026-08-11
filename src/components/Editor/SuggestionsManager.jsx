@@ -17,6 +17,7 @@ export default function SuggestionsManager({ arcId, showNotification }) {
     const [searchQuery, setSearchQuery] = useState('');
     // When adding a suggestion: which position to place it after
     const [selectedPosition, setSelectedPosition] = useState(1);
+    const [selectedType, setSelectedType] = useState('next');
 
     useEffect(() => {
         if (arcId) fetchData();
@@ -30,9 +31,9 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                 SupabaseAPI.getEventsByArc(arcId),
                 SupabaseAPI.getEvents()
             ]);
-            setSuggestions(suggs);
-            setArcEvents(arcEvs);
-            setAllEvents(allEvs);
+            setSuggestions(suggs || []);
+            setArcEvents(arcEvs || []);
+            setAllEvents(allEvs || []);
         } catch (err) {
             console.error('Failed to fetch suggestions:', err);
             showNotification?.('Failed to load suggestions', 'error');
@@ -42,16 +43,18 @@ export default function SuggestionsManager({ arcId, showNotification }) {
     };
 
     const handleAdd = async (targetEvent) => {
-        // Check duplicate at same position
-        if (suggestions.find(s => s.target_event_id === targetEvent.event_id && s.position === selectedPosition)) {
-            showNotification?.('Sự kiện này đã được gợi ý tại vị trí này', 'warning');
+        const typeStr = selectedType || 'next';
+        // Check duplicate at same position and type
+        if (suggestions.find(s => s.target_event_id === targetEvent.event_id && s.position === selectedPosition && (s.type || 'next') === typeStr)) {
+            showNotification?.('Sự kiện này đã được gợi ý cùng loại tại vị trí này', 'warning');
             return;
         }
         try {
             await SupabaseAPI.createSuggestion({
                 arc_id: arcId,
                 target_event_id: targetEvent.event_id,
-                position: selectedPosition
+                position: selectedPosition,
+                type: typeStr
             });
             await fetchData();
             showNotification?.('Đã thêm gợi ý');
@@ -96,14 +99,14 @@ export default function SuggestionsManager({ arcId, showNotification }) {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h3 className={styles.title}>Gợi ý sự kiện (Next Suggestions)</h3>
+                <h3 className={styles.title}>Gợi ý sự kiện (Event Recommendations)</h3>
                 <button className={styles.addBtn} onClick={() => setShowSelector(true)}>
                     <Plus size={14} /> Thêm gợi ý
                 </button>
             </div>
 
             <p className={styles.helpText}>
-                Gợi ý sẽ hiển thị ngay sau event chỉ định.
+                Gợi ý sẽ hiển thị tại event chỉ định (Gợi ý tiếp theo hoặc Gợi ý đọc trước).
             </p>
 
             {/* Render arc events interleaved with suggestions */}
@@ -125,11 +128,14 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                             {/* Suggestions after this event */}
                             {groupedByPos[ev.posIndex]?.map(s => {
                                 const target = allEvents.find(e => e.event_id === s.target_event_id);
+                                const isPrev = s.type === 'prev';
                                 return (
                                     <div key={s.id} className={styles.suggestionRow}>
                                         <div className={styles.suggestionLine} />
                                         <div className={styles.suggestionChip}>
-                                            <span className={styles.suggestionLabel}>Gợi ý:</span>
+                                            <span className={styles.suggestionLabel} style={{ color: isPrev ? '#64B5F6' : '#FFB74D' }}>
+                                                {isPrev ? '[ĐỌC TRƯỚC]' : '[TIẾP THEO]'}
+                                            </span>
                                             <span className={styles.suggestionTarget}>{target?.name || s.target_event_id}</span>
                                             <button
                                                 className={styles.removeBtn}
@@ -151,12 +157,15 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                     .filter(([pos]) => parseInt(pos) > arcEventPositions.length)
                     .map(([pos, suggs]) => (
                         <div key={`overflow_${pos}`} className={styles.overflowGroup}>
-                            <span className={styles.overflowLabel}>Sau event #{pos} (ngoài danh sách hiện tại)</span>
+                            <span className={styles.overflowLabel}>Tại event #{pos} (ngoài danh sách hiện tại)</span>
                             {suggs.map(s => {
                                 const target = allEvents.find(e => e.event_id === s.target_event_id);
+                                const isPrev = s.type === 'prev';
                                 return (
                                     <div key={s.id} className={styles.suggestionChip}>
-                                        <span className={styles.suggestionLabel}>Gợi ý:</span>
+                                        <span className={styles.suggestionLabel} style={{ color: isPrev ? '#64B5F6' : '#FFB74D' }}>
+                                            {isPrev ? '[ĐỌC TRƯỚC]' : '[TIẾP THEO]'}
+                                        </span>
                                         <span className={styles.suggestionTarget}>{target?.name || s.target_event_id}</span>
                                         <button className={styles.removeBtn} onClick={() => handleDelete(s.id)}><X size={12} /></button>
                                     </div>
@@ -176,9 +185,30 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                             <button onClick={() => setShowSelector(false)}><X size={18} /></button>
                         </div>
 
+                        {/* Type Selector */}
+                        <div className={styles.positionSelector} style={{ marginBottom: '0.75rem' }}>
+                            <label>Loại gợi ý:</label>
+                            <select
+                                style={{
+                                    padding: '0.4rem 0.6rem',
+                                    backgroundColor: '#1E1E1E',
+                                    color: '#FFF',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '4px',
+                                    marginTop: '0.25rem',
+                                    width: '100%'
+                                }}
+                                value={selectedType}
+                                onChange={e => setSelectedType(e.target.value)}
+                            >
+                                <option value="next">Gợi ý tiếp theo (Next Event)</option>
+                                <option value="prev">Gợi ý đọc trước (Previous Prerequisite)</option>
+                            </select>
+                        </div>
+
                         {/* Position Selector */}
                         <div className={styles.positionSelector}>
-                            <label>Hiển thị sau event thứ:</label>
+                            <label>Hiển thị tại event thứ:</label>
                             <div className={styles.posOptions}>
                                 {arcEventPositions.length > 0 ? (
                                     arcEventPositions.map(ev => (

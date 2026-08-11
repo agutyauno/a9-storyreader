@@ -79,6 +79,17 @@
     background-color: var(--color-bg-primary);
     border-radius: var(--radius-base);
     box-shadow: var(--shadow-md);
+    border-left: 4px solid var(--color-accent);
+}
+
+.arc-suggestion.suggestion-prev {
+    border-left: 4px solid #2196F3;
+    background-color: rgba(33, 150, 243, 0.05);
+}
+
+.arc-suggestion.suggestion-next {
+    border-left: 4px solid #FF9800;
+    background-color: rgba(255, 152, 0, 0.05);
 }
 
 .suggestion-text {
@@ -91,8 +102,20 @@
     text-decoration: none;
 }
 
-.suggestion-text:hover {
-    color: var(--color-accent);
+.suggestion-text.prev-text {
+    color: #64B5F6;
+}
+
+.suggestion-text.prev-text:hover {
+    color: #90CAF9;
+}
+
+.suggestion-text.next-text {
+    color: #FFB74D;
+}
+
+.suggestion-text.next-text:hover {
+    color: #FFE0B2;
 }
 
 /* ================================================================================================= */
