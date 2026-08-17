@@ -5,6 +5,7 @@ import { StoryRenderer } from '../utils/storyRenderer';
 import { BGMManager, SFXManager } from '../utils/audioManager';
 import { StoryScriptParser } from '../utils/storyParser';
 import { getAssetUrl } from '../utils/assetUtils';
+import { Printer } from 'lucide-react';
 import styles from '../styles/StoryPage.module.css';
 
 export default function StoryPage() {
@@ -269,6 +270,10 @@ export default function StoryPage() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  const handleExportPdf = () => {
+    window.print();
+  };
+
   // Render navigation buttons
   const currentIndex = allStories.findIndex(s => s.story_id === id);
   const prevStory = currentIndex > 0 ? allStories[currentIndex - 1] : null;
@@ -290,6 +295,15 @@ export default function StoryPage() {
           </Link>
 
           <div className={styles['header-right-controls']}>
+            <button
+              id="pdf-export"
+              className={styles['pdf-export-btn']}
+              onClick={handleExportPdf}
+              title="Xuất PDF / In truyện"
+            >
+              <Printer size={18} />
+            </button>
+
             <div id="audio-controls" className={styles['audio-controls']}>
               <button id="audio-toggle" className={`${styles['audio-btn']} ${!audioEnabled ? styles['muted'] : ''}`} onClick={toggleAudio}>
                 <span id="audio-icon" className={styles['audio-icon']}>{audioEnabled ? '🔊' : '🔇'}</span>

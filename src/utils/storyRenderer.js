@@ -168,7 +168,7 @@ export const StoryRenderer = {
     }
 
     const parentHtml = `
-      <section class="${sectionClasses}" ${bgmAttrs} data-original-bg="${bgUrl}" ${extraAttrs}>
+      <section class="${sectionClasses}" ${bgmAttrs} data-original-bg="${bgUrl}" style="--bg-url: url('${bgUrl}');" ${extraAttrs}>
         <div class="${cx('background-wrapper', styles)}">
           <img class="${cx('background-blur', styles)}" src="${bgUrl}" alt="">
           <div class="${cx('image-container', styles)}">

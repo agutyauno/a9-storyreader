@@ -764,6 +764,26 @@ p {
     border-color: var(--color-accent);
 }
 
+.pdf-export-btn {
+    width: 40px;
+    height: 40px;
+    padding: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.pdf-export-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
 .audio-btn.muted {
     opacity: 0.5;
 }
@@ -1071,7 +1091,7 @@ p {
     }
 
     .narrator-box {
-        margin: 0 calc(3.5rem - var(--spacing-xs));
+        margin: 0 calc(3.5rem + var(--spacing-xs));
     }
 
     .narrator-text {
@@ -1082,6 +1102,12 @@ p {
     /* Audio */
     /* Audio */
     .audio-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+    }
+
+    .pdf-export-btn {
         width: 32px;
         height: 32px;
         padding: 0;
@@ -1149,4 +1175,165 @@ p {
 /* Ensure active choice background displays as grid */
 .dialogue-background.choice-response.active {
     display: grid;
+}
+
+/* ================================================================================================= */
+/* Print / PDF Export Styles */
+/* ================================================================================================= */
+@media print {
+
+    :global(html),
+    :global(body) {
+        background-color: #0d0e12 !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    header,
+    .story_page-header,
+    .audio-controls,
+    .pdf-export-btn,
+    .sidebar-toggle-btn,
+    .chapter-sidebar,
+    .sidebar-overlay,
+    .switch-chapter-button,
+    .back-to-top,
+    .expand-icon {
+        display: none !important;
+    }
+
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .info {
+        margin-bottom: 1.5rem !important;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* 1. Dialogue Section Container per PDF page */
+    .dialogue-background {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 1.5rem 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        
+        /* First section shares Page 1 with #info, so its min-height is lower to prevent spilling to Page 2 */
+        min-height: 75vh !important;
+        
+        /* SOLID BACKGROUND: For Page 2+ when the 100vh background image ends */
+        background-color: #121212 !important;
+        
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* From Section 2 onwards: Always start on a new PDF page and take at least 90vh */
+    .dialogue-background ~ .dialogue-background {
+        min-height: 90vh !important;
+        page-break-before: always !important;
+        break-before: page !important;
+    }
+
+    /* Layer 1: Blurred full background layer ONLY on the first A4 page */
+    .dialogue-background::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 100vh !important; /* LIMIT TO 1 PAGE TALL */
+        background-image: var(--bg-url) !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        
+        filter: blur(40px) brightness(0.35) !important;
+        -webkit-filter: blur(40px) brightness(0.35) !important;
+        transform: scale(1.1) !important;
+        z-index: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Layer 2: Sharp background image centered ONLY on the first A4 page */
+    .dialogue-background::after {
+        content: "" !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 100vh !important; /* LIMIT TO 1 PAGE TALL */
+        
+        /* Multiple backgrounds: dark overlay gradient on top of sharp image */
+        background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), var(--bg-url) !important;
+        background-size: cover, contain !important;
+        background-position: center center, center center !important;
+        background-repeat: no-repeat, no-repeat !important;
+        
+        z-index: 1 !important;
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .dialogue-section {
+        display: block !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+
+    .dialogue-box,
+    .narrator-box,
+    .sfx_player,
+    .decision-group {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Hide static background DOM wrapper so dialogues start right at the top of each page! */
+    .background-wrapper {
+        display: none !important;
+    }
+
+    /* Dialogues start immediately from top of each page! */
+    .dialogue-container {
+        display: flex !important;
+        flex-direction: column !important;
+        position: relative !important;
+        z-index: 10 !important;
+        width: 94% !important;
+        margin: 0 auto !important;
+        padding: 0.5rem 0 1.5rem 0 !important;
+        gap: var(--spacing-xs) !important;
+    }
+
+    .character_avt {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .dialogue-content {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 }
