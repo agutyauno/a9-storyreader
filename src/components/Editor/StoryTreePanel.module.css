@@ -48,6 +48,14 @@
     flex: 1;
     overflow-y: auto;
     padding: 4px 0;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.treeScroll::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .emptyState {

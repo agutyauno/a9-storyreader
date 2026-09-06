@@ -164,16 +164,16 @@ const ScriptEditor = forwardRef(({ value, onChange, characters = [], assets = []
             };
 
             const options = [
-                { label: '@char', type: 'keyword', apply: snippet('@char Name [id="", color=""]', -20), detail: 'Declare character' },
-                { label: '@narrator', type: 'keyword', apply: snippet('@narrator {\n  \n}', -2), detail: 'Multi-line narrator' },
-                { label: '@bg', type: 'keyword', apply: snippet('@bg ""', -1), detail: 'Change background' },
-                { label: '@bgm', type: 'keyword', apply: snippet('@bgm id=""', -1), detail: 'Play background music' },
-                { label: '@sfx', type: 'keyword', apply: snippet('@sfx ""', -1), detail: 'Play sound effect' },
-                { label: '@video', type: 'keyword', apply: snippet('@video src=""', -1), detail: 'Play video' },
-                { label: '@decision', type: 'keyword', apply: snippet('@decision ""', -1), detail: 'Choice menu' },
-                { label: '@response', type: 'keyword', apply: snippet('@response "" 1 {\n  \n}', -2), detail: 'Choice response group' },
-                { label: '@note', type: 'keyword', apply: snippet('@note id: content', -11), detail: 'Declare translator note' },
-                { label: '@section', type: 'keyword', detail: 'Break into chunks' },
+                { label: '@char', type: 'keyword', apply: snippet('@char Tên_Nhân_Vật [id="char_id", avatar="avatar_id", full="full_id", color="#00E5FF"]'), detail: 'Khai báo nhân vật (id, avatar, full, color)' },
+                { label: '@bg', type: 'keyword', apply: snippet('@bg "bg_asset_id"'), detail: 'Đổi hình nền bối cảnh' },
+                { label: '@bgm', type: 'keyword', apply: snippet('@bgm id="bgm_id" intro="intro_id" loop="loop_id"'), detail: 'Phát nhạc nền (id, intro, loop)' },
+                { label: '@sfx', type: 'keyword', apply: snippet('@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"'), detail: 'Hiệu ứng âm thanh tiếng động' },
+                { label: '@video', type: 'keyword', apply: snippet('@video src="video_id_hoặc_url"'), detail: 'Phát video PV / Cutscene' },
+                { label: '@section', type: 'keyword', apply: snippet('@section'), detail: 'Bắt đầu phân đoạn / chương mới' },
+                { label: '@narrator', type: 'keyword', apply: snippet('@narrator {\n  Nội dung dẫn truyện ở đây...\n}'), detail: 'Khối lời dẫn truyện nhiều dòng' },
+                { label: '@decision', type: 'keyword', apply: snippet('@decision "decision_group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2'), detail: 'Cây nhánh lựa chọn' },
+                { label: '@response', type: 'keyword', apply: snippet('@response "decision_group_id" 1 {\n  # Diễn biến khi chọn phương án 1\n  \n}'), detail: 'Khối phản hồi theo lựa chọn' },
+                { label: '@note', type: 'keyword', apply: snippet('@note note_id: Giải thích chi tiết về thuật ngữ'), detail: 'Định nghĩa mục ghi chú tra cứu' },
             ];
             return {
                 from: word.from,

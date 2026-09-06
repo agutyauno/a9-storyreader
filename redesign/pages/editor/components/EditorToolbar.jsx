@@ -13,7 +13,9 @@ import {
     BookOpen,
     Film,
     Headphones,
-    MessageCircle
+    MessageCircle,
+    Layers,
+    FileText
 } from 'lucide-react';
 import SyntaxHelpModal from './modals/SyntaxHelpModal';
 import './editorComponents.css';
@@ -25,8 +27,27 @@ const TOOL_GROUPS = [
         icon: Film,
         color: '#FF9E80',
         tools: [
-            { id: 'bg', label: 'Bối cảnh (BG)', icon: ImageIcon, template: '@bg ""', hint: '@bg "asset_id"' },
-            { id: 'video', label: 'Video (PV)', icon: Video, template: '@video src=""', hint: '@video src="asset_id"' },
+            { 
+                id: 'bg', 
+                label: 'Bối cảnh (BG)', 
+                icon: ImageIcon, 
+                template: '@bg "bg_asset_id"', 
+                hint: '@bg "bg_asset_id"' 
+            },
+            { 
+                id: 'video', 
+                label: 'Video (PV)', 
+                icon: Video, 
+                template: '@video src="video_id_hoặc_url"', 
+                hint: '@video src="video_id_hoặc_url"' 
+            },
+            { 
+                id: 'section', 
+                label: 'Phân đoạn (Section)', 
+                icon: Layers, 
+                template: '@section', 
+                hint: '@section - Bắt đầu phân đoạn mới' 
+            },
         ]
     },
     {
@@ -35,8 +56,20 @@ const TOOL_GROUPS = [
         icon: Headphones,
         color: '#FFE082',
         tools: [
-            { id: 'bgm', label: 'Nhạc nền (BGM)', icon: Music, template: '@bgm id="" intro="" loop=""', hint: '@bgm id="bgm_id"' },
-            { id: 'sfx', label: 'Âm thanh (SFX)', icon: Volume2, template: '@sfx "" src=""', hint: '@sfx "sfx_id"' },
+            { 
+                id: 'bgm', 
+                label: 'Nhạc nền (BGM)', 
+                icon: Music, 
+                template: '@bgm id="bgm_id" intro="intro_audio_id" loop="loop_audio_id"', 
+                hint: '@bgm id="bgm_id" intro="intro_id" loop="loop_id"' 
+            },
+            { 
+                id: 'sfx', 
+                label: 'Âm thanh (SFX)', 
+                icon: Volume2, 
+                template: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"', 
+                hint: '@sfx "Tên_Hiệu_Ứng" src="sfx_id"' 
+            },
         ]
     },
     {
@@ -45,13 +78,63 @@ const TOOL_GROUPS = [
         icon: MessageCircle,
         color: '#A5D6A7',
         tools: [
-            { id: 'dialogue', label: 'Lời thoại', icon: MessageSquare, template: 'Name [, ]: ', hint: 'Tên [biểu_cảm]: Lời thoại' },
-            { id: 'char', label: 'Nhân vật', icon: UserPlus, template: '@char Name id=""', hint: '@char Name id=""' },
-            { id: 'narrator', label: 'Dẫn truyện', icon: MessageSquare, template: '@narrator {\n  \n}', hint: '@narrator { ... }' },
-            { id: 'note_def', label: 'Ghi chú', icon: HelpCircle, template: '@note id: nội dung ghi chú', hint: '@note id: nội dung' },
-            { id: 'note_link', label: 'Liên kết từ', icon: HelpCircle, template: '[từ | id]', isInline: true, hint: '[từ_hiển_thị | note_id]' },
-            { id: 'decision', label: 'Lựa chọn', icon: GitMerge, template: '@decision "" [, ]\n- Choice 1\n- Choice 2', hint: '@decision "câu_hỏi"' },
-            { id: 'response', label: 'Phản hồi', icon: CornerDownRight, template: '@response "" 1 {\n  \n}', hint: '@response "lựa_chọn" 1' },
+            { 
+                id: 'char', 
+                label: 'Khai báo nhân vật', 
+                icon: UserPlus, 
+                template: '@char Tên_Nhân_Vật [id="char_id", avatar="avatar_id", full="full_id", color="#00E5FF"]', 
+                hint: '@char Tên [id="", avatar="", full="", color=""]' 
+            },
+            { 
+                id: 'dialogue', 
+                label: 'Lời thoại nhân vật', 
+                icon: MessageSquare, 
+                template: 'Tên_Nhân_Vật [Avatar_Trái.biểu_cảm, Avatar_Phải.biểu_cảm, color="#00E5FF"]: Lời thoại của nhân vật...', 
+                hint: 'Tên [Trái.biểu_cảm, Phải.biểu_cảm, color="#hex"]: Lời thoại' 
+            },
+            { 
+                id: 'narrator', 
+                label: 'Dẫn truyện', 
+                icon: MessageSquare, 
+                template: '@narrator {\n  Nội dung lời dẫn truyện ở đây (hỗ trợ chú thích [từ | note_id])...\n}', 
+                hint: '@narrator { nội dung }' 
+            },
+            { 
+                id: 'decision', 
+                label: 'Nhánh lựa chọn', 
+                icon: GitMerge, 
+                template: '@decision "decision_group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2', 
+                hint: '@decision "group_id" [Trái, Phải]\n- Lựa chọn 1\n- Lựa chọn 2' 
+            },
+            { 
+                id: 'response', 
+                label: 'Phản hồi lựa chọn', 
+                icon: CornerDownRight, 
+                template: '@response "decision_group_id" 1 {\n  # Kịch bản diễn biến khi chọn Lựa chọn 1\n  Tên_Nhân_Vật [biểu_cảm, ]: Phản hồi tương ứng...\n}', 
+                hint: '@response "group_id" 1 { ... }' 
+            },
+            { 
+                id: 'note_def', 
+                label: 'Định nghĩa ghi chú', 
+                icon: HelpCircle, 
+                template: '@note note_id: Giải thích chi tiết về thuật ngữ hoặc bối cảnh tra cứu', 
+                hint: '@note note_id: nội dung giải thích' 
+            },
+            { 
+                id: 'note_link', 
+                label: 'Liên kết từ chú thích', 
+                icon: HelpCircle, 
+                template: '[Từ cần chú thích | note_id]', 
+                isInline: true, 
+                hint: '[Từ hiển thị | note_id]' 
+            },
+            { 
+                id: 'comment', 
+                label: 'Ghi chú kịch bản (#)', 
+                icon: FileText, 
+                template: '# Ghi chú kịch bản / TODO: ...', 
+                hint: '# Ghi chú kịch bản' 
+            },
         ]
     }
 ];

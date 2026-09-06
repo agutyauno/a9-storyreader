@@ -4,78 +4,88 @@ import '../editorComponents.css';
 
 const SYNTAX_GUIDES = [
     {
-        category: 'SCENE (Bối cảnh & Media)',
+        category: 'SCENE (Bối cảnh & Phân đoạn)',
         icon: ImageIcon,
         color: '#FF9E80',
         items: [
             {
-                tag: '@bg "asset_id"',
-                description: 'Thay đổi hình nền bối cảnh câu chuyện.',
+                tag: '@bg "bg_asset_id"',
+                description: 'Đổi hình nền bối cảnh (nhận Asset ID hoặc URL ảnh).',
                 example: '@bg "bg_ruin_city_01"'
             },
             {
-                tag: '@video src="asset_id"',
-                description: 'Phát video PV hoặc hiệu ứng hình ảnh động.',
+                tag: '@video src="video_id_hoặc_url"',
+                description: 'Phát video PV/Cutscene (hỗ trợ Asset ID, YouTube, Google Drive, MP4/WebM).',
                 example: '@video src="video_pv_01"'
+            },
+            {
+                tag: '@section',
+                description: 'Bắt đầu một phân đoạn/chương kịch bản mới trong câu chuyện.',
+                example: '@section'
             }
         ]
     },
     {
-        category: 'AUDIO (Nhạc nền & Âm thanh)',
+        category: 'AUDIO (Nhạc nền & Hiệu ứng âm thanh)',
         icon: Music,
         color: '#FFE082',
         items: [
             {
-                tag: '@bgm id="bgm_id" [intro=""] [loop=""]',
-                description: 'Phát bản nhạc nền BGM cho phân cảnh.',
-                example: '@bgm id="m_avg_theme" intro="" loop=""'
+                tag: '@bgm id="bgm_id" intro="intro_id" loop="loop_id"',
+                description: 'Phát nhạc nền BGM (id: bài nhạc chính, intro: đoạn dạo đầu phát 1 lần, loop: đoạn lặp lại).',
+                example: '@bgm id="m_avg_theme" intro="m_avg_theme_intro" loop="m_avg_theme_loop"'
             },
             {
-                tag: '@sfx "sfx_id"',
-                description: 'Kích hoạt hiệu ứng âm thanh tiếng động.',
-                example: '@sfx "e_avg_thunder"'
+                tag: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"',
+                description: 'Kích hoạt âm thanh tiếng động kèm nhãn tên hiển thị trên giao diện.',
+                example: '@sfx "Tiếng sấm" src="e_avg_thunder"'
             }
         ]
     },
     {
-        category: 'CONTENT (Nhân vật & Lời thoại)',
+        category: 'CONTENT (Nhân vật, Lời thoại & Tương tác)',
         icon: User,
         color: '#A5D6A7',
         items: [
             {
-                tag: 'Tên_Nhân_Vật [biểu_cảm]: Lời thoại',
-                description: 'Tạo lời thoại nhân vật kèm biểu cảm avatar.',
-                example: 'Amiya [angry]: Doctor, xin hãy cẩn thận!'
+                tag: '@char Tên [id="...", avatar="...", full="...", color="#..."]',
+                description: 'Khai báo nhân vật với ID database, ảnh avatar, ảnh đứng full-body, và màu chữ tên hiển thị.',
+                example: '@char Amiya [id="char_002_amiya", avatar="char_002_amiya_1", full="char_002_amiya_1_full", color="#00E5FF"]'
             },
             {
-                tag: '@char Tên id="char_id"',
-                description: 'Xuất hiện nhân vật trên phân cảnh.',
-                example: '@char Amiya id="char_002_amiya"'
+                tag: 'Tên_Nhân_Vật [Trái.biểu_cảm, Phải.biểu_cảm, color="#..."]: Lời thoại',
+                description: 'Tạo lời thoại kèm avatar trái, avatar phải, biểu cảm tùy chọn (e.g. .smile, .angry) và đổi màu tên riêng.',
+                example: 'Amiya [Amiya.smile, Kaltsit.serious, color="#00E5FF"]: Doctor, chúng ta đã đến nơi rồi!'
             },
             {
                 tag: '@narrator {\n  Nội dung...\n}',
-                description: 'Lời dẫn truyện, văn bản mô tả bối cảnh.',
-                example: '@narrator {\n  Màn đêm buông xuống thành phố Chernobog...\n}'
+                description: 'Khối lời dẫn truyện hoặc văn bản mô tả bối cảnh (hỗ trợ chú thích [từ | note_id]).',
+                example: '@narrator {\n  Màn đêm buông xuống thành phố Chernobog...\n  Năng lượng [Originium | originium] tỏa sáng trong đống đổ nát.\n}'
             },
             {
-                tag: '@note id: Nội dung ghi chú',
-                description: 'Định nghĩa thuật ngữ/ghi chú tra cứu.',
-                example: '@note originium: Quặng khoáng sản chứa năng lượng kỳ lạ'
+                tag: '@decision "group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2',
+                description: 'Tạo hộp lựa chọn phân nhánh với nhóm ID, ảnh nhân vật minh họa hai bên và danh sách các phương án.',
+                example: '@decision "route_01" [Doctor, Amiya.smile]\n- Tiến vào tòa nhà phía trước\n- Quan sát thêm từ xa'
             },
             {
-                tag: '[Từ hiển thị | note_id]',
-                description: 'Gắn liên kết tra cứu từ điển vào lời thoại.',
-                example: 'Năng lượng [Originium | originium] rất nguy hiểm.'
+                tag: '@response "group_id" 1 {\n  ...\n}',
+                description: 'Khối kịch bản diễn biến tương ứng khi người chơi chọn một phương án (1, 2, ...).',
+                example: '@response "route_01" 1 {\n  Amiya [Amiya.serious, ]: Bên trong này có vẻ an toàn.\n}'
             },
             {
-                tag: '@decision "Câu hỏi" [, ]\n- Lựa chọn A\n- Lựa chọn B',
-                description: 'Tạo cây lựa chọn phân nhánh cho người đọc.',
-                example: '@decision "Bạn chọn đi đâu?" [, ]\n- Đi theo Amiya\n- Ở lại căn cứ'
+                tag: '@note note_id: Nội dung giải thích',
+                description: 'Định nghĩa mục thuật ngữ/ghi chú tra cứu trong từ điển cốt truyện.',
+                example: '@note originium: Quặng khoáng sản chứa năng lượng kỳ lạ và nguy hiểm'
             },
             {
-                tag: '@response "Lựa chọn A" 1 {\n ... \n}',
-                description: 'Nhánh kịch bản tương ứng với lựa chọn.',
-                example: '@response "Đi theo Amiya" 1 {\n  Amiya: Cảm ơn Doctor đã đồng hành!\n}'
+                tag: '[Từ cần chú thích | note_id]',
+                description: 'Gắn liên kết giải thích thuật ngữ vào một từ ngữ bất kỳ trong lời thoại hoặc dẫn truyện.',
+                example: 'Năng lượng [Originium | originium] rất nguy hiểm đối với con người.'
+            },
+            {
+                tag: '# Ghi chú kịch bản / Comment',
+                description: 'Dòng ghi chú nội bộ của người biên soạn, không hiển thị trong kịch bản khi đọc.',
+                example: '# TODO: Bổ sung thêm câu thoại của Kaltsit ở đoạn sau'
             }
         ]
     }
@@ -111,29 +121,71 @@ export default function SyntaxHelpModal({ isOpen, onClose }) {
                                 </span>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                 {section.items.map((item, idx) => (
-                                    <div key={idx} style={{ backgroundColor: '#121212', border: '1px solid rgba(245,237,220,0.12)', padding: '0.65rem 0.85rem', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 700, color: '#F5EDDC', backgroundColor: '#1A1A1A', padding: '0.2rem 0.45rem', borderRadius: '3px', border: '1px solid rgba(245,237,220,0.2)' }}>
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            backgroundColor: '#121212',
+                                            border: '1px solid rgba(245,237,220,0.12)',
+                                            padding: '0.85rem 1rem',
+                                            borderRadius: '4px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.55rem'
+                                        }}
+                                    >
+                                        {/* 1. Câu lệnh ở trên cùng */}
+                                        <div style={{ display: 'flex' }}>
+                                            <div style={{
+                                                fontFamily: 'var(--font-mono)',
+                                                fontSize: '0.84rem',
+                                                fontWeight: 700,
+                                                color: '#F5EDDC',
+                                                backgroundColor: '#1A1A1A',
+                                                padding: '0.35rem 0.65rem',
+                                                borderRadius: '3px',
+                                                border: '1px solid rgba(245,237,220,0.2)',
+                                                whiteSpace: 'pre-wrap',
+                                                lineHeight: 1.5,
+                                                width: '100%',
+                                                boxSizing: 'border-box'
+                                            }}>
                                                 {item.tag}
-                                            </span>
-                                            <span style={{ fontSize: '0.72rem', color: 'rgba(245,237,220,0.65)', fontFamily: 'var(--font-swiss)' }}>
-                                                {item.description}
-                                            </span>
+                                            </div>
                                         </div>
-                                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'rgba(245,237,220,0.5)', backgroundColor: '#0A0A0A', padding: '0.35rem 0.6rem', borderRadius: '3px' }}>
-                                            <span style={{ color: 'var(--color-terracotta)', opacity: 0.8 }}>Ví dụ:</span> {item.example}
+
+                                        {/* 2. Mô tả câu lệnh ở giữa */}
+                                        <div style={{
+                                            fontSize: '0.8rem',
+                                            color: 'rgba(245,237,220,0.85)',
+                                            fontFamily: 'var(--font-swiss)',
+                                            lineHeight: 1.55,
+                                            padding: '0 0.15rem'
+                                        }}>
+                                            {item.description}
+                                        </div>
+
+                                        {/* 3. Ví dụ câu lệnh ở cuối cùng */}
+                                        <div style={{
+                                            fontFamily: 'var(--font-mono)',
+                                            fontSize: '0.76rem',
+                                            color: 'rgba(245,237,220,0.65)',
+                                            backgroundColor: '#0A0A0A',
+                                            padding: '0.45rem 0.75rem',
+                                            borderRadius: '3px',
+                                            border: '1px solid rgba(245,237,220,0.08)',
+                                            whiteSpace: 'pre-wrap',
+                                            lineHeight: 1.5
+                                        }}>
+                                            <span style={{ color: 'var(--color-terracotta)', fontWeight: 600, marginRight: '0.35rem' }}>Ví dụ:</span>
+                                            {item.example}
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ))}
-                </div>
-
-                <div className="redesign-modal-footer">
-                    <button className="redesign-btn primary" onClick={onClose}>Đóng Hướng Dẫn</button>
                 </div>
             </div>
         </div>

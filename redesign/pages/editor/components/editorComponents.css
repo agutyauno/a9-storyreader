@@ -542,6 +542,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+.redesign-tree-panel::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Opera */
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .redesign-tree-node {
