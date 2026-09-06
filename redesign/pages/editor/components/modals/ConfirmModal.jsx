@@ -7,7 +7,7 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
 
     return (
         <div className="redesign-modal-overlay" onClick={onCancel}>
-            <div className="redesign-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="redesign-modal-card dialog" onClick={(e) => e.stopPropagation()}>
                 <div className="redesign-modal-header">
                     <div className="redesign-modal-title">
                         <AlertCircle size={20} className={danger ? 'text-crimson' : 'text-terracotta'} />

@@ -421,7 +421,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 {asset.type === 'video' && (
                                     getYouTubeId(externalUrl) ? (
                                         <iframe 
-                                            src={`https://www.youtube.com/embed/${getYouTubeId(externalUrl)}`}
+                                            src={`https://www.youtube-nocookie.com/embed/${getYouTubeId(externalUrl)}`}
                                             title="YouTube video player"
                                             frameBorder="0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

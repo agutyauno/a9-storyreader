@@ -133,67 +133,8 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     const loadTree = async () => {
         setLoading(true);
         try {
-            // Parallel fetch all layers in one go
-            const [regions, arcs, events, stories] = await Promise.all([
-                SupabaseAPI.getRegions(),
-                SupabaseAPI.getArcs(),
-                SupabaseAPI.getEvents(),
-                SupabaseAPI.getStories(),
-            ]);
-
-            // Create maps for efficient building
-            const storiesByEvent = {};
-            stories.forEach(s => {
-                const eid = s.event_id;
-                if (!storiesByEvent[eid]) storiesByEvent[eid] = [];
-                storiesByEvent[eid].push({
-                    type: 'story',
-                    parentId: eid,
-                    parentType: 'event',
-                    ...s,
-                    id: s.story_id,
-                    children: []
-                });
-            });
-
-            const eventsByArc = {};
-            events.forEach(e => {
-                const aid = e.arc_id;
-                if (!eventsByArc[aid]) eventsByArc[aid] = [];
-                eventsByArc[aid].push({
-                    type: 'event',
-                    parentId: aid,
-                    parentType: 'arc',
-                    ...e,
-                    id: e.event_id,
-                    children: storiesByEvent[e.event_id] || []
-                });
-            });
-
-            const arcsByRegion = {};
-            arcs.forEach(a => {
-                const rid = a.region_id;
-                if (!arcsByRegion[rid]) arcsByRegion[rid] = [];
-                arcsByRegion[rid].push({
-                    type: 'arc',
-                    parentId: rid,
-                    parentType: 'region',
-                    ...a,
-                    id: a.arc_id,
-                    children: eventsByArc[a.arc_id] || []
-                });
-            });
-
-            const built = regions.map(r => ({
-                type: 'region',
-                parentId: null,
-                parentType: null,
-                ...r,
-                id: r.region_id,
-                children: arcsByRegion[r.region_id] || []
-            }));
-
-            setTree(built);
+            const data = await SupabaseAPI.getFullStoryTree();
+            setTree(data || []);
         } catch (err) {
             console.error('Failed to load story tree:', err);
         } finally {

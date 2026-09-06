@@ -125,9 +125,10 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
         try {
             if (assetData.type === 'character') {
                 await SupabaseAPI.createCharacter({
-                    id: assetData.asset_id,
+                    character_id: assetData.asset_id,
                     name: assetData.name,
                     description: assetData.description || '',
+                    expressions: assetData.expressions || []
                 });
             } else if (assetData.category === 'gallery') {
                 await SupabaseAPI.createGallery({

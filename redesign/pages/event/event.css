@@ -912,14 +912,12 @@
 
 .sugg-banner-btn.prev-btn:hover {
     border-color: #42A5F5;
-    background-color: rgba(33, 150, 243, 0.15);
     transform: translateY(-2px);
     box-shadow: 5px 5px 0px var(--color-charcoal);
 }
 
 .sugg-banner-btn.next-btn:hover {
     border-color: var(--color-terracotta);
-    background-color: rgba(216, 67, 21, 0.15);
     transform: translateY(-2px);
     box-shadow: 5px 5px 0px var(--color-charcoal);
 }

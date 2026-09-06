@@ -149,7 +149,7 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                         </div>
                     </div>
 
-                    <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#1A1A1A', border: '1px solid rgba(245,237,220,0.2)', padding: '0.4rem 0.75rem', flex: 1, minWidth: '200px' }}>
                             <Search size={14} style={{ color: 'rgba(245,237,220,0.5)', marginRight: '0.5rem' }} />
                             <input 
@@ -175,13 +175,13 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                         </div>
                     </div>
 
-                    <div className="redesign-modal-body" style={{ minHeight: '350px' }}>
+                    <div className="redesign-modal-body">
                         {loading ? (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, opacity: 0.6 }}>
                                 <Loader className="spinning" size={24} /> Đang tải danh sách asset...
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', opacity: 0.5, fontFamily: 'Share Tech Mono' }}>
+                            <div style={{ textAlign: 'center', padding: '3rem', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
                                 NO_MATCHING_ASSETS
                             </div>
                         ) : (

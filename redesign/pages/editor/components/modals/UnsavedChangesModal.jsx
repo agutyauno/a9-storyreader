@@ -8,7 +8,7 @@ const UnsavedChangesModal = ({ isOpen, onConfirm, onCancel, onSaveAndConfirm, sa
 
     return ReactDOM.createPortal(
         <div className="redesign-modal-overlay" onClick={onCancel}>
-            <div className="redesign-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="redesign-modal-card dialog" onClick={(e) => e.stopPropagation()}>
                 <div className="redesign-modal-header">
                     <div className="redesign-modal-title">
                         <AlertCircle size={20} className="text-terracotta" />

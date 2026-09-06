@@ -116,7 +116,7 @@ export const StoryRenderer = {
     let videoContent = '';
     
     if (ytId) {
-      videoContent = `<iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; aspect-ratio: 16/9; border-radius: 8px;"></iframe>`;
+      videoContent = `<iframe src="https://www.youtube-nocookie.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; aspect-ratio: 16/9; border-radius: 8px;"></iframe>`;
     } else if (driveId) {
       videoContent = `<iframe src="https://drive.google.com/file/d/${driveId}/preview" title="Google Drive Video" frameborder="0" allowfullscreen style="width: 100%; min-height: 300px; border-radius: 8px;"></iframe>`;
     } else {

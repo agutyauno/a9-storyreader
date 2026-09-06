@@ -91,14 +91,14 @@ export default function EventGalleryManager({ eventId, showNotification, onPickA
     return (
         <div style={{ marginTop: '1.5rem', backgroundColor: '#141414', border: '1px solid rgba(245,237,220,0.15)', padding: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h4 style={{ margin: 0, fontFamily: 'Share Tech Mono', color: '#F5EDDC', textTransform: 'uppercase' }}>ARTWORK GALLERY ({gallery.length})</h4>
+                <h4 style={{ margin: 0, fontFamily: 'var(--font-mono)', color: '#F5EDDC', textTransform: 'uppercase' }}>ARTWORK GALLERY ({gallery.length})</h4>
                 <button className="redesign-btn primary" style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }} onClick={handleAdd}>
                     <Plus size={14} /> Thêm Gallery
                 </button>
             </div>
 
             {gallery.length === 0 ? (
-                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontFamily: 'Share Tech Mono', fontSize: '0.85rem' }}>
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                     CHƯA CÓ ARTWORK GALLERY NÀO
                 </div>
             ) : (

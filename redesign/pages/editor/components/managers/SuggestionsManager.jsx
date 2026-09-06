@@ -82,14 +82,14 @@ export default function SuggestionsManager({ arcId, showNotification }) {
     return (
         <div style={{ marginTop: '1.5rem', backgroundColor: '#141414', border: '1px solid rgba(245,237,220,0.15)', padding: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h4 style={{ margin: 0, fontFamily: 'Share Tech Mono', color: '#F5EDDC', textTransform: 'uppercase' }}>GỢI Ý SỰ KIỆN (EVENT RECOMMENDATIONS)</h4>
+                <h4 style={{ margin: 0, fontFamily: 'var(--font-mono)', color: '#F5EDDC', textTransform: 'uppercase' }}>GỢI Ý SỰ KIỆN (EVENT RECOMMENDATIONS)</h4>
                 <button className="redesign-btn primary" style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }} onClick={() => setShowSelector(true)}>
                     <Plus size={14} /> Thêm gợi ý
                 </button>
             </div>
 
             {suggestions.length === 0 ? (
-                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontFamily: 'Share Tech Mono', fontSize: '0.85rem' }}>
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                     CHƯA CÓ GỢI Ý NÀO CHO ARC NÀY
                 </div>
             ) : (
@@ -99,9 +99,9 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                         return (
                             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1C1C1C', padding: '0.6rem 0.8rem', border: '1px solid rgba(245,237,220,0.1)' }}>
                                 <div>
-                                    <span style={{ fontFamily: 'Share Tech Mono', color: '#D84315', fontSize: '0.75rem', marginRight: '0.5rem' }}>POS #{s.position}</span>
+                                    <span style={{ fontFamily: 'var(--font-mono)', color: '#D84315', fontSize: '0.75rem', marginRight: '0.5rem' }}>POS #{s.position}</span>
                                     <span style={{
-                                        fontFamily: 'Share Tech Mono',
+                                        fontFamily: 'var(--font-mono)',
                                         fontSize: '0.7rem',
                                         padding: '0.15rem 0.4rem',
                                         borderRadius: '2px',
@@ -154,7 +154,7 @@ export default function SuggestionsManager({ arcId, showNotification }) {
                                 {filteredTargets.map(ev => (
                                     <div key={ev.event_id} style={{ padding: '0.5rem 0.75rem', backgroundColor: '#121212', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }} onClick={() => handleAdd(ev)}>
                                         <span>{ev.name}</span>
-                                        <span style={{ opacity: 0.5, fontFamily: 'Share Tech Mono' }}>{ev.event_id}</span>
+                                        <span style={{ opacity: 0.5, fontFamily: 'var(--font-mono)' }}>{ev.event_id}</span>
                                     </div>
                                 ))}
                             </div>

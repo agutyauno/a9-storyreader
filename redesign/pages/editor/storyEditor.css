@@ -170,7 +170,7 @@
     height: 100%;
     background-color: var(--text-main);
     cursor: col-resize;
-    z-index: 5;
+    z-index: 50;
     transition: background-color var(--transition-smooth);
 }
 
@@ -315,18 +315,14 @@
     background: var(--color-crimson);
 }
 
-/* ─── LEGACY TOOLBAR STYLING OVERRIDES & REDESIGN TOOLBAR ─────────────────────── */
+/* ─── LEGACY TOOLBAR STYLING OVERRIDES (V1 only) ────────────────────────── */
 
-.editor-toolbar-container,
-div[class*="toolbar"] {
+.legacy-editor-toolbar-container,
+div[class*="StoryEditor_toolbar"] {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     overflow-x: auto;
-    overflow-y: hidden;
-    scroll-behavior: smooth;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(245, 237, 220, 0.2) transparent;
     background-color: var(--bg-panel);
     border-bottom: var(--border-thick);
     padding: 0.4rem 0.65rem;
@@ -337,24 +333,20 @@ div[class*="toolbar"] {
     min-height: 42px;
 }
 
-.editor-toolbar-container::-webkit-scrollbar,
-div[class*="toolbar"]::-webkit-scrollbar {
+div[class*="StoryEditor_toolbar"]::-webkit-scrollbar {
     height: 4px;
 }
 
-.editor-toolbar-container::-webkit-scrollbar-track,
-div[class*="toolbar"]::-webkit-scrollbar-track {
+div[class*="StoryEditor_toolbar"]::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.editor-toolbar-container::-webkit-scrollbar-thumb,
-div[class*="toolbar"]::-webkit-scrollbar-thumb {
+div[class*="StoryEditor_toolbar"]::-webkit-scrollbar-thumb {
     background: rgba(245, 237, 220, 0.2);
     border-radius: 2px;
 }
 
-.editor-toolbar-container::-webkit-scrollbar-thumb:hover,
-div[class*="toolbar"]::-webkit-scrollbar-thumb:hover {
+div[class*="StoryEditor_toolbar"]::-webkit-scrollbar-thumb:hover {
     background: var(--color-terracotta);
 }
 

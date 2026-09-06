@@ -197,7 +197,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ padding: '0.65rem 0.75rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>CẤU TRÚC CỐT TRUYỆN</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>CẤU TRÚC CỐT TRUYỆN</span>
                 <button
                     className="redesign-btn primary"
                     style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}

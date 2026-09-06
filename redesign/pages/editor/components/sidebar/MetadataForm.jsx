@@ -65,7 +65,7 @@ export default function MetadataForm({ entity, onSaved, onPickAsset, showNotific
     return (
         <div style={{ padding: '1rem', backgroundColor: '#141414', borderTop: '1px solid rgba(245,237,220,0.15)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ margin: 0, fontFamily: 'Share Tech Mono', color: '#F5EDDC' }}>THÔNG TIN {typeLabel.toUpperCase()}</h4>
+                <h4 style={{ margin: 0, fontFamily: 'var(--font-mono)', color: '#F5EDDC' }}>THÔNG TIN {typeLabel.toUpperCase()}</h4>
                 <button className="redesign-btn primary" style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }} disabled={saving} onClick={handleSave}>
                     {saving ? <Loader className="spinning" size={14} /> : <Save size={14} />}
                     <span>{saving ? 'Lưu...' : 'Lưu'}</span>

@@ -29,23 +29,23 @@ export default function AssetPreviewModal({ isOpen, asset, kind = 'asset', onClo
                     </button>
                 </div>
 
-                <div className="redesign-modal-body" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '350px', backgroundColor: '#0B0B0B' }}>
+                <div className="redesign-modal-body" style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B0B0B' }}>
                     {previewUrl ? (
                         <img 
                             src={getAssetUrl(previewUrl)} 
                             alt={title} 
-                            style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', border: '1px solid rgba(245,237,220,0.15)' }} 
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', border: '1px solid rgba(245,237,220,0.15)' }} 
                         />
                     ) : (
                         <div style={{ textAlign: 'center', color: 'rgba(245,237,220,0.4)' }}>
                             {isCharacter ? <User size={80} /> : <ImageIcon size={80} />}
-                            <p style={{ marginTop: '1rem', fontFamily: 'Share Tech Mono' }}>NO_IMAGE_AVAILABLE</p>
+                            <p style={{ marginTop: '1rem', fontFamily: 'var(--font-mono)' }}>NO_IMAGE_AVAILABLE</p>
                         </div>
                     )}
                 </div>
 
                 <div className="redesign-modal-footer" style={{ justifyContent: 'center' }}>
-                    <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: 'rgba(245,237,220,0.5)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'rgba(245,237,220,0.5)' }}>
                         PRESS ESC OR CLICK OUTSIDE TO CLOSE
                     </span>
                 </div>
