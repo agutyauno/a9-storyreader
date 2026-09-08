@@ -447,7 +447,7 @@ export default function OperatorListPage() {
                                     <div className="operator-card-img-wrap">
                                         <img
                                             className="operator-card-img"
-                                            src={op.portraitUrl}
+                                            src={op.portraitUrl || op.avatar_url}
                                             alt={op.name}
                                             onError={(e) => {
                                                 e.target.onerror = null
@@ -487,7 +487,7 @@ export default function OperatorListPage() {
                                 >
                                     <img
                                         className="operator-list-avatar"
-                                        src={op.portraitUrl}
+                                        src={op.avatar_url || op.portraitUrl}
                                         alt={op.name}
                                         onError={(e) => {
                                             e.target.onerror = null

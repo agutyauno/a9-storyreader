@@ -10,7 +10,9 @@ import OperatorDetailPage from './pages/operator/operatorDetail.jsx'
 import RedesignLoginPage from './pages/login/login.jsx'
 import EditorHubPage from './pages/editor/editorHub.jsx'
 import RedesignStoryEditorPage from './pages/editor/storyEditor.jsx'
-import RedesignOperatorEditorPage from './pages/editor/operatorEditor.jsx'
+import OperatorListPageEditor from './pages/editor/operator/OperatorListPageEditor.jsx'
+import OperatorDetailPageEditor from './pages/editor/operator/OperatorDetailPageEditor.jsx'
+import OperatorStoryEditorPage from './pages/editor/operator/OperatorStoryEditorPage.jsx'
 
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext.jsx'
 import { NotificationProvider } from './components/Notification'
@@ -70,10 +72,42 @@ ReactDOM.createRoot(document.getElementById('redesign-root')).render(
               } 
             />
             <Route 
-              path="/editor/operator/:operatorId?" 
+              path="/editor/operator" 
               element={
                 <ProtectedRoute>
-                  <RedesignOperatorEditorPage />
+                  <OperatorListPageEditor />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/editor/operator/new" 
+              element={
+                <ProtectedRoute>
+                  <OperatorDetailPageEditor />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/editor/operator/records" 
+              element={
+                <ProtectedRoute>
+                  <OperatorStoryEditorPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/editor/operator/records/:recordId" 
+              element={
+                <ProtectedRoute>
+                  <OperatorStoryEditorPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/editor/operator/:id" 
+              element={
+                <ProtectedRoute>
+                  <OperatorDetailPageEditor />
                 </ProtectedRoute>
               } 
             />

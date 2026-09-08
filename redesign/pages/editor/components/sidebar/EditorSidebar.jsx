@@ -1,13 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SidebarTabs from './SidebarTabs';
 import StoryTreePanel from './StoryTreePanel';
+import OperatorTreePanel from '../../operator/components/OperatorTreePanel';
 import AssetPanel from './AssetPanel';
 import AddItemModal from '../modals/AddItemModal';
 import AddAssetModal from '../modals/AddAssetModal';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import '../editorComponents.css';
 
-export default function EditorSidebar({ metadata, onMetadataChange, onStorySelect, currentStoryId, reloadRef, onPickAsset, showNotification }) {
+export default function EditorSidebar({ 
+    metadata, 
+    onMetadataChange, 
+    onStorySelect, 
+    currentStoryId, 
+    reloadRef, 
+    onPickAsset, 
+    showNotification,
+    isRecord = false,
+    currentRecordId,
+    onRecordSelect,
+    onNewRecord,
+    onDeleteRecord,
+    recordReloadTrigger,
+}) {
     const [activeTab, setActiveTab] = useState('story');
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -158,17 +173,31 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
     return (
         <div className="redesign-sidebar-container">
-            <SidebarTabs activeTab={activeTab} onTabChange={setActiveTab} />
+            <SidebarTabs 
+                activeTab={activeTab} 
+                onTabChange={setActiveTab} 
+                tab1Label={isRecord ? 'KÍ SỰ CÁN VIÊN' : 'STORY TREE'}
+            />
 
             <div style={{ flex: 1, overflow: 'hidden' }}>
                 {activeTab === 'story' ? (
-                    <StoryTreePanel
-                        onStorySelect={onStorySelect}
-                        onAddItem={handleAddItem}
-                        onEditItem={handleEditItem}
-                        currentStoryId={currentStoryId}
-                        showNotification={showNotification}
-                    />
+                    isRecord ? (
+                        <OperatorTreePanel
+                            currentRecordId={currentRecordId || currentStoryId}
+                            onSelectRecord={onRecordSelect || onStorySelect}
+                            onNewRecord={onNewRecord}
+                            onDeleteRecord={onDeleteRecord}
+                            reloadTrigger={recordReloadTrigger}
+                        />
+                    ) : (
+                        <StoryTreePanel
+                            onStorySelect={onStorySelect}
+                            onAddItem={handleAddItem}
+                            onEditItem={handleEditItem}
+                            currentStoryId={currentStoryId}
+                            showNotification={showNotification}
+                        />
+                    )
                 ) : (
                     <AssetPanel
                         onAddAsset={handleOpenAddAsset}

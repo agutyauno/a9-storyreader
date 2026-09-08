@@ -1,14 +1,14 @@
 import React from 'react';
 import '../editorComponents.css';
 
-export default function SidebarTabs({ activeTab, onTabChange }) {
+export default function SidebarTabs({ activeTab, onTabChange, tab1Label = 'STORY TREE' }) {
     return (
         <div className="redesign-sidebar-tabs">
             <button 
                 className={`redesign-sidebar-tab ${activeTab === 'story' ? 'active' : ''}`}
                 onClick={() => onTabChange('story')}
             >
-                STORY TREE
+                {tab1Label}
             </button>
             <button 
                 className={`redesign-sidebar-tab ${activeTab === 'assets' ? 'active' : ''}`}

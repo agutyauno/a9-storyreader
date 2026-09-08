@@ -14,6 +14,12 @@ export const getFolderPath = (type, category) => {
         if (category === 'banner') return 'images/banners';
         if (category === 'char_avatar') return 'images/char_avatars';
         if (category === 'character') return 'images/characters';
+        if (category === 'operator_avatar') return 'images/operators_images/avatars';
+        if (category === 'operator_full') return 'images/operators_images/full';
+        if (category === 'operator_skill') return 'images/operators_images/skills';
+        if (category === 'operator_module') return 'images/operators_images/modules';
+        if (category === 'operator_token') return 'images/operators_images/tokens';
+        if (category === 'operator_base_skill' || category === 'base_skill') return 'images/operators_images/base_skills';
         if (category === 'gallery') return 'images/story_images';
         if (category === 'wallpaper') return 'images/wallpapers';
         return 'images/thumbnails';
@@ -21,6 +27,7 @@ export const getFolderPath = (type, category) => {
     if (type === 'audio') {
         if (category === 'bgm') return 'audio/bgm';
         if (category === 'sfx') return 'audio/sfx';
+        if (category === 'operator_voice' || category === 'voice') return 'audio/operators_voices';
         return 'audio';
     }
     if (type === 'video') {

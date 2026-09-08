@@ -1735,10 +1735,11 @@
     font-family: var(--font-mono);
     font-size: 0.78rem;
     color: rgba(24, 24, 24, 0.6);
-    line-height: 1.5;
+    line-height: 1.6;
     border-left: 2px solid var(--color-terracotta);
     padding-left: 0.75rem;
     margin-bottom: 0.5rem;
+    white-space: pre-line;
 }
 
 @media (max-width: 600px) {

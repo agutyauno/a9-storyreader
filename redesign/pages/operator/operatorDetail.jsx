@@ -167,7 +167,8 @@ function SkillTab({ operator }) {
                                             {skill.spRecoveryType && skill.spRecoveryType !== '-' && skill.activationType !== 'passive' && (
                                                 <span className={`skill-meta-tag recovery-tag type-${skill.spRecoveryType}`}>
                                                     {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
-                                                        skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' : 'Defensive Recovery'}
+                                                        skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
+                                                        skill.spRecoveryType === 'defensive' ? 'Defensive Recovery' : 'Passive'}
                                                 </span>
                                             )}
                                         </div>
@@ -242,7 +243,16 @@ function SkillTab({ operator }) {
                     {operator.baseSkills.map((bs, idx) => (
                         <div key={idx} className="base-skill-item">
                             <div className="base-skill-icon">
-                                <Home size={16} />
+                                {bs.icon ? (
+                                    <img
+                                        src={getAssetUrl(bs.icon)}
+                                        alt={bs.name}
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <Home size={16} />
+                                )}
                             </div>
                             <div className="base-skill-info">
                                 <span className="base-skill-name">{bs.name}</span>
@@ -434,7 +444,16 @@ export default function OperatorDetailPage() {
                 setLoading(true)
                 const data = await SupabaseAPI.getOperator(id)
                 if (data) {
-                    setOperator(data)
+                    const records = await SupabaseAPI.getOperatorRecords(id)
+                    setOperator({
+                        ...data,
+                        records: (records || []).map(r => ({
+                            ...r,
+                            id: r.record_id,
+                            title: r.name,
+                            description: r.description
+                        }))
+                    })
                     document.title = `${data.name} // Civilight Eterna Database`
                 } else {
                     const mockData = getOperatorById(id)

@@ -1189,6 +1189,353 @@ const SupabaseAPI_Raw = {
       })
     );
   },
+
+  // ===========================================================================
+  // OPERATORS
+  // ===========================================================================
+  async getOperators() {
+    try {
+      const { data, error } = await supabase
+        .from('operators')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('getOperators warning:', error.message);
+        return [];
+      }
+      if (!data || data.length === 0) return [];
+
+      // Fetch default skins for thumbnails
+      const { data: skins } = await supabase
+        .from('operator_skins')
+        .select('operator_id, avatar_url, full_url, is_default');
+
+      const skinMap = {};
+      (skins || []).forEach(s => {
+        if (!skinMap[s.operator_id] || s.is_default) {
+          skinMap[s.operator_id] = s;
+        }
+      });
+
+      return data.map(op => ({
+        ...op,
+        id: op.operator_id,
+        class: op.class_id,
+        subclass: op.sub_class_id,
+        faction: (op.factions && op.factions.length > 0) ? op.factions[0] : null,
+        avatar_url: skinMap[op.operator_id]?.avatar_url || '',
+        full_url: skinMap[op.operator_id]?.full_url || '',
+        portraitUrl: skinMap[op.operator_id]?.full_url || skinMap[op.operator_id]?.avatar_url || ''
+      }));
+    } catch (err) {
+      console.warn('getOperators failed:', err);
+      return [];
+    }
+  },
+
+  async getOperator(operatorId) {
+    try {
+      const { data, error } = await supabase
+        .from('operators')
+        .select('*')
+        .eq('operator_id', operatorId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+
+      // Fetch skins and dialogues in parallel
+      const [skinsRes, dialoguesRes] = await Promise.all([
+        supabase.from('operator_skins').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true }),
+        supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true })
+      ]);
+
+      const skins = (skinsRes.data || []).map(s => ({
+        ...s,
+        id: s.skin_id,
+        portraitUrl: s.full_url || s.avatar_url,
+        avatarUrl: s.avatar_url
+      }));
+
+      const defaultSkin = skins.find(s => s.is_default) || skins[0];
+
+      return {
+        ...data,
+        id: data.operator_id,
+        class: data.class_id,
+        subclass: data.sub_class_id,
+        faction: (data.factions && data.factions.length > 0) ? data.factions[0] : null,
+        portraitUrl: defaultSkin?.portraitUrl || '',
+        avatarUrl: defaultSkin?.avatarUrl || '',
+        skins: skins,
+        dialogues: (dialoguesRes.data || []).map(d => ({
+          ...d,
+          id: d.dialogue_id,
+          content: d.text_content,
+          voiceLines: {
+            JP: d.audio_url_jp,
+            EN: d.audio_url_en,
+            CN: d.audio_url_cn
+          }
+        })),
+        talents: data.combat_info?.talents || [],
+        skills: data.combat_info?.skills || [],
+        modules: data.combat_info?.modules || [],
+        baseSkills: data.combat_info?.baseSkills || [],
+        token: data.combat_info?.token || null,
+        profiles: data.lore_info?.profiles || []
+      };
+    } catch (err) {
+      console.warn(`getOperator ${operatorId} failed:`, err);
+      return null;
+    }
+  },
+
+  async createOperator(payload) {
+    const cleanPayload = { ...payload };
+    cleanPayload.updated_at = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('operators')
+      .insert(cleanPayload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperator(operatorId, payload) {
+    const cleanPayload = { ...payload };
+    cleanPayload.updated_at = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('operators')
+      .update(cleanPayload)
+      .eq('operator_id', operatorId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperator(operatorId) {
+    const { error } = await supabase
+      .from('operators')
+      .delete()
+      .eq('operator_id', operatorId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR SKINS
+  // ===========================================================================
+  async getOperatorSkins(operatorId) {
+    try {
+      const { data, error } = await supabase
+        .from('operator_skins')
+        .select('*')
+        .eq('operator_id', operatorId)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('getOperatorSkins warning:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('getOperatorSkins failed:', err);
+      return [];
+    }
+  },
+
+  async createOperatorSkin(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+    const { data, error } = await supabase
+      .from('operator_skins')
+      .insert(cleanPayload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorSkin(skinId, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
+    if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+    const { data, error } = await supabase
+      .from('operator_skins')
+      .update(cleanPayload)
+      .eq('skin_id', skinId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorSkin(skinId) {
+    const { error } = await supabase
+      .from('operator_skins')
+      .delete()
+      .eq('skin_id', skinId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR DIALOGUES
+  // ===========================================================================
+  async getOperatorDialogues(operatorId) {
+    try {
+      const { data, error } = await supabase
+        .from('operator_dialogues')
+        .select('*')
+        .eq('operator_id', operatorId)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('getOperatorDialogues warning:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('getOperatorDialogues failed:', err);
+      return [];
+    }
+  },
+
+  async createOperatorDialogue(payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.audio_url_jp) cleanPayload.audio_url_jp = cleanUrl(cleanPayload.audio_url_jp);
+    if (cleanPayload.audio_url_en) cleanPayload.audio_url_en = cleanUrl(cleanPayload.audio_url_en);
+    if (cleanPayload.audio_url_cn) cleanPayload.audio_url_cn = cleanUrl(cleanPayload.audio_url_cn);
+    const { data, error } = await supabase
+      .from('operator_dialogues')
+      .insert(cleanPayload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorDialogue(dialogueId, payload) {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.audio_url_jp) cleanPayload.audio_url_jp = cleanUrl(cleanPayload.audio_url_jp);
+    if (cleanPayload.audio_url_en) cleanPayload.audio_url_en = cleanUrl(cleanPayload.audio_url_en);
+    if (cleanPayload.audio_url_cn) cleanPayload.audio_url_cn = cleanUrl(cleanPayload.audio_url_cn);
+    const { data, error } = await supabase
+      .from('operator_dialogues')
+      .update(cleanPayload)
+      .eq('dialogue_id', dialogueId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorDialogue(dialogueId) {
+    const { error } = await supabase
+      .from('operator_dialogues')
+      .delete()
+      .eq('dialogue_id', dialogueId);
+    if (error) throw error;
+  },
+
+  // ===========================================================================
+  // OPERATOR RECORDS (STORIES)
+  // ===========================================================================
+  async getOperatorRecords(operatorId) {
+    try {
+      const { data, error } = await supabase
+        .from('operator_records')
+        .select('*')
+        .eq('operator_id', operatorId)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('getOperatorRecords warning:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err) {
+      console.warn('getOperatorRecords failed:', err);
+      return [];
+    }
+  },
+
+  async getOperatorRecord(recordId) {
+    try {
+      const { data, error } = await supabase
+        .from('operator_records')
+        .select('*')
+        .eq('record_id', recordId)
+        .maybeSingle();
+      if (error) throw error;
+      return data || null;
+    } catch (err) {
+      console.warn(`getOperatorRecord ${recordId} failed:`, err);
+      return null;
+    }
+  },
+
+  async createOperatorRecord(payload) {
+    const cleanPayload = { ...payload };
+    cleanPayload.updated_at = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('operator_records')
+      .insert(cleanPayload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOperatorRecord(recordId, payload) {
+    const cleanPayload = { ...payload };
+    cleanPayload.updated_at = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('operator_records')
+      .update(cleanPayload)
+      .eq('record_id', recordId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteOperatorRecord(recordId) {
+    const { error } = await supabase
+      .from('operator_records')
+      .delete()
+      .eq('record_id', recordId);
+    if (error) throw error;
+  },
+
+  async getOperatorStoryTree() {
+    try {
+      const [opsRes, recsRes] = await Promise.all([
+        supabase.from('operators').select('operator_id, name, appellation, rarity, class_id, factions').order('name'),
+        supabase.from('operator_records').select('record_id, operator_id, name, display_order').order('display_order', { ascending: true })
+      ]);
+
+      const operators = opsRes.data || [];
+      const records = recsRes.data || [];
+
+      // Group records by operator_id
+      const recordsMap = {};
+      records.forEach(r => {
+        if (!recordsMap[r.operator_id]) recordsMap[r.operator_id] = [];
+        recordsMap[r.operator_id].push(r);
+      });
+
+      return operators.map(op => ({
+        ...op,
+        records: recordsMap[op.operator_id] || []
+      }));
+    } catch (err) {
+      console.warn('getOperatorStoryTree failed:', err);
+      return [];
+    }
+  },
 };
 
 // Proxy to wrap all SupabaseAPI methods with auth error handling

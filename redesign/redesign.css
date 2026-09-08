@@ -57,6 +57,31 @@ body {
     line-height: 1.5;
 }
 
+/* Swiss-Brutalist Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f0eae1;
+    border-left: 1px solid rgba(24, 24, 24, 0.08);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-charcoal, #181818);
+    border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-terracotta, #B2653B);
+}
+
+html, body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-charcoal, #181818) #f0eae1;
+}
+
 /* Monospace text */
 .technical-text {
     font-family: var(--font-mono);

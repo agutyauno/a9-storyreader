@@ -1,0 +1,1171 @@
+/* ============================================================================= */
+/* OPERATOR EDITOR SUITE STYLES (Swiss-Brutalist // Redesign Cohesive Theme)    */
+/* ============================================================================= */
+
+/* Main Containers */
+.op-editor-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-main, #F5EDDC);
+    color: var(--text-main, #181818);
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    background-image:
+        radial-gradient(at 5% 15%, rgba(178, 101, 59, 0.06) 0px, transparent 35%),
+        radial-gradient(at 95% 85%, rgba(92, 127, 113, 0.06) 0px, transparent 35%);
+    background-attachment: fixed;
+}
+
+/* Pinned Header / Top Bar */
+.op-editor-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 1.25rem;
+    background-color: var(--color-charcoal, #181818);
+    border-bottom: 2px solid #282828;
+    color: var(--color-cream, #F5EDDC);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.op-editor-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.op-editor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Compact Title & Count Badge */
+.op-compact-title {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-cream, #F5EDDC);
+    letter-spacing: 0.05em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.op-count-badge {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-ochre, #BA8530);
+    background: rgba(186, 133, 48, 0.15);
+    border: 1px solid rgba(186, 133, 48, 0.4);
+    padding: 0.1rem 0.45rem;
+    letter-spacing: 0.05em;
+}
+
+/* Brutalist Button Styles (Cohesive with Story Editor) */
+.op-editor-header .brutalist-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background-color: transparent;
+    border: 1px solid rgba(245, 237, 220, 0.35);
+    color: var(--color-cream, #F5EDDC);
+    cursor: pointer;
+    transition: var(--transition-step, 0.2s);
+}
+
+.op-editor-header .brutalist-icon-btn:hover {
+    background-color: var(--color-cream, #F5EDDC);
+    color: var(--color-charcoal, #181818);
+    border-color: var(--color-cream, #F5EDDC);
+}
+
+.op-editor-header .brutalist-icon-btn.danger:hover {
+    background-color: var(--color-crimson, #8C2D2D);
+    color: #ffffff;
+    border-color: var(--color-crimson, #8C2D2D);
+}
+
+.op-editor-header .brutalist-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.85rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border: 1px solid rgba(245, 237, 220, 0.3);
+    background-color: transparent;
+    color: var(--color-cream, #F5EDDC);
+    transition: var(--transition-step, 0.2s);
+    text-transform: uppercase;
+}
+
+.op-editor-header .brutalist-btn.secondary {
+    background-color: rgba(245, 237, 220, 0.08);
+    border-color: rgba(245, 237, 220, 0.25);
+    color: var(--color-cream, #F5EDDC);
+}
+
+.op-editor-header .brutalist-btn.secondary:hover {
+    background-color: var(--color-ochre, #BA8530);
+    border-color: var(--color-ochre, #BA8530);
+    color: var(--color-charcoal, #181818);
+}
+
+.op-editor-header .brutalist-btn.primary {
+    background-color: var(--color-terracotta, #B2653B);
+    border-color: var(--color-terracotta, #B2653B);
+    color: #ffffff;
+}
+
+.op-editor-header .brutalist-btn.primary:hover {
+    background-color: #c97444;
+    border-color: #c97444;
+}
+
+.op-editor-title-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.op-editor-title-tag {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(245, 237, 220, 0.8);
+    font-weight: 700;
+}
+
+.op-editor-title-main {
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 0;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+/* Quick Switcher Button (Detail <-> Story Editor) */
+.op-quick-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    background-color: rgba(245, 237, 220, 0.08);
+    border: 1px solid rgba(245, 237, 220, 0.3);
+    color: var(--color-cream, #F5EDDC);
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-step, 0.2s);
+}
+
+.op-quick-switch-btn:hover {
+    background-color: var(--color-ochre, #BA8530);
+    border-color: var(--color-ochre, #BA8530);
+    color: var(--color-charcoal, #181818);
+}
+
+.op-quick-switch-btn .kbd-shortcut {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+    background-color: rgba(245, 237, 220, 0.15);
+    border: 1px solid rgba(245, 237, 220, 0.3);
+    border-radius: 2px;
+}
+
+/* Back Link / Top Bar Back Button */
+.op-header-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--color-cream, #F5EDDC);
+    background: transparent;
+    border: 1px solid rgba(245, 237, 220, 0.6);
+    padding: 0.45rem 0.85rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-step, 0.2s);
+    text-transform: uppercase;
+}
+
+.op-header-back-btn:hover {
+    background-color: var(--color-cream, #F5EDDC);
+    color: var(--color-charcoal, #181818);
+    border-color: var(--color-cream, #F5EDDC);
+}
+
+/* Action Buttons */
+.op-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: var(--border-thick, 2px solid #181818);
+    transition: var(--transition-step, 0.2s);
+    letter-spacing: 0.5px;
+}
+
+.op-btn-primary {
+    background-color: var(--color-charcoal, #181818);
+    color: var(--color-cream, #F5EDDC);
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.25);
+}
+
+.op-btn-primary:hover:not(:disabled) {
+    background-color: var(--color-ochre, #BA8530);
+    color: #181818;
+    box-shadow: 3px 3px 0px #181818;
+}
+
+.op-btn-secondary {
+    background-color: #ffffff;
+    color: var(--color-charcoal, #181818);
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.op-btn-secondary:hover {
+    background-color: var(--color-cream, #F5EDDC);
+    box-shadow: 3px 3px 0px #181818;
+}
+
+.op-btn-danger {
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    color: var(--color-crimson, #802520);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.op-btn-danger:hover {
+    background-color: var(--color-crimson, #802520);
+    color: #ffffff;
+}
+
+/* Card Actions Bar on Operator List */
+.operator-card-admin-bar {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    background-color: #ffffff;
+    border-top: 1px solid rgba(24, 24, 24, 0.15);
+}
+
+.operator-card-admin-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.5rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background-color: #ffffff;
+    border: 1px solid var(--color-charcoal, #181818);
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+    transition: var(--transition-step, 0.2s);
+    text-transform: uppercase;
+}
+
+.operator-card-admin-btn:hover {
+    background-color: var(--color-charcoal, #181818);
+    color: var(--color-cream, #F5EDDC);
+}
+
+.operator-card-admin-btn.danger:hover {
+    background-color: var(--color-crimson, #802520);
+    border-color: var(--color-crimson, #802520);
+    color: #ffffff;
+}
+
+/* Image Upload Field */
+.img-upload-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.img-upload-label {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-terracotta, #B2653B);
+    text-transform: uppercase;
+}
+
+.img-upload-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.img-upload-url-input {
+    flex: 1;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(24, 24, 24, 0.3);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-charcoal, #181818);
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.img-upload-url-input:focus {
+    border-color: var(--color-terracotta, #B2653B);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.img-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.85rem;
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    color: var(--color-charcoal, #181818);
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+    transition: var(--transition-step, 0.2s);
+}
+
+.img-upload-btn:hover {
+    background-color: var(--color-terracotta, #B2653B);
+    color: #ffffff;
+}
+
+.img-upload-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: #ffffff;
+    border: 1px solid rgba(24, 24, 24, 0.3);
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+}
+
+.img-upload-clear-btn:hover {
+    background-color: var(--color-crimson, #802520);
+    color: #ffffff;
+    border-color: var(--color-crimson, #802520);
+}
+
+.img-upload-hint {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.7rem;
+    color: rgba(24, 24, 24, 0.6);
+}
+
+.img-upload-error {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.72rem;
+    color: var(--color-crimson, #802520);
+    font-weight: 700;
+}
+
+.img-upload-preview {
+    margin-top: 0.5rem;
+    position: relative;
+    max-width: 220px;
+    max-height: 180px;
+    border: var(--border-thick, 2px solid #181818);
+    background-color: #ffffff;
+    box-shadow: 3px 3px 0px var(--color-charcoal, #181818);
+    overflow: hidden;
+}
+
+.img-upload-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.img-upload-preview-meta {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(24, 24, 24, 0.85);
+    color: var(--color-cream, #F5EDDC);
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Audio Upload Preview */
+.audio-upload-preview {
+    margin-top: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 0.75rem;
+    background-color: var(--color-cream, #F5EDDC);
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.audio-upload-preview-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-charcoal, #181818);
+}
+
+.audio-upload-preview-tag {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--color-terracotta, #B2653B);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+/* Modals */
+.op-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: rgba(24, 24, 24, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.op-modal-box {
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 6px 6px 0px var(--color-charcoal, #181818);
+    width: 100%;
+    max-width: 650px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalScaleIn 0.18s ease-out;
+}
+
+@keyframes modalScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.op-modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: var(--border-thick, 2px solid #181818);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-cream, #F5EDDC);
+}
+
+.op-modal-title {
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin: 0;
+    color: var(--color-charcoal, #181818);
+    text-transform: uppercase;
+}
+
+.op-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.op-modal-close:hover {
+    color: var(--color-crimson, #802520);
+}
+
+.op-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: #ffffff;
+}
+
+.op-modal-footer {
+    padding: 1rem 1.25rem;
+    border-top: var(--border-thick, 2px solid #181818);
+    background-color: var(--color-cream, #F5EDDC);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* Form inputs in modal and detail editor */
+.op-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.op-form-label {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-charcoal, #181818);
+    text-transform: uppercase;
+}
+
+.op-form-input,
+.op-form-select {
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(24, 24, 24, 0.3);
+    padding: 0.4rem 0.65rem;
+    color: var(--color-charcoal, #181818);
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.82rem;
+    outline: none;
+    margin: 0;
+    line-height: 1.2;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.op-form-select {
+    cursor: pointer;
+}
+
+.op-form-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(24, 24, 24, 0.3);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-charcoal, #181818);
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.85rem;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+    margin: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.op-form-input:focus,
+.op-form-textarea:focus,
+.op-form-select:focus {
+    border-color: var(--color-terracotta, #B2653B);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.op-form-row {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.op-form-row>* {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Spin animation */
+.spin-animate {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================================= */
+/* OPERATOR DETAIL & DOSSIER EDITOR (Swiss-Brutalist Overhaul)                 */
+/* ============================================================================= */
+
+.op-editor-container .operator-detail-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 1.75rem;
+    margin: 0;
+    min-height: auto;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .op-editor-container .operator-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.op-editor-container .operator-left-col {
+    position: sticky;
+    top: 68px;
+    max-height: calc(100vh - 84px);
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 4px 4px 0px var(--color-charcoal, #181818);
+    padding: 0;
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--color-charcoal, #181818) #f0eae1 !important;
+    z-index: 10;
+}
+
+/* Force visible custom scrollbar on left column overriding display:none in operator.css */
+.op-editor-container .operator-left-col::-webkit-scrollbar {
+    display: block !important;
+    width: 6px !important;
+}
+
+.op-editor-container .operator-left-col::-webkit-scrollbar-track {
+    background: #f0eae1 !important;
+    border-left: 1px solid rgba(24, 24, 24, 0.15) !important;
+}
+
+.op-editor-container .operator-left-col::-webkit-scrollbar-thumb {
+    background: var(--color-charcoal, #181818) !important;
+    border-radius: 0px !important;
+}
+
+.op-editor-container .operator-left-col::-webkit-scrollbar-thumb:hover {
+    background: var(--color-terracotta, #B2653B) !important;
+}
+
+.op-editor-container .operator-right-col {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    background-color: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Left Column Styling */
+.op-editor-container .operator-portrait-wrap {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    background: #111318;
+    overflow: hidden;
+    border-bottom: var(--border-thick, 2px solid #181818);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.op-editor-container .operator-portrait-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center top;
+}
+
+.op-editor-container .operator-left-info {
+    padding: 1.15rem;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+/* Swiss-Brutalist Tabs */
+.op-editor-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    background: transparent;
+    border-bottom: var(--border-thick, 2px solid #181818);
+    padding-bottom: 0.75rem;
+}
+
+.op-editor-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 3px 3px 0px var(--color-charcoal, #181818);
+    color: var(--color-charcoal, #181818);
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-step, 0.15s);
+}
+
+.op-editor-tab-btn:hover {
+    background-color: var(--color-cream, #F5EDDC);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px var(--color-charcoal, #181818);
+}
+
+.op-editor-tab-btn.active {
+    background-color: var(--color-charcoal, #181818);
+    color: var(--color-cream, #F5EDDC);
+    box-shadow: 3px 3px 0px var(--color-terracotta, #B2653B);
+}
+
+.op-editor-tab-btn .tab-count-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+    background: rgba(186, 133, 48, 0.25);
+    color: var(--color-ochre, #BA8530);
+    border: 1px solid rgba(186, 133, 48, 0.5);
+}
+
+.op-editor-tab-btn.active .tab-count-badge {
+    background: var(--color-terracotta, #B2653B);
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+/* Brutalist Section Cards in Right Column */
+.op-tab-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.op-content-card {
+    background-color: #ffffff;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 4px 4px 0px var(--color-charcoal, #181818);
+}
+
+.op-content-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--color-cream, #F5EDDC);
+    border-bottom: var(--border-thick, 2px solid #181818);
+}
+
+.op-content-card-title {
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--color-charcoal, #181818);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.op-content-card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Sub Card within Section (Talents, Skills, Modules, BaseSkills) */
+.op-sub-card {
+    background-color: #fdfbf7;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+    margin-bottom: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.op-sub-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    background-color: #f5eddc;
+    border-bottom: 1.5px solid var(--color-charcoal, #181818);
+    box-sizing: border-box;
+}
+
+.op-sub-card-body {
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* CustomSelect & Input Standardized Overrides for Left Info */
+.op-form-group .ced-dropdown {
+    width: 100%;
+}
+
+.op-form-group .ced-dropdown-toggle {
+    width: 100%;
+}
+
+.op-editor-container .operator-left-info .op-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.op-editor-container .operator-left-info .op-form-label {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-charcoal, #181818);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+    margin-bottom: 0.1rem;
+}
+
+/* Perfectly balanced input fields and custom select dropdowns */
+.op-editor-container .operator-left-info .op-form-input,
+.op-editor-container .operator-left-info .ced-dropdown-toggle {
+    width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0.4rem 0.65rem !important;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.82rem !important;
+    font-weight: 600;
+    color: var(--color-charcoal, #181818) !important;
+    background-color: #ffffff !important;
+    border: 1.5px solid var(--color-charcoal, #181818) !important;
+    border-radius: 0px !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    line-height: 1.2;
+}
+
+.op-editor-container .operator-left-info .op-form-input:focus,
+.op-editor-container .operator-left-info .ced-dropdown-toggle:focus,
+.op-editor-container .operator-left-info .ced-dropdown-toggle.open {
+    border-color: var(--color-terracotta, #B2653B) !important;
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818) !important;
+}
+
+.op-editor-container .operator-left-info .op-form-input:disabled {
+    background-color: #f5f3ef !important;
+    color: rgba(24, 24, 24, 0.6) !important;
+    cursor: not-allowed;
+}
+
+.op-editor-container .operator-left-info .ced-dropdown {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+.op-editor-container .operator-left-info .ced-dropdown-value {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.op-editor-container .operator-left-info .ced-dropdown-caret {
+    flex-shrink: 0;
+    margin-left: 0.35rem;
+}
+
+.op-editor-container .operator-left-info .ced-dropdown-menu {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    border: 1.5px solid var(--color-charcoal, #181818) !important;
+    box-shadow: 3px 3px 0px var(--color-charcoal, #181818) !important;
+    background-color: #ffffff !important;
+    z-index: 200;
+}
+
+.op-editor-container .operator-left-info .ced-dropdown-item {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.76rem !important;
+    font-weight: 600;
+    padding: 0.4rem 0.6rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Portal Dropdown Menu (immune to parent overflow clipping) */
+.ced-dropdown-portal-menu {
+    border: 1.5px solid var(--color-charcoal, #181818) !important;
+    box-shadow: 4px 4px 0px var(--color-charcoal, #181818) !important;
+    background-color: #ffffff !important;
+    overflow-y: auto !important;
+    border-radius: 0px !important;
+    box-sizing: border-box !important;
+}
+
+.ced-dropdown-portal-menu .ced-dropdown-item {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem !important;
+    font-weight: 600;
+    padding: 0.45rem 0.65rem !important;
+    cursor: pointer;
+    color: var(--color-charcoal, #181818);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.12s, color 0.12s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.ced-dropdown-portal-menu .ced-dropdown-item:hover {
+    background-color: rgba(178, 101, 59, 0.12);
+    color: var(--color-terracotta, #B2653B);
+}
+
+.ced-dropdown-portal-menu .ced-dropdown-item.selected {
+    background-color: var(--color-terracotta, #B2653B);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.ced-dropdown-portal-menu::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+.ced-dropdown-portal-menu::-webkit-scrollbar-track {
+    background: #f5eddc !important;
+}
+
+.ced-dropdown-portal-menu::-webkit-scrollbar-thumb {
+    background: #181818 !important;
+}
+
+.ced-dropdown-portal-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--color-terracotta, #B2653B) !important;
+}
+
+/* ============================================================================= */
+/* SWISS-BRUTALIST CUSTOM SCROLLBARS                                            */
+/* ============================================================================= */
+
+/* Global Editor Scroller */
+.op-editor-container ::-webkit-scrollbar,
+.op-modal-box ::-webkit-scrollbar,
+.ced-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.op-editor-container ::-webkit-scrollbar-track,
+.op-modal-box ::-webkit-scrollbar-track,
+.ced-dropdown-menu::-webkit-scrollbar-track {
+    background: #f0eae1;
+}
+
+.op-editor-container ::-webkit-scrollbar-thumb,
+.op-modal-box ::-webkit-scrollbar-thumb,
+.ced-dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--color-charcoal, #181818);
+    border-radius: 0px;
+}
+
+.op-editor-container ::-webkit-scrollbar-thumb:hover,
+.op-modal-box ::-webkit-scrollbar-thumb:hover,
+.ced-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--color-terracotta, #B2653B);
+}
+
+/* Firefox scrollbar support */
+.op-editor-container,
+.op-editor-container *,
+.op-modal-body,
+.ced-dropdown-menu {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-charcoal, #181818) #f0eae1;
+}
+
+/* General Brutalist Button & Icon-Btn Classes */
+.brutalist-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.9rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border: var(--border-thick, 2px solid #181818);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+    transition: var(--transition-step, 0.15s);
+    text-transform: uppercase;
+}
+
+.brutalist-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px var(--color-charcoal, #181818);
+}
+
+.brutalist-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--color-charcoal, #181818);
+}
+
+.brutalist-btn.secondary {
+    background-color: #ffffff;
+    color: var(--color-charcoal, #181818);
+}
+
+.brutalist-btn.primary {
+    background-color: var(--color-terracotta, #B2653B);
+    color: #ffffff;
+}
+
+.brutalist-btn.primary:hover {
+    background-color: #c97444;
+}
+
+.brutalist-btn.danger {
+    background-color: var(--color-crimson, #802520);
+    color: #ffffff;
+}
+
+.brutalist-btn.danger:hover {
+    background-color: #9e2e28;
+}
+
+.brutalist-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: #ffffff;
+    border: 1px solid var(--color-charcoal, #181818);
+    box-shadow: 1px 1px 0px var(--color-charcoal, #181818);
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+    transition: var(--transition-step, 0.15s);
+}
+
+.brutalist-icon-btn:hover:not(:disabled) {
+    background-color: var(--color-cream, #F5EDDC);
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.brutalist-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Empty State Card */
+.op-empty-state-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    background-color: #faf8f5;
+    border: 1px dashed rgba(24, 24, 24, 0.3);
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.op-empty-state-text {
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(24, 24, 24, 0.55);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}

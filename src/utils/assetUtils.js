@@ -16,8 +16,8 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 export function getAssetUrl(path, type = null) {
   if (!path) return '';
 
-  const isVideo = type === 'video' || path.match(/\.(mp4|webm|ogg)$/i);
-  const isAudio = type === 'audio' || type === 'bgm' || type === 'sfx' || path.match(/\.(mp3|wav|flac)$/i) || path.includes('/audio/bgm/') || path.includes('/audio/sfx/');
+  const isVideo = type === 'video' || path.match(/\.(mp4|webm)$/i);
+  const isAudio = type === 'audio' || type === 'bgm' || type === 'sfx' || type === 'voice' || path.match(/\.(mp3|wav|flac|ogg|m4a|aac)$/i) || path.includes('/audio/');
 
   // Redirect local audio asset paths to external repository paths if we want them raw from GitHub
   let processedPath = path;
