@@ -1066,8 +1066,7 @@ export default function OperatorDetailPageEditor() {
                                     <div className="op-content-card-body">
                                         {talents.length === 0 ? (
                                             <div className="op-empty-state-card">
-                                                <Zap size={28} color="rgba(24, 24, 24, 0.3)" />
-                                                <span className="op-empty-state-text">CHƯA CÓ DỮ LIỆU TÀI NĂNG</span>
+                                                <span className="op-empty-state-text">CHƯA CÓ TÀI NĂNG</span>
                                             </div>
                                         ) : (
                                             talents.map((talent, idx) => (
@@ -1115,7 +1114,6 @@ export default function OperatorDetailPageEditor() {
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
-                                            <Swords size={16} color="var(--color-terracotta, #B2653B)" />
                                             <span>Kỹ Năng Chiến Đấu ({skills.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleAddSkill}>
@@ -1252,7 +1250,6 @@ export default function OperatorDetailPageEditor() {
                                     <div className="op-content-card-body">
                                         {modules.length === 0 ? (
                                             <div className="op-empty-state-card">
-                                                <Package size={28} color="rgba(24, 24, 24, 0.3)" />
                                                 <span className="op-empty-state-text">CHƯA CÓ MODULE NÀO</span>
                                             </div>
                                         ) : (
