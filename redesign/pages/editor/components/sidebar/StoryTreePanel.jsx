@@ -156,7 +156,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     };
 
     const handleDelete = (node) => {
-        const typeLabels = { region: 'Region (Vùng)', arc: 'Arc (Chương)', event: 'Event (Sự kiện)', story: 'Story (Bài viết)' };
+        const typeLabels = { region: 'Region', arc: 'Arc', event: 'Event', story: 'Story' };
         let warningMsg = `Bạn có chắc chắn muốn xoá ${typeLabels[node.type]} "${node.name}" không?`;
         if (node.children?.length > 0) {
             warningMsg += ` Lưu ý: Tất cả các mục con bên trong cũng sẽ bị ảnh hưởng!`;

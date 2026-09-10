@@ -60,12 +60,26 @@ export function NotificationProvider({ children }) {
         setNotifications((prev) => [...prev, { id, message, type, title }])
     }
 
+    const showNotification = (arg1, arg2, arg3) => {
+        if (typeof arg1 === 'string' && (arg1 === 'success' || arg1 === 'error' || arg1 === 'warning' || arg1 === 'info' || arg1 === 'danger')) {
+            const type = arg1 === 'danger' ? 'error' : arg1
+            const title = typeof arg2 === 'string' ? arg2 : ''
+            const message = typeof arg3 === 'string' ? arg3 : (title || '')
+            addNotification(message, type, title)
+        } else {
+            const message = typeof arg1 === 'string' ? arg1 : ''
+            const type = typeof arg2 === 'string' ? (arg2 === 'danger' ? 'error' : arg2) : 'info'
+            const title = typeof arg3 === 'string' ? arg3 : ''
+            addNotification(message, type, title)
+        }
+    }
+
     const removeNotification = (id) => {
         setNotifications((prev) => prev.filter((n) => n.id !== id))
     }
 
     return (
-        <NotificationContext.Provider value={{ addNotification }}>
+        <NotificationContext.Provider value={{ addNotification, showNotification }}>
             {children}
             {/* Notification Stack container */}
             <div className="notification-stack">

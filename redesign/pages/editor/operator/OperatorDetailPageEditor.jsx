@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import NotificationToast from '../components/NotificationToast'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
@@ -219,6 +220,7 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
 export default function OperatorDetailPageEditor() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const isNew = !id || id === 'new'
 
     // Operator basic state
@@ -288,8 +290,15 @@ export default function OperatorDetailPageEditor() {
 
     const showToast = (message, type = 'success') => {
         setNotification({ message, type })
-        setTimeout(() => setNotification({ message: '', type: 'success' }), 4000)
     }
+
+    // Catch toast message from redirect location state
+    useEffect(() => {
+        if (location.state?.toastMessage) {
+            showToast(location.state.toastMessage, location.state.toastType || 'success')
+            window.history.replaceState({}, document.title)
+        }
+    }, [location.state])
 
     // Keyboard shortcut Alt + S to switch to record/story editor
     useEffect(() => {
@@ -437,7 +446,10 @@ export default function OperatorDetailPageEditor() {
                     })
                 }
                 showToast('Đã tạo cán viên mới thành công!', 'success')
-                navigate(`/editor/operator/${opId.trim()}`, { replace: true })
+                navigate(`/editor/operator/${opId.trim()}`, { 
+                    replace: true, 
+                    state: { toastMessage: 'Đã tạo cán viên mới thành công!', toastType: 'success' } 
+                })
             } else {
                 await SupabaseAPI.updateOperator(id, payload)
                 showToast('Đã lưu hồ sơ cán viên thành công!', 'success')
@@ -1162,6 +1174,7 @@ export default function OperatorDetailPageEditor() {
                                                             value={skill.icon}
                                                             onChange={(url) => handleUpdateSkill(idx, 'icon', url)}
                                                             placeholder="URL icon kĩ năng hoặc tải lên..."
+                                                            onNotify={showToast}
                                                         />
 
                                                         {/* SP and Type config */}
@@ -1718,6 +1731,7 @@ export default function OperatorDetailPageEditor() {
                                 value={skinForm.avatar_url}
                                 onChange={(url) => setSkinForm({ ...skinForm, avatar_url: url })}
                                 hint="Được tải lên thư mục: images/operators_images/avatars"
+                                onNotify={showToast}
                             />
 
                             {/* Full Skin Upload */}
@@ -1727,6 +1741,7 @@ export default function OperatorDetailPageEditor() {
                                 value={skinForm.full_url}
                                 onChange={(url) => setSkinForm({ ...skinForm, full_url: url })}
                                 hint="Được tải lên thư mục: images/operators_images/full"
+                                onNotify={showToast}
                             />
 
                             <div className="op-form-group">
@@ -1820,6 +1835,7 @@ export default function OperatorDetailPageEditor() {
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_jp: url })}
                                 placeholder="URL audio JP hoặc tải tệp lên (.mp3, .wav, .ogg)..."
                                 hint="Được tải lên thư mục GitHub: audio/operators_voices/jp"
+                                onNotify={showToast}
                             />
 
                             {/* Audio Upload EN */}
@@ -1830,6 +1846,7 @@ export default function OperatorDetailPageEditor() {
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_en: url })}
                                 placeholder="URL audio EN hoặc tải tệp lên (.mp3, .wav, .ogg)..."
                                 hint="Được tải lên thư mục GitHub: audio/operators_voices/en"
+                                onNotify={showToast}
                             />
 
                             {/* Audio Upload CN */}
@@ -1840,6 +1857,7 @@ export default function OperatorDetailPageEditor() {
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_cn: url })}
                                 placeholder="URL audio CN hoặc tải tệp lên (.mp3, .wav, .ogg)..."
                                 hint="Được tải lên thư mục GitHub: audio/operators_voices/cn"
+                                onNotify={showToast}
                             />
                         </div>
 
@@ -1922,6 +1940,12 @@ export default function OperatorDetailPageEditor() {
                     </div>
                 </div>
             )}
+
+            <NotificationToast
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: '', type: 'success' })}
+            />
         </div>
     )
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import NotificationToast from '../components/NotificationToast'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import { 
     CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, 
@@ -171,12 +172,20 @@ export default function OperatorListPageEditor() {
     const [selectedRarity, setSelectedRarity] = useState(null)
     const [viewMode, setViewMode] = useState('grid')
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+    const location = useLocation()
     const [notification, setNotification] = useState({ message: '', type: 'success' })
 
     const showToast = (message, type = 'success') => {
         setNotification({ message, type })
-        setTimeout(() => setNotification({ message: '', type: 'success' }), 4000)
     }
+
+    // Catch toast message from redirect location state
+    useEffect(() => {
+        if (location.state?.toastMessage) {
+            showToast(location.state.toastMessage, location.state.toastType || 'success')
+            window.history.replaceState({}, document.title)
+        }
+    }, [location.state])
 
     const loadOperators = async () => {
         setLoading(true)
@@ -676,6 +685,12 @@ export default function OperatorListPageEditor() {
                     </div>
                 )}
             </main>
+
+            <NotificationToast
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: '', type: 'success' })}
+            />
         </div>
     )
 }

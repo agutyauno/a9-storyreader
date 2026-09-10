@@ -57,13 +57,17 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                     SupabaseAPI.getAllGallery(),
                 ]);
                 
-                const mappedGallery = (galleryData || []).map(g => ({
-                    asset_id: g.gallery_id,
-                    name: g.title,
-                    url: g.image_url,
-                    type: 'image',
-                    category: 'gallery'
-                }));
+                const existingAssetIds = new Set((assetData || []).map(a => a.asset_id).filter(Boolean));
+                
+                const mappedGallery = (galleryData || [])
+                    .filter(g => g.gallery_id && !existingAssetIds.has(g.gallery_id))
+                    .map(g => ({
+                        asset_id: g.gallery_id,
+                        name: g.title || g.gallery_id,
+                        url: g.image_url,
+                        type: 'image',
+                        category: 'gallery'
+                    }));
 
                 setAssets([...(assetData || []), ...mappedGallery]);
             }
@@ -186,11 +190,11 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                             </div>
                         ) : (
                             <div className="redesign-asset-grid">
-                                {filtered.map(item => {
+                                {filtered.map((item, idx) => {
                                     const isSelected = selectedAssets.has(item.asset_id);
                                     return (
                                         <div 
-                                            key={item.asset_id}
+                                            key={`picker-${item.category || 'asset'}-${item.asset_id || idx}-${idx}`}
                                             className="redesign-asset-card"
                                             style={isSelected ? { borderColor: '#D84315', backgroundColor: 'rgba(216,67,21,0.15)' } : {}}
                                             onClick={() => toggleSelect(item)}

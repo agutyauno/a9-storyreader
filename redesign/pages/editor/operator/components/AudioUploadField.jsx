@@ -22,7 +22,8 @@ export default function AudioUploadField({
     label = 'Tệp âm thanh',
     placeholder = 'https://... hoặc tải tệp âm thanh (.mp3, .wav, .ogg)',
     hint = '',
-    customFileName = null
+    customFileName = null,
+    onNotify = null
 }) {
     const fileInputRef = useRef(null)
     const audioRef = useRef(null)
@@ -60,12 +61,15 @@ export default function AudioUploadField({
             const res = await uploadFileToGithub(file, folderPath, customFileName)
             if (res && res.url) {
                 onChange(res.url)
+                onNotify?.('Đã tải tệp âm thanh lên Server thành công!', 'success')
             } else {
                 throw new Error(res?.error || 'Không nhận được URL từ máy chủ upload.')
             }
         } catch (err) {
             console.error('Audio upload failed:', err)
-            setUploadError(err.message || 'Tải tệp âm thanh lên thất bại.')
+            const errMsg = err.message || 'Tải tệp âm thanh lên thất bại.'
+            setUploadError(errMsg)
+            onNotify?.(errMsg, 'error')
         } finally {
             setUploading(false)
             if (fileInputRef.current) {

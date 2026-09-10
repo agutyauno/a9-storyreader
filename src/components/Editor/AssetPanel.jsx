@@ -225,7 +225,10 @@ export default function AssetPanel({ onAddAsset, onPickAsset, showNotification }
         return false;
     });
 
+    const existingAssetIds = useMemo(() => new Set(assets.map(a => a.asset_id).filter(Boolean)), [assets]);
+
     const filteredGallery = gallery.filter(g => {
+        if (existingAssetIds.has(g.gallery_id)) return false;
         const q = search.toLowerCase();
         return !q || g.title?.toLowerCase().includes(q) || g.gallery_id.toLowerCase().includes(q);
     }).map(g => ({

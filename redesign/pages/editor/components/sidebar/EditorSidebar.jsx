@@ -8,13 +8,13 @@ import AddAssetModal from '../modals/AddAssetModal';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import '../editorComponents.css';
 
-export default function EditorSidebar({ 
-    metadata, 
-    onMetadataChange, 
-    onStorySelect, 
-    currentStoryId, 
-    reloadRef, 
-    onPickAsset, 
+export default function EditorSidebar({
+    metadata,
+    onMetadataChange,
+    onStorySelect,
+    currentStoryId,
+    reloadRef,
+    onPickAsset,
     showNotification,
     isRecord = false,
     currentRecordId,
@@ -63,30 +63,31 @@ export default function EditorSidebar({
     const handleModalSubmit = async (formData, isEditMode) => {
         try {
             let result;
+            let payload;
             if (modalType === 'region') {
-                const payload = {
+                payload = {
                     region_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
                     icon_url: formData.imageUrl,
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateRegion(formData.id, payload)
                     : await SupabaseAPI.createRegion(payload);
             } else if (modalType === 'arc') {
-                const payload = {
+                payload = {
                     arc_id: formData.id,
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
                     region_id: isEditMode ? initialData.region_id : (modalParent?.region_id || modalParent?.id),
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateArc(formData.id, payload)
                     : await SupabaseAPI.createArc(payload);
             } else if (modalType === 'event') {
-                const payload = {
+                payload = {
                     event_id: formData.id,
                     name: formData.name,
                     description: formData.description,
@@ -96,11 +97,11 @@ export default function EditorSidebar({
                     banner_url: formData.bannerUrl,
                     wallpaper_url: formData.wallpaperUrl,
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateEvent(formData.id, payload)
                     : await SupabaseAPI.createEvent(payload);
             } else if (modalType === 'story') {
-                const payload = {
+                payload = {
                     story_id: formData.id,
                     name: formData.name,
                     description: formData.description,
@@ -108,9 +109,12 @@ export default function EditorSidebar({
                     event_id: isEditMode ? initialData.event_id : (modalParent?.event_id || modalParent?.id),
                 };
                 if (!isEditMode) {
-                    payload.script_text = `@bg ""\n\nName: Hello world!\n`;
+                    payload.story_content = {
+                        type: 'vns',
+                        script: ``
+                    };
                 }
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateStory(formData.id, payload)
                     : await SupabaseAPI.createStory(payload);
             }
@@ -174,9 +178,9 @@ export default function EditorSidebar({
 
     return (
         <div className="redesign-sidebar-container">
-            <SidebarTabs 
-                activeTab={activeTab} 
-                onTabChange={setActiveTab} 
+            <SidebarTabs
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
                 tab1Label={isRecord ? 'KÍ SỰ CÁN VIÊN' : 'STORY TREE'}
             />
 

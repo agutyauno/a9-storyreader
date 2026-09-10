@@ -242,13 +242,18 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                 SupabaseAPI.getAllGallery(),
             ]);
 
-            const mappedGallery = (galleryData || []).map(g => ({
-                asset_id: g.gallery_id,
-                name: g.title,
-                url: g.image_url,
-                type: 'image',
-                category: 'gallery'
-            }));
+            // Filter out any gallery entries that already exist in the assets table (e.g. background assets added to event galleries)
+            const existingAssetIds = new Set((assetData || []).map(a => a.asset_id).filter(Boolean));
+
+            const mappedGallery = (galleryData || [])
+                .filter(g => g.gallery_id && !existingAssetIds.has(g.gallery_id))
+                .map(g => ({
+                    asset_id: g.gallery_id,
+                    name: g.title || g.gallery_id,
+                    url: g.image_url,
+                    type: 'image',
+                    category: 'gallery'
+                }));
 
             setAssets([...(assetData || []), ...mappedGallery]);
             setCharacters(charData || []);
@@ -498,9 +503,9 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                     </div>
                 ) : isCharCat ? (
                     <div className="redesign-asset-grid">
-                        {filteredChars.map(char => (
+                        {filteredChars.map((char, idx) => (
                             <CharacterCard
-                                key={char.character_id}
+                                key={`char-${char.character_id || idx}-${idx}`}
                                 character={char}
                                 onDetail={handleDetailChar}
                                 onDelete={handleDeleteChar}
@@ -509,17 +514,17 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                     </div>
                 ) : activeCat === 'all' ? (
                     <div className="redesign-asset-grid">
-                        {filteredChars.map(char => (
+                        {filteredChars.map((char, idx) => (
                             <CharacterCard
-                                key={`char-${char.character_id}`}
+                                key={`char-${char.character_id || idx}-${idx}`}
                                 character={char}
                                 onDetail={handleDetailChar}
                                 onDelete={handleDeleteChar}
                             />
                         ))}
-                        {filteredAssets.map(asset => (
+                        {filteredAssets.map((asset, idx) => (
                             <AssetCard
-                                key={asset.asset_id}
+                                key={`asset-${asset.category || 'misc'}-${asset.asset_id || idx}-${idx}`}
                                 asset={asset}
                                 isPlaying={playingAudioId === asset.asset_id}
                                 onTogglePlay={handleTogglePlay}
@@ -530,9 +535,9 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                     </div>
                 ) : (
                     <div className="redesign-asset-grid">
-                        {filteredAssets.map(asset => (
+                        {filteredAssets.map((asset, idx) => (
                             <AssetCard
-                                key={asset.asset_id}
+                                key={`asset-${asset.category || 'misc'}-${asset.asset_id || idx}-${idx}`}
                                 asset={asset}
                                 isPlaying={playingAudioId === asset.asset_id}
                                 onTogglePlay={handleTogglePlay}

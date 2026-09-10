@@ -17,7 +17,8 @@ export default function ImageUploadField({
     folderPath = 'images/operators_images/avatars',
     label = 'Hình ảnh',
     placeholder = 'https://... hoặc tải tệp lên',
-    hint = ''
+    hint = '',
+    onNotify = null
 }) {
     const fileInputRef = useRef(null)
     const [uploading, setUploading] = useState(false)
@@ -34,12 +35,15 @@ export default function ImageUploadField({
             const res = await uploadFileToGithub(file, folderPath)
             if (res && res.url) {
                 onChange(res.url)
+                onNotify?.('Đã tải ảnh lên Server thành công!', 'success')
             } else {
                 throw new Error('Không nhận được URL từ máy chủ upload.')
             }
         } catch (err) {
             console.error('Image upload failed:', err)
-            setUploadError(err.message || 'Tải ảnh lên thất bại.')
+            const errMsg = err.message || 'Tải ảnh lên thất bại.'
+            setUploadError(errMsg)
+            onNotify?.(errMsg, 'error')
         } finally {
             setUploading(false)
             if (fileInputRef.current) {

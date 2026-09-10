@@ -44,7 +44,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
 
     const handleEditItem = (node, reloadFn) => {
         setModalType(node.type);
-        setModalParent(null); 
+        setModalParent(null);
         setInitialData(node);
         reloadTreeRef.current = reloadFn;
         setModalOpen(true);
@@ -61,7 +61,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     display_order: formData.displayOrder,
                     icon_url: formData.imageUrl,
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateRegion(formData.id, payload)
                     : await SupabaseAPI.createRegion(payload);
             } else if (modalType === 'arc') {
@@ -72,7 +72,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     display_order: formData.displayOrder,
                     region_id: isEditMode ? initialData.region_id : (modalParent?.region_id || modalParent?.id),
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateArc(formData.id, payload)
                     : await SupabaseAPI.createArc(payload);
             } else if (modalType === 'event') {
@@ -86,7 +86,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     banner_url: formData.bannerUrl,
                     wallpaper_url: formData.wallpaperUrl,
                 };
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateEvent(formData.id, payload)
                     : await SupabaseAPI.createEvent(payload);
             } else if (modalType === 'story') {
@@ -98,9 +98,9 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     event_id: isEditMode ? initialData.event_id : (modalParent?.event_id || modalParent?.id),
                 };
                 if (!isEditMode) {
-                    payload.story_content = { characters: {}, sections: [] };
+                    payload.story_content = { type: 'vns', script: `` };
                 }
-                result = isEditMode 
+                result = isEditMode
                     ? await SupabaseAPI.updateStory(formData.id, payload)
                     : await SupabaseAPI.createStory(payload);
             } else if (modalType === 'character') {
@@ -116,7 +116,7 @@ export default function EditorSidebar({ metadata, onMetadataChange, onStorySelec
                     gallery_id: formData.id,
                     title: formData.name,
                     display_order: formData.displayOrder,
-                    event_id: modalParent?.event_id || modalParent?.id || null, 
+                    event_id: modalParent?.event_id || modalParent?.id || null,
                     image_url: formData.imageUrl
                 };
                 result = await SupabaseAPI.createGallery(payload);
