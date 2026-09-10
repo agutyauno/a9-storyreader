@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getOperatorById, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './mockOperatorData'
+import { CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './operatorMapping'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import { useNotification } from '../../components/Notification'
@@ -456,19 +456,11 @@ export default function OperatorDetailPage() {
                     })
                     document.title = `${data.name} // Civilight Eterna Database`
                 } else {
-                    const mockData = getOperatorById(id)
-                    setOperator(mockData)
-                    if (mockData) {
-                        document.title = `${mockData.name} // Civilight Eterna Database`
-                    }
+                    setOperator(null)
                 }
             } catch (err) {
                 console.error("Failed to load operator from Supabase:", err)
-                const mockData = getOperatorById(id)
-                setOperator(mockData)
-                if (mockData) {
-                    document.title = `${mockData.name} // Civilight Eterna Database`
-                }
+                setOperator(null)
             } finally {
                 setLoading(false)
             }

@@ -4,7 +4,7 @@ import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import { 
     CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, 
     getOperatorFactionIds, getHierarchicalFactions 
-} from '../../operator/mockOperatorData'
+} from '../../operator/operatorMapping'
 import {
     Plus, Search, Grid, List, Star, Trash2, Edit3, BookOpen,
     ArrowLeft, LogOut, UserX, Loader2, ExternalLink, Filter, ChevronDown

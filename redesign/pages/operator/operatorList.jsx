@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { MOCK_OPERATORS, FACTIONS, CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, getOperatorFactionIds, getHierarchicalFactions } from './mockOperatorData'
+import { FACTIONS, CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, getOperatorFactionIds, getHierarchicalFactions } from './operatorMapping'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import Loading from '../../components/Loading'
 import { Search, Grid, List, Star, UserX, Filter, ChevronDown } from 'lucide-react'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import './operator.css'
@@ -153,7 +154,7 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
 }
 
 export default function OperatorListPage() {
-    const [operators, setOperators] = useState(MOCK_OPERATORS)
+    const [operators, setOperators] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedFaction, setSelectedFaction] = useState(null)
@@ -170,11 +171,10 @@ export default function OperatorListPage() {
         async function fetchOps() {
             try {
                 const data = await SupabaseAPI.getOperators()
-                if (data && data.length > 0) {
-                    setOperators(data)
-                }
+                setOperators(data || [])
             } catch (err) {
-                console.error('Failed to load operators from Supabase:', err)
+                console.error('Failed to load operators:', err)
+                setOperators([])
             } finally {
                 setLoading(false)
             }
@@ -427,11 +427,15 @@ export default function OperatorListPage() {
                     </div>
 
                     {/* Operator Display */}
-                    {filteredOperators.length === 0 ? (
+                    {loading ? (
+                        <div style={{ padding: '6rem 0', display: 'flex', justifyContent: 'center' }}>
+                            <Loading text="RESOLVING_OPERATORS_REGISTRY..." />
+                        </div>
+                    ) : filteredOperators.length === 0 ? (
                         <div className="operator-empty-state">
                             <UserX size={48} className="operator-empty-icon" />
                             <span className="operator-empty-text technical-text">
-                                NO_MATCHING_RECORDS // ADJUST SEARCH PARAMETERS
+                                KHÔNG TÌM THẤY CÁN VIÊN
                             </span>
                         </div>
                     ) : viewMode === 'grid' ? (

@@ -27,42 +27,42 @@ export const SUBCLASSES = [
     id: 'pioneer',
     name: 'Pioneer',
     classId: 'vanguard',
-    description: 'Blocks 2 enemies.',
+    description: 'Chặn 2 kẻ địch.',
     icon: '/assets/images/icon/class/Pioneer_Vanguard.png'
   },
   {
     id: 'charger',
     name: 'Charger',
     classId: 'vanguard',
-    description: 'Obtain 1 DP after this unit defeats an enemy; Refunds the original DP Cost when retreated',
+    description: 'Hồi 1 DP sau khi tiêu diệt một kẻ địch; Hoàn trả toàn bộ lượng DP gốc khi rút lui.',
     icon: '/assets/images/icon/class/Charger_Vanguard.png'
   },
   {
     id: 'standard_bearer',
     name: 'Standard Bearer',
     classId: 'vanguard',
-    description: 'Cannot block enemies during the skill duration.',
+    description: 'Không thể chặn kẻ địch trong thời gian kỹ năng kích hoạt.',
     icon: '/assets/images/icon/class/Standard_Bearer_Vanguard.png'
   },
   {
     id: 'tactician',
     name: 'Tactician',
     classId: 'vanguard',
-    description: 'This unit can designate one Tactical Point within attack range to call Reinforcements; ATK is increased to 150% when attacking enemies blocked by Reinforcements',
+    description: 'Có thể chỉ định một Điểm Chiến Thuật trong tầm đánh để gọi Quân Tiếp Viện; Sát thương tăng lên 150% khi tấn công kẻ địch bị chặn bởi Quân Tiếp Viện.',
     icon: '/assets/images/icon/class/Tactician_Vanguard.png'
   },
   {
     id: 'agent',
     name: 'Agent',
     classId: 'vanguard',
-    description: '	Has reduced Redeployment Time, can use ranged attacks',
+    description: 'Giảm thời gian Tái triển khai, có thể thực hiện tấn công tầm xa.',
     icon: '/assets/images/icon/class/Agent_Vanguard.png'
   },
   {
     id: 'strategist',
     name: 'Strategist',
     classId: 'vanguard',
-    description: 'Blocks 2 enemies, and can support allies in the Deployment Waiting Zone',
+    description: 'Chặn 2 kẻ địch, có thể hỗ trợ đồng minh trong Khu Vực Chờ Triển Khai.',
     icon: '/assets/images/icon/class/Strategist_Vanguard.png'
   },
 
@@ -71,98 +71,98 @@ export const SUBCLASSES = [
     id: 'dreadnought',
     name: 'Dreadnought',
     classId: 'guard',
-    description: 'Blocks 1 enemy.',
+    description: 'Chặn 1 kẻ địch.',
     icon: '/assets/images/icon/class/Dreadnought_Guard.png'
   },
   {
     id: 'centurion',
     name: 'Centurion',
     classId: 'guard',
-    description: 'Attacks all blocked enemies',
+    description: 'Tấn công tất cả kẻ địch đang bị chặn.',
     icon: '/assets/images/icon/class/Centurion_Guard.png'
   },
   {
     id: 'lord',
     name: 'Lord',
     classId: 'guard',
-    description: 'Can launch Ranged Attacks that deal 80% of normal ATK.',
+    description: 'Có thể phát động tấn công tầm xa gây 80% sát thương.',
     icon: '/assets/images/icon/class/Lord_Guard.png'
   },
   {
     id: 'arts_fighter',
     name: 'Arts Fighter',
     classId: 'guard',
-    description: 'Deals Arts damage.',
+    description: 'Đòn đánh thường gây Sát thương Phép.',
     icon: '/assets/images/icon/class/Arts_Fighter_Guard.png'
   },
   {
     id: 'instructor',
     name: 'Instructor',
     classId: 'guard',
-    description: 'Can attack enemies from range; When attacking enemies not blocked by self, increase ATK to 120%',
+    description: 'Có thể tấn công kẻ địch từ khoảng cách xa; Khi tấn công kẻ địch không bị chặn bởi bản thân, sức tấn công tăng lên 120%.',
     icon: '/assets/images/icon/class/Instructor_Guard.png'
   },
   {
     id: 'fighter',
     name: 'Fighter',
     classId: 'guard',
-    description: 'Blocks 1 enemy.',
+    description: 'Chặn 1 kẻ địch.',
     icon: '/assets/images/icon/class/Fighter_Guard.png'
   },
   {
     id: 'swordmaster',
     name: 'Swordmaster',
     classId: 'guard',
-    description: 'Normal attacks deal damage twice.',
+    description: 'Đòn đánh thường gây sát thương 2 lần liên tiếp.',
     icon: '/assets/images/icon/class/Swordmaster_Guard.png'
   },
   {
     id: 'liberator',
     name: 'Liberator',
     classId: 'guard',
-    description: 'Normally does not attack and has 0 Block; When skill is inactive, ATK gradually increases up to +200% over 40 seconds. ATK is reset when the skill ends',
+    description: 'Bình thường không tấn công và chặn kẻ địch; Khi kỹ năng chưa kích hoạt, chỉ số tấn công tăng dần lên tới +200% sau 40 giây. Chỉ số tấn công sẽ thiết lập lại khi kỹ năng kết thúc.',
     icon: '/assets/images/icon/class/Liberator_Guard.png'
   },
   {
     id: 'reaper',
     name: 'Reaper',
     classId: 'guard',
-    description: 'Cannot be healed by allies; Attacks deal AoE damage; Recovers 50 HP for every enemy hit during attacks, up to Block count',
+    description: 'Không thể nhận hồi phục từ đồng minh; Đòn đánh gây sát thương diện rộng; Hồi 50 HP cho mỗi kẻ địch trúng đòn, tối đa theo số lượng chặn.',
     icon: '/assets/images/icon/class/Reaper_Guard.png'
   },
   {
     id: 'soloblade',
     name: 'Soloblade',
     classId: 'guard',
-    description: 'attacks an enemy. Can\'t be healed by other units. Recovers self HP every time this operator attacks an enemy',
+    description: 'Không thể nhận hồi phục từ các đơn vị khác. Hồi 70 HP cho bản thân mỗi khi tấn công kẻ địch.',
     icon: '/assets/images/icon/class/Soloblade_Guard.png'
   },
   {
     id: 'crusher',
     name: 'Crusher',
     classId: 'guard',
-    description: 'Attacks all blocked enemies',
+    description: 'Tấn công tất cả kẻ địch đang bị chặn.',
     icon: '/assets/images/icon/class/Crusher_Guard.png'
   },
   {
     id: 'earthshaker',
     name: 'Earthshaker',
     classId: 'guard',
-    description: 'Attacks deal 50% ATK as AOE Physical damage to enemies around the target.',
+    description: 'Đòn đánh gây 50% sức tấn công thành Sát thương Vật lý diện rộng lên kẻ địch xung quanh mục tiêu.',
     icon: '/assets/images/icon/class/Earthshaker_Guard.png'
   },
   {
     id: 'mercenary',
     name: 'Mercenary',
     classId: 'guard',
-    description: 'Can spend DP to strengthen combat abilities',
+    description: 'Có thể tiêu hao điểm DP để gia tăng năng lực chiến đấu.',
     icon: '/assets/images/icon/class/Mercenary_Guard.png'
   },
   {
     id: 'primal_guard',
     name: 'Primal Guard',
     classId: 'guard',
-    description: 'Blocks 2 enemies, and can inflict Elemental damage',
+    description: 'Chặn 2 kẻ địch, có thể gây Sát thương Nguyên tố.',
     icon: '/assets/images/icon/class/Primal_Guard.png'
   },
 
@@ -171,56 +171,56 @@ export const SUBCLASSES = [
     id: 'protector',
     name: 'Protector',
     classId: 'defender',
-    description: 'Blocks 3 enemies',
+    description: 'Chặn 3 kẻ địch.',
     icon: '/assets/images/icon/class/Protector_Defender.png'
   },
   {
     id: 'guardian',
     name: 'Guardian',
     classId: 'defender',
-    description: 'Can heal allies by using the skill',
+    description: 'Có thể hồi máu cho đồng minh bằng cách kích hoạt kỹ năng.',
     icon: '/assets/images/icon/class/Guardian_Defender.png'
   },
   {
     id: 'juggernaut',
     name: 'Juggernaut',
     classId: 'defender',
-    description: 'Cannot be healed by allies.',
+    description: 'Không thể nhận hồi phục từ đồng minh.',
     icon: '/assets/images/icon/class/Juggernaut_Defender.png'
   },
   {
     id: 'arts_protector',
     name: 'Arts Protector',
     classId: 'defender',
-    description: 'Normal attacks deal Arts Damage while the skill is active',
+    description: 'Đòn đánh thường gây Sát thương Phép khi kỹ năng kích hoạt.',
     icon: '/assets/images/icon/class/Arts_Protector_Defender.png'
   },
   {
     id: 'duelist',
     name: 'Duelist',
     classId: 'defender',
-    description: 'Only restores SP when blocking enemiesS',
+    description: 'Chỉ hồi phục điểm kỹ năng khi trực tiếp chặn kẻ địch.',
     icon: '/assets/images/icon/class/Duelist_Defender.png'
   },
   {
     id: 'fortress',
     name: 'Fortress',
     classId: 'defender',
-    description: 'When not blocking enemies, prioritizes dealing ranged AoE Physical damage',
+    description: 'Khi không chặn kẻ địch, ưu tiên gây Sát thương Vật lý diện rộng từ xa.',
     icon: '/assets/images/icon/class/Fortress_Defender.png'
   },
   {
     id: 'sentry_protector',
     name: 'Sentry Protector',
     classId: 'defender',
-    description: 'Blocks 3 enemies and attacks from long range',
+    description: 'Chặn 3 kẻ địch và có thể tấn công từ khoảng cách xa.',
     icon: '/assets/images/icon/class/Sentry_Protector_Defender.png'
   },
   {
     id: 'primal_protector',
     name: 'Primal Protector',
     classId: 'defender',
-    description: 'Blocks 3 enemies, and can inflict Elemental Injury',
+    description: 'Chặn 3 kẻ địch, có thể gây Tổn thương Nguyên tố.',
     icon: '/assets/images/icon/class/Primal_Protector_Defender.png'
   },
 
@@ -229,70 +229,70 @@ export const SUBCLASSES = [
     id: 'marksman',
     name: 'Marksman',
     classId: 'sniper',
-    description: 'Attacks aerial enemies first',
+    description: 'Ưu tiên tấn công kẻ địch trên không.',
     icon: '/assets/images/icon/class/Marksman_Sniper.png'
   },
   {
     id: 'artilleryman',
     name: 'Artilleryman',
     classId: 'sniper',
-    description: 'Deals AOE Physical damage',
+    description: 'Gây Sát thương Vật lý diện rộng.',
     icon: '/assets/images/icon/class/Artilleryman_Sniper.png'
   },
   {
     id: 'deadeye',
     name: 'Deadeye',
     classId: 'sniper',
-    description: 'Prioritizes attacking the enemy with lowest DEF within range first',
+    description: 'Ưu tiên tấn công kẻ địch có DEF thấp nhất trong tầm đánh.',
     icon: '/assets/images/icon/class/Deadeye_Sniper.png'
   },
   {
     id: 'heavyshooter',
     name: 'Heavyshooter',
     classId: 'sniper',
-    description: 'High accuracy point-blank shot',
+    description: 'Đòn bắn điểm xạ cự ly gần với độ chính xác và sức sát thương cao.',
     icon: '/assets/images/icon/class/Heavyshooter_Sniper.png'
   },
   {
     id: 'spreadshooter',
     name: 'Spreadshooter',
     classId: 'sniper',
-    description: 'Attacks all enemies within range, and deals 150% damage to enemies in the row directly in front of this unit.',
+    description: 'Tấn công tất cả kẻ địch trong tầm đánh, và gây 150% sát thương lên kẻ địch ở hàng ngay phía trước.',
     icon: '/assets/images/icon/class/Spreadshooter_Sniper.png'
   },
   {
     id: 'besieger',
     name: 'Besieger',
     classId: 'sniper',
-    description: 'Attacks the heaviest enemy first',
+    description: 'Ưu tiên tấn công kẻ địch có trọng lượng nặng nhất trước.',
     icon: '/assets/images/icon/class/Besieger_Sniper.png'
   },
   {
     id: 'flinger',
     name: 'Flinger',
     classId: 'sniper',
-    description: 'Attacks deal two instances of Physical damage to ground enemies in a small area (The second instance is a shockwave that has half the normal ATK)',
+    description: 'Đòn đánh gây 2 lần Sát thương Vật lý lên kẻ địch mặt đất trong phạm vi nhỏ (lần thứ hai là sóng xung kích gây nửa lượng sát thương thường).',
     icon: '/assets/images/icon/class/Flinger_Sniper.png'
   },
   {
     id: 'hunter',
     name: 'Hunter',
     classId: 'sniper',
-    description: 'Attacks consume Ammo to increase ATK; While not attacking, Ammo will be slowly reloaded',
+    description: 'Đòn đánh tiêu hao Đạn để tăng sức tấn công; Khi không tấn công, Đạn sẽ được nạp lại dần.',
     icon: '/assets/images/icon/class/Hunter_Sniper.png'
   },
   {
     id: 'loopshooter',
     name: 'Loopshooter',
     classId: 'sniper',
-    description: 'Can only attack while holding a boomerang projectile (projectile takes time to return)',
+    description: 'Chỉ có thể tấn công khi đang giữ boomerang (vũ khí cần thời gian để bay quay trở lại).',
     icon: '/assets/images/icon/class/Loopshooter_Sniper.png'
   },
   {
     id: 'skybreaker',
     name: 'Skybreaker',
     classId: 'sniper',
-    description: 'Takes off on deployment, and only attacks aerial enemies when in mid-air; on skill activation, descends and deals AOE Physical damage',
+    description: 'Bay lên không trung khi triển khai, chỉ tấn công kẻ địch trên không khi đang bay; kích hoạt kỹ năng sẽ hạ cánh và gây Sát thương Vật lý diện rộng.',
     icon: '/assets/images/icon/class/Skybreaker_Sniper.png'
   },
 
@@ -301,63 +301,63 @@ export const SUBCLASSES = [
     id: 'corecaster',
     name: 'Core Caster',
     classId: 'caster',
-    description: 'Deals Arts damage',
+    description: 'Gây Sát thương Phép.',
     icon: '/assets/images/icon/class/Core_Caster.png'
   },
   {
     id: 'splash_caster',
     name: 'Splash Caster',
     classId: 'caster',
-    description: 'Deals AOE Arts damage',
+    description: 'Gây Sát thương Phép diện rộng.',
     icon: '/assets/images/icon/class/Splash_Caster.png'
   },
   {
     id: 'mech_accord_caster',
     name: 'Mech-Accord Caster',
     classId: 'caster',
-    description: 'Controls a Drone to deal Arts damage to an enemy; When the Drone continuously attacks the same enemy, its damage will increase (up to 110% of the operator\'s ATK)',
+    description: 'Điều khiển Drone gây Sát thương Phép lên kẻ địch; Khi Drone liên tục tấn công cùng một mục tiêu, sát thương tăng dần (lên tới 110% sức tấn công).',
     icon: '/assets/images/icon/class/Mech-Accord_Caster.png'
   },
   {
     id: 'phalanx_caster',
     name: 'Phalanx Caster',
     classId: 'caster',
-    description: 'Normally does not attack, but has greatly increased DEF and RES; When skill is active, attacks deal AoE Arts damage',
+    description: 'Bình thường không tấn công, nhưng được tăng mạnh giáp và kháng phép; Khi kỹ năng kích hoạt, đòn đánh gây Sát thương Phép diện rộng.',
     icon: '/assets/images/icon/class/Phalanx_Caster.png'
   },
   {
     id: 'mystic_caster',
     name: 'Mystic Caster',
     classId: 'caster',
-    description: 'Attacks deal Arts damage; When unable to find a target, attacks can be stored up and fired all at once (Up to 3 charges).',
+    description: 'Đòn đánh gây Sát thương Phép; Khi không có mục tiêu trong tầm, có thể tích trữ đòn đánh và bắn cùng lúc (tối đa tích trữ 3 đòn).',
     icon: '/assets/images/icon/class/Mystic_Caster.png'
   },
   {
     id: 'chain_caster',
     name: 'Chain Caster',
     classId: 'caster',
-    description: 'Attacks deal Arts damage and jump between 4 enemies. Each jump deals 15% less damage and inflicts a brief Slow',
+    description: 'Đòn đánh gây Sát thương Phép và nảy giữa 4 kẻ địch. Mỗi lần nảy giảm 15% sát thương và gây Làm chậm.',
     icon: '/assets/images/icon/class/Chain_Caster.png'
   },
   {
     id: 'blast_caster',
     name: 'Blast Caster',
     classId: 'caster',
-    description: 'Deals AOE Arts damage in a long line',
+    description: 'Gây Sát thương Phép diện rộng theo một đường thẳng dài.',
     icon: '/assets/images/icon/class/Blast_Caster.png'
   },
   {
     id: 'primal_caster',
     name: 'Primal Caster',
     classId: 'caster',
-    description: 'Attacks deal Arts damage, and can inflict Elemental damage',
+    description: 'Đòn đánh gây Sát thương Phép, có thể gây Sát thương Nguyên tố.',
     icon: '/assets/images/icon/class/Primal_Caster.png'
   },
   {
     id: 'shaper_caster',
     name: 'Shaper Caster',
     classId: 'caster',
-    description: 'Deals Arts Damage; Can create Summons by defeating enemies, and can attack enemies blocked by these Summons',
+    description: 'Gây Sát thương Phép; Có thể tạo Triệu Hồi khi hạ gục kẻ địch, và tấn công các kẻ địch bị các Triệu Hồi này chặn.',
     icon: '/assets/images/icon/class/Shaper_Caster.png'
   },
 
@@ -366,49 +366,49 @@ export const SUBCLASSES = [
     id: 'medic',
     name: 'Medic',
     classId: 'medic',
-    description: 'Restores the HP of allies',
+    description: 'Hồi phục HP cho đồng minh.',
     icon: '/assets/images/icon/class/Medic_Medic.png'
   },
   {
     id: 'multitarget_medic',
     name: 'Multi-target Medic',
     classId: 'medic',
-    description: 'Restores the HP of 3 allies simultaneously',
+    description: 'Hồi phục HP cho 3 đồng minh cùng một lúc.',
     icon: '/assets/images/icon/class/Multi-target_Medic.png'
   },
   {
     id: 'therapist',
     name: 'Therapist',
     classId: 'medic',
-    description: 'Has a large healing range, but the healing amount on farther targets is reduced to 80%',
+    description: 'Có tầm hồi phục rộng, nhưng lượng hồi phục cho mục tiêu ở xa bị giảm còn 80%.',
     icon: '/assets/images/icon/class/Therapist_Medic.png'
   },
   {
     id: 'wandering_medic',
     name: 'Wandering Medic',
     classId: 'medic',
-    description: 'Restores the HP of allied units and recovers Elemental Injury by 50% of ATK (can recover Elemental Injury of unhurt allied units)',
+    description: 'Hồi phục HP cho đồng minh và hồi phục Tổn thương Nguyên tố bằng 50% sức tấn công (có thể hồi phục Tổn thương Nguyên tố cho đồng minh chưa mất máu).',
     icon: '/assets/images/icon/class/Wandering_Medic.png'
   },
   {
     id: 'incantationmedic',
     name: 'Incantation Medic',
     classId: 'medic',
-    description: 'Attacks deal Arts damage and heal the HP of an ally within Attack Range for 50% of the damage dealt',
+    description: 'Đòn đánh gây Sát thương Phép và hồi máu cho một đồng minh trong tầm đánh bằng 50% lượng sát thương gây ra.',
     icon: '/assets/images/icon/class/Incantation_Medic.png'
   },
   {
     id: 'chain_medic',
     name: 'Chain Medic',
     classId: 'medic',
-    description: 'Restores HP of allies, bouncing between 3 allies. Healing reduced by 25% per bounce.',
+    description: 'Hồi phục HP cho đồng minh, dòng trị liệu nảy giữa 3 mục tiêu. Khả năng hồi phục giảm 25% sau mỗi lần nảy.',
     icon: '/assets/images/icon/class/Chain_Medic.png'
   },
   {
     id: 'watchman_medic',
     name: 'Watchman Medic',
     classId: 'medic',
-    description: 'Restores the HP of allies, and can Take Off',
+    description: 'Hồi phục HP cho đồng minh, có khả năng Bay lên không trung.',
     icon: '/assets/images/icon/class/Watchman_Medic.png'
   },
 
@@ -417,49 +417,49 @@ export const SUBCLASSES = [
     id: 'decel_binder',
     name: 'Decel Binder',
     classId: 'supporter',
-    description: 'Deals Arts damage and Slows the target for a short time',
+    description: 'Gây Sát thương Phép và Làm chậm mục tiêu trong thời gian ngắn.',
     icon: '/assets/images/icon/class/Decel_Binder_Supporter.png'
   },
   {
     id: 'hexer',
     name: 'Hexer',
     classId: 'supporter',
-    description: 'Deals Arts damage',
+    description: 'Đòn đánh gây Sát thương Phép.',
     icon: '/assets/images/icon/class/Hexer_Supporter.png'
   },
   {
     id: 'summoner',
     name: 'Summoner',
     classId: 'supporter',
-    description: 'Deals Arts damage, Can use Summons in battles',
+    description: 'Gây Sát thương Phép, có thể sử dụng Triệu Hồi trong trận chiến.',
     icon: '/assets/images/icon/class/Summoner_Supporter.png'
   },
   {
     id: 'bard',
     name: 'Bard',
     classId: 'supporter',
-    description: 'Does not attack but continuously restores the HP of all allies within range (the HP restored per second is equal to 10% of self ATK). Self is unaffected by Inspiration',
+    description: 'Không tấn công nhưng liên tục hồi phục HP cho tất cả đồng minh trong tầm (lượng HP hồi mỗi giây bằng 10% sức tấn công bản thân). Bản thân không nhận hiệu ứng Cảm Hứng.',
     icon: '/assets/images/icon/class/Bard_Supporter.png'
   },
   {
     id: 'abjurer',
     name: 'Abjurer',
     classId: 'supporter',
-    description: 'Deals Arts damage; When skill is active, attacks instead restore the HP of allies (heal amount is equal to 75% of ATK)',
+    description: 'Gây Sát thương Phép; Khi kỹ năng kích hoạt, đòn đánh chuyển sang hồi phục HP cho đồng minh (lượng hồi máu bằng 75% sức tấn công).',
     icon: '/assets/images/icon/class/Abjurer_Supporter.png'
   },
   {
     id: 'artificer',
     name: 'Artificer',
     classId: 'supporter',
-    description: 'Blocks 2 enemies; Can use <Support Devices> in battles',
+    description: 'Chặn 2 kẻ địch; Có thể sử dụng các Thiết Bị Hỗ Trợ trong trận chiến.',
     icon: '/assets/images/icon/class/Artificer_Supporter.png'
   },
   {
     id: 'ritualist',
     name: 'Ritualist',
     classId: 'supporter',
-    description: 'Attacks deal Arts damage, and can inflict Elemental Injury',
+    description: 'Đòn đánh gây Sát thương Phép, có thể gây Tổn thương Nguyên tố.',
     icon: '/assets/images/icon/class/Ritualist_Supporter.png'
   },
 
@@ -468,70 +468,70 @@ export const SUBCLASSES = [
     id: 'executor',
     name: 'Executor',
     classId: 'specialist',
-    description: 'Significantly reduced Redeployment Time',
+    description: 'Giảm đáng kể thời gian Tái triển khai.',
     icon: '/assets/images/icon/class/Executor_Specialist.png'
   },
   {
     id: 'merchant',
     name: 'Merchant',
     classId: 'specialist',
-    description: 'Has reduced Redeployment Time, but DP Cost is not refunded upon retreating; While deployed, 3 DP are consumed every 3 seconds (automatically retreats without sufficient DP)',
+    description: 'Giảm thời gian Tái triển khai, nhưng không hoàn trả DP khi rút lui; Khi đang triển khai, tiêu hao 3 DP mỗi 3 giây (tự động rút lui nếu không đủ DP).',
     icon: '/assets/images/icon/class/Merchant_Specialist.png'
   },
   {
     id: 'hookmaster',
     name: 'Hookmaster',
     classId: 'specialist',
-    description: 'Can Shift enemies by using skills, can be deployed on Ranged Tiles',
+    description: 'Có thể Kéo kẻ địch bằng kỹ năng, có thể triển khai trên Ô Cao.',
     icon: '/assets/images/icon/class/Hookmaster_Specialist.png'
   },
   {
     id: 'push_stroker',
     name: 'Push Stroker',
     classId: 'specialist',
-    description: 'Can attack all blocked enemies, can be deployed on Ranged Tiles',
+    description: 'Có thể tấn công tất cả kẻ địch bị chặn, có thể triển khai trên Ô Cao.',
     icon: '/assets/images/icon/class/Push_Stroker_Specialist.png'
   },
   {
     id: 'ambusher',
     name: 'Ambusher',
     classId: 'specialist',
-    description: 'Deals Damage to all targets within range, 50% chance to dodge Physical and Arts attacks and is less likely to be targeted by enemies',
+    description: 'Gây sát thương lên tất cả mục tiêu trong tầm, có 50% cơ hội né đòn tấn công Vật lý và Phép, ít bị kẻ địch nhắm tới hơn.',
     icon: '/assets/images/icon/class/Ambusher_Specialist.png'
   },
   {
     id: 'dollkeeper',
     name: 'Dollkeeper',
     classId: 'specialist',
-    description: 'Does not retreat upon receiving lethal damage, instead swaps to a <Substitute> (Substitute has 0 Block). Swaps back to the original after 20 seconds',
+    description: 'Không rút lui khi nhận sát thương chí tử, thay vào đó chuyển sang một Thế Thân (Thế Thân chặn 0). Chuyển lại về bản thể sau 20 giây.',
     icon: '/assets/images/icon/class/Dollkeeper_Specialist.png'
   },
   {
     id: 'geek',
     name: 'Geek',
     classId: 'specialist',
-    description: 'Continually loses HP over time',
+    description: 'Liên tục mất HP theo thời gian.',
     icon: '/assets/images/icon/class/Geek_Specialist.png'
   },
   {
     id: 'trapmaster',
     name: 'Trapmaster',
     classId: 'specialist',
-    description: 'Can use traps to assist in combat, but traps cannot be placed on tiles already occupied by an enemy',
+    description: 'Có thể đặt Bẫy để hỗ trợ chiến đấu, nhưng bẫy không thể đặt trên ô đã có kẻ địch đứng.',
     icon: '/assets/images/icon/class/Trapmaster_Specialist.png'
   },
   {
     id: 'alchemist',
     name: 'Alchemist',
     classId: 'specialist',
-    description: 'Can throw Alchemical Units to assist in combat',
+    description: 'Có thể ném các Đơn Vị Thuật Giả Kim để hỗ trợ trong chiến đấu.',
     icon: '/assets/images/icon/class/Alchemist_Specialist.png'
   },
   {
     id: 'skyranger',
     name: 'Skyranger',
     classId: 'specialist',
-    description: 'After Taking Off, can block 2 flying enemies',
+    description: 'Sau khi Bay lên không trung, có thể chặn 2 kẻ địch đang bay.',
     icon: '/assets/images/icon/class/Skyranger_Specialist.png'
   }
 ]
@@ -546,27 +546,6 @@ export const SUBCLASSES_MAP = SUBCLASSES.reduce((acc, item) => {
   if (!acc[snake]) acc[snake] = item
   return acc
 }, {})
-
-// Explicit backward-compatible & alternative aliases
-if (SUBCLASSES_MAP['corecaster']) {
-  SUBCLASSES_MAP['core_caster'] = SUBCLASSES_MAP['corecaster']
-}
-if (SUBCLASSES_MAP['incantationmedic']) {
-  SUBCLASSES_MAP['incantation_medic'] = SUBCLASSES_MAP['incantationmedic']
-}
-if (SUBCLASSES_MAP['multitarget_medic']) {
-  SUBCLASSES_MAP['multi_target_medic'] = SUBCLASSES_MAP['multitarget_medic']
-  SUBCLASSES_MAP['multi-target_medic'] = SUBCLASSES_MAP['multitarget_medic']
-  SUBCLASSES_MAP['multitargetmedic'] = SUBCLASSES_MAP['multitarget_medic']
-}
-if (SUBCLASSES_MAP['mech_accord_caster']) {
-  SUBCLASSES_MAP['mech-accord_caster'] = SUBCLASSES_MAP['mech_accord_caster']
-  SUBCLASSES_MAP['mechaccord_caster'] = SUBCLASSES_MAP['mech_accord_caster']
-  SUBCLASSES_MAP['mechaccord'] = SUBCLASSES_MAP['mech_accord_caster']
-}
-if (SUBCLASSES_MAP['standard_bearer']) {
-  SUBCLASSES_MAP['standardbearer'] = SUBCLASSES_MAP['standard_bearer']
-}
 
 // ─── Factions ───────────────────────────────────────────────────────────────
 export const FACTIONS = [

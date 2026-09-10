@@ -5,7 +5,7 @@ import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
     getHierarchicalFactions
-} from '../../operator/mockOperatorData'
+} from '../../operator/operatorMapping'
 import ImageUploadField from './components/ImageUploadField'
 import AudioUploadField from './components/AudioUploadField'
 import {
