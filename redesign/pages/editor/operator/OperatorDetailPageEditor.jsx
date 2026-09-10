@@ -1341,7 +1341,6 @@ export default function OperatorDetailPageEditor() {
                                     <div className="op-content-card-body">
                                         {baseSkills.length === 0 ? (
                                             <div className="op-empty-state-card">
-                                                <Home size={28} color="rgba(24, 24, 24, 0.3)" />
                                                 <span className="op-empty-state-text">CHƯA CÓ KỸ NĂNG HẬU CẦN</span>
                                             </div>
                                         ) : (
