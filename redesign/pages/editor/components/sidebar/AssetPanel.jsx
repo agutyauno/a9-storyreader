@@ -228,6 +228,11 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [catOpen]);
 
+    const showNotificationRef = useRef(showNotification);
+    useEffect(() => {
+        showNotificationRef.current = showNotification;
+    }, [showNotification]);
+
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
@@ -249,15 +254,15 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
             setCharacters(charData || []);
         } catch (err) {
             console.error('Failed to load asset panel data:', err);
-            showNotification?.('Tải danh sách asset thất bại', 'error');
+            showNotificationRef.current?.('Tải danh sách asset thất bại', 'error');
         } finally {
             setLoading(false);
         }
-    }, [showNotification]);
+    }, []);
 
     useEffect(() => {
         loadData();
-    }, [loadData]);
+    }, []);
 
     useEffect(() => {
         if (reloadRef) reloadRef.current = loadData;

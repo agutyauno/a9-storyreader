@@ -18,6 +18,7 @@ export default function EditorSidebar({
     showNotification,
     isRecord = false,
     currentRecordId,
+    selectedEntityId,
     onRecordSelect,
     onNewRecord,
     onDeleteRecord,
@@ -195,6 +196,7 @@ export default function EditorSidebar({
                             onAddItem={handleAddItem}
                             onEditItem={handleEditItem}
                             currentStoryId={currentStoryId}
+                            selectedEntityId={selectedEntityId}
                             showNotification={showNotification}
                         />
                     )

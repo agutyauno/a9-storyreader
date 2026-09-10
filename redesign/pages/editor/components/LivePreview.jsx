@@ -8,6 +8,8 @@ export default function LivePreview({ scriptText, name = 'Live Preview', charact
     const [previewLoading, setPreviewLoading] = useState(false);
     const [htmlContent, setHtmlContent] = useState('');
     const contentRef = useRef(null);
+    const scrollerRef = useRef(null);
+    const scrollPosRef = useRef(0);
 
     const charCacheMap = useMemo(() => {
         return Object.fromEntries(characters.map(c => [c.character_id || c.id, c]));
@@ -77,10 +79,20 @@ export default function LivePreview({ scriptText, name = 'Live Preview', charact
             if (decisions[0]) decisions[0].click();
         });
 
-        // Auto-scroll to bottom of the preview scroller
-        const parentScroller = contentDiv.closest('.preview-body-scroller');
-        if (parentScroller) {
-            parentScroller.scrollTop = parentScroller.scrollHeight;
+        // Translator Notes Click Handling (prevent triggering parent decision choice)
+        const notes = contentDiv.querySelectorAll('.translator-note');
+        notes.forEach(note => {
+            const handleNoteClick = (e) => {
+                e.stopPropagation();
+            };
+            note.removeEventListener('click', note._clickFn);
+            note._clickFn = handleNoteClick;
+            note.addEventListener('click', handleNoteClick);
+        });
+
+        // Preserve user scroll position across live preview re-renders
+        if (scrollerRef.current && scrollPosRef.current > 0) {
+            scrollerRef.current.scrollTop = scrollPosRef.current;
         }
 
     }, [htmlContent]);
@@ -110,7 +122,12 @@ export default function LivePreview({ scriptText, name = 'Live Preview', charact
                 </div>
             </div>
 
-            <div className="preview-body-scroller" style={{ flexGrow: 1, overflowY: 'auto', position: 'relative' }}>
+            <div 
+                ref={scrollerRef}
+                onScroll={(e) => { scrollPosRef.current = e.currentTarget.scrollTop; }}
+                className="preview-body-scroller" 
+                style={{ flexGrow: 1, overflowY: 'auto', position: 'relative' }}
+            >
                 <div className="story-reader-container page-fade-in" style={{ padding: '2rem 1.5rem' }}>
                     {htmlContent ? (
                         <div ref={contentRef} dangerouslySetInnerHTML={{ __html: htmlContent }} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../../src/contexts/AuthContext'
 import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X } from 'lucide-react'
@@ -69,6 +69,30 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         setIsPreviewVisible(!isPreviewVisible)
     }
 
+    const [unsavedModalData, setUnsavedModalData] = useState({
+        title: 'CÓ THAY ĐỔI CHƯA LƯU',
+        message: 'Bạn có thay đổi chưa lưu. Các thay đổi của bạn sẽ bị mất nếu không lưu ngay bây giờ.',
+        confirmText: 'Xác nhận rời trang',
+        saveText: 'Lưu và xác nhận',
+        cancelText: 'Quay lại'
+    })
+
+    const confirmNavigation = (action, customData = null) => {
+        if (isDirty) {
+            setUnsavedModalData({
+                title: customData?.title || 'CÓ THAY ĐỔI CHƯA LƯU',
+                message: customData?.message || 'Bạn có thay đổi chưa lưu. Các thay đổi của bạn sẽ bị mất nếu không lưu ngay bây giờ.',
+                confirmText: customData?.confirmText || 'Xác nhận rời trang',
+                saveText: customData?.saveText || 'Lưu và xác nhận',
+                cancelText: customData?.cancelText || 'Quay lại'
+            })
+            setPendingAction(() => action)
+            setUnsavedModalOpen(true)
+        } else {
+            action()
+        }
+    }
+
     const handleBack = () => {
         confirmNavigation(() => navigate(isRecord ? '/editor/operator' : '/editor'))
     }
@@ -84,19 +108,10 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         })
     }
 
-    const confirmNavigation = (action) => {
-        if (isDirty) {
-            setPendingAction(() => action)
-            setUnsavedModalOpen(true)
-        } else {
-            action()
-        }
-    }
-
     const [notification, setNotification] = useState({ message: '', type: 'success' })
-    const showNotification = (message, type = 'success') => {
+    const showNotification = useCallback((message, type = 'success') => {
         setNotification({ message, type })
-    }
+    }, [])
 
     // Resizing state
     const [isResizingSidebar, setIsResizingSidebar] = useState(false)
@@ -448,13 +463,21 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         const success = await handleSave(true)
         if (success) {
             setUnsavedModalOpen(false)
-            if (pendingAction) pendingAction()
+            if (pendingAction) {
+                const action = pendingAction
+                setPendingAction(null)
+                action()
+            }
         }
     }
 
     const handleConfirmDiscard = () => {
         setUnsavedModalOpen(false)
-        if (pendingAction) pendingAction()
+        if (pendingAction) {
+            const action = pendingAction
+            setPendingAction(null)
+            action()
+        }
     }
 
     const handleOpenStandalonePreview = () => {
@@ -464,7 +487,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         }
         sessionStorage.setItem('preview_story', JSON.stringify(previewObj))
         if (isRecord) {
-            const targetUrl = metadata.record_id 
+            const targetUrl = metadata.record_id
                 ? `#/operator-record/${metadata.record_id}?preview=1`
                 : `#/operator-record/preview?preview=1`
             window.open(targetUrl, '_blank')
@@ -477,6 +500,15 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         const targetNode = nodeObj || (typeof storyIdOrNode === 'object' ? storyIdOrNode : null)
         const storyId = typeof storyIdOrNode === 'string' ? storyIdOrNode : (targetNode?.story_id || targetNode?.id)
 
+        // If clicking on the currently active story/chapter and already in story editor mode, return early
+        const activeStoryId = isRecord ? metadata.record_id : metadata.story_id
+        if ((targetNode?.type === 'story' || storyId) && storyId === activeStoryId && editorMode === 'story') {
+            return
+        }
+
+        const targetName = targetNode?.name || (storyId ? `chương "${storyId}"` : 'mục khác')
+        const currentName = metadata.name || (isRecord ? 'kí sự hiện tại' : 'chương hiện tại')
+
         const action = () => {
             if (targetNode?.type === 'story' || (storyId && (!targetNode || targetNode.type === 'story'))) {
                 if (storyId) navigate(`/editor/story/${storyId}`)
@@ -487,12 +519,18 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 setEditorMode(null)
             }
         }
+
         confirmNavigation(action)
     }
 
     // Record selection and management handlers
     const handleRecordSelect = (record, operator) => {
         const targetId = typeof record === 'string' ? record : record?.record_id
+
+        if (targetId && targetId === metadata.record_id && editorMode === 'story') {
+            return
+        }
+
         const action = () => {
             if (targetId) {
                 navigate(`/editor/operator/records/${targetId}`)
@@ -500,18 +538,21 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
             setEditorMode('story')
             setSelectedEntity(null)
         }
+
         confirmNavigation(action)
     }
 
     const handleOpenNewRecordModal = (operator) => {
-        setNewRecordTargetOp(operator)
-        setNewRecordData({
-            record_id: `${operator.operator_id}_rec_${(operator.records?.length || 0) + 1}`,
-            name: `Kí sự ${(operator.records?.length || 0) + 1}`,
-            description: '',
-            display_order: (operator.records?.length || 0) + 1
+        confirmNavigation(() => {
+            setNewRecordTargetOp(operator)
+            setNewRecordData({
+                record_id: `${operator.operator_id}_rec_${(operator.records?.length || 0) + 1}`,
+                name: `Kí sự ${(operator.records?.length || 0) + 1}`,
+                description: '',
+                display_order: (operator.records?.length || 0) + 1
+            })
+            setNewRecordModalOpen(true)
         })
-        setNewRecordModalOpen(true)
     }
 
     const handleCreateRecordSubmit = async (e) => {
@@ -581,9 +622,9 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     <button onClick={handleBack} className="brutalist-icon-btn" title="Về Hub">
                         <ArrowLeft size={18} />
                     </button>
-                    <button 
-                        onClick={toggleSidebar} 
-                        className={`brutalist-icon-btn ${isSidebarVisible ? 'active' : ''}`} 
+                    <button
+                        onClick={toggleSidebar}
+                        className={`brutalist-icon-btn ${isSidebarVisible ? 'active' : ''}`}
                         title={isSidebarVisible ? "Ẩn danh mục" : "Hiện danh mục"}
                     >
                         <PanelLeft size={18} />
@@ -591,12 +632,12 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     <h1 className="editor-title technical-text">
                         {isRecord ? (
                             editorMode === 'story'
-                                ? `RECORD_COMPILER // ${metadata.name}`
-                                : 'RECORD_COMPILER // INITIALIZING'
+                                ? `RECORD_EDITOR // ${metadata.name}`
+                                : 'RECORD_EDITOR // INITIALIZING'
                         ) : (
                             editorMode === 'story'
-                                ? `STORY_COMPILER // ${metadata.name}`
-                                : selectedEntity 
+                                ? `STORY_EDITOR // ${metadata.name}`
+                                : selectedEntity
                                     ? `${selectedEntity.type.toUpperCase()}_META // ${selectedEntity.name}`
                                     : 'STORY_COMPILER // INITIALIZING'
                         )}
@@ -606,7 +647,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
 
                 <div className="header-right">
                     {isRecord && (
-                        <button 
+                        <button
                             onClick={() => confirmNavigation(() => navigate(metadata.operator_id ? `/editor/operator/${metadata.operator_id}` : '/editor/operator'))}
                             className="brutalist-btn secondary technical-text"
                             title="Chuyển sang sửa hồ sơ chi tiết cán viên (Alt+S)"
@@ -622,9 +663,9 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                 <ExternalLink size={14} />
                                 <span>STANDALONE_PREVIEW</span>
                             </button>
-                            <button 
-                                onClick={() => handleSave(false)} 
-                                className={`brutalist-btn primary technical-text ${isDirty ? 'dirty' : ''}`} 
+                            <button
+                                onClick={() => handleSave(false)}
+                                className={`brutalist-btn primary technical-text ${isDirty ? 'dirty' : ''}`}
                                 disabled={saving}
                             >
                                 {saving ? <Loader size={14} className="spinning" /> : <Save size={14} />}
@@ -632,15 +673,15 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                             </button>
                         </>
                     )}
-                    
+
                     <button onClick={handleLogout} className="brutalist-icon-btn danger" title="Đăng xuất">
                         <LogOut size={16} />
                     </button>
 
                     {editorMode === 'story' && (
-                        <button 
-                            onClick={togglePreview} 
-                            className={`brutalist-icon-btn ${isPreviewVisible ? 'active' : ''}`} 
+                        <button
+                            onClick={togglePreview}
+                            className={`brutalist-icon-btn ${isPreviewVisible ? 'active' : ''}`}
                             title={isPreviewVisible ? "Ẩn Live Preview" : "Mở Live Preview"}
                         >
                             <PanelRight size={18} />
@@ -660,6 +701,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                             onMetadataChange={setMetadata}
                             onStorySelect={isRecord ? handleRecordSelect : handleEntitySelect}
                             currentStoryId={isRecord ? metadata.record_id : metadata.story_id}
+                            selectedEntityId={selectedEntity?.id}
                             reloadRef={sidebarReloadRef}
                             onPickAsset={openPicker}
                             showNotification={showNotification}
@@ -669,8 +711,8 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                             onDeleteRecord={handleDeleteRecord}
                             recordReloadTrigger={recordReloadTrigger}
                         />
-                        <div 
-                            className="splitter-bar" 
+                        <div
+                            className="splitter-bar"
                             onMouseDown={() => setIsResizingSidebar(true)}
                         />
                     </div>
@@ -710,22 +752,22 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
 
                                 {/* Detailed Managers based on entity type - EXCLUDED in Record mode */}
                                 {!isRecord && selectedEntity.type === 'arc' && (
-                                    <SuggestionsManager 
-                                        arcId={selectedEntity.arc_id || selectedEntity.id} 
-                                        showNotification={showNotification} 
+                                    <SuggestionsManager
+                                        arcId={selectedEntity.arc_id || selectedEntity.id}
+                                        showNotification={showNotification}
                                     />
                                 )}
                                 {!isRecord && selectedEntity.type === 'event' && (
                                     <>
-                                        <EventCharactersManager 
-                                            eventId={selectedEntity.event_id || selectedEntity.id} 
-                                            showNotification={showNotification} 
+                                        <EventCharactersManager
+                                            eventId={selectedEntity.event_id || selectedEntity.id}
+                                            showNotification={showNotification}
                                             onPickAsset={openPicker}
                                             onPreview={handlePreviewAsset}
                                         />
-                                        <EventGalleryManager 
-                                            eventId={selectedEntity.event_id || selectedEntity.id} 
-                                            showNotification={showNotification} 
+                                        <EventGalleryManager
+                                            eventId={selectedEntity.event_id || selectedEntity.id}
+                                            showNotification={showNotification}
                                             onPickAsset={openPicker}
                                             onPreview={handlePreviewAsset}
                                         />
@@ -755,12 +797,12 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 {/* Live Preview Column */}
                 {isPreviewVisible && editorMode === 'story' && !loading && (
                     <div className="workspace-preview-wrapper" style={{ width: previewWidth }}>
-                        <div 
-                            className="splitter-bar left" 
+                        <div
+                            className="splitter-bar left"
                             onMouseDown={() => setIsResizingPreview(true)}
                         />
                         <div className="preview-inner-column">
-                            <LivePreview 
+                            <LivePreview
                                 scriptText={scriptText}
                                 name={metadata.name}
                                 characters={allCharacters}
@@ -802,11 +844,19 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 onClose={() => setNotification({ message: '', type: 'success' })}
             />
 
-            <UnsavedChangesModal 
+            <UnsavedChangesModal
                 isOpen={unsavedModalOpen}
                 saving={saving}
+                title={unsavedModalData.title}
+                message={unsavedModalData.message}
+                confirmText={unsavedModalData.confirmText}
+                saveText={unsavedModalData.saveText}
+                cancelText={unsavedModalData.cancelText}
                 onConfirm={handleConfirmDiscard}
-                onCancel={() => setUnsavedModalOpen(false)}
+                onCancel={() => {
+                    setUnsavedModalOpen(false)
+                    setPendingAction(null)
+                }}
                 onSaveAndConfirm={handleSaveAndConfirm}
             />
 

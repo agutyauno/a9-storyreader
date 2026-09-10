@@ -640,18 +640,41 @@ div[class*="toolbarDivider"] {
     }
 }
 
-/* Scrollbar hiding overrides for tree scroll container and live preview scroller */
-div[class*="treeScroll"]::-webkit-scrollbar,
-.preview-body-scroller::-webkit-scrollbar {
+/* Scrollbar hiding overrides for tree scroll container */
+div[class*="treeScroll"]::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
 }
 
-div[class*="treeScroll"],
-.preview-body-scroller {
+div[class*="treeScroll"] {
     -ms-overflow-style: none !important;
     scrollbar-width: none !important;
+}
+
+/* ─── LIVE PREVIEW CUSTOM SCROLLBAR ─────────────────────────────────────────── */
+.preview-body-scroller {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(245, 237, 220, 0.25) #111111 !important;
+}
+
+.preview-body-scroller::-webkit-scrollbar {
+    display: block !important;
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.preview-body-scroller::-webkit-scrollbar-track {
+    background: #111111 !important;
+}
+
+.preview-body-scroller::-webkit-scrollbar-thumb {
+    background: rgba(245, 237, 220, 0.25) !important;
+    border-radius: 3px !important;
+}
+
+.preview-body-scroller::-webkit-scrollbar-thumb:hover {
+    background: var(--color-terracotta, #B2653B) !important;
 }
 
 /* ─── LIVE PREVIEW DIALOGUE COMPACT SIZE OVERRIDES ───────────────────────────── */
@@ -740,4 +763,18 @@ div[class*="treeScroll"],
     background-color: rgba(178, 101, 59, 0.3) !important;
     border-color: var(--color-terracotta) !important;
     color: #F5EDDC !important;
+}
+
+.preview-body-scroller .decision .translator-note {
+    text-decoration: underline dotted 2px;
+    text-underline-offset: 4px;
+    cursor: help;
+    color: var(--color-ochre, #D99B26);
+    position: relative;
+    font-weight: 600;
+}
+
+.preview-body-scroller .note-tooltip {
+    pointer-events: none;
+    z-index: 1000;
 }

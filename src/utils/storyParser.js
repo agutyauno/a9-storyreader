@@ -424,6 +424,37 @@ export const StoryScriptParser = {
                     if (nextTrimmed.startsWith('- ')) {
                         choices.push(nextTrimmed.substring(2).trim());
                         i++;
+                    } else if (nextTrimmed.startsWith('#') || nextTrimmed.startsWith('//')) {
+                        // Skip/preserve script comment inside decision without breaking choices
+                        i++;
+                    } else if (nextTrimmed.startsWith('@note ')) {
+                        const noteMatch = nextTrimmed.match(/^@note\s+([^:]+):\s*(.+)/);
+                        if (noteMatch) {
+                            result.notes[noteMatch[1].trim()] = noteMatch[2].trim();
+                        }
+                        i++;
+                    } else if (choices.length > 0 && (nextTrimmed.startsWith('@note:') || nextTrimmed.startsWith('@note '))) {
+                        // Sub-note directly attached to the previous choice
+                        const noteContent = nextTrimmed.replace(/^@note:?\s*/, '').trim();
+                        choices[choices.length - 1] += ` [note: ${noteContent}]`;
+                        i++;
+                    } else if (!nextTrimmed) {
+                        // Empty line: peek ahead to see if more choices or comments follow
+                        let peek = i + 1;
+                        let hasMore = false;
+                        while (peek < lines.length) {
+                            const p = lines[peek].trim();
+                            if (!p) { peek++; continue; }
+                            if (p.startsWith('- ') || p.startsWith('#') || p.startsWith('//') || p.startsWith('@note')) {
+                                hasMore = true;
+                            }
+                            break;
+                        }
+                        if (hasMore) {
+                            i++;
+                        } else {
+                            break;
+                        }
                     } else {
                         break;
                     }

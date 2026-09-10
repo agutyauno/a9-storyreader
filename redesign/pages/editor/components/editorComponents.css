@@ -75,13 +75,86 @@
     max-height: calc(100vh - 2rem);
 }
 
-/* Dialog / Small Fixed Dimensions: 480px x 260px */
+/* Dialog / Small Fixed Dimensions */
 .redesign-modal-card.dialog,
 .redesign-modal-card.small {
-    width: 480px;
-    height: 260px;
+    width: 520px;
+    min-height: 240px;
+    height: auto;
     max-width: calc(100vw - 2rem);
     max-height: calc(100vh - 2rem);
+}
+
+/* Unsaved Changes Confirmation Dialog: 560px wide, auto-height with clean Swiss-Brutalist layout */
+.redesign-modal-card.unsaved-dialog {
+    width: 560px;
+    min-height: 220px;
+    height: auto;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95), 0 0 32px rgba(178, 101, 59, 0.12);
+}
+
+.unsaved-modal-header {
+    padding: 1rem 1.4rem;
+}
+
+.unsaved-title-icon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: rgba(178, 101, 59, 0.15);
+    border: 1px solid rgba(178, 101, 59, 0.45);
+    flex-shrink: 0;
+}
+
+.unsaved-modal-body {
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.unsaved-simple-message-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.unsaved-simple-message {
+    margin: 0;
+    font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: rgba(245, 237, 220, 0.95);
+    letter-spacing: 0.2px;
+}
+
+.unsaved-modal-footer {
+    padding: 1rem 1.4rem;
+    background-color: #121212;
+    border-top: 1px solid rgba(245, 237, 220, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.unsaved-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.unsaved-modal-footer .redesign-btn {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
 }
 
 /* Modal Form wrapper takes full height between header and footer */
@@ -575,6 +648,19 @@
     border-color: var(--color-terracotta, #B2653B);
     color: #FFF;
     font-weight: 600;
+}
+
+.redesign-tree-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    margin-left: -4px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .redesign-tree-actions {

@@ -25,7 +25,8 @@ function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, minWidth: 0 }}>
                     <span
-                        style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', visibility: hasChildren ? 'visible' : 'hidden' }}
+                        className="redesign-tree-chevron"
+                        style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
                         onClick={(e) => { e.stopPropagation(); onToggle(node.id, isOpen); }}
                     >
                         {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -88,10 +89,12 @@ function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect
     );
 }
 
-export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, currentStoryId, showNotification }) {
+export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, currentStoryId, selectedEntityId, showNotification }) {
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedId, setSelectedId] = useState(currentStoryId || null);
+    const [internalSelectedId, setInternalSelectedId] = useState(null);
+
+    const activeSelectedId = selectedEntityId || currentStoryId || internalSelectedId;
 
     const [expandedMap, setExpandedMap] = useState(() => {
         try {
@@ -108,10 +111,6 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     useEffect(() => {
         loadTree();
     }, []);
-
-    useEffect(() => {
-        if (currentStoryId) setSelectedId(currentStoryId);
-    }, [currentStoryId]);
 
     const loadTree = async () => {
         setLoading(true);
@@ -135,7 +134,9 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     };
 
     const handleSelect = (node) => {
-        setSelectedId(node.id);
+        if (!selectedEntityId && !currentStoryId) {
+            setInternalSelectedId(node.id);
+        }
         if (node.type === 'story') {
             onStorySelect(node.story_id || node.id, node);
         } else {
@@ -174,8 +175,8 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                     else if (node.type === 'story') await SupabaseAPI.deleteStory(node.story_id || node.id);
 
                     showNotification?.(`Đã xoá ${typeLabels[node.type]} "${node.name}"`, 'success');
-                    if (selectedId === node.id) {
-                        setSelectedId(null);
+                    if (activeSelectedId === node.id) {
+                        setInternalSelectedId(null);
                         onStorySelect(null, null);
                     }
                     await loadTree();
@@ -212,7 +213,7 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                     <TreeNode
                         key={regionNode.id}
                         node={regionNode}
-                        selectedId={selectedId}
+                        selectedId={activeSelectedId}
                         expandedMap={expandedMap}
                         onToggle={handleToggle}
                         onSelect={handleSelect}

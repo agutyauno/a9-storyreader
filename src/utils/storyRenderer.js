@@ -215,20 +215,26 @@ export const StoryRenderer = {
 
   processNotes(text, styles) {
     if (!text) return '';
-    // This regex matches [any text | note_id]
-    // Group 1: the word/phrase to annotate
-    // Group 2: the note ID
-    return text.replace(/\[([^|\]]+)\|([^\]]+)\]/g, (match, word, noteId) => {
+    const noteClass = cx('translator-note', styles);
+    const tooltipClass = cx('note-tooltip', styles);
+
+    // 1. Process inline [note: content] or [ghi chú: content]
+    let processed = text.replace(/\[(note|ghi chú):\s*([^\]]+)\]/gi, (match, label, content) => {
+      const cleanContent = content.trim();
+      const cleanLabel = label.trim();
+      return `<span class="${noteClass}" data-note-id="inline" data-note-content="${cleanContent.replace(/"/g, '&quot;')}">[${cleanLabel}]<span class="${tooltipClass}">${cleanContent}</span></span>`;
+    });
+
+    // 2. Process [word | note_id_or_inline_content]
+    processed = processed.replace(/\[([^|\]]+)\|([^\]]+)\]/g, (match, word, noteId) => {
       const id = noteId.trim();
-      const noteContent = this.notes[id] || '';
+      const noteContent = this.notes[id] !== undefined ? this.notes[id] : id;
       const cleanWord = word.trim();
-      
-      // We use cx to get the scoped class name from the CSS module
-      const noteClass = cx('translator-note', styles);
-      const tooltipClass = cx('note-tooltip', styles);
       
       return `<span class="${noteClass}" data-note-id="${id}" data-note-content="${noteContent.replace(/"/g, '&quot;')}">${cleanWord}<span class="${tooltipClass}">${noteContent}</span></span>`;
     });
+
+    return processed;
   },
 
   renderNarrator(narrator, styles) {
@@ -281,7 +287,7 @@ export const StoryRenderer = {
     const rightFull = this.getFullImage(decision.right);
 
     const choices = (decision.choices || []).map((choice, index) => {
-      return `<p class="${cx('decision', styles)}" data-choice-value="${index + 1}">${choice}</p>`;
+      return `<p class="${cx('decision', styles)}" data-choice-value="${index + 1}">${this.processNotes(choice, styles)}</p>`;
     }).join('');
 
     return `

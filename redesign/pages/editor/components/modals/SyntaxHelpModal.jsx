@@ -64,8 +64,8 @@ const SYNTAX_GUIDES = [
             },
             {
                 tag: '@decision "group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2',
-                description: 'Tạo hộp lựa chọn phân nhánh với nhóm ID, ảnh nhân vật minh họa hai bên và danh sách các phương án.',
-                example: '@decision "route_01" [Doctor, Amiya.smile]\n- Tiến vào tòa nhà phía trước\n- Quan sát thêm từ xa'
+                description: 'Tạo hộp lựa chọn phân nhánh với nhóm ID, ảnh nhân vật hai bên và các phương án (hỗ trợ chú thích [từ | note_id], [note: nội dung], và comment #).',
+                example: '@decision "route_01" [Doctor, Amiya.smile]\n- Tiến vào [Rhode Island | note_ri]\n- Quan sát thêm từ xa [note: Lựa chọn an toàn hơn]'
             },
             {
                 tag: '@response "group_id" 1 {\n  ...\n}',
@@ -79,7 +79,7 @@ const SYNTAX_GUIDES = [
             },
             {
                 tag: '[Từ cần chú thích | note_id]',
-                description: 'Gắn liên kết giải thích thuật ngữ vào một từ ngữ bất kỳ trong lời thoại hoặc dẫn truyện.',
+                description: 'Gắn liên kết giải thích thuật ngữ vào một từ ngữ bất kỳ trong lời thoại, dẫn truyện hoặc lựa chọn decision (cũng hỗ trợ [note: nội dung trực tiếp]).',
                 example: 'Năng lượng [Originium | originium] rất nguy hiểm đối với con người.'
             },
             {

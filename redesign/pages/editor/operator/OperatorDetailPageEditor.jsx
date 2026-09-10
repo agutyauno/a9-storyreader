@@ -1116,18 +1116,18 @@ export default function OperatorDetailPageEditor() {
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
                                             <Swords size={16} color="var(--color-terracotta, #B2653B)" />
-                                            <span>Kĩ Năng Chiến Đấu ({skills.length})</span>
+                                            <span>Kỹ Năng Chiến Đấu ({skills.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleAddSkill}>
                                             <Plus size={13} />
-                                            <span>Thêm Kĩ Năng</span>
+                                            <span>Thêm Kỹ Năng</span>
                                         </button>
                                     </div>
 
                                     <div className="op-content-card-body">
                                         {skills.length === 0 ? (
                                             <div className="op-empty-state-card">
-                                                <span className="op-empty-state-text">CHƯA CÓ KĨ NĂNG CHIẾN ĐẤU</span>
+                                                <span className="op-empty-state-text">CHƯA CÓ KỸ NĂNG CHIẾN ĐẤU</span>
                                             </div>
                                         ) : (
                                             skills.map((skill, idx) => (
@@ -1225,7 +1225,7 @@ export default function OperatorDetailPageEditor() {
 
                                                         <textarea
                                                             className="op-form-textarea"
-                                                            placeholder="Mô tả chi tiết kĩ năng..."
+                                                            placeholder="Mô tả chi tiết kỹ năng..."
                                                             value={skill.description}
                                                             onChange={(e) => handleUpdateSkill(idx, 'description', e.target.value)}
                                                             rows={3}
@@ -1241,7 +1241,7 @@ export default function OperatorDetailPageEditor() {
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
-                                            <span>Modules ({modules.length})</span>
+                                            <span>Module ({modules.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleAddModule}>
                                             <Plus size={13} />
@@ -1333,11 +1333,11 @@ export default function OperatorDetailPageEditor() {
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
-                                            <span>Kĩ Năng Hậu Cần ({baseSkills.length})</span>
+                                            <span>Kỹ Năng Hậu Cần ({baseSkills.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleAddBaseSkill}>
                                             <Plus size={13} />
-                                            <span>Thêm Kĩ Năng Hậu Cần</span>
+                                            <span>Thêm Kỹ Năng Hậu Cần</span>
                                         </button>
                                     </div>
 
@@ -1345,7 +1345,7 @@ export default function OperatorDetailPageEditor() {
                                         {baseSkills.length === 0 ? (
                                             <div className="op-empty-state-card">
                                                 <Home size={28} color="rgba(24, 24, 24, 0.3)" />
-                                                <span className="op-empty-state-text">CHƯA CÓ KĨ NĂNG HẬU CẦN</span>
+                                                <span className="op-empty-state-text">CHƯA CÓ KỸ NĂNG HẬU CẦN</span>
                                             </div>
                                         ) : (
                                             baseSkills.map((bs, idx) => (
