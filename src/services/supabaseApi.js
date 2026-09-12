@@ -776,8 +776,13 @@ const SupabaseAPI_Raw = {
       mockDatabase.assets.push(newItem);
       return newItem;
     }
-    const cleanPayload = { ...payload };
-    if (cleanPayload.url) cleanPayload.url = cleanUrl(cleanPayload.url);
+    // Table 'assets' only has columns: asset_id, type, category, url
+    const cleanPayload = {
+      asset_id: payload.asset_id,
+      type: payload.type,
+      category: payload.category,
+      url: payload.url ? cleanUrl(payload.url) : ''
+    };
 
     const { data, error } = await supabase.from('assets').insert(cleanPayload).select().single();
     if (error) throw error;
@@ -791,8 +796,11 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.assets[idx], payload);
       return mockDatabase.assets[idx];
     }
-    const cleanPayload = { ...payload };
-    if (cleanPayload.url) cleanPayload.url = cleanUrl(cleanPayload.url);
+    // Table 'assets' only has columns: asset_id, type, category, url
+    const cleanPayload = {};
+    if (payload.category !== undefined) cleanPayload.category = payload.category;
+    if (payload.type !== undefined) cleanPayload.type = payload.type;
+    if (payload.url !== undefined) cleanPayload.url = cleanUrl(payload.url);
 
     const { data, error } = await supabase.from('assets').update(cleanPayload).eq('asset_id', assetId).select().single();
     if (error) throw error;

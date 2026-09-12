@@ -231,10 +231,22 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                 await onSubmit({
                     type: selectedType.type,
                     category: selectedType.category,
-                    name: name.trim() || assetId.trim(),
-                    description: description.trim(),
                     asset_id: assetId.trim(),
                     url: externalUrl.trim(),
+                });
+            } else if (selectedType.category === 'gallery') {
+                const folderPath = getFolderPath(selectedType.type, selectedType.category);
+                const result = await uploadFileToGithub(file, folderPath);
+                if (!result.success) throw new Error(result.error || 'Upload file thất bại');
+                
+                await purgeJsDelivrCache(result.url);
+
+                await onSubmit({
+                    type: selectedType.type,
+                    category: selectedType.category,
+                    name: name.trim() || assetId.trim(),
+                    asset_id: assetId.trim(),
+                    url: result.url,
                 });
             } else {
                 // Upload file to GitHub
@@ -247,8 +259,6 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                 await onSubmit({
                     type: selectedType.type,
                     category: selectedType.category,
-                    name: name.trim() || assetId.trim(),
-                    description: description.trim(),
                     asset_id: assetId.trim(),
                     url: result.url,
                 });
@@ -287,8 +297,6 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                 await onSubmit({
                     type: selectedType.type,
                     category: selectedType.category,
-                    name: item.name.trim() || item.assetId.trim(),
-                    description: '',
                     asset_id: item.assetId.trim(),
                     url: result.url,
                 });
@@ -423,7 +431,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                             </div>
                         )}
 
-                        {/* Single Mode Asset ID & Name */}
+                        {/* Single Mode Asset ID & Details */}
                         {!isBulkMode && (
                             <>
                                 <div className="redesign-form-group">
@@ -437,27 +445,44 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                                     />
                                 </div>
 
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">Tên hiển thị</label>
-                                    <input 
-                                        className="redesign-input"
-                                        placeholder="Nhập tên bối cảnh / asset..."
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        disabled={isUploading}
-                                    />
-                                </div>
+                                {isCharacter && (
+                                    <>
+                                        <div className="redesign-form-group">
+                                            <label className="redesign-label">Tên nhân vật *</label>
+                                            <input 
+                                                className="redesign-input"
+                                                placeholder="Ví dụ: Amiya, Kal'tsit..."
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                disabled={isUploading}
+                                            />
+                                        </div>
 
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">Mô tả</label>
-                                    <textarea 
-                                        className="redesign-textarea"
-                                        placeholder="Nhập mô tả asset (không bắt buộc)..."
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        disabled={isUploading}
-                                    />
-                                </div>
+                                        <div className="redesign-form-group">
+                                            <label className="redesign-label">Mô tả</label>
+                                            <textarea 
+                                                className="redesign-textarea"
+                                                placeholder="Nhập mô tả nhân vật (không bắt buộc)..."
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                disabled={isUploading}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {selectedType.category === 'gallery' && (
+                                    <div className="redesign-form-group">
+                                        <label className="redesign-label">Tiêu đề ảnh (Title) *</label>
+                                        <input 
+                                            className="redesign-input"
+                                            placeholder="Tiêu đề hiển thị..."
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            disabled={isUploading}
+                                        />
+                                    </div>
+                                )}
                             </>
                         )}
 

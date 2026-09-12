@@ -150,8 +150,6 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                     });
                 } else {
                     await SupabaseAPI.updateAsset(asset.asset_id, {
-                        name: name.trim(),
-                        description: description.trim(),
                         url: externalUrl.trim()
                     });
                 }
@@ -211,13 +209,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                             <div style={{ display: 'grid', gridTemplateColumns: externalUrl ? '1fr 1.2fr' : '1fr', gap: '1.25rem', alignItems: 'start' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <div className="redesign-form-group">
-                                        <label className="redesign-label">Tên / Nhãn hiển thị</label>
+                                        <label className="redesign-label">
+                                            {asset.category === 'gallery' ? 'Tiêu đề ảnh hiển thị' : 'Asset ID'}
+                                        </label>
                                         <input 
                                             className="redesign-input"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            placeholder="Nhập tên..."
-                                            disabled={saving}
+                                            value={asset.category === 'gallery' ? name : (asset.asset_id || '')}
+                                            onChange={(e) => {
+                                                if (asset.category === 'gallery') setName(e.target.value);
+                                            }}
+                                            placeholder={asset.category === 'gallery' ? 'Nhập tiêu đề ảnh...' : 'Asset ID'}
+                                            disabled={asset.category !== 'gallery' || saving}
                                         />
                                     </div>
 
@@ -230,18 +232,6 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                                 <input type="file" onChange={handleReplaceFile} style={{ display: 'none' }} disabled={uploadingFile || saving} />
                                             </label>
                                         </div>
-                                    </div>
-
-                                    <div className="redesign-form-group">
-                                        <label className="redesign-label">Mô tả</label>
-                                        <textarea 
-                                            className="redesign-textarea"
-                                            style={{ minHeight: '120px' }}
-                                            value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
-                                            placeholder="Nhập mô tả..."
-                                            disabled={saving}
-                                        />
                                     </div>
                                 </div>
 

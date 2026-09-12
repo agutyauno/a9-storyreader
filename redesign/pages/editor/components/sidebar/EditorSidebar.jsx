@@ -159,15 +159,13 @@ export default function EditorSidebar({
             } else {
                 await SupabaseAPI.createAsset({
                     asset_id: assetData.asset_id,
-                    name: assetData.name,
-                    description: assetData.description || '',
                     type: assetData.type,
                     category: assetData.category,
                     url: assetData.url || '',
                 });
             }
 
-            showNotification?.(`Đã thêm asset "${assetData.name}"`, 'success');
+            showNotification?.(`Đã thêm asset "${assetData.name || assetData.asset_id}"`, 'success');
             assetReloadRef.current?.();
         } catch (err) {
             console.error('Add asset error:', err);

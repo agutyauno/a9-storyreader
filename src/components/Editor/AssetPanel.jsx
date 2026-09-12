@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, Search, Loader, Trash2, Copy, Edit2, Music, Image, Video, Film, UserSquare2, LayoutDashboard } from 'lucide-react';
 import { SupabaseAPI } from '../../services/supabaseApi';
 import AssetDetailModal from './AssetDetailModal';

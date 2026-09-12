@@ -95,8 +95,6 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
             } else {
                 await SupabaseAPI.createAsset({
                     asset_id: newAssetData.asset_id,
-                    name: newAssetData.name,
-                    description: newAssetData.description || '',
                     type: newAssetData.type,
                     category: newAssetData.category,
                     url: newAssetData.url || ''
