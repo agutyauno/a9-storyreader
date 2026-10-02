@@ -13,7 +13,7 @@ import {
     ArrowLeft, Save, ExternalLink, BookOpen, Star, Plus, Trash2,
     Edit2, Check, X, Play, Loader2, Image as ImageIcon, Sparkles,
     Shield, Swords, Zap, Clock, Package, Home, Volume2, MoveUp, MoveDown,
-    ChevronDown
+    ChevronDown, Eye, EyeOff
 } from 'lucide-react'
 import { getAssetUrl } from '../../../../src/utils/assetUtils'
 import '../../operator/operator.css'
@@ -231,6 +231,7 @@ export default function OperatorDetailPageEditor() {
     const [classId, setClassId] = useState('guard')
     const [subClassId, setSubClassId] = useState('')
     const [selectedFactions, setSelectedFactions] = useState(['rhodes_island'])
+    const [status, setStatus] = useState('published') // 'published' | 'draft'
 
     // Combat info state
     const [talents, setTalents] = useState([])
@@ -332,6 +333,7 @@ export default function OperatorDetailPageEditor() {
                     setClassId(op.class_id || 'guard')
                     setSubClassId(op.sub_class_id || '')
                     setSelectedFactions(Array.isArray(op.factions) ? op.factions : ['rhodes_island'])
+                    setStatus(op.status || 'published')
 
                     // Combat info
                     const combat = op.combat_info || {}
@@ -419,6 +421,7 @@ export default function OperatorDetailPageEditor() {
                 name: name.trim(),
                 appellation: appellation.trim(),
                 rarity: Number(rarity),
+                status: status || 'published',
                 class_id: classId || null,
                 sub_class_id: subClassId || null,
                 factions: selectedFactions,
@@ -1035,6 +1038,29 @@ export default function OperatorDetailPageEditor() {
 
                         {/* Identity form */}
                         <div className="operator-left-info">
+                            {/* Publication Status */}
+                            <div className="op-form-group">
+                                <label className="op-form-label technical-text">TRẠNG THÁI XUẤT BẢN:</label>
+                                <div className="op-status-toggle-group">
+                                    <button
+                                        type="button"
+                                        className={`op-status-toggle-btn ${status === 'published' ? 'active-published' : ''}`}
+                                        onClick={() => setStatus('published')}
+                                    >
+                                        <Check size={13} />
+                                        <span>XUẤT BẢN</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`op-status-toggle-btn ${status === 'draft' ? 'active-draft' : ''}`}
+                                        onClick={() => setStatus('draft')}
+                                    >
+                                        <EyeOff size={13} />
+                                        <span>BẢN NHÁP</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Operator ID */}
                             <div className="op-form-group">
                                 <label className="op-form-label technical-text" title="MÃ CÁN VIÊN (OPERATOR_ID)">MÃ CÁN VIÊN (OPERATOR_ID):</label>

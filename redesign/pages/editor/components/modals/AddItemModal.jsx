@@ -10,6 +10,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
     const [imageUrl, setImageUrl] = useState('');
     const [bannerUrl, setBannerUrl] = useState('');
     const [wallpaperUrl, setWallpaperUrl] = useState('');
+    const [status, setStatus] = useState('published');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -27,6 +28,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setImageUrl(initialData.icon_url || initialData.image_url || '');
             setBannerUrl(initialData.banner_url || '');
             setWallpaperUrl(initialData.wallpaper_url || '');
+            setStatus(initialData.status || 'published');
         } else {
             setName('');
             setItemId('');
@@ -35,6 +37,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
             setImageUrl('');
             setBannerUrl('');
             setWallpaperUrl('');
+            setStatus('published');
         }
         setError(null);
     }, [isOpen, initialDisplayOrder, initialData]);
@@ -63,6 +66,7 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                 imageUrl: imageUrl.trim() || null,
                 bannerUrl: bannerUrl.trim() || null,
                 wallpaperUrl: wallpaperUrl.trim() || null,
+                status: type === 'story' ? status : undefined,
             }, isEditMode);
 
             onClose();
@@ -145,6 +149,37 @@ export default function AddItemModal({ isOpen, type, onClose, onSubmit, onPickAs
                                 placeholder="Mô tả..."
                             />
                         </div>
+
+                        {type === 'story' && (
+                            <div className="redesign-form-group">
+                                <label className="redesign-label">Trạng thái xuất bản</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.35rem' }}>
+                                    <button
+                                        type="button"
+                                        className={`brutalist-btn technical-text ${status === 'published' ? 'primary' : 'secondary'}`}
+                                        style={{ padding: '0.45rem', fontSize: '0.75rem', justifyContent: 'center' }}
+                                        onClick={() => setStatus('published')}
+                                    >
+                                        ĐÃ XUẤT BẢN
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`brutalist-btn technical-text ${status === 'draft' ? 'primary' : 'secondary'}`}
+                                        style={{
+                                            padding: '0.45rem',
+                                            fontSize: '0.75rem',
+                                            justifyContent: 'center',
+                                            borderColor: status === 'draft' ? '#BA8530' : undefined,
+                                            color: status === 'draft' ? '#BA8530' : undefined,
+                                            background: status === 'draft' ? 'rgba(186, 133, 48, 0.15)' : undefined
+                                        }}
+                                        onClick={() => setStatus('draft')}
+                                    >
+                                        BẢN NHÁP
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {(type === 'region' || type === 'event') && (
                             <div className="redesign-form-group">

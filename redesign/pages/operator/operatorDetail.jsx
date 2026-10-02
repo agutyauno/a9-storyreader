@@ -468,6 +468,7 @@ function RecordTab({ operator }) {
 export default function OperatorDetailPage() {
     const { id } = useParams()
     const [operator, setOperator] = useState(null)
+    const [isDraft, setIsDraft] = useState(false)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('skill')
     const [selectedSkinId, setSelectedSkinId] = useState('default')
@@ -481,6 +482,13 @@ export default function OperatorDetailPage() {
                 setLoading(true)
                 const data = await SupabaseAPI.getOperator(id)
                 if (data) {
+                    if (data.status === 'draft') {
+                        setIsDraft(true)
+                        setOperator(null)
+                        document.title = `HỒ SƠ SOẠN THẢO // Civilight Eterna Database`
+                        return
+                    }
+                    setIsDraft(false)
                     const records = await SupabaseAPI.getOperatorRecords(id)
                     setOperator({
                         ...data,
@@ -493,6 +501,7 @@ export default function OperatorDetailPage() {
                     })
                     document.title = `${data.name} // Civilight Eterna Database`
                 } else {
+                    setIsDraft(false)
                     setOperator(null)
                 }
             } catch (err) {
@@ -531,6 +540,35 @@ export default function OperatorDetailPage() {
                 <Header BASE_URL={BASE_URL} />
                 <main className="main-layout" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Loading text="RESOLVING_OPERATOR_DATA_STREAM..." />
+                </main>
+                <Footer />
+            </div>
+        )
+    }
+
+    if (isDraft) {
+        return (
+            <div className="app-wrapper">
+                <Header BASE_URL={BASE_URL} />
+                <main className="main-layout">
+                    <div className="content-area expanded">
+                        <div className="redesign-container" style={{ padding: '4rem 2.5rem' }}>
+                            <div className="error-container" style={{ borderLeftColor: 'var(--color-ochre, #BA8530)' }}>
+                                <p className="technical-text" style={{ color: 'var(--color-ochre, #BA8530)' }}>
+                                    RESTRICTED_ACCESS // DRAFT_IN_PROGRESS
+                                </p>
+                                <h2 style={{ fontFamily: 'var(--font-heading)', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                                    HỒ SƠ ĐANG TRONG GIAI ĐOẠN BIÊN TẬP
+                                </h2>
+                                <p style={{ maxWidth: '480px', margin: '0 auto 1.5rem', color: 'rgba(24, 24, 24, 0.7)', fontSize: '0.9rem' }}>
+                                    Hồ sơ dữ liệu của cán viên này hiện đang được soạn thảo và chưa được phát hành công khai.
+                                </p>
+                                <Link to="/operator" className="btn-link" style={{ display: 'inline-flex' }}>
+                                    QUAY LẠI DANH SÁCH
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 </main>
                 <Footer />
             </div>

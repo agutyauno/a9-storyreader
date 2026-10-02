@@ -306,19 +306,36 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   // STORIES
   // ===========================================================================
-  async getStoriesByEvent(eventId) {
-    if (USE_MOCK_DB)
-      return sortByOrder(mockDatabase.stories.filter(s => s.event_id === eventId));
-    const { data, error } = await supabase.from('stories').select('*').eq('event_id', eventId).order('display_order');
+  async getStoriesByEvent(eventId, options = {}) {
+    const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
+    if (USE_MOCK_DB) {
+      let list = mockDatabase.stories.filter(s => s.event_id === eventId);
+      if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
+      return sortByOrder(list);
+    }
+    let query = supabase.from('stories').select('*').eq('event_id', eventId);
+    if (!includeDrafts) {
+      query = query.neq('status', 'draft');
+    }
+    const { data, error } = await query.order('display_order');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
   },
 
-  async getStories() {
-    if (USE_MOCK_DB) return sortByOrder(mockDatabase.stories);
-    const { data, error } = await supabase.from('stories').select('*').order('display_order');
+  async getStories(options = {}) {
+    const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
+    if (USE_MOCK_DB) {
+      let list = mockDatabase.stories;
+      if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
+      return sortByOrder(list);
+    }
+    let query = supabase.from('stories').select('*');
+    if (!includeDrafts) {
+      query = query.neq('status', 'draft');
+    }
+    const { data, error } = await query.order('display_order');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
   },
 
   async getStory(storyId) {
@@ -326,7 +343,8 @@ const SupabaseAPI_Raw = {
       return mockDatabase.stories.find(s => s.story_id === storyId) || null;
     const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
     if (error) throw error;
-    return data?.[0] || null;
+    if (!data?.[0]) return null;
+    return { ...data[0], status: data[0].status || 'published' };
   },
 
   async createStory(payload) {
@@ -334,13 +352,17 @@ const SupabaseAPI_Raw = {
       const newItem = {
         story_id: genId('story'),
         display_order: 0,
+        status: payload.status || 'published',
         story_content: { characters: {}, sections: [] },
         ...payload
       };
       mockDatabase.stories.push(newItem);
       return newItem;
     }
-    const { data, error } = await supabase.from('stories').insert(payload).select().single();
+    const { data, error } = await supabase.from('stories').insert({
+      status: 'published',
+      ...payload
+    }).select().single();
     if (error) throw error;
     return data;
   },
@@ -357,6 +379,17 @@ const SupabaseAPI_Raw = {
     return data?.[0] || null;
   },
 
+  async toggleStoryStatus(storyId, status) {
+    const { data, error } = await supabase
+      .from('stories')
+      .update({ status })
+      .eq('story_id', storyId)
+      .select('story_id, status')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async deleteStory(storyId) {
     if (USE_MOCK_DB) {
       mockDatabase.stories = mockDatabase.stories.filter(s => s.story_id !== storyId);
@@ -371,7 +404,7 @@ const SupabaseAPI_Raw = {
       this.getRegions(),
       this.getArcs(),
       this.getEvents(),
-      this.getStories(),
+      this.getStories({ includeDrafts: true }),
     ]);
 
     const storiesByEvent = {};
@@ -1253,11 +1286,18 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   // OPERATORS
   // ===========================================================================
-  async getOperators() {
+  async getOperators(options = {}) {
+    const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('operators')
-        .select('*')
+        .select('*');
+
+      if (!includeDrafts) {
+        query = query.neq('status', 'draft');
+      }
+
+      const { data, error } = await query
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
       if (error) {
@@ -1290,6 +1330,7 @@ const SupabaseAPI_Raw = {
         const rawFull = skinMap[op.operator_id]?.full_url || '';
         return {
           ...op,
+          status: op.status || 'published',
           id: op.operator_id,
           class: op.class_id,
           subclass: op.sub_class_id,
@@ -1334,6 +1375,7 @@ const SupabaseAPI_Raw = {
 
       return {
         ...data,
+        status: data.status || 'published',
         id: data.operator_id,
         class: data.class_id,
         subclass: data.sub_class_id,
@@ -1403,6 +1445,17 @@ const SupabaseAPI_Raw = {
       .update(cleanPayload)
       .eq('operator_id', operatorId)
       .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async toggleOperatorStatus(operatorId, status) {
+    const { data, error } = await supabase
+      .from('operators')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('operator_id', operatorId)
+      .select('operator_id, status')
       .single();
     if (error) throw error;
     return data;

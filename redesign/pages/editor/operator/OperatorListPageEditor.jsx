@@ -9,7 +9,8 @@ import {
 } from '../../operator/operatorMapping'
 import {
     Plus, Search, Grid, List, Star, Trash2, Edit3, BookOpen,
-    ArrowLeft, LogOut, UserX, Loader2, ExternalLink, Filter, ChevronDown
+    ArrowLeft, LogOut, UserX, Loader2, ExternalLink, Filter, ChevronDown,
+    Eye, EyeOff, Check
 } from 'lucide-react'
 import { useAuth } from '../../../../src/contexts/AuthContext'
 import { getAssetUrl } from '../../../../src/utils/assetUtils'
@@ -238,6 +239,7 @@ export default function OperatorListPageEditor() {
     const [selectedSubclass, setSelectedSubclass] = useState(null)
     const [selectedRarity, setSelectedRarity] = useState(null)
     const [viewMode, setViewMode] = useState('grid')
+    const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'published' | 'draft'
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
     const location = useLocation()
     const [notification, setNotification] = useState({ message: '', type: 'success' })
@@ -257,7 +259,7 @@ export default function OperatorListPageEditor() {
     const loadOperators = async () => {
         setLoading(true)
         try {
-            const data = await SupabaseAPI.getOperators()
+            const data = await SupabaseAPI.getOperators({ includeDrafts: true })
             setOperators(data || [])
         } catch (err) {
             console.error('Failed to load operators:', err)
@@ -282,6 +284,22 @@ export default function OperatorListPageEditor() {
                 console.error('Delete failed:', err)
                 showToast('Xoá cán viên thất bại: ' + err.message, 'error')
             }
+        }
+    }
+
+    const handleToggleStatus = async (operator, e) => {
+        e?.stopPropagation()
+        const currentStatus = operator.status || 'published'
+        const newStatus = currentStatus === 'published' ? 'draft' : 'published'
+        try {
+            await SupabaseAPI.toggleOperatorStatus(operator.operator_id, newStatus)
+            setOperators(prev => prev.map(op =>
+                op.operator_id === operator.operator_id ? { ...op, status: newStatus } : op
+            ))
+            showToast(`Đã chuyển "${operator.name}" sang ${newStatus === 'published' ? 'Đã xuất bản' : 'Bản nháp'}.`, 'success')
+        } catch (err) {
+            console.error('Toggle status failed:', err)
+            showToast('Thay đổi trạng thái thất bại: ' + err.message, 'error')
         }
     }
 
@@ -324,8 +342,13 @@ export default function OperatorListPageEditor() {
             result = result.filter(op => op.rarity === Number(selectedRarity))
         }
 
+        // Status filter
+        if (statusFilter !== 'all') {
+            result = result.filter(op => (op.status || 'published') === statusFilter)
+        }
+
         return result
-    }, [operators, searchQuery, selectedFaction, selectedClass, selectedSubclass, selectedRarity])
+    }, [operators, searchQuery, selectedFaction, selectedClass, selectedSubclass, selectedRarity, statusFilter])
 
     // Get unique factions, classes and subclasses from data
     const availableFactions = useMemo(() => {
@@ -505,6 +528,28 @@ export default function OperatorListPageEditor() {
                             <Filter size={16} />
                         </button>
 
+                        {/* Status Filter Group */}
+                        <div className="operator-status-filter-group technical-text">
+                            <button
+                                className={`op-status-filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setStatusFilter('all')}
+                            >
+                                TẤT CẢ ({operators.length})
+                            </button>
+                            <button
+                                className={`op-status-filter-btn ${statusFilter === 'published' ? 'active' : ''}`}
+                                onClick={() => setStatusFilter('published')}
+                            >
+                                XUẤT BẢN ({operators.filter(o => o.status !== 'draft').length})
+                            </button>
+                            <button
+                                className={`op-status-filter-btn ${statusFilter === 'draft' ? 'active' : ''}`}
+                                onClick={() => setStatusFilter('draft')}
+                            >
+                                BẢN NHÁP ({operators.filter(o => o.status === 'draft').length})
+                            </button>
+                        </div>
+
                         <div className="operator-view-toggle">
                             <button
                                 className={`operator-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
@@ -635,6 +680,9 @@ export default function OperatorListPageEditor() {
                                                 e.target.src = getAssetUrl(FALLBACK_AVATAR)
                                             }}
                                         />
+                                        <div className={`operator-card-status-badge ${op.status === 'draft' ? 'draft' : 'published'}`}>
+                                            {op.status === 'draft' ? 'DRAFT' : 'PUB'}
+                                        </div>
                                         <div className="operator-card-rarity">
                                             {renderStars(op.rarity)}
                                         </div>
@@ -679,6 +727,14 @@ export default function OperatorListPageEditor() {
                                     {/* Admin Action Buttons */}
                                     <div className="operator-card-admin-bar">
                                         <button
+                                            className={`operator-card-admin-btn status-btn ${op.status === 'draft' ? 'is-draft' : 'is-published'}`}
+                                            onClick={(e) => handleToggleStatus(op, e)}
+                                            title={op.status === 'draft' ? 'Bản nháp - Bấm để xuất bản' : 'Đã xuất bản - Bấm để chuyển về bản nháp'}
+                                        >
+                                            {op.status === 'draft' ? <EyeOff size={13} /> : <Eye size={13} />}
+                                        </button>
+
+                                        <button
                                             className="operator-card-admin-btn"
                                             onClick={() => navigate(`/editor/operator/${op.operator_id}`)}
                                             title="Chỉnh sửa hồ sơ chi tiết"
@@ -712,6 +768,7 @@ export default function OperatorListPageEditor() {
                         <div className="operator-list-header">
                             <span>Mã</span>
                             <span>Cán Viên</span>
+                            <span>Trạng Thái</span>
                             <span>Phe Phái</span>
                             <span>Class</span>
                             <span>Độ Hiếm</span>
@@ -741,11 +798,24 @@ export default function OperatorListPageEditor() {
                                         <span className="operator-list-name">{op.name}</span>
                                     </div>
 
+                                    <div>
+                                        <span className={`operator-status-pill ${op.status === 'draft' ? 'draft' : 'published'}`}>
+                                            {op.status === 'draft' ? 'BẢN NHÁP' : 'XUẤT BẢN'}
+                                        </span>
+                                    </div>
+
                                     <span className="operator-list-faction">{factionInfo?.name || op.factions?.[0] || '-'}</span>
                                     <span className="operator-list-class">{classInfo?.name || op.class_id || '-'}</span>
                                     <span className="operator-list-rarity">{renderStars(op.rarity)}</span>
 
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            className={`operator-card-admin-btn status-btn ${op.status === 'draft' ? 'is-draft' : 'is-published'}`}
+                                            onClick={(e) => handleToggleStatus(op, e)}
+                                            title={op.status === 'draft' ? 'Bản nháp - Bấm để xuất bản' : 'Đã xuất bản - Bấm để chuyển về bản nháp'}
+                                        >
+                                            {op.status === 'draft' ? <EyeOff size={13} /> : <Eye size={13} />}
+                                        </button>
                                         <button
                                             className="operator-card-admin-btn"
                                             onClick={() => navigate(`/editor/operator/${op.operator_id}`)}

@@ -1174,3 +1174,140 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
+
+/* ─── PUBLICATION STATUS STYLES ────────────────────────────────────────── */
+.operator-status-filter-group {
+    display: inline-flex;
+    align-items: center;
+    border: var(--border-thick, 2px solid #181818);
+    background-color: #EDF4F0;
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.op-status-filter-btn {
+    padding: 0.4rem 0.75rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(24, 24, 24, 0.2);
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+    transition: var(--transition-fast, all 0.15s ease);
+}
+
+.op-status-filter-btn:last-child {
+    border-right: none;
+}
+
+.op-status-filter-btn:hover {
+    background-color: rgba(24, 24, 24, 0.08);
+}
+
+.op-status-filter-btn.active {
+    background-color: var(--color-charcoal, #181818);
+    color: #F5EDDC;
+}
+
+/* Card Status Badge (Grid) */
+.operator-card-status-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 6px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--color-charcoal, #181818);
+    box-shadow: 1px 1px 0px var(--color-charcoal, #181818);
+    z-index: 2;
+    text-transform: uppercase;
+}
+
+.operator-card-status-badge.published {
+    background-color: #2e5c3e;
+    color: #e2f7ea;
+}
+
+.operator-card-status-badge.draft {
+    background-color: #BA8530;
+    color: #181818;
+}
+
+/* List Status Pill */
+.operator-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--color-charcoal, #181818);
+    box-shadow: 1px 1px 0px var(--color-charcoal, #181818);
+    text-transform: uppercase;
+}
+
+.operator-status-pill.published {
+    background-color: #2e5c3e;
+    color: #e2f7ea;
+}
+
+.operator-status-pill.draft {
+    background-color: #BA8530;
+    color: #181818;
+}
+
+/* Admin Bar Status Toggle Button */
+.operator-card-admin-btn.status-btn.is-published {
+    color: #2e5c3e;
+}
+
+.operator-card-admin-btn.status-btn.is-draft {
+    color: #BA8530;
+}
+
+/* Detail Page Status Toggle in Left Column */
+.op-status-toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.op-status-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.5rem;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border: 1.5px solid var(--color-charcoal, #181818);
+    background-color: #faf8f5;
+    color: var(--color-charcoal, #181818);
+    cursor: pointer;
+    transition: var(--transition-fast, all 0.15s ease);
+}
+
+.op-status-toggle-btn:hover {
+    background-color: #f0ebe1;
+}
+
+.op-status-toggle-btn.active-published {
+    background-color: #2e5c3e;
+    color: #e2f7ea;
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}
+
+.op-status-toggle-btn.active-draft {
+    background-color: #BA8530;
+    color: #181818;
+    box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
+}

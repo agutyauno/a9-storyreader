@@ -626,16 +626,18 @@
 }
 
 .redesign-tree-node {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.38rem 0.5rem;
+    padding: 0.35rem 0.5rem;
     border: 1px solid transparent;
     cursor: pointer;
     transition: all 0.15s ease;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     user-select: none;
     font-family: var(--font-swiss, 'Space Grotesk', sans-serif);
+    overflow: hidden;
 }
 
 .redesign-tree-node:hover {
@@ -654,25 +656,36 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
-    margin-left: -4px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    margin-right: 2px;
     cursor: pointer;
     flex-shrink: 0;
 }
 
 .redesign-tree-actions {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 0.2rem;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease;
+    background: #1e1e1e;
+    padding: 2px 4px;
+    border-radius: 2px;
+    box-shadow: -10px 0 14px 4px #1e1e1e;
+    z-index: 2;
 }
 
 .redesign-tree-node:hover .redesign-tree-actions {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .redesign-tree-btn {
@@ -691,6 +704,155 @@
 
 .redesign-tree-btn.danger:hover {
     color: #FF6B6B;
+}
+
+/* --- Story Tree Status Badges & Event Meta --- */
+.tree-status-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    font-family: var(--font-mono, monospace);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1.2;
+}
+
+.tree-status-badge.draft {
+    background: #BA8530;
+    color: #181818;
+}
+
+.tree-status-badge.pub {
+    background: rgba(46, 125, 50, 0.2);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.tree-event-meta {
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: var(--font-mono, monospace);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.tree-event-meta.all-pub {
+    color: #81c784;
+    background: rgba(46, 125, 50, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.tree-event-meta.mixed {
+    color: #BA8530;
+    background: rgba(186, 133, 48, 0.15);
+    border: 1px solid rgba(186, 133, 48, 0.3);
+}
+
+.tree-event-meta.all-draft {
+    color: #ff9800;
+    background: rgba(255, 152, 0, 0.18);
+    border: 1px solid rgba(255, 152, 0, 0.4);
+    font-weight: 700;
+}
+
+.tree-event-meta.empty {
+    color: rgba(245, 237, 220, 0.35);
+    border: 1px dashed rgba(245, 237, 220, 0.2);
+}
+
+/* Tree filter tabs */
+.tree-filter-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    padding: 0.35rem 0.5rem;
+    background: #181818;
+    border-bottom: 1px solid rgba(245, 237, 220, 0.1);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.tree-filter-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2px 3px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: rgba(245, 237, 220, 0.6);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    padding: 3px 2px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+    border-radius: 2px;
+    min-width: 0;
+    line-height: 1.15;
+}
+
+.tree-filter-tab:hover {
+    color: var(--color-cream, #F5EDDC);
+    background: rgba(245, 237, 220, 0.05);
+}
+
+.tree-filter-tab.active {
+    background: var(--color-charcoal-light, #252525);
+    color: var(--color-cream, #F5EDDC);
+    border-color: rgba(245, 237, 220, 0.25);
+    font-weight: 700;
+}
+
+.tree-filter-tab.active.tab-draft {
+    border-color: #BA8530;
+    color: #BA8530;
+}
+
+.tree-filter-tab.active.tab-pub {
+    border-color: #4caf50;
+    color: #81c784;
+}
+
+.tree-filter-tab .tab-label {
+    white-space: nowrap;
+}
+
+.tree-filter-tab .tab-count {
+    opacity: 0.8;
+    font-weight: 700;
+}
+
+.tree-search-bar {
+    padding: 0.35rem 0.5rem;
+    background: #141414;
+    border-bottom: 1px solid rgba(245, 237, 220, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.tree-search-input {
+    flex: 1;
+    background: #1e1e1e;
+    border: 1px solid rgba(245, 237, 220, 0.15);
+    color: var(--color-cream, #F5EDDC);
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 2px;
+    font-family: var(--font-swiss, sans-serif);
+    outline: none;
+}
+
+.tree-search-input:focus {
+    border-color: var(--color-ochre, #BA8530);
 }
 
 /* --- Compact Asset Panel & Cards --- */

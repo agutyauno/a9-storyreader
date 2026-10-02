@@ -20,6 +20,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
   const location = useLocation()
 
   const [story, setStory] = useState(null)
+  const [isDraft, setIsDraft] = useState(false)
   const [eventData, setEventData] = useState(null)
   const [allStories, setAllStories] = useState([])
   const [htmlContent, setHtmlContent] = useState('')
@@ -152,6 +153,16 @@ export default function RedesignStoryPage({ isRecord = false }) {
           setLoading(false)
           return
         }
+
+        const isPreview = !!queryParams.get('preview')
+        if (fetchedStory.status === 'draft' && !isPreview) {
+          setIsDraft(true)
+          setStory(null)
+          document.title = `HỒ SƠ SOẠN THẢO // Civilight Eterna Database`
+          setLoading(false)
+          return
+        }
+        setIsDraft(false)
 
         setStory(fetchedStory)
         document.title = `${fetchedStory.name} // Civilight Eterna Database`
@@ -408,6 +419,33 @@ export default function RedesignStoryPage({ isRecord = false }) {
         <Header BASE_URL={BASE_URL} />
         <main className="main-layout text-center" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Loading text="RESOLVING_STORY_RECORD_STREAM..." />
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (isDraft) {
+    return (
+      <div className="app-wrapper">
+        <Header BASE_URL={BASE_URL} />
+        <main className="main-layout">
+          <div className="redesign-container" style={{ padding: '4rem 2.5rem' }}>
+            <div className="error-container" style={{ borderLeftColor: 'var(--color-ochre, #BA8530)' }}>
+              <p className="technical-text" style={{ color: 'var(--color-ochre, #BA8530)' }}>
+                RESTRICTED_ACCESS // DRAFT_IN_PROGRESS
+              </p>
+              <h2 style={{ fontFamily: 'var(--font-heading)', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                HỒ SƠ CỐT TRUYỆN ĐANG ĐƯỢC BIÊN TẬP
+              </h2>
+              <p style={{ maxWidth: '480px', margin: '0 auto 1.5rem', color: 'rgba(24, 24, 24, 0.7)', fontSize: '0.9rem' }}>
+                Hồ sơ kịch bản này hiện đang trong giai đoạn soạn thảo và chưa được phát hành công khai.
+              </p>
+              <Link to={eventData?.event_id ? `/event/${eventData.event_id}` : "/"} className="btn-link" style={{ display: 'inline-flex' }}>
+                {eventData?.event_id ? 'QUAY LẠI SỰ KIỆN' : 'QUAY LẠI TRANG CHỦ'}
+              </Link>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>

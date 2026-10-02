@@ -138,10 +138,24 @@ export default function RedesignEventPage() {
                                         Object.fromEntries((evts || []).map(e => [e.event_id, e]))
                                     ).catch(() => ({}))
 
-                                    resolvedSuggs = matchedRaw.map(s => {
+                                     const candidateSuggs = matchedRaw.map(s => {
                                         const target = allEvtsMap[s.target_event_id]
                                         return target ? { ...target, suggestionId: s.id, suggestionPosition: s.position, suggestionType: s.type || 'next' } : null
                                     }).filter(Boolean)
+
+                                    if (candidateSuggs.length > 0) {
+                                        const verifiedSuggs = await Promise.all(
+                                            candidateSuggs.map(async (cs) => {
+                                                try {
+                                                    const targetStories = await SupabaseAPI.getStoriesByEvent(cs.event_id, { includeDrafts: false })
+                                                    return (targetStories && targetStories.length > 0) ? cs : null
+                                                } catch {
+                                                    return null
+                                                }
+                                            })
+                                        )
+                                        resolvedSuggs = verifiedSuggs.filter(Boolean)
+                                    }
                                 }
                             }
                         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../src/contexts/AuthContext'
-import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X, Eye, EyeOff } from 'lucide-react'
 
 import EditorSidebar from './components/sidebar/EditorSidebar'
 import EditorToolbar from './components/EditorToolbar'
@@ -39,7 +39,13 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
     // Sidebar & Preview visibility & width
     const [isSidebarVisible, setIsSidebarVisible] = useState(window.innerWidth > 1024)
     const [isPreviewVisible, setIsPreviewVisible] = useState(window.innerWidth > 1024)
-    const [sidebarWidth, setSidebarWidth] = useState(300)
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        try {
+            return parseInt(localStorage.getItem('story_editor_sidebar_width')) || 360
+        } catch (e) {
+            return 360
+        }
+    })
     const [previewWidth, setPreviewWidth] = useState(450)
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 1024)
 
@@ -163,6 +169,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         display_order: null,
         event_id: null,
         story_id: null,
+        status: 'published',
         operator_id: null,
         record_id: null,
     })
@@ -269,6 +276,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                         display_order: item.display_order ?? null,
                         event_id: item.event_id ?? null,
                         story_id: item.story_id,
+                        status: item.status || 'published',
                         operator_id: null,
                         record_id: null,
                     })
@@ -331,8 +339,9 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (isResizingSidebar) {
-                const newWidth = Math.max(200, Math.min(500, e.clientX))
+                const newWidth = Math.max(260, Math.min(600, e.clientX))
                 setSidebarWidth(newWidth)
+                try { localStorage.setItem('story_editor_sidebar_width', newWidth) } catch (e) { }
             } else if (isResizingPreview) {
                 const windowWidth = window.innerWidth
                 const newWidth = Math.max(300, Math.min(800, windowWidth - e.clientX))
@@ -400,6 +409,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     description: metadata.description,
                     display_order: metadata.display_order,
                     event_id: metadata.event_id,
+                    status: metadata.status || 'published',
                     story_content: { type: 'vns', script: scriptText },
                 }
 
@@ -662,6 +672,33 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
 
                     {editorMode === 'story' && (
                         <>
+                            {!isRecord && (
+                                <button
+                                    onClick={() => {
+                                        const nextStatus = metadata.status === 'draft' ? 'published' : 'draft'
+                                        setMetadata(prev => ({ ...prev, status: nextStatus }))
+                                        if (metadata.story_id) {
+                                            SupabaseAPI.toggleStoryStatus(metadata.story_id, nextStatus)
+                                                .then(() => {
+                                                    showNotification(`Đã chuyển sang ${nextStatus === 'published' ? 'Đã xuất bản' : 'Bản nháp'}.`, 'success')
+                                                    sidebarReloadRef.current?.()
+                                                })
+                                                .catch(err => showNotification(`Lỗi đổi trạng thái: ${err.message}`, 'error'))
+                                        }
+                                    }}
+                                    className="brutalist-btn secondary technical-text"
+                                    style={{
+                                        borderColor: metadata.status === 'draft' ? '#BA8530' : '#2e5c3e',
+                                        color: metadata.status === 'draft' ? '#BA8530' : '#2e5c3e',
+                                        background: metadata.status === 'draft' ? 'rgba(186, 133, 48, 0.1)' : 'rgba(46, 92, 62, 0.1)'
+                                    }}
+                                    title="Bấm để chuyển đổi giữa Đã xuất bản và Bản nháp"
+                                >
+                                    {metadata.status === 'draft' ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    <span>{metadata.status === 'draft' ? 'BẢN NHÁP' : 'ĐÃ XUẤT BẢN'}</span>
+                                </button>
+                            )}
+
                             <button onClick={handleOpenStandalonePreview} className="brutalist-btn secondary technical-text">
                                 <ExternalLink size={14} />
                                 <span>STANDALONE_PREVIEW</span>

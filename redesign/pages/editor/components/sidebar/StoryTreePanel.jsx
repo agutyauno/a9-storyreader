@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit, Eye, EyeOff, Search, X } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import ConfirmModal from '../modals/ConfirmModal';
 import '../editorComponents.css';
@@ -11,36 +11,205 @@ const TYPE_ICON = {
     story: <FileText size={13} />,
 };
 
-function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect, onAdd, onDelete, onEdit }) {
+function getNodeStoryStats(node) {
+    let total = 0;
+    let pub = 0;
+    let draft = 0;
+    function traverse(children) {
+        for (const c of children || []) {
+            if (c.type === 'story') {
+                total++;
+                if (c.status === 'draft') draft++;
+                else pub++;
+            }
+            if (c.children) traverse(c.children);
+        }
+    }
+    traverse(node.children);
+    return { total, pub, draft };
+}
+
+function getStoryCounts(tree) {
+    let total = 0;
+    let pub = 0;
+    let draft = 0;
+    function traverse(nodes) {
+        for (const n of nodes || []) {
+            if (n.type === 'story') {
+                total++;
+                if (n.status === 'draft') draft++;
+                else pub++;
+            }
+            if (n.children) traverse(n.children);
+        }
+    }
+    traverse(tree);
+    return { total, pub, draft };
+}
+
+function filterTree(nodes, filterStatus, searchQuery = '') {
+    const query = searchQuery.trim().toLowerCase();
+    if (filterStatus === 'all' && !query) return nodes;
+
+    function filterNode(node) {
+        if (node.type === 'story') {
+            const matchesStatus =
+                filterStatus === 'all' ||
+                (filterStatus === 'draft' && node.status === 'draft') ||
+                (filterStatus === 'published' && node.status !== 'draft');
+            const matchesSearch = !query ||
+                (node.name || '').toLowerCase().includes(query) ||
+                (node.story_id || node.id || '').toLowerCase().includes(query);
+            return matchesStatus && matchesSearch ? { ...node, children: [] } : null;
+        }
+
+        const filteredChildren = (node.children || [])
+            .map(child => filterNode(child))
+            .filter(Boolean);
+
+        const matchesSearch = query && (
+            (node.name || '').toLowerCase().includes(query) ||
+            (node.id || '').toLowerCase().includes(query)
+        );
+
+        if (filteredChildren.length > 0 || matchesSearch) {
+            return {
+                ...node,
+                children: filteredChildren
+            };
+        }
+
+        return null;
+    }
+
+    return nodes.map(filterNode).filter(Boolean);
+}
+
+function TreeNode({
+    node,
+    depth = 0,
+    selectedId,
+    expandedMap,
+    onToggle,
+    onSelect,
+    onAdd,
+    onDelete,
+    onEdit,
+    onToggleStatus,
+    onBulkToggleEvent
+}) {
     const isOpen = expandedMap[node.id] !== undefined ? expandedMap[node.id] : (depth < 2);
     const hasChildren = node.children?.length > 0;
     const isSelected = selectedId === node.id;
+    const eventStats = node.type === 'event' ? getNodeStoryStats(node) : null;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div
                 className={`redesign-tree-node ${isSelected ? 'selected' : ''}`}
-                style={{ paddingLeft: `${8 + depth * 14}px` }}
+                style={{ paddingLeft: `${6 + depth * 10}px` }}
                 onClick={() => onSelect(node)}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, minWidth: 0 }}>
-                    <span
-                        className="redesign-tree-chevron"
-                        style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
-                        onClick={(e) => { e.stopPropagation(); onToggle(node.id, isOpen); }}
-                    >
-                        {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    {hasChildren ? (
+                        <span
+                            className="redesign-tree-chevron"
+                            onClick={(e) => { e.stopPropagation(); onToggle(node.id, isOpen); }}
+                        >
+                            {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        </span>
+                    ) : (
+                        <span style={{ width: 4, flexShrink: 0 }} />
+                    )}
+
+                    <span style={{ color: isSelected ? '#FFF' : '#D84315', display: 'flex', flexShrink: 0 }}>
+                        {TYPE_ICON[node.type]}
                     </span>
 
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <span style={{ color: isSelected ? '#FFF' : '#D84315', display: 'flex' }}>
-                            {TYPE_ICON[node.type]}
-                        </span>
-                        <span>{node.name}</span>
+                    <span
+                        style={{
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.82rem'
+                        }}
+                        title={node.name}
+                    >
+                        {node.name}
                     </span>
+
+                    {/* Story Status Badge */}
+                    {node.type === 'story' && (
+                        <span
+                            className={`tree-status-badge ${node.status === 'draft' ? 'draft' : 'pub'}`}
+                            title={node.status === 'draft' ? "Bản nháp (Đang ẩn)" : "Đã xuất bản (Công khai)"}
+                        >
+                            {node.status === 'draft' ? 'DRAFT' : 'PUB'}
+                        </span>
+                    )}
+
+                    {/* Event / Chapter Summary Badge - Compact & Clean */}
+                    {node.type === 'event' && eventStats && (
+                        eventStats.total === 0 ? (
+                            <span className="tree-event-meta empty" title="Chưa có màn nào">0</span>
+                        ) : eventStats.pub === 0 ? (
+                            <span
+                                className="tree-event-meta all-draft"
+                                title={`Chưa có màn nào xuất bản (${eventStats.draft} màn nháp) - Đang ẩn khỏi độc giả`}
+                            >
+                                0/{eventStats.total}
+                            </span>
+                        ) : eventStats.draft > 0 ? (
+                            <span
+                                className="tree-event-meta mixed"
+                                title={`Đang biên tập: ${eventStats.pub}/${eventStats.total} đã xuất bản (${eventStats.draft} bản nháp)`}
+                            >
+                                {eventStats.pub}/{eventStats.total}
+                            </span>
+                        ) : (
+                            <span
+                                className="tree-event-meta all-pub"
+                                title={`Toàn bộ ${eventStats.total}/${eventStats.total} màn đã xuất bản`}
+                            >
+                                {eventStats.total}/{eventStats.total}
+                            </span>
+                        )
+                    )}
                 </div>
 
                 <div className="redesign-tree-actions" onClick={e => e.stopPropagation()}>
+                    {/* Quick Story Status Toggle */}
+                    {node.type === 'story' && (
+                        <button
+                            className="redesign-tree-btn"
+                            title={node.status === 'draft' ? "Bấm để Xuất Bản ngay (Public)" : "Bấm để chuyển thành Bản Nháp (Draft)"}
+                            onClick={() => onToggleStatus(node)}
+                        >
+                            {node.status === 'draft' ? (
+                                <Eye size={13} style={{ color: '#BA8530' }} />
+                            ) : (
+                                <EyeOff size={13} style={{ color: '#81c784' }} />
+                            )}
+                        </button>
+                    )}
+
+                    {/* Bulk Event Status Toggle */}
+                    {node.type === 'event' && eventStats && eventStats.total > 0 && (
+                        <button
+                            className="redesign-tree-btn"
+                            title={eventStats.draft > 0 ? `Xuất bản tất cả (${eventStats.draft} bản nháp)` : "Chuyển toàn bộ chương thành bản nháp"}
+                            onClick={() => onBulkToggleEvent(node, eventStats.draft > 0 ? 'published' : 'draft')}
+                        >
+                            {eventStats.draft > 0 ? (
+                                <Eye size={13} style={{ color: '#BA8530' }} />
+                            ) : (
+                                <EyeOff size={13} style={{ color: '#81c784' }} />
+                            )}
+                        </button>
+                    )}
+
                     {node.type !== 'story' && (
                         <button
                             className="redesign-tree-btn"
@@ -81,6 +250,8 @@ function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect
                             onAdd={onAdd}
                             onDelete={onDelete}
                             onEdit={onEdit}
+                            onToggleStatus={onToggleStatus}
+                            onBulkToggleEvent={onBulkToggleEvent}
                         />
                     ))}
                 </div>
@@ -89,10 +260,20 @@ function TreeNode({ node, depth = 0, selectedId, expandedMap, onToggle, onSelect
     );
 }
 
-export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, currentStoryId, selectedEntityId, showNotification }) {
+export default function StoryTreePanel({
+    onStorySelect,
+    onAddItem,
+    onEditItem,
+    currentStoryId,
+    selectedEntityId,
+    showNotification,
+    reloadRef
+}) {
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
     const [internalSelectedId, setInternalSelectedId] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft'
+    const [searchQuery, setSearchQuery] = useState('');
 
     const activeSelectedId = selectedEntityId || currentStoryId || internalSelectedId;
 
@@ -112,6 +293,12 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
         loadTree();
     }, []);
 
+    useEffect(() => {
+        if (reloadRef) {
+            reloadRef.current = loadTree;
+        }
+    }, [reloadRef]);
+
     const loadTree = async () => {
         setLoading(true);
         try {
@@ -124,6 +311,28 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
             setLoading(false);
         }
     };
+
+    const counts = useMemo(() => getStoryCounts(tree), [tree]);
+
+    const filteredTree = useMemo(() => {
+        return filterTree(tree, statusFilter, searchQuery);
+    }, [tree, statusFilter, searchQuery]);
+
+    // When filtering by draft or search query, auto-expand all matching branches
+    const activeExpandedMap = useMemo(() => {
+        if (statusFilter !== 'all' || searchQuery.trim()) {
+            const map = {};
+            function expandAll(nodes) {
+                for (const n of nodes || []) {
+                    map[n.id] = true;
+                    if (n.children) expandAll(n.children);
+                }
+            }
+            expandAll(filteredTree);
+            return map;
+        }
+        return expandedMap;
+    }, [statusFilter, searchQuery, filteredTree, expandedMap]);
 
     const handleToggle = (id, currentOpen) => {
         setExpandedMap(prev => {
@@ -142,6 +351,50 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
         } else {
             onStorySelect(null, node);
         }
+    };
+
+    const handleToggleStoryStatus = async (node) => {
+        const nextStatus = node.status === 'draft' ? 'published' : 'draft';
+        try {
+            await SupabaseAPI.toggleStoryStatus(node.story_id || node.id, nextStatus);
+            showNotification?.(
+                `Đã chuyển "${node.name}" sang ${nextStatus === 'published' ? 'ĐÃ XUẤT BẢN' : 'BẢN NHÁP'}.`,
+                'success'
+            );
+            await loadTree();
+        } catch (err) {
+            console.error('Toggle story status error:', err);
+            showNotification?.(`Lỗi đổi trạng thái: ${err.message}`, 'error');
+        }
+    };
+
+    const handleBulkToggleEvent = (eventNode, targetStatus) => {
+        const stories = (eventNode.children || []).filter(c => c.type === 'story');
+        const targetStories = stories.filter(s => s.status !== targetStatus);
+        if (targetStories.length === 0) return;
+
+        const actionText = targetStatus === 'published' ? 'XUẤT BẢN' : 'CHUYỂN THÀNH BẢN NHÁP';
+        setConfirmData({
+            title: `${actionText} TOÀN BỘ CHƯƠNG`,
+            message: `Bạn có chắc muốn ${actionText.toLowerCase()} tất cả ${targetStories.length} màn kịch bản trong "${eventNode.name}"?`,
+            onConfirm: async () => {
+                setConfirmOpen(false);
+                setLoading(true);
+                try {
+                    await Promise.all(
+                        targetStories.map(s => SupabaseAPI.toggleStoryStatus(s.story_id || s.id, targetStatus))
+                    );
+                    showNotification?.(`Đã ${actionText.toLowerCase()} ${targetStories.length} màn kịch bản!`, 'success');
+                    await loadTree();
+                } catch (err) {
+                    console.error('Bulk toggle event status error:', err);
+                    showNotification?.(`Lỗi: ${err.message}`, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     const handleAdd = (parentNode) => {
@@ -192,11 +445,16 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
     };
 
     if (loading) {
-        return <div style={{ padding: '1.5rem', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}><Loader className="spinning" size={18} /> Đang tải dữ liệu...</div>;
+        return (
+            <div style={{ padding: '1.5rem', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                <Loader className="spinning" size={18} /> Đang tải dữ liệu...
+            </div>
+        );
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Top Toolbar */}
             <div style={{ padding: '0.65rem 0.75rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>CẤU TRÚC CỐT TRUYỆN</span>
                 <button
@@ -208,20 +466,78 @@ export default function StoryTreePanel({ onStorySelect, onAddItem, onEditItem, c
                 </button>
             </div>
 
+            {/* Publication Status Filter Tabs */}
+            <div className="tree-filter-tabs">
+                <button
+                    className={`tree-filter-tab ${statusFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setStatusFilter('all')}
+                    title={`Tất cả: ${counts.total} màn`}
+                >
+                    <span className="tab-label">TẤT CẢ</span>
+                    <span className="tab-count">({counts.total})</span>
+                </button>
+                <button
+                    className={`tree-filter-tab tab-pub ${statusFilter === 'published' ? 'active tab-pub' : ''}`}
+                    onClick={() => setStatusFilter('published')}
+                    title={`Đã xuất bản: ${counts.pub} màn`}
+                >
+                    <span className="tab-label">XUẤT BẢN</span>
+                    <span className="tab-count">({counts.pub})</span>
+                </button>
+                <button
+                    className={`tree-filter-tab tab-draft ${statusFilter === 'draft' ? 'active tab-draft' : ''}`}
+                    onClick={() => setStatusFilter('draft')}
+                    title={`Bản nháp: ${counts.draft} màn`}
+                >
+                    <span className="tab-label">BẢN NHÁP</span>
+                    <span className="tab-count">({counts.draft})</span>
+                </button>
+            </div>
+
+            {/* Quick Search */}
+            <div className="tree-search-bar">
+                <Search size={12} color="rgba(245,237,220,0.5)" />
+                <input
+                    type="text"
+                    className="tree-search-input"
+                    placeholder="Tìm tên hoặc ID chương..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                    <button
+                        onClick={() => setSearchQuery('')}
+                        style={{ background: 'transparent', border: 'none', color: 'rgba(245,237,220,0.5)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                        title="Xoá tìm kiếm"
+                    >
+                        <X size={12} />
+                    </button>
+                )}
+            </div>
+
+            {/* Tree Nodes List */}
             <div className="redesign-tree-panel">
-                {tree.map(regionNode => (
-                    <TreeNode
-                        key={regionNode.id}
-                        node={regionNode}
-                        selectedId={activeSelectedId}
-                        expandedMap={expandedMap}
-                        onToggle={handleToggle}
-                        onSelect={handleSelect}
-                        onAdd={handleAdd}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                    />
-                ))}
+                {filteredTree.length === 0 ? (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
+                        NO_ITEMS_FOUND // {statusFilter.toUpperCase()}
+                    </div>
+                ) : (
+                    filteredTree.map(regionNode => (
+                        <TreeNode
+                            key={regionNode.id}
+                            node={regionNode}
+                            selectedId={activeSelectedId}
+                            expandedMap={activeExpandedMap}
+                            onToggle={handleToggle}
+                            onSelect={handleSelect}
+                            onAdd={handleAdd}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            onToggleStatus={handleToggleStoryStatus}
+                            onBulkToggleEvent={handleBulkToggleEvent}
+                        />
+                    ))
+                )}
             </div>
 
             <ConfirmModal

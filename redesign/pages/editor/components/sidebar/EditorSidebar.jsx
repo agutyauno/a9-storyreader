@@ -107,6 +107,7 @@ export default function EditorSidebar({
                     name: formData.name,
                     description: formData.description,
                     display_order: formData.displayOrder,
+                    status: formData.status || 'published',
                     event_id: isEditMode ? initialData.event_id : (modalParent?.event_id || modalParent?.id),
                 };
                 if (!isEditMode) {
@@ -202,6 +203,7 @@ export default function EditorSidebar({
                             currentStoryId={currentStoryId}
                             selectedEntityId={selectedEntityId}
                             showNotification={showNotification}
+                            reloadRef={reloadTreeRef}
                         />
                     )
                 ) : (
