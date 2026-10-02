@@ -12,7 +12,8 @@ import {
     Heart, Swords, Shield, Sparkles,
     Timer, Coins, Square, Zap,
     Home, Package,
-    Crosshair, Flame, PlusCircle, Flag, Target, Activity, HelpCircle, Clock
+    Crosshair, Flame, PlusCircle, Flag, Target, Activity, HelpCircle, Clock,
+    BookOpen, ArrowRight
 } from 'lucide-react'
 import './operator.css'
 
@@ -316,11 +317,12 @@ function DialogueTab({ operator, selectedSkinId }) {
     const { showNotification } = useNotification()
 
     const handlePlayVoice = (dialogue) => {
-        const voiceUrl = dialogue.voiceLines?.[voiceLang]
+        const rawUrl = dialogue.voiceLines?.[voiceLang]
+        const voiceUrl = rawUrl ? getAssetUrl(rawUrl) : ''
         if (voiceUrl) {
             const audio = new Audio(voiceUrl)
             audio.play().catch(() => {
-                showNotification('warning', 'Playback Error', 'Không thể phát âm thanh.')
+                showNotification('warning', 'Playback Error', 'Không thể phát âm thanh từ tệp này.')
             })
         } else {
             showNotification('info', 'Audio Unavailable', `Voice line (${voiceLang}) chưa có trong cơ sở dữ liệu.`)
@@ -413,13 +415,27 @@ function RecordTab({ operator }) {
     return (
         <div className="operator-section">
             <div className="operator-section-title">Kí sự ({operator.records.length})</div>
-            {operator.records.map((record, idx) => (
-                <div key={record.id || idx} className="record-item">
-                    <span className="record-item-meta">REC.{String(idx + 1).padStart(2, '0')} // {record.id}</span>
-                    <span className="record-item-title">{record.title}</span>
-                    <span className="record-item-desc">{record.description}</span>
-                </div>
-            ))}
+            <div className="operator-records-list">
+                {operator.records.map((record, idx) => (
+                    <Link
+                        key={record.id || idx}
+                        to={`/operator-record/${record.id}`}
+                        className="record-item record-link-card"
+                        title={`Đọc kịch bản: ${record.title}`}
+                    >
+                        <div className="record-item-top">
+                            <span className="record-item-meta technical-text">REC.{String(idx + 1).padStart(2, '0')} // {record.id}</span>
+                            <BookOpen size={14} className="record-item-icon" />
+                        </div>
+                        <span className="record-item-title">{record.title}</span>
+                        {record.description && <span className="record-item-desc">{record.description}</span>}
+                        <div className="record-item-action technical-text">
+                            <span>ĐỌC KÍ SỰ</span>
+                            <ArrowRight size={12} />
+                        </div>
+                    </Link>
+                ))}
+            </div>
         </div>
     )
 }

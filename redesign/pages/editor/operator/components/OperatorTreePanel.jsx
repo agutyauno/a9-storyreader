@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { ChevronRight, ChevronDown, Plus, Trash2, User, Search, RefreshCw, FileText, Star, BookOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi'
 
 export default function OperatorTreePanel({
+    initialOperatorId,
     currentRecordId,
     onSelectRecord,
     onNewRecord,
@@ -15,6 +16,7 @@ export default function OperatorTreePanel({
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [expandedOps, setExpandedOps] = useState({})
+    const handledInitialRef = useRef(false)
 
     const fetchTree = async () => {
         setLoading(true)
@@ -26,6 +28,17 @@ export default function OperatorTreePanel({
                 const parentOp = data.find(op => op.records?.some(r => r.record_id === currentRecordId))
                 if (parentOp) {
                     setExpandedOps(prev => ({ ...prev, [parentOp.operator_id]: true }))
+                }
+            } else if (initialOperatorId && data && !handledInitialRef.current) {
+                handledInitialRef.current = true
+                const targetOp = data.find(op => op.operator_id === initialOperatorId)
+                if (targetOp) {
+                    setExpandedOps(prev => ({ ...prev, [targetOp.operator_id]: true }))
+                    if (targetOp.records && targetOp.records.length > 0) {
+                        onSelectRecord?.(targetOp.records[0], targetOp)
+                    } else {
+                        onNewRecord?.(targetOp)
+                    }
                 }
             }
         } catch (err) {

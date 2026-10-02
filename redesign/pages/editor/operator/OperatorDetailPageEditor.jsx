@@ -376,7 +376,8 @@ export default function OperatorDetailPageEditor() {
 
     // Current portrait for preview
     const activeSkin = skins.find(s => s.skin_id === selectedSkinId) || skins[0]
-    const previewPortrait = activeSkin?.full_url || activeSkin?.avatar_url || ''
+    const rawPortrait = activeSkin?.full_url || activeSkin?.avatar_url || ''
+    const previewPortrait = rawPortrait ? getAssetUrl(rawPortrait) : ''
 
     // Available subclasses based on current class
     const availableSubclasses = useMemo(() => {
@@ -412,8 +413,9 @@ export default function OperatorDetailPageEditor() {
 
         setSaving(true)
         try {
+            const confirmedOpId = opId.trim()
             const payload = {
-                operator_id: opId.trim(),
+                operator_id: confirmedOpId,
                 name: name.trim(),
                 appellation: appellation.trim(),
                 rarity: Number(rarity),
@@ -434,19 +436,61 @@ export default function OperatorDetailPageEditor() {
 
             if (isNew) {
                 await SupabaseAPI.createOperator(payload)
-                // If there are initial skins, create default skin if none exists
+
+                // 1. Batch create skins
                 if (skins.length === 0) {
                     await SupabaseAPI.createOperatorSkin({
-                        operator_id: opId.trim(),
+                        operator_id: confirmedOpId,
                         name: 'Mặc định',
                         avatar_url: '',
                         full_url: '',
                         description: 'Trang phục mặc định của cán viên.',
                         is_default: true
                     })
+                } else {
+                    for (const s of skins) {
+                        await SupabaseAPI.createOperatorSkin({
+                            operator_id: confirmedOpId,
+                            name: s.name,
+                            avatar_url: s.avatar_url,
+                            full_url: s.full_url,
+                            description: s.description,
+                            is_default: s.is_default
+                        })
+                    }
                 }
-                showToast('Đã tạo cán viên mới thành công!', 'success')
-                navigate(`/editor/operator/${opId.trim()}`, { 
+
+                // 2. Batch create dialogues
+                if (dialogues.length > 0) {
+                    for (const d of dialogues) {
+                        await SupabaseAPI.createOperatorDialogue({
+                            operator_id: confirmedOpId,
+                            title: d.title,
+                            text_content: d.text_content,
+                            skin_id: d.skin_id || null,
+                            audio_url_jp: d.audio_url_jp || null,
+                            audio_url_en: d.audio_url_en || null,
+                            audio_url_cn: d.audio_url_cn || null
+                        })
+                    }
+                }
+
+                // 3. Batch create records
+                if (records.length > 0) {
+                    for (const r of records) {
+                        await SupabaseAPI.createOperatorRecord({
+                            record_id: r.record_id,
+                            operator_id: confirmedOpId,
+                            name: r.name,
+                            description: r.description || '',
+                            display_order: Number(r.display_order) || 1,
+                            story_content: r.story_content || { type: 'vns', script: `// Kịch bản kí sự: ${r.name}\n\n[dialog]\n${name}: Kí sự bắt đầu.\n` }
+                        })
+                    }
+                }
+
+                showToast('Đã tạo cán viên mới và lưu toàn bộ dữ liệu thành công!', 'success')
+                navigate(`/editor/operator/${confirmedOpId}`, { 
                     replace: true, 
                     state: { toastMessage: 'Đã tạo cán viên mới thành công!', toastType: 'success' } 
                 })
@@ -493,6 +537,48 @@ export default function OperatorDetailPageEditor() {
         }
 
         try {
+            if (isNew) {
+                // In-memory state for new operator
+                if (editingSkin) {
+                    setSkins(prev => prev.map(s => {
+                        if (s.skin_id === editingSkin.skin_id) {
+                            return {
+                                ...s,
+                                name: skinForm.name.trim(),
+                                avatar_url: skinForm.avatar_url,
+                                full_url: skinForm.full_url,
+                                description: skinForm.description,
+                                is_default: skinForm.is_default
+                            }
+                        }
+                        return skinForm.is_default ? { ...s, is_default: false } : s
+                    }))
+                    showToast('Đã cập nhật skin vào bộ nhớ tạm.', 'success')
+                } else {
+                    const newSkinId = `temp_skin_${Date.now()}`
+                    const isDef = skinForm.is_default || skins.length === 0
+                    const newSkin = {
+                        skin_id: newSkinId,
+                        operator_id: opId,
+                        name: skinForm.name.trim(),
+                        avatar_url: skinForm.avatar_url,
+                        full_url: skinForm.full_url,
+                        description: skinForm.description,
+                        is_default: isDef
+                    }
+                    setSkins(prev => {
+                        const updated = isDef ? prev.map(s => ({ ...s, is_default: false })) : [...prev]
+                        return [...updated, newSkin]
+                    })
+                    if (!selectedSkinId || isDef) {
+                        setSelectedSkinId(newSkinId)
+                    }
+                    showToast('Đã thêm skin vào bộ nhớ tạm.', 'success')
+                }
+                setSkinModalOpen(false)
+                return
+            }
+
             const payload = {
                 operator_id: opId,
                 name: skinForm.name.trim(),
@@ -521,6 +607,14 @@ export default function OperatorDetailPageEditor() {
 
     const handleDeleteSkin = async (skinId) => {
         if (window.confirm('Bạn có chắc muốn xoá skin này?')) {
+            if (isNew) {
+                setSkins(prev => prev.filter(s => s.skin_id !== skinId))
+                if (selectedSkinId === skinId) {
+                    setSelectedSkinId(skins.find(s => s.skin_id !== skinId)?.skin_id || null)
+                }
+                showToast('Đã xoá skin khỏi bộ nhớ tạm.', 'success')
+                return
+            }
             try {
                 await SupabaseAPI.deleteOperatorSkin(skinId)
                 showToast('Đã xoá skin.', 'success')
@@ -655,6 +749,41 @@ export default function OperatorDetailPageEditor() {
         }
 
         try {
+            if (isNew) {
+                if (editingDialogue) {
+                    setDialogues(prev => prev.map(d => {
+                        if (d.dialogue_id === editingDialogue.dialogue_id) {
+                            return {
+                                ...d,
+                                title: dialogueForm.title.trim(),
+                                text_content: dialogueForm.text_content.trim(),
+                                skin_id: dialogueForm.skin_id || null,
+                                audio_url_jp: dialogueForm.audio_url_jp || null,
+                                audio_url_en: dialogueForm.audio_url_en || null,
+                                audio_url_cn: dialogueForm.audio_url_cn || null
+                            }
+                        }
+                        return d
+                    }))
+                    showToast('Đã cập nhật dòng thoại vào bộ nhớ tạm.', 'success')
+                } else {
+                    const newDialogue = {
+                        dialogue_id: `temp_dlg_${Date.now()}`,
+                        operator_id: opId,
+                        title: dialogueForm.title.trim(),
+                        text_content: dialogueForm.text_content.trim(),
+                        skin_id: dialogueForm.skin_id || null,
+                        audio_url_jp: dialogueForm.audio_url_jp || null,
+                        audio_url_en: dialogueForm.audio_url_en || null,
+                        audio_url_cn: dialogueForm.audio_url_cn || null
+                    }
+                    setDialogues(prev => [...prev, newDialogue])
+                    showToast('Đã thêm dòng thoại vào bộ nhớ tạm.', 'success')
+                }
+                setDialogueModalOpen(false)
+                return
+            }
+
             const payload = {
                 operator_id: opId,
                 title: dialogueForm.title.trim(),
@@ -684,6 +813,11 @@ export default function OperatorDetailPageEditor() {
 
     const handleDeleteDialogue = async (dialogueId) => {
         if (window.confirm('Xoá dòng thoại này?')) {
+            if (isNew) {
+                setDialogues(prev => prev.filter(d => d.dialogue_id !== dialogueId))
+                showToast('Đã xoá dòng thoại khỏi bộ nhớ tạm.', 'success')
+                return
+            }
             try {
                 await SupabaseAPI.deleteOperatorDialogue(dialogueId)
                 showToast('Đã xoá dòng thoại.', 'success')
@@ -713,6 +847,21 @@ export default function OperatorDetailPageEditor() {
         }
 
         try {
+            if (isNew) {
+                const newRec = {
+                    record_id: recordForm.record_id.trim(),
+                    operator_id: opId,
+                    name: recordForm.name.trim(),
+                    description: recordForm.description.trim(),
+                    display_order: Number(recordForm.display_order) || 1,
+                    story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: Kí sự bắt đầu.\n` }
+                }
+                setRecords(prev => [...prev, newRec])
+                showToast('Đã thêm thông tin kí sự vào bộ nhớ tạm.', 'success')
+                setRecordModalOpen(false)
+                return
+            }
+
             const payload = {
                 record_id: recordForm.record_id.trim(),
                 operator_id: opId,
@@ -735,6 +884,11 @@ export default function OperatorDetailPageEditor() {
 
     const handleDeleteRecord = async (recordId) => {
         if (window.confirm(`Xoá kí sự "${recordId}" cùng kịch bản của nó?`)) {
+            if (isNew) {
+                setRecords(prev => prev.filter(r => r.record_id !== recordId))
+                showToast('Đã xoá kí sự khỏi bộ nhớ tạm.', 'success')
+                return
+            }
             try {
                 await SupabaseAPI.deleteOperatorRecord(recordId)
                 showToast('Đã xoá kí sự.', 'success')
@@ -995,7 +1149,7 @@ export default function OperatorDetailPageEditor() {
                                                 style={{ border: selectedSkinId === s.skin_id ? '2px solid var(--color-terracotta, #B2653B)' : '2px solid #181818' }}
                                             >
                                                 {s.avatar_url ? (
-                                                    <img src={s.avatar_url} alt={s.name} />
+                                                    <img src={getAssetUrl(s.avatar_url)} alt={s.name} />
                                                 ) : (
                                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', color: '#fff' }}>
                                                         <ImageIcon size={16} />
@@ -1576,7 +1730,10 @@ export default function OperatorDetailPageEditor() {
                                                                     className="brutalist-icon-btn"
                                                                     title="Nghe audio JP"
                                                                     onClick={() => {
-                                                                        new Audio(dlg.audio_url_jp).play().catch(() => showToast('Không thể phát audio.', 'error'))
+                                                                        const audioUrl = getAssetUrl(dlg.audio_url_jp)
+                                                                        if (audioUrl) {
+                                                                            new Audio(audioUrl).play().catch(() => showToast('Không thể phát audio từ URL này.', 'error'))
+                                                                        }
                                                                     }}
                                                                 >
                                                                     <Volume2 size={12} />
@@ -1673,7 +1830,13 @@ export default function OperatorDetailPageEditor() {
                                                         {/* Direct jump to VN Script Editor */}
                                                         <button
                                                             className="brutalist-btn primary"
-                                                            onClick={() => navigate(`/editor/operator/records/${rec.record_id}`)}
+                                                            onClick={() => {
+                                                                if (isNew) {
+                                                                    showToast('Vui lòng bấm "TẠO CÁN VIÊN" trước khi bắt đầu soạn kịch bản chi tiết!', 'warning')
+                                                                    return
+                                                                }
+                                                                navigate(`/editor/operator/records/${rec.record_id}`)
+                                                            }}
                                                             title="Mở trình soạn thảo kịch bản kịch tính VN"
                                                         >
                                                             <BookOpen size={13} />

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Upload, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { uploadFileToGithub } from '../../../../../src/services/githubService'
+import { getAssetUrl } from '../../../../../src/utils/assetUtils'
 
 /**
  * ImageUploadField
@@ -51,6 +52,8 @@ export default function ImageUploadField({
             }
         }
     }
+
+    const previewSrc = value ? getAssetUrl(value) : ''
 
     return (
         <div className="img-upload-field">
@@ -107,7 +110,7 @@ export default function ImageUploadField({
             {value && (
                 <div className="img-upload-preview">
                     <img
-                        src={value}
+                        src={previewSrc}
                         alt="Preview"
                         onError={(e) => {
                             e.target.style.display = 'none'

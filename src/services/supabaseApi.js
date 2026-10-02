@@ -776,7 +776,6 @@ const SupabaseAPI_Raw = {
       mockDatabase.assets.push(newItem);
       return newItem;
     }
-    // Table 'assets' only has columns: asset_id, type, category, url
     const cleanPayload = {
       asset_id: payload.asset_id,
       type: payload.type,
@@ -796,7 +795,6 @@ const SupabaseAPI_Raw = {
       Object.assign(mockDatabase.assets[idx], payload);
       return mockDatabase.assets[idx];
     }
-    // Table 'assets' only has columns: asset_id, type, category, url
     const cleanPayload = {};
     if (payload.category !== undefined) cleanPayload.category = payload.category;
     if (payload.type !== undefined) cleanPayload.type = payload.type;
@@ -1360,6 +1358,26 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteOperator(operatorId) {
+    // 1. Delete associated records, dialogues, skins first to avoid foreign key violations
+    try {
+      await supabase.from('operator_records').delete().eq('operator_id', operatorId);
+    } catch (e) {
+      console.warn('Cascade delete operator_records warning:', e.message);
+    }
+
+    try {
+      await supabase.from('operator_dialogues').delete().eq('operator_id', operatorId);
+    } catch (e) {
+      console.warn('Cascade delete operator_dialogues warning:', e.message);
+    }
+
+    try {
+      await supabase.from('operator_skins').delete().eq('operator_id', operatorId);
+    } catch (e) {
+      console.warn('Cascade delete operator_skins warning:', e.message);
+    }
+
+    // 2. Delete parent operator row
     const { error } = await supabase
       .from('operators')
       .delete()

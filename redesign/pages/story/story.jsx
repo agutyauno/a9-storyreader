@@ -466,9 +466,9 @@ export default function RedesignStoryPage({ isRecord = false }) {
         <div className={`content-area story-page-wrapper ${sidebarOpen ? 'sidebar-active' : 'expanded'} ${isHideDialogues ? 'hide-dialogues-mode' : ''}`}>
           {/* Dynamic header details overlay */}
           {isRecord ? (
-            <Link to={`/operator/${story?.operator_id}`} className="header-meta-bar panel-stripes" title={`Đi tới hồ sơ cán viên: ${story?.operator_id}`}>
+            <Link to={story?.operator_id ? `/operator/${story.operator_id}` : '/operator'} className="header-meta-bar panel-stripes" title={story?.operator_id ? `Đi tới hồ sơ cán viên: ${story.operator_id}` : 'Đi tới danh sách cán viên'}>
               <span className="technical-text header-dynamic-title">
-                {eventData?.name || story?.name || ''}
+                {eventData?.name || story?.name || 'KÍ SỰ CÁN VIÊN'}
               </span>
             </Link>
           ) : eventData ? (

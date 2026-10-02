@@ -1352,6 +1352,47 @@
     line-height: 1.5;
 }
 
+.record-item.record-link-card {
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    transition: transform var(--transition-step, 0.2s), box-shadow var(--transition-step, 0.2s), border-color var(--transition-step, 0.2s), background-color var(--transition-step, 0.2s);
+}
+
+.record-item.record-link-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-terracotta, #B2653B);
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+    background-color: #E2ECE6;
+}
+
+.record-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.record-item-icon {
+    color: var(--color-terracotta, #B2653B);
+}
+
+.record-item-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-terracotta, #B2653B);
+    margin-top: 0.25rem;
+    letter-spacing: 0.05em;
+    transition: gap var(--transition-step, 0.2s);
+}
+
+.record-item.record-link-card:hover .record-item-action {
+    gap: 0.55rem;
+    color: var(--color-charcoal);
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────── */
 /* RESPONSIVE                                                                      */
 /* ─────────────────────────────────────────────────────────────────────────────── */

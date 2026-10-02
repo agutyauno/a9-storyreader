@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import NotificationToast from '../components/NotificationToast'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
@@ -96,21 +97,79 @@ const renderRarityOption = (opt) => {
     )
 }
 
-// Reusable Swiss-Brutalist Custom Select Component
+// Reusable Swiss-Brutalist Custom Select Component with Portal rendering to prevent clipping
 function CustomSelect({ id, value, onChange, options, placeholder, renderOption }) {
     const [isOpen, setIsOpen] = useState(false)
-    const dropdownRef = useRef(null)
+    const [menuStyle, setMenuStyle] = useState({})
+    const toggleRef = useRef(null)
+    const menuRef = useRef(null)
 
-    // Close on click outside
+    // Calculate position in viewport
+    const updatePosition = useCallback(() => {
+        if (!toggleRef.current) return
+        const rect = toggleRef.current.getBoundingClientRect()
+
+        // If button is off-screen, close menu
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            setIsOpen(false)
+            return
+        }
+
+        const menuMaxHeight = 260
+        const spaceBelow = window.innerHeight - rect.bottom
+        const openUpwards = spaceBelow < menuMaxHeight && rect.top > menuMaxHeight
+
+        setMenuStyle({
+            position: 'fixed',
+            left: `${rect.left}px`,
+            width: `${rect.width}px`,
+            top: openUpwards ? 'auto' : `${rect.bottom + 4}px`,
+            bottom: openUpwards ? `${window.innerHeight - rect.top + 4}px` : 'auto',
+            zIndex: 999999,
+            maxHeight: `${menuMaxHeight}px`
+        })
+    }, [])
+
     useEffect(() => {
+        if (!isOpen) return
+
+        updatePosition()
+
+        const handleScroll = (event) => {
+            // Allow user to scroll inside the dropdown menu itself
+            if (menuRef.current && menuRef.current.contains(event.target)) {
+                return
+            }
+            updatePosition()
+        }
+
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (
+                toggleRef.current && !toggleRef.current.contains(event.target) &&
+                menuRef.current && !menuRef.current.contains(event.target)
+            ) {
                 setIsOpen(false)
             }
         }
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                setIsOpen(false)
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll, true)
+        window.addEventListener('resize', updatePosition)
         document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+        document.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll, true)
+            window.removeEventListener('resize', updatePosition)
+            document.removeEventListener('mousedown', handleClickOutside)
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isOpen, updatePosition])
 
     const handleSelect = (val) => {
         onChange(val)
@@ -120,8 +179,9 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
     const selectedOption = options.find(o => o.value === value)
 
     return (
-        <div className="ced-dropdown" ref={dropdownRef} id={id}>
+        <div className="ced-dropdown" id={id}>
             <button
+                ref={toggleRef}
                 type="button"
                 className={`ced-dropdown-toggle ${isOpen ? 'open' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
@@ -136,8 +196,12 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
                 <ChevronDown size={14} className="ced-dropdown-caret" />
             </button>
 
-            {isOpen && (
-                <div className="ced-dropdown-menu">
+            {isOpen && createPortal(
+                <div
+                    ref={menuRef}
+                    className="ced-dropdown-menu ced-dropdown-portal-menu"
+                    style={menuStyle}
+                >
                     <div
                         className={`ced-dropdown-item ${!value ? 'selected' : ''}`}
                         onClick={() => handleSelect(null)}
@@ -153,7 +217,8 @@ function CustomSelect({ id, value, onChange, options, placeholder, renderOption 
                             {renderOption ? renderOption(opt) : opt.label}
                         </div>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     )

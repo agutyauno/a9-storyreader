@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../src/contexts/AuthContext'
 import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X } from 'lucide-react'
 
@@ -24,9 +24,12 @@ import './storyEditor.css'
 
 export default function RedesignStoryEditorPage({ isRecord = false }) {
     const navigate = useNavigate()
+    const location = useLocation()
     const { logout } = useAuth()
     const { storyId, recordId } = useParams()
     const currentId = isRecord ? (recordId || storyId) : storyId
+    const queryParams = new URLSearchParams(location.search)
+    const urlOperatorId = queryParams.get('operatorId')
     const editorRef = useRef(null)
 
     const [loading, setLoading] = useState(false)
@@ -706,6 +709,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                             onPickAsset={openPicker}
                             showNotification={showNotification}
                             currentRecordId={metadata.record_id}
+                            initialOperatorId={urlOperatorId}
                             onRecordSelect={handleRecordSelect}
                             onNewRecord={handleOpenNewRecordModal}
                             onDeleteRecord={handleDeleteRecord}

@@ -18,6 +18,7 @@ export default function EditorSidebar({
     showNotification,
     isRecord = false,
     currentRecordId,
+    initialOperatorId,
     selectedEntityId,
     onRecordSelect,
     onNewRecord,
@@ -186,6 +187,7 @@ export default function EditorSidebar({
                 {activeTab === 'story' ? (
                     isRecord ? (
                         <OperatorTreePanel
+                            initialOperatorId={initialOperatorId}
                             currentRecordId={currentRecordId || currentStoryId}
                             onSelectRecord={onRecordSelect || onStorySelect}
                             onNewRecord={onNewRecord}

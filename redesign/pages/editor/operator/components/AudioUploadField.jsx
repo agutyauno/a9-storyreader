@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Upload, X, Play, Square, Loader2, Volume2 } from 'lucide-react'
 import { uploadFileToGithub } from '../../../../../src/services/githubService'
+import { getAssetUrl } from '../../../../../src/utils/assetUtils'
 
 /**
  * AudioUploadField
@@ -80,13 +81,18 @@ export default function AudioUploadField({
 
     const togglePlay = () => {
         if (!value) return
+        const targetUrl = getAssetUrl(value)
+        if (!targetUrl) return
 
         if (isPlaying) {
             audioRef.current?.pause()
             setIsPlaying(false)
         } else {
-            if (!audioRef.current || audioRef.current.src !== value) {
-                audioRef.current = new Audio(value)
+            if (!audioRef.current || audioRef.current.src !== targetUrl) {
+                if (audioRef.current) {
+                    audioRef.current.pause()
+                }
+                audioRef.current = new Audio(targetUrl)
                 audioRef.current.onended = () => setIsPlaying(false)
                 audioRef.current.onerror = () => {
                     setIsPlaying(false)
@@ -98,7 +104,7 @@ export default function AudioUploadField({
                 .catch((err) => {
                     console.error('Audio playback error:', err)
                     setIsPlaying(false)
-                    setUploadError('Lỗi phát âm thanh. Vui lòng kiểm tra định dạng hoặc quyền truy cập.')
+                    setUploadError('Lỗi phát âm thanh. Vui lòng kiểm tra định dạng hoặc đường dẫn.')
                 })
         }
     }
