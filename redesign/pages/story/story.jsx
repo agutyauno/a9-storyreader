@@ -11,7 +11,8 @@ import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
-import { Volume2, VolumeX, ArrowLeft, ArrowRight, ChevronUp, Eye, EyeOff } from 'lucide-react'
+import { Volume2, VolumeX, ArrowLeft, ArrowRight, ChevronUp, Eye, EyeOff, BookmarkCheck } from 'lucide-react'
+import { saveReadingProgress } from '../../../src/utils/readingHistory'
 import './story.css'
 
 export default function RedesignStoryPage({ isRecord = false }) {
@@ -23,6 +24,9 @@ export default function RedesignStoryPage({ isRecord = false }) {
   const [isDraft, setIsDraft] = useState(false)
   const [eventData, setEventData] = useState(null)
   const [allStories, setAllStories] = useState([])
+  const [nextEventData, setNextEventData] = useState(null)
+  const [nextEventFirstStory, setNextEventFirstStory] = useState(null)
+  const [completionSuggestions, setCompletionSuggestions] = useState([])
   const [htmlContent, setHtmlContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -145,6 +149,44 @@ export default function RedesignStoryPage({ isRecord = false }) {
             ])
             setEventData(ev)
             setAllStories(stories || [])
+
+            // Resolve next event if this is the last story
+            const currIdx = (stories || []).findIndex(s => s.story_id === id)
+            if (currIdx !== -1 && currIdx === stories.length - 1 && ev?.arc_id) {
+              try {
+                const [arcEvents, rawSuggs] = await Promise.all([
+                  SupabaseAPI.getEventsByArc(ev.arc_id),
+                  SupabaseAPI.getSuggestionsByArc(ev.arc_id).catch(() => [])
+                ])
+                const sortedArcEvs = [...(arcEvents || [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+                const evIndex = sortedArcEvs.findIndex(e => e.event_id === ev.event_id)
+                if (evIndex !== -1 && evIndex < sortedArcEvs.length - 1) {
+                  const candNextEv = sortedArcEvs[evIndex + 1]
+                  const nextStories = await SupabaseAPI.getStoriesByEvent(candNextEv.event_id, { includeDrafts: false })
+                  if (nextStories && nextStories.length > 0) {
+                    setNextEventData(candNextEv)
+                    setNextEventFirstStory(nextStories[0])
+                  }
+                }
+
+                if (rawSuggs && rawSuggs.length > 0) {
+                  const event1BasedPos = evIndex !== -1 ? evIndex + 1 : 0
+                  const matchedNextSuggs = rawSuggs.filter(s => s.position === event1BasedPos && (s.type || 'next') === 'next')
+                  if (matchedNextSuggs.length > 0) {
+                    const allEvts = await SupabaseAPI.getEvents().catch(() => [])
+                    const evMap = Object.fromEntries((allEvts || []).map(e => [e.event_id, e]))
+                    const resolvedSuggList = matchedNextSuggs.map(s => evMap[s.target_event_id]).filter(Boolean)
+                    setCompletionSuggestions(resolvedSuggList)
+                  }
+                }
+              } catch (errNext) {
+                console.warn('Could not resolve next event navigation:', errNext)
+              }
+            } else {
+              setNextEventData(null)
+              setNextEventFirstStory(null)
+              setCompletionSuggestions([])
+            }
           }
         }
 
@@ -167,6 +209,17 @@ export default function RedesignStoryPage({ isRecord = false }) {
         setStory(fetchedStory)
         document.title = `${fetchedStory.name} // Civilight Eterna Database`
 
+        if (!isRecord && fetchedStory) {
+          saveReadingProgress({
+            storyId: fetchedStory.story_id,
+            storyName: fetchedStory.name,
+            eventId: fetchedStory.event_id,
+            eventName: eventData?.name,
+            scrollPercent: 0,
+            bannerUrl: eventData?.banner_url || eventData?.image_url
+          })
+        }
+
         let contentToRender = fetchedStory.story_content
         if (contentToRender && contentToRender.type === 'vns') {
           contentToRender = await StoryScriptParser.parseWithDB(contentToRender.script)
@@ -188,6 +241,40 @@ export default function RedesignStoryPage({ isRecord = false }) {
       if (window.sfxManager) window.sfxManager.destroy()
     }
   }, [id, location.search])
+
+  // Track scroll progress for reading history
+  useEffect(() => {
+    if (!story || isRecord) return
+    let lastSavedPercent = -1
+    let timeoutId = null
+
+    const handleScrollProgress = () => {
+      if (timeoutId) return
+      timeoutId = setTimeout(() => {
+        timeoutId = null
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
+        if (scrollHeight <= 0) return
+        const percent = Math.min(100, Math.max(0, Math.round((window.scrollY / scrollHeight) * 100)))
+        if (Math.abs(percent - lastSavedPercent) >= 5 || percent === 100) {
+          lastSavedPercent = percent
+          saveReadingProgress({
+            storyId: story.story_id,
+            storyName: story.name,
+            eventId: eventData?.event_id,
+            eventName: eventData?.name,
+            scrollPercent: percent,
+            bannerUrl: eventData?.banner_url || eventData?.image_url
+          })
+        }
+      }, 500)
+    }
+
+    window.addEventListener('scroll', handleScrollProgress, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScrollProgress)
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [story, eventData, isRecord])
 
   // 2. Audio Synchronizer & Global Settings Sync
   const applyAudioSettings = () => {
@@ -412,6 +499,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
   const currentIndex = allStories.findIndex(s => s.story_id === id)
   const prevStory = currentIndex > 0 ? allStories[currentIndex - 1] : null
   const nextStory = currentIndex >= 0 && currentIndex < allStories.length - 1 ? allStories[currentIndex + 1] : null
+  const isLastStoryInEvent = !isRecord && currentIndex >= 0 && currentIndex === allStories.length - 1
 
   if (loading) {
     return (
@@ -532,15 +620,28 @@ export default function RedesignStoryPage({ isRecord = false }) {
                 disabled={!prevStory}
                 onClick={() => prevStory && navigate(isRecord ? `/operator-record/${prevStory.story_id}` : `/story/${prevStory.story_id}`)}
               >
-                ← CHƯƠNG TRƯỚC
+                ← MÀN TRƯỚC
               </button>
-              <button
-                className="btn-chapter-nav"
-                disabled={!nextStory}
-                onClick={() => nextStory && navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
-              >
-                CHƯƠNG SAU →
-              </button>
+              {nextStory ? (
+                <button
+                  className="btn-chapter-nav"
+                  onClick={() => navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
+                >
+                  MÀN TIẾP THEO →
+                </button>
+              ) : nextEventFirstStory ? (
+                <button
+                  className="btn-chapter-nav btn-next-event highlight-next"
+                  onClick={() => navigate(`/story/${nextEventFirstStory.story_id}`)}
+                  title={`Chuyển sang: ${nextEventData?.name}`}
+                >
+                  SỰ KIỆN TIẾP: {nextEventData?.name} ⇥
+                </button>
+              ) : (
+                <button className="btn-chapter-nav" disabled>
+                  HẾT SỰ KIỆN →
+                </button>
+              )}
             </div>
 
             {/* Story Information Intro Card */}
@@ -559,6 +660,55 @@ export default function RedesignStoryPage({ isRecord = false }) {
             {/* Core Story Dialogue Scroller */}
             <div id="story-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: htmlContent }} />
 
+            {/* Event Completion Banner (Only when on the last story of the event) */}
+            {isLastStoryInEvent && (
+              <div className="event-completion-card">
+                <div className="completion-icon-wrapper">
+                  <BookmarkCheck size={28} />
+                </div>
+                <h3 className="completion-title">Hoàn thành: {eventData?.name}</h3>
+                <p className="completion-desc">
+                  Bạn đã đọc hết tất cả các màn trong sự kiện này.
+                </p>
+                <div className="completion-actions">
+                  {nextEventFirstStory && (
+                    <button
+                      className="btn-next-event-action"
+                      onClick={() => navigate(`/story/${nextEventFirstStory.story_id}`)}
+                    >
+                      <span>ĐỌC TIẾP: {nextEventData?.name}</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  )}
+                  <Link
+                    to={eventData?.event_id ? `/event/${eventData.event_id}` : "/"}
+                    className="btn-back-event-action"
+                  >
+                    MỤC LỤC SỰ KIỆN
+                  </Link>
+                </div>
+
+                {completionSuggestions.length > 0 && (
+                  <div className="completion-suggestions-section">
+                    <div className="completion-sugg-title">GỢI Ý ĐỌC TIẾP THEO</div>
+                    <div className="completion-sugg-list">
+                      {completionSuggestions.map(cs => (
+                        <Link
+                          key={cs.event_id}
+                          to={`/event/${cs.event_id}`}
+                          className="completion-sugg-item"
+                          title={`Xem sự kiện: ${cs.name}`}
+                        >
+                          <span>{cs.name}</span>
+                          <ArrowRight size={14} />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Bottom Chapter Nav Buttons */}
             <div className="chapter-nav-buttons bottom-nav">
               <button
@@ -566,15 +716,28 @@ export default function RedesignStoryPage({ isRecord = false }) {
                 disabled={!prevStory}
                 onClick={() => prevStory && navigate(isRecord ? `/operator-record/${prevStory.story_id}` : `/story/${prevStory.story_id}`)}
               >
-                ← CHƯƠNG TRƯỚC
+                ← MÀN TRƯỚC
               </button>
-              <button
-                className="btn-chapter-nav"
-                disabled={!nextStory}
-                onClick={() => nextStory && navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
-              >
-                CHƯƠNG SAU →
-              </button>
+              {nextStory ? (
+                <button
+                  className="btn-chapter-nav"
+                  onClick={() => navigate(isRecord ? `/operator-record/${nextStory.story_id}` : `/story/${nextStory.story_id}`)}
+                >
+                  MÀN TIẾP THEO →
+                </button>
+              ) : nextEventFirstStory ? (
+                <button
+                  className="btn-chapter-nav btn-next-event highlight-next"
+                  onClick={() => navigate(`/story/${nextEventFirstStory.story_id}`)}
+                  title={`Chuyển sang: ${nextEventData?.name}`}
+                >
+                  SỰ KIỆN TIẾP: {nextEventData?.name} ⇥
+                </button>
+              ) : (
+                <button className="btn-chapter-nav" disabled>
+                  HẾT SỰ KIỆN →
+                </button>
+              )}
             </div>
 
           </div>

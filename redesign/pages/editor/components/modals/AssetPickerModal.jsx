@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Search, Loader, Image as ImageIcon, Plus, RotateCw } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
+import { EditorCache } from '../../../../../src/services/editorCache';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
 import AddAssetModal from './AddAssetModal';
 import '../editorComponents.css';
@@ -24,26 +25,21 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedAssets, setSelectedAssets] = useState(new Map());
+    const [isReloading, setIsReloading] = useState(false);
 
     useEffect(() => {
         if (filterType) setActiveCat(filterType);
         else setActiveCat('all');
     }, [filterType, isOpen]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            setSelectedAssets(new Map());
-            return;
-        }
-        loadAssets();
-    }, [isOpen]);
+    const loadAssets = async (force = false) => {
+        if (force) setIsReloading(true);
+        else setLoading(true);
 
-    const loadAssets = async () => {
-        setLoading(true);
         try {
+            const bundle = await EditorCache.getAssetsBundle({ force });
             if (filterType === 'character') {
-                const charData = await SupabaseAPI.getCharacters();
-                const mappedChars = (charData || []).map(c => ({
+                const mappedChars = (bundle.characters || []).map(c => ({
                     asset_id: c.character_id,
                     name: c.name,
                     url: c.avatar_url,
@@ -52,31 +48,34 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                 }));
                 setAssets(mappedChars);
             } else {
-                const [assetData, galleryData] = await Promise.all([
-                    SupabaseAPI.getAssets(),
-                    SupabaseAPI.getAllGallery(),
-                ]);
-                
-                const existingAssetIds = new Set((assetData || []).map(a => a.asset_id).filter(Boolean));
-                
-                const mappedGallery = (galleryData || [])
-                    .filter(g => g.gallery_id && !existingAssetIds.has(g.gallery_id))
-                    .map(g => ({
-                        asset_id: g.gallery_id,
-                        name: g.title || g.gallery_id,
-                        url: g.image_url,
-                        type: 'image',
-                        category: 'gallery'
-                    }));
-
-                setAssets([...(assetData || []), ...mappedGallery]);
+                setAssets(bundle.assets || []);
             }
         } catch (err) {
             console.error('AssetPicker load failed:', err);
         } finally {
             setLoading(false);
+            setIsReloading(false);
         }
     };
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSelectedAssets(new Map());
+            return;
+        }
+        loadAssets(false);
+
+        // Reactive update if assets change while modal is open
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.type === 'assets' || e.detail?.type === 'all') {
+                loadAssets(false);
+            }
+        };
+        window.addEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        return () => {
+            window.removeEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        };
+    }, [isOpen, filterType]);
 
     const handleAddAssetSubmit = async (newAssetData) => {
         try {
@@ -100,7 +99,8 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                     url: newAssetData.url || ''
                 });
             }
-            await loadAssets();
+            EditorCache.invalidateAssets();
+            await loadAssets(false);
             setShowAddModal(false);
         } catch (err) {
             console.error('Create asset failed:', err);
@@ -142,6 +142,16 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                             <span>CHỌN ASSET {multiSelect ? '(CHỌN NHIỀU)' : ''}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <button
+                                className="redesign-tool-btn"
+                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: isReloading ? 'not-allowed' : 'pointer' }}
+                                onClick={() => loadAssets(true)}
+                                disabled={isReloading}
+                                title="Làm mới danh sách asset từ máy chủ"
+                            >
+                                <RotateCw size={13} className={isReloading ? 'spinning' : ''} />
+                                <span>Làm mới</span>
+                            </button>
                             <button className="redesign-btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setShowAddModal(true)}>
                                 <Plus size={14} /> Thêm mới
                             </button>

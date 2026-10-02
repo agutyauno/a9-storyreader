@@ -8,7 +8,8 @@ import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
 import Tabs from '../../components/Tabs'
-import { ArrowLeft, ArrowRight, ExternalLink, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ExternalLink, Sparkles, BookmarkCheck } from 'lucide-react'
+import { getLastRead } from '../../../src/utils/readingHistory'
 import './event.css'
 
 const EVENT_TABS = [
@@ -33,6 +34,20 @@ export default function RedesignEventPage() {
     const [gallery, setGallery] = useState([])
     const [suggestedEvents, setSuggestedEvents] = useState([])
     const [loading, setLoading] = useState(true)
+    const [lastRead, setLastRead] = useState(() => getLastRead())
+
+    // Listen for real-time reading progress updates
+    useEffect(() => {
+        const handleProgressUpdate = () => {
+            setLastRead(getLastRead())
+        }
+        window.addEventListener('cedReadingProgressUpdate', handleProgressUpdate)
+        window.addEventListener('storage', handleProgressUpdate)
+        return () => {
+            window.removeEventListener('cedReadingProgressUpdate', handleProgressUpdate)
+            window.removeEventListener('storage', handleProgressUpdate)
+        }
+    }, [])
     const [error, setError] = useState(null)
 
     // Sidebar & Region States
@@ -420,6 +435,21 @@ export default function RedesignEventPage() {
                                                     <span className="event-stat-label technical-text">MEDIA</span>
                                                 </div>
                                             </div>
+
+                                            {/* Quick Resume Button if last read story belongs to this event */}
+                                            {lastRead && lastRead.eventId === id && (
+                                                <div className="event-hero-resume-box">
+                                                    <Link
+                                                        to={`/story/${lastRead.storyId}`}
+                                                        className="btn-event-hero-resume"
+                                                    >
+                                                        <BookmarkCheck size={16} />
+                                                        <span>TIẾP TỤC ĐỌC: {lastRead.storyName}</span>
+                                                        <span className="resume-progress-badge">{lastRead.scrollPercent || 0}%</span>
+                                                        <ArrowRight size={16} />
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Banner Image Column */}
@@ -521,24 +551,46 @@ export default function RedesignEventPage() {
                                                 <p className="tab-empty-msg">Không tìm thấy ghi chép cốt truyện cho sự kiện này.</p>
                                             ) : (
                                                 <div className="chapters-grid">
-                                                    {stories.map((story, index) => (
-                                                        <Link
-                                                            key={story.story_id}
-                                                            to={`/story/${story.story_id}`}
-                                                            className="chapter-card"
-                                                            title="Mở trình đọc truyện"
-                                                        >
-                                                            <div className="chapter-meta technical-text">
-                                                                STORY_NODE // 0{index + 1}
-                                                            </div>
-                                                            <div className="chapter-title">
-                                                                {story.name}
-                                                            </div>
-                                                            <div className="technical-text" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                                READ_STORY <ExternalLink size={12} />
-                                                            </div>
-                                                        </Link>
-                                                    ))}
+                                                    {stories.map((story, index) => {
+                                                        const isCurrentLastRead = lastRead?.storyId === story.story_id
+                                                        return (
+                                                            <Link
+                                                                key={story.story_id}
+                                                                to={`/story/${story.story_id}`}
+                                                                className={`chapter-card ${isCurrentLastRead ? 'is-last-read' : ''}`}
+                                                                title="Mở trình đọc truyện"
+                                                            >
+                                                                {isCurrentLastRead && (
+                                                                    <div className="chapter-reading-badge">
+                                                                        <BookmarkCheck size={11} />
+                                                                        <span>ĐANG ĐỌC ({lastRead.scrollPercent || 0}%)</span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="chapter-meta technical-text">
+                                                                    STORY_NODE // 0{index + 1}
+                                                                </div>
+                                                                <div className="chapter-title">
+                                                                    {story.name}
+                                                                </div>
+                                                                <div
+                                                                    className="technical-text"
+                                                                    style={{
+                                                                        fontSize: '0.75rem',
+                                                                        opacity: isCurrentLastRead ? 0.95 : 0.5,
+                                                                        marginTop: 'auto',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.25rem',
+                                                                        color: isCurrentLastRead ? 'var(--color-ochre, #BA8530)' : 'inherit',
+                                                                        fontWeight: isCurrentLastRead ? 700 : 'normal'
+                                                                    }}
+                                                                >
+                                                                    {isCurrentLastRead ? 'TIẾP TỤC ĐỌC' : 'READ_STORY'}{' '}
+                                                                    {isCurrentLastRead ? <ArrowRight size={12} /> : <ExternalLink size={12} />}
+                                                                </div>
+                                                            </Link>
+                                                        )
+                                                    })}
                                                 </div>
                                             )}
                                         </div>

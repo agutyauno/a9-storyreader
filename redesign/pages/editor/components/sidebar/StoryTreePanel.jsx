@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit, Eye, EyeOff, Search, X } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit, Eye, EyeOff, Search, X, RotateCw } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
+import { EditorCache } from '../../../../../src/services/editorCache';
 import ConfirmModal from '../modals/ConfirmModal';
 import '../editorComponents.css';
 
@@ -293,24 +294,49 @@ export default function StoryTreePanel({
         loadTree();
     }, []);
 
-    useEffect(() => {
-        if (reloadRef) {
-            reloadRef.current = loadTree;
-        }
-    }, [reloadRef]);
+    const [isReloading, setIsReloading] = useState(false);
 
-    const loadTree = async () => {
-        setLoading(true);
+    const loadTree = async (force = false) => {
+        if (force) setIsReloading(true);
+        else if (tree.length === 0) setLoading(true);
+
         try {
-            const data = await SupabaseAPI.getFullStoryTree();
+            const data = await EditorCache.getStoryTree({ force });
             setTree(data || []);
+            if (force) {
+                showNotification?.('Đã làm mới danh mục cốt truyện từ máy chủ', 'success');
+            }
         } catch (err) {
             console.error('Failed to load story tree:', err);
             showNotification?.('Tải danh mục cốt truyện thất bại', 'error');
         } finally {
             setLoading(false);
+            setIsReloading(false);
         }
     };
+
+    useEffect(() => {
+        loadTree(false);
+    }, []);
+
+    // Reactive cache updates from other components
+    useEffect(() => {
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.type === 'storyTree' || e.detail?.type === 'all') {
+                loadTree(false);
+            }
+        };
+        window.addEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        return () => {
+            window.removeEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (reloadRef) {
+            reloadRef.current = () => loadTree(true);
+        }
+    }, [reloadRef]);
 
     const counts = useMemo(() => getStoryCounts(tree), [tree]);
 
@@ -357,11 +383,12 @@ export default function StoryTreePanel({
         const nextStatus = node.status === 'draft' ? 'published' : 'draft';
         try {
             await SupabaseAPI.toggleStoryStatus(node.story_id || node.id, nextStatus);
+            EditorCache.invalidateStoryTree();
             showNotification?.(
                 `Đã chuyển "${node.name}" sang ${nextStatus === 'published' ? 'ĐÃ XUẤT BẢN' : 'BẢN NHÁP'}.`,
                 'success'
             );
-            await loadTree();
+            await loadTree(false);
         } catch (err) {
             console.error('Toggle story status error:', err);
             showNotification?.(`Lỗi đổi trạng thái: ${err.message}`, 'error');
@@ -384,8 +411,9 @@ export default function StoryTreePanel({
                     await Promise.all(
                         targetStories.map(s => SupabaseAPI.toggleStoryStatus(s.story_id || s.id, targetStatus))
                     );
+                    EditorCache.invalidateStoryTree();
                     showNotification?.(`Đã ${actionText.toLowerCase()} ${targetStories.length} màn kịch bản!`, 'success');
-                    await loadTree();
+                    await loadTree(false);
                 } catch (err) {
                     console.error('Bulk toggle event status error:', err);
                     showNotification?.(`Lỗi: ${err.message}`, 'error');
@@ -427,12 +455,13 @@ export default function StoryTreePanel({
                     else if (node.type === 'event') await SupabaseAPI.deleteEvent(node.event_id || node.id);
                     else if (node.type === 'story') await SupabaseAPI.deleteStory(node.story_id || node.id);
 
+                    EditorCache.invalidateStoryTree();
                     showNotification?.(`Đã xoá ${typeLabels[node.type]} "${node.name}"`, 'success');
                     if (activeSelectedId === node.id) {
                         setInternalSelectedId(null);
                         onStorySelect(null, null);
                     }
-                    await loadTree();
+                    await loadTree(false);
                 } catch (err) {
                     console.error('Delete node failed:', err);
                     showNotification?.(`Xoá thất bại: ${err.message}`, 'error');
@@ -444,7 +473,7 @@ export default function StoryTreePanel({
         setConfirmOpen(true);
     };
 
-    if (loading) {
+    if (loading && tree.length === 0) {
         return (
             <div style={{ padding: '1.5rem', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                 <Loader className="spinning" size={18} /> Đang tải dữ liệu...
@@ -457,13 +486,25 @@ export default function StoryTreePanel({
             {/* Top Toolbar */}
             <div style={{ padding: '0.65rem 0.75rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>CẤU TRÚC CỐT TRUYỆN</span>
-                <button
-                    className="redesign-btn primary"
-                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
-                    onClick={() => onAddItem('region', null, loadTree, tree.length + 1)}
-                >
-                    <Plus size={12} /> Thêm Region
-                </button>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <button
+                        className="redesign-tool-btn"
+                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', cursor: isReloading ? 'not-allowed' : 'pointer' }}
+                        onClick={() => loadTree(true)}
+                        disabled={isReloading}
+                        title="Làm mới danh mục cốt truyện từ máy chủ"
+                    >
+                        <RotateCw size={12} className={isReloading ? 'spinning' : ''} />
+                        <span>Làm mới</span>
+                    </button>
+                    <button
+                        className="redesign-btn primary"
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
+                        onClick={() => onAddItem('region', null, () => loadTree(true), tree.length + 1)}
+                    >
+                        <Plus size={12} /> Thêm Region
+                    </button>
+                </div>
             </div>
 
             {/* Publication Status Filter Tabs */}

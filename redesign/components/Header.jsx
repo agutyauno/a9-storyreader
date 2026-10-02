@@ -1,10 +1,24 @@
-import React, { useState } from 'react'
-import { ChevronsLeft, ChevronsRight, Settings, Users, BookOpen } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { ChevronsLeft, ChevronsRight, Settings, Users, BookOpen, BookmarkCheck } from 'lucide-react'
 import { getAssetUrl } from '../../src/utils/assetUtils'
+import { getLastRead } from '../../src/utils/readingHistory'
 import SettingsModal from './SettingsModal'
 
 export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) {
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [lastRead, setLastRead] = useState(() => getLastRead())
+
+    useEffect(() => {
+        const updateLastRead = () => {
+            setLastRead(getLastRead())
+        }
+        window.addEventListener('cedReadingProgressUpdate', updateLastRead)
+        window.addEventListener('storage', updateLastRead)
+        return () => {
+            window.removeEventListener('cedReadingProgressUpdate', updateLastRead)
+            window.removeEventListener('storage', updateLastRead)
+        }
+    }, [])
 
     return (
         <header className="app-header">
@@ -37,6 +51,22 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
             </div>
 
             <nav className="header-nav">
+                {lastRead && lastRead.storyId && (
+                    <>
+                        <a
+                            href={`#/story/${lastRead.storyId}`}
+                            className="header-nav-item resume-reading-nav"
+                            title={`Tiếp tục đọc: ${lastRead.eventName ? `${lastRead.eventName} // ` : ''}${lastRead.storyName} (${lastRead.scrollPercent || 0}%)`}
+                        >
+                            <BookmarkCheck size={16} className="header-nav-icon" style={{ color: 'var(--color-cream)' }} />
+                            <span className="header-nav-text" style={{ color: 'var(--color-cream)' }}>
+                                TIẾP TỤC ĐỌC
+                            </span>
+                        </a>
+                        <div className="header-nav-separator"></div>
+                    </>
+                )}
+
                 <a href="#/operator" className="header-nav-item" title="Operator">
                     <Users size={16} className="header-nav-icon" />
                     <span className="header-nav-text">OPERATOR</span>

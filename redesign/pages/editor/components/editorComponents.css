@@ -1386,3 +1386,51 @@
 .tree-link-btn:hover {
     color: #FFF;
 }
+
+/* Animation utilities */
+.spinning {
+    animation: spin-kf 1s linear infinite;
+}
+
+@keyframes spin-kf {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Tool button for editor panels and headers */
+.redesign-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+    font-family: var(--font-mono, 'Source Code Pro', monospace);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(245, 237, 220, 0.85);
+    background-color: #242424;
+    border: 1px solid rgba(245, 237, 220, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.redesign-tool-btn:hover:not(:disabled) {
+    background-color: var(--color-charcoal, #181818);
+    color: var(--color-ochre, #BA8530);
+    border-color: var(--color-ochre, #BA8530);
+    transform: translateY(-1px);
+}
+
+.redesign-tool-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.redesign-tool-btn.active {
+    background-color: var(--color-terracotta, #B2653B);
+    color: #FFF;
+    border-color: var(--color-terracotta, #B2653B);
+}
+

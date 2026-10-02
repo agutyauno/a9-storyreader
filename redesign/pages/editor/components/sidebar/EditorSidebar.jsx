@@ -6,6 +6,7 @@ import AssetPanel from './AssetPanel';
 import AddItemModal from '../modals/AddItemModal';
 import AddAssetModal from '../modals/AddAssetModal';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
+import { EditorCache } from '../../../../../src/services/editorCache';
 import '../editorComponents.css';
 
 export default function EditorSidebar({
@@ -121,6 +122,7 @@ export default function EditorSidebar({
                     : await SupabaseAPI.createStory(payload);
             }
 
+            EditorCache.invalidateStoryTree();
             showNotification?.(`Đã ${isEditMode ? 'cập nhật' : 'tạo mới'} ${modalType} "${formData.name}"`, 'success');
             reloadTreeRef.current?.();
 
@@ -167,6 +169,7 @@ export default function EditorSidebar({
                 });
             }
 
+            EditorCache.invalidateAssets();
             showNotification?.(`Đã thêm asset "${assetData.name || assetData.asset_id}"`, 'success');
             assetReloadRef.current?.();
         } catch (err) {

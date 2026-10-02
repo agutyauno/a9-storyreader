@@ -224,6 +224,44 @@
     background-color: rgba(245, 237, 220, 0.15);
 }
 
+/* Event Hero Quick Resume Button */
+.event-hero-resume-box {
+    margin-top: 1rem;
+    align-self: flex-start;
+}
+
+.btn-event-hero-resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 1.25rem;
+    background-color: var(--color-charcoal);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: var(--border-thin);
+    box-shadow: 3px 3px 0px var(--color-ochre, #BA8530);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+
+.btn-event-hero-resume:hover {
+    background-color: var(--color-ochre, #BA8530);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0px var(--color-charcoal);
+}
+
+.btn-event-hero-resume .resume-progress-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 2px;
+    font-size: 0.72rem;
+}
+
 /* Banner Image Column */
 .event-hero-image-wrap {
     border: var(--border-thick);
@@ -453,6 +491,48 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Chapter Card Reading Status */
+.chapter-card.is-last-read {
+    border-color: var(--color-ochre, #BA8530);
+    box-shadow: 4px 4px 0px var(--color-ochre, #BA8530);
+    background: linear-gradient(135deg, #ffffff 75%, rgba(186, 133, 48, 0.1) 100%);
+}
+
+.chapter-card.is-last-read::after {
+    background-color: var(--color-ochre, #BA8530);
+}
+
+.chapter-card.is-last-read:hover {
+    background-color: var(--color-ochre, #BA8530);
+    border-color: var(--color-ochre, #BA8530);
+    color: #ffffff;
+}
+
+.chapter-reading-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--color-ochre, #BA8530);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--color-charcoal);
+    box-shadow: 2px 2px 0px var(--color-charcoal);
+    z-index: 2;
+}
+
+.chapter-card.is-last-read:hover .chapter-reading-badge {
+    background-color: var(--color-charcoal);
+    color: #ffffff;
 }
 
 /* ─────────────────────────────────────────────────────

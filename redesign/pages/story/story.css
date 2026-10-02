@@ -167,6 +167,149 @@ a.header-meta-bar:hover {
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
 }
 
+.btn-chapter-nav.btn-next-event.highlight-next {
+  background-color: var(--color-ochre, #BA8530);
+  color: #181818;
+  border-color: #BA8530;
+}
+
+.btn-chapter-nav.btn-next-event.highlight-next:hover:not(:disabled) {
+  background-color: #d19736;
+  border-color: #d19736;
+  color: #181818;
+}
+
+/* Event Completion Card */
+.event-completion-card {
+  margin: 3.5rem 0 2.5rem;
+  padding: 2.5rem 2rem;
+  background-color: var(--color-charcoal, #181818);
+  border: 2px solid var(--color-ochre, #BA8530);
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.4);
+  position: relative;
+  text-align: center;
+}
+
+.completion-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background-color: rgba(186, 133, 48, 0.15);
+  border: 2px solid var(--color-ochre, #BA8530);
+  border-radius: 50%;
+  color: var(--color-ochre, #BA8530);
+  margin-bottom: 1.25rem;
+}
+
+.completion-title {
+  font-family: var(--font-heading, sans-serif);
+  font-size: 1.5rem;
+  color: var(--color-cream, #F5EDDC);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.completion-desc {
+  font-size: 0.95rem;
+  color: rgba(245, 237, 220, 0.7);
+  margin: 0 auto 1.75rem;
+  max-width: 480px;
+}
+
+.completion-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.btn-next-event-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  background-color: var(--color-ochre, #BA8530);
+  color: #181818;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  border: 2px solid #BA8530;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-next-event-action:hover {
+  background-color: #d19736;
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.4);
+}
+
+.btn-back-event-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.5rem;
+  background-color: transparent;
+  color: var(--color-cream, #F5EDDC);
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  border: 1px solid rgba(245, 237, 220, 0.3);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-back-event-action:hover {
+  border-color: var(--color-cream, #F5EDDC);
+  background-color: rgba(245, 237, 220, 0.08);
+}
+
+.completion-suggestions-section {
+  border-top: 1px solid rgba(245, 237, 220, 0.12);
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.completion-sugg-title {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: rgba(245, 237, 220, 0.5);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.completion-sugg-list {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.completion-sugg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(245, 237, 220, 0.05);
+  border: 1px solid rgba(245, 237, 220, 0.2);
+  color: var(--color-cream, #F5EDDC);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.completion-sugg-item:hover {
+  border-color: var(--color-ochre, #BA8530);
+  color: var(--color-ochre, #BA8530);
+  background-color: rgba(186, 133, 48, 0.08);
+}
+
 /* ─────────────────────────────────────────────────────
    VISUAL NOVEL VIEW ENGINE (STORY PARALLAX BACKGROUNDS)
    ───────────────────────────────────────────────────── */

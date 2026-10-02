@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Plus, Search, Loader, Trash2, Copy, Music, Image, Video, Film, UserSquare2, LayoutDashboard, Play, Pause, Eye, X, ChevronDown, Filter } from 'lucide-react';
+import { Plus, Search, Loader, Trash2, Copy, Music, Image, Video, Film, UserSquare2, LayoutDashboard, Play, Pause, Eye, X, ChevronDown, Filter, RotateCw } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
+import { EditorCache } from '../../../../../src/services/editorCache';
 import AssetDetailModal from '../modals/AssetDetailModal';
 import ConfirmModal from '../modals/ConfirmModal';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
@@ -233,44 +234,47 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
         showNotificationRef.current = showNotification;
     }, [showNotification]);
 
-    const loadData = useCallback(async () => {
-        setLoading(true);
+    const [isReloading, setIsReloading] = useState(false);
+
+    const loadData = useCallback(async (force = false) => {
+        if (force) setIsReloading(true);
+        else setLoading(true);
+
         try {
-            const [assetData, charData, galleryData] = await Promise.all([
-                SupabaseAPI.getAssets(),
-                SupabaseAPI.getCharacters(),
-                SupabaseAPI.getAllGallery(),
-            ]);
-
-            // Filter out any gallery entries that already exist in the assets table (e.g. background assets added to event galleries)
-            const existingAssetIds = new Set((assetData || []).map(a => a.asset_id).filter(Boolean));
-
-            const mappedGallery = (galleryData || [])
-                .filter(g => g.gallery_id && !existingAssetIds.has(g.gallery_id))
-                .map(g => ({
-                    asset_id: g.gallery_id,
-                    name: g.title || g.gallery_id,
-                    url: g.image_url,
-                    type: 'image',
-                    category: 'gallery'
-                }));
-
-            setAssets([...(assetData || []), ...mappedGallery]);
-            setCharacters(charData || []);
+            const bundle = await EditorCache.getAssetsBundle({ force });
+            setAssets(bundle.assets || []);
+            setCharacters(bundle.characters || []);
+            if (force) {
+                showNotificationRef.current?.('Đã làm mới dữ liệu asset từ máy chủ', 'success');
+            }
         } catch (err) {
             console.error('Failed to load asset panel data:', err);
             showNotificationRef.current?.('Tải danh sách asset thất bại', 'error');
         } finally {
             setLoading(false);
+            setIsReloading(false);
         }
     }, []);
 
     useEffect(() => {
-        loadData();
-    }, []);
+        loadData(false);
+    }, [loadData]);
+
+    // Reactive cache updates from other components/modals
+    useEffect(() => {
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.type === 'assets' || e.detail?.type === 'all') {
+                loadData(false);
+            }
+        };
+        window.addEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        return () => {
+            window.removeEventListener('cedEditorCacheUpdated', handleCacheUpdate);
+        };
+    }, [loadData]);
 
     useEffect(() => {
-        if (reloadRef) reloadRef.current = loadData;
+        if (reloadRef) reloadRef.current = () => loadData(true);
     }, [reloadRef, loadData]);
 
     const handleDeleteAsset = useCallback((asset) => {
@@ -284,8 +288,9 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                     if (asset.category === 'gallery') await SupabaseAPI.deleteGallery(asset.asset_id);
                     else await SupabaseAPI.deleteAsset(asset.asset_id);
 
+                    EditorCache.invalidateAssets();
                     showNotification?.('Đã xoá asset', 'success');
-                    await loadData();
+                    await loadData(false);
                 } catch (err) {
                     console.error('Delete asset error:', err);
                     showNotification?.(`Xoá thất bại: ${err.message}`, 'error');
@@ -306,8 +311,9 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                 setLoading(true);
                 try {
                     await SupabaseAPI.deleteCharacter(char.character_id);
+                    EditorCache.invalidateAssets();
                     showNotification?.('Đã xoá nhân vật', 'success');
-                    await loadData();
+                    await loadData(false);
                 } catch (err) {
                     console.error('Delete char error:', err);
                     showNotification?.(`Xoá thất bại: ${err.message}`, 'error');
@@ -406,13 +412,25 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                         {totalDisplayCount}
                     </span>
                 </div>
-                <button
-                    className="redesign-btn primary"
-                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.7rem' }}
-                    onClick={() => onAddAsset(activeCat)}
-                >
-                    <Plus size={12} /> Thêm Asset
-                </button>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <button
+                        className="redesign-tool-btn"
+                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', cursor: isReloading ? 'not-allowed' : 'pointer' }}
+                        onClick={() => loadData(true)}
+                        disabled={isReloading}
+                        title="Làm mới danh sách asset từ máy chủ"
+                    >
+                        <RotateCw size={12} className={isReloading ? 'spinning' : ''} />
+                        <span>Làm mới</span>
+                    </button>
+                    <button
+                        className="redesign-btn primary"
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.7rem' }}
+                        onClick={() => onAddAsset(activeCat)}
+                    >
+                        <Plus size={12} /> Thêm Asset
+                    </button>
+                </div>
             </div>
 
             {/* Search & Category Filter Dropdown */}

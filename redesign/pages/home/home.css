@@ -408,3 +408,166 @@
 .event-card-horizontal.is-suggestion:hover .suggestion-badge-label {
     color: var(--color-charcoal);
 }
+
+/* Home Resume Reading Widget */
+.home-resume-widget {
+    margin-left: 2.5rem;
+    margin-right: 4.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    border: var(--border-thick);
+    background-color: var(--color-charcoal);
+    color: #ffffff;
+    box-shadow: 4px 4px 0px var(--color-ochre, #BA8530);
+    position: relative;
+    overflow: hidden;
+}
+
+.home-resume-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 6px;
+    background-color: var(--color-ochre, #BA8530);
+}
+
+.home-resume-inner {
+    padding: 1.25rem 1.75rem 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.home-resume-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-ochre, #BA8530);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    width: 100%;
+}
+
+.home-resume-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 260px;
+}
+
+.home-resume-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.home-resume-event {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.65);
+    text-transform: uppercase;
+}
+
+.home-resume-divider {
+    color: var(--color-ochre, #BA8530);
+    font-weight: bold;
+}
+
+.home-resume-story {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+}
+
+.home-resume-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.home-resume-progress-bar {
+    width: 140px;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+}
+
+.home-resume-progress-fill {
+    height: 100%;
+    background-color: var(--color-ochre, #BA8530);
+    transition: width 0.3s ease;
+}
+
+.home-resume-percent {
+    font-size: 0.75rem;
+    color: var(--color-ochre, #BA8530);
+    font-weight: 700;
+}
+
+.home-resume-time {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.home-resume-action {
+    display: flex;
+    align-items: center;
+}
+
+.btn-home-resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1.4rem;
+    background-color: var(--color-ochre, #BA8530);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: var(--transition-smooth);
+}
+
+.btn-home-resume:hover {
+    background-color: #ffffff;
+    color: var(--color-charcoal);
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 0px var(--color-ochre, #BA8530);
+}
+
+@media (max-width: 900px) {
+    .home-resume-widget {
+        max-width: 600px;
+        margin: 1rem auto 0 auto;
+    }
+
+    .home-resume-inner {
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+    }
+
+    .home-resume-story {
+        font-size: 1.05rem;
+    }
+
+    .home-resume-action {
+        width: 100%;
+    }
+
+    .btn-home-resume {
+        width: 100%;
+        justify-content: center;
+    }
+}

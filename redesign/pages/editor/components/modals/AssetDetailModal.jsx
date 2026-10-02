@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, CheckCircle2, ZoomIn } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
+import { EditorCache } from '../../../../../src/services/editorCache';
 import { uploadFileToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
 import ConfirmModal from './ConfirmModal';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
@@ -155,6 +156,7 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 }
             }
 
+            EditorCache.invalidateAssets();
             showNotification?.('Cập nhật thành công', 'success');
             onUpdated?.();
             onClose();

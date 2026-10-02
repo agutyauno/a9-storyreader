@@ -20,6 +20,7 @@ import UnsavedChangesModal from './components/modals/UnsavedChangesModal'
 
 import { StoryScriptParser } from '../../../src/utils/storyParser'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
+import { EditorCache } from '../../../src/services/editorCache'
 import './storyEditor.css'
 
 export default function RedesignStoryEditorPage({ isRecord = false }) {
@@ -298,16 +299,13 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         loadContent()
     }, [currentId, isRecord])
 
-    // Load auto-completions metadata
+    // Load auto-completions metadata using EditorCache
     useEffect(() => {
         async function loadMetadata() {
             try {
-                const [chars, assets, galleryData] = await Promise.all([
-                    SupabaseAPI.getCharacters(),
-                    SupabaseAPI.getAssets(),
-                    SupabaseAPI.getAllGallery(),
-                ])
-                setAllCharacters(chars || [])
+                const bundle = await EditorCache.getAssetsBundle()
+                setAllCharacters(bundle.characters || [])
+                setAllAssets(bundle.assets || [])
 
                 if (metadata.event_id) {
                     try {
@@ -319,21 +317,28 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 } else {
                     setEventCharacters([])
                 }
-
-                const mappedGallery = (galleryData || []).map(g => ({
-                    asset_id: g.gallery_id,
-                    name: g.title,
-                    url: g.image_url,
-                    type: 'image',
-                    category: 'gallery'
-                }))
-                setAllAssets([...(assets || []), ...mappedGallery])
             } catch (err) {
                 console.error('Failed to load metadata:', err)
             }
         }
         loadMetadata()
     }, [metadata.event_id])
+
+    // Listen for reactive cache updates from other components
+    useEffect(() => {
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.type === 'assets' || e.detail?.type === 'all') {
+                EditorCache.getAssetsBundle().then(bundle => {
+                    setAllCharacters(bundle.characters || [])
+                    setAllAssets(bundle.assets || [])
+                }).catch(console.error)
+            }
+        }
+        window.addEventListener('cedEditorCacheUpdated', handleCacheUpdate)
+        return () => {
+            window.removeEventListener('cedEditorCacheUpdated', handleCacheUpdate)
+        }
+    }, [])
 
     // Resizing listeners
     useEffect(() => {
@@ -415,11 +420,13 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
 
                 if (metadata.story_id) {
                     await SupabaseAPI.updateStory(metadata.story_id, payload)
+                    EditorCache.invalidateStoryTree()
                     setInitialScript(scriptText)
                     if (!silent) showNotification('Đã lưu kịch bản chương!', 'success')
                     return true
                 } else {
                     const created = await SupabaseAPI.createStory(payload)
+                    EditorCache.invalidateStoryTree()
                     setMetadata(prev => ({ ...prev, story_id: created.story_id }))
                     setInitialScript(scriptText)
                     navigate(`/editor/story/${created.story_id}`, { replace: true })

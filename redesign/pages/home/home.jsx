@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { BookmarkCheck, ArrowRight } from 'lucide-react'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
+import { getLastRead, formatRelativeTime } from '../../../src/utils/readingHistory'
 import Header from '../../components/Header'
 import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
@@ -17,9 +19,23 @@ export default function RedesignHomePage() {
     const [loadingEvents, setLoadingEvents] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 900)
     const [error, setError] = useState(null)
+    const [lastRead, setLastRead] = useState(() => getLastRead())
 
     const timelineRef = useRef(null)
     const location = useLocation()
+
+    // Listen for real-time reading progress updates
+    useEffect(() => {
+        const handleProgressUpdate = () => {
+            setLastRead(getLastRead())
+        }
+        window.addEventListener('cedReadingProgressUpdate', handleProgressUpdate)
+        window.addEventListener('storage', handleProgressUpdate)
+        return () => {
+            window.removeEventListener('cedReadingProgressUpdate', handleProgressUpdate)
+            window.removeEventListener('storage', handleProgressUpdate)
+        }
+    }, [])
 
     // Vite base path for redirecting to original app page
     const BASE_URL = import.meta.env.BASE_URL || '/'
@@ -241,6 +257,54 @@ export default function RedesignHomePage() {
                                     {selectedRegion.description || 'Không tìm thấy dữ liệu mô tả cụ thể cho khu vực này.'}
                                 </p>
                             </div>
+
+                            {/* Quick Resume Reading Widget if lastRead exists */}
+                            {lastRead && (
+                                <div className="home-resume-widget">
+                                    <div className="home-resume-inner">
+                                        <div className="home-resume-badge technical-text">
+                                            <BookmarkCheck size={14} />
+                                            <span>BẢN GHI ĐANG ĐỌC DỞ // RESUME_READING</span>
+                                        </div>
+                                        <div className="home-resume-main">
+                                            <div className="home-resume-info">
+                                                {lastRead.eventName && (
+                                                    <>
+                                                        <span className="home-resume-event">{lastRead.eventName}</span>
+                                                        <span className="home-resume-divider">/</span>
+                                                    </>
+                                                )}
+                                                <span className="home-resume-story">{lastRead.storyName}</span>
+                                            </div>
+                                            <div className="home-resume-meta">
+                                                <div className="home-resume-progress-bar">
+                                                    <div
+                                                        className="home-resume-progress-fill"
+                                                        style={{ width: `${Math.max(5, lastRead.scrollPercent || 0)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="home-resume-percent technical-text">
+                                                    {lastRead.scrollPercent || 0}%
+                                                </span>
+                                                {lastRead.timestamp && (
+                                                    <span className="home-resume-time technical-text">
+                                                        ({formatRelativeTime(lastRead.timestamp)})
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="home-resume-action">
+                                            <Link
+                                                to={`/story/${lastRead.storyId}`}
+                                                className="btn-home-resume"
+                                            >
+                                                <span>TIẾP TỤC ĐỌC</span>
+                                                <ArrowRight size={14} />
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Event Chain Body */}
                             {loadingEvents ? (
