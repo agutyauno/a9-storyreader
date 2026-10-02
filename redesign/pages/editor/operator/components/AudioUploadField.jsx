@@ -158,7 +158,23 @@ export default function AudioUploadField({
 
             {uploadError && (
                 <div className="img-upload-error technical-text">
-                    LỖI: {uploadError}
+                    <span>LỖI: {uploadError}</span>
+                    {(uploadError.toLowerCase().includes('đăng nhập') || uploadError.toLowerCase().includes('phiên làm việc')) && (
+                        <a
+                            href="#/login"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'inline-block',
+                                marginLeft: '0.5rem',
+                                color: 'var(--color-terracotta)',
+                                fontWeight: 700,
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            Đến trang Đăng nhập ↗
+                        </a>
+                    )}
                 </div>
             )}
 

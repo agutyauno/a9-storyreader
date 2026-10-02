@@ -437,9 +437,10 @@ export default function OperatorDetailPageEditor() {
             if (isNew) {
                 await SupabaseAPI.createOperator(payload)
 
-                // 1. Batch create skins
+                // 1. Batch create skins with ID mapping
+                const skinIdMap = new Map()
                 if (skins.length === 0) {
-                    await SupabaseAPI.createOperatorSkin({
+                    const createdDefault = await SupabaseAPI.createOperatorSkin({
                         operator_id: confirmedOpId,
                         name: 'Mặc định',
                         avatar_url: '',
@@ -447,9 +448,12 @@ export default function OperatorDetailPageEditor() {
                         description: 'Trang phục mặc định của cán viên.',
                         is_default: true
                     })
+                    if (createdDefault?.skin_id) {
+                        skinIdMap.set('default', createdDefault.skin_id)
+                    }
                 } else {
                     for (const s of skins) {
-                        await SupabaseAPI.createOperatorSkin({
+                        const createdSkin = await SupabaseAPI.createOperatorSkin({
                             operator_id: confirmedOpId,
                             name: s.name,
                             avatar_url: s.avatar_url,
@@ -457,20 +461,25 @@ export default function OperatorDetailPageEditor() {
                             description: s.description,
                             is_default: s.is_default
                         })
+                        if (s.skin_id && createdSkin?.skin_id) {
+                            skinIdMap.set(s.skin_id, createdSkin.skin_id)
+                        }
                     }
                 }
 
-                // 2. Batch create dialogues
+                // 2. Batch create dialogues with mapped skin_id
                 if (dialogues.length > 0) {
                     for (const d of dialogues) {
+                        const targetSkinId = d.skin_id ? (skinIdMap.get(d.skin_id) || null) : null
                         await SupabaseAPI.createOperatorDialogue({
                             operator_id: confirmedOpId,
                             title: d.title,
                             text_content: d.text_content,
-                            skin_id: d.skin_id || null,
+                            skin_id: targetSkinId,
                             audio_url_jp: d.audio_url_jp || null,
                             audio_url_en: d.audio_url_en || null,
-                            audio_url_cn: d.audio_url_cn || null
+                            audio_url_cn: d.audio_url_cn || null,
+                            display_order: d.display_order ?? 0
                         })
                     }
                 }
@@ -479,7 +488,6 @@ export default function OperatorDetailPageEditor() {
                 if (records.length > 0) {
                     for (const r of records) {
                         await SupabaseAPI.createOperatorRecord({
-                            record_id: r.record_id,
                             operator_id: confirmedOpId,
                             name: r.name,
                             description: r.description || '',
@@ -665,6 +673,7 @@ export default function OperatorDetailPageEditor() {
     const handleAddModule = () => {
         setModules([...modules, {
             name: `Module ${modules.length + 1}`,
+            icon: '',
             imageUrl: '',
             lore: '',
             stats: { hp: 120, atk: 45 },
@@ -1328,6 +1337,7 @@ export default function OperatorDetailPageEditor() {
                                                             value={skill.icon}
                                                             onChange={(url) => handleUpdateSkill(idx, 'icon', url)}
                                                             placeholder="URL icon kĩ năng hoặc tải lên..."
+                                                            darkPreview={true}
                                                             onNotify={showToast}
                                                         />
 
@@ -1447,12 +1457,26 @@ export default function OperatorDetailPageEditor() {
                                                     </div>
 
                                                     <div className="op-sub-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                        {/* Module Icon (40x40 in Header) */}
                                                         <ImageUploadField
-                                                            label="Ảnh banner module:"
+                                                            label="Icon module (tiêu đề 40x40):"
+                                                            folderPath="images/operators_images/modules"
+                                                            value={mod.icon || ''}
+                                                            onChange={(url) => handleUpdateModule(idx, 'icon', url)}
+                                                            placeholder="URL icon module hoặc tải lên..."
+                                                            darkPreview={true}
+                                                            onNotify={showToast}
+                                                        />
+
+                                                        {/* Module Banner (Content) */}
+                                                        <ImageUploadField
+                                                            label="Ảnh banner module (nội dung):"
                                                             folderPath="images/operators_images/modules"
                                                             value={mod.imageUrl}
                                                             onChange={(url) => handleUpdateModule(idx, 'imageUrl', url)}
                                                             placeholder="URL banner module..."
+                                                            darkPreview={true}
+                                                            onNotify={showToast}
                                                         />
 
                                                         <div className="op-form-group">
@@ -1543,6 +1567,7 @@ export default function OperatorDetailPageEditor() {
                                                             value={bs.icon || ''}
                                                             onChange={(url) => handleUpdateBaseSkill(idx, 'icon', url)}
                                                             placeholder="URL icon kĩ năng hậu cần hoặc tải lên..."
+                                                            darkPreview={true}
                                                         />
                                                         <div className="op-form-group">
                                                             <label className="op-form-label technical-text">MÔ TẢ HIỆU ỨNG CĂN CỨ:</label>

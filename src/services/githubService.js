@@ -37,6 +37,29 @@ export const getFolderPath = (type, category) => {
 };
 
 /**
+ * Sanitizes a file name for safe storage in GitHub repositories.
+ * Converts Vietnamese characters to plain Latin, replaces spaces with underscores,
+ * strips special characters, and ensures a clean lowercase extension.
+ */
+export const sanitizeFileName = (fileName) => {
+    if (!fileName) return `file_${Date.now()}`;
+    const lastDotIndex = fileName.lastIndexOf('.');
+    let base = lastDotIndex !== -1 ? fileName.slice(0, lastDotIndex) : fileName;
+    const ext = lastDotIndex !== -1 ? fileName.slice(lastDotIndex).toLowerCase() : '';
+
+    base = base
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[đĐ]/g, 'd')
+        .replace(/[^a-zA-Z0-9_\-\.]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+
+    if (!base) base = `asset_${Date.now()}`;
+    return `${base}${ext}`;
+};
+
+/**
  * Uploads a file to GitHub via Supabase Edge Function 'github-manager'.
  * @param {File} file 
  * @param {string} folderPath 
@@ -49,14 +72,14 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
-            throw new Error('Phiên làm việc không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
+            throw new Error('Phiên làm việc không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại để tải tệp lên.');
         }
 
-        // Determine final filename: custom (if provided) + its detected extension
-        let finalFileName = file.name;
+        // Determine final filename: custom (if provided) or sanitized original filename
+        let finalFileName = sanitizeFileName(file.name);
         if (customFileName) {
             const ext = file.name.split('.').pop();
-            finalFileName = `${customFileName}.${ext}`;
+            finalFileName = sanitizeFileName(`${customFileName}.${ext}`);
         }
 
         const { data, error } = await supabase.functions.invoke('github-manager', {
@@ -183,10 +206,10 @@ export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
             const b64 = await fileToBase64(item.file);
 
             // Determine filename
-            let fileName = item.file.name;
+            let fileName = sanitizeFileName(item.file.name);
             if (item.customFileName) {
                 const ext = item.file.name.split('.').pop();
-                fileName = `${item.customFileName}.${ext}`;
+                fileName = sanitizeFileName(`${item.customFileName}.${ext}`);
             }
 
             const cleanFolder = (item.folderPath || '').replace(/\/$/, '').replace(/^\//, '');

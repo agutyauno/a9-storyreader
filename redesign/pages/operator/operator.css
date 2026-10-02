@@ -267,7 +267,7 @@
 /* Grid View */
 .operator-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 1.5rem;
     margin: 1rem 2.5rem 2rem 2.5rem;
 }
@@ -293,7 +293,7 @@
 .operator-card-img-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 3/4;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
     background-color: var(--color-charcoal);
     border-bottom: var(--border-thick);
@@ -303,16 +303,15 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: top center;
-    opacity: 0.9;
-    filter: grayscale(10%);
+    object-position: center;
+    opacity: 0.95;
+    filter: grayscale(0%);
     transition: opacity var(--transition-smooth), transform var(--transition-smooth);
 }
 
 .operator-card:hover .operator-card-img {
     opacity: 1;
     transform: scale(1.05);
-    filter: grayscale(0%);
 }
 
 .operator-card-rarity {
@@ -346,6 +345,46 @@
     border: 1px solid rgba(245, 237, 220, 0.2);
     text-transform: uppercase;
     z-index: 2;
+}
+
+.operator-card-badges {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background-color: rgba(24, 24, 24, 0.88);
+    backdrop-filter: blur(6px);
+    padding: 0.25rem 0.45rem;
+    border: 1px solid rgba(245, 237, 220, 0.25);
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    transition: border-color var(--transition-step), background-color var(--transition-step);
+}
+
+.operator-card:hover .operator-card-badges {
+    border-color: var(--color-ochre);
+    background-color: rgba(24, 24, 24, 0.95);
+}
+
+.operator-card-badge-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    display: block;
+    transition: transform var(--transition-smooth);
+}
+
+.operator-card-badges-divider {
+    width: 1px;
+    height: 14px;
+    background-color: rgba(245, 237, 220, 0.3);
+}
+
+.operator-card:hover .operator-card-badge-icon {
+    transform: scale(1.08);
 }
 
 .operator-card-info {
@@ -904,12 +943,14 @@
     width: 40px;
     height: 40px;
     border: 1.5px solid var(--color-charcoal);
+    background-color: var(--color-charcoal, #181818);
 }
 
 .collapsible-item.variant-module .collapsible-icon svg {
     width: 20px;
     height: 20px;
     stroke-width: 2px;
+    color: #EDF4F0;
 }
 
 .collapsible-item.variant-skill .collapsible-icon {
@@ -932,6 +973,12 @@
     object-fit: cover;
 }
 
+.collapsible-item.variant-module .collapsible-icon img {
+    object-fit: contain;
+    padding: 3px;
+    background-color: var(--color-charcoal, #181818);
+}
+
 /* Skill Icon SP Overlay Badge Styling */
 .skill-icon-inner {
     width: 100%;
@@ -940,6 +987,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: var(--color-charcoal);
 }
 
 .skill-icon-img {
@@ -1167,7 +1215,7 @@
     width: 36px;
     height: 36px;
     border: 1.5px solid rgba(24, 24, 24, 0.15);
-    background-color: #ffffff;
+    background-color: var(--color-charcoal);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1753,16 +1801,20 @@
     height: 140px;
     aspect-ratio: 1/1;
     border: 2px solid var(--color-charcoal);
-    background-color: var(--color-charcoal);
+    background-color: var(--color-charcoal, #181818);
     flex-shrink: 0;
     overflow: hidden;
-    box-shadow: 2px 2px 0px var(--color-charcoal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .module-banner-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    padding: 6px;
+    background-color: var(--color-charcoal, #181818);
 }
 
 .module-text-container {

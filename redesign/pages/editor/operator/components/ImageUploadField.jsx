@@ -19,7 +19,8 @@ export default function ImageUploadField({
     label = 'Hình ảnh',
     placeholder = 'https://... hoặc tải tệp lên',
     hint = '',
-    onNotify = null
+    onNotify = null,
+    darkPreview = false
 }) {
     const fileInputRef = useRef(null)
     const [uploading, setUploading] = useState(false)
@@ -28,6 +29,16 @@ export default function ImageUploadField({
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0]
         if (!file) return
+
+        // Validate file size (max 15MB)
+        const MAX_SIZE_MB = 15
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            const sizeErr = `Tệp ảnh quá lớn (${(file.size / (1024 * 1024)).toFixed(1)}MB). Vui lòng chọn tệp nhỏ hơn ${MAX_SIZE_MB}MB.`
+            setUploadError(sizeErr)
+            onNotify?.(sizeErr, 'error')
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
 
         setUploading(true)
         setUploadError(null)
@@ -38,7 +49,7 @@ export default function ImageUploadField({
                 onChange(res.url)
                 onNotify?.('Đã tải ảnh lên Server thành công!', 'success')
             } else {
-                throw new Error('Không nhận được URL từ máy chủ upload.')
+                throw new Error(res?.error || 'Không nhận được URL từ máy chủ upload.')
             }
         } catch (err) {
             console.error('Image upload failed:', err)
@@ -101,14 +112,30 @@ export default function ImageUploadField({
 
             {uploadError && (
                 <div className="img-upload-error technical-text">
-                    LỖI: {uploadError}
+                    <span>LỖI: {uploadError}</span>
+                    {(uploadError.toLowerCase().includes('đăng nhập') || uploadError.toLowerCase().includes('phiên làm việc')) && (
+                        <a
+                            href="#/login"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'inline-block',
+                                marginLeft: '0.5rem',
+                                color: 'var(--color-terracotta)',
+                                fontWeight: 700,
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            Đến trang Đăng nhập ↗
+                        </a>
+                    )}
                 </div>
             )}
 
             {hint && <div className="img-upload-hint technical-text">{hint}</div>}
 
             {value && (
-                <div className="img-upload-preview">
+                <div className={`img-upload-preview ${darkPreview ? 'dark-preview' : ''}`}>
                     <img
                         src={previewSrc}
                         alt="Preview"

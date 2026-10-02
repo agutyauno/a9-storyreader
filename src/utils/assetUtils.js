@@ -25,6 +25,13 @@ export function getAssetUrl(path, type = null) {
     processedPath = processedPath.replace('/assets/', '/');
   }
 
+  // Normalize paths targeting data repository folders without a leading slash
+  if (!processedPath.startsWith('/') && !processedPath.startsWith('http') && !processedPath.startsWith('data:')) {
+    if (processedPath.startsWith('images/') || processedPath.startsWith('audio/') || processedPath.startsWith('video/')) {
+      processedPath = '/' + processedPath;
+    }
+  }
+
   // If it is already an absolute URL or a data URI
   if (processedPath.startsWith('http') || processedPath.startsWith('data:')) {
     const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';

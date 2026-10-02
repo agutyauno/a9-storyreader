@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import NotificationToast from '../components/NotificationToast'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
-import { 
-    CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP, 
-    getOperatorFactionIds, getHierarchicalFactions 
+import {
+    CLASSES, CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP,
+    getOperatorFactionIds, getHierarchicalFactions
 } from '../../operator/operatorMapping'
 import {
     Plus, Search, Grid, List, Star, Trash2, Edit3, BookOpen,
@@ -15,6 +15,8 @@ import { useAuth } from '../../../../src/contexts/AuthContext'
 import { getAssetUrl } from '../../../../src/utils/assetUtils'
 import '../../operator/operator.css'
 import './operatorEditorPages.css'
+
+const FALLBACK_AVATAR = '/assets/images/character/blank.png'
 
 // Custom renderer for class options with PNG icons
 const renderClassOption = (opt) => {
@@ -607,9 +609,15 @@ export default function OperatorListPageEditor() {
                     /* Grid Mode */
                     <div className="operator-grid">
                         {filteredOperators.map(op => {
-                            const imgSrc = op.portraitUrl || op.avatar_url || ''
+                            const imgSrc = getAssetUrl(op.avatar_url || FALLBACK_AVATAR)
                             const classInfo = CLASSES_MAP[op.class_id || op.class]
+                            const subclassInfo = SUBCLASSES_MAP[op.sub_class_id || op.subclass]
+                            const classIcon = classInfo?.icon ? getAssetUrl(classInfo.icon) : ''
+                            const subclassIcon = subclassInfo?.icon ? getAssetUrl(subclassInfo.icon) : ''
                             const factionInfo = FACTIONS_MAP[op.factions?.[0] || op.faction]
+                            const badgeTitle = subclassInfo
+                                ? `${classInfo?.name || op.class_id || ''} // ${subclassInfo.name}`
+                                : (classInfo?.name || op.class_id || '')
 
                             return (
                                 <div key={op.operator_id} className="operator-card" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -618,24 +626,45 @@ export default function OperatorListPageEditor() {
                                         onClick={() => navigate(`/editor/operator/${op.operator_id}`)}
                                         style={{ cursor: 'pointer' }}
                                     >
-                                        {imgSrc ? (
-                                            <img
-                                                className="operator-card-img"
-                                                src={imgSrc}
-                                                alt={op.name}
-                                                onError={(e) => { e.target.style.display = 'none' }}
-                                            />
-                                        ) : (
-                                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
-                                                NO_IMAGE
-                                            </div>
-                                        )}
+                                        <img
+                                            className="operator-card-img"
+                                            src={imgSrc}
+                                            alt={op.name}
+                                            onError={(e) => {
+                                                e.target.onerror = null
+                                                e.target.src = getAssetUrl(FALLBACK_AVATAR)
+                                            }}
+                                        />
                                         <div className="operator-card-rarity">
                                             {renderStars(op.rarity)}
                                         </div>
-                                        <div className="operator-card-class">
-                                            {classInfo?.name || op.class_id || 'UNKNOWN'}
-                                        </div>
+                                        {(classIcon || subclassIcon) ? (
+                                            <div className="operator-card-badges" title={badgeTitle}>
+                                                {classIcon && (
+                                                    <img
+                                                        src={classIcon}
+                                                        alt={classInfo?.name || ''}
+                                                        className="operator-card-badge-icon"
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                )}
+                                                {classIcon && subclassIcon && (
+                                                    <span className="operator-card-badges-divider" />
+                                                )}
+                                                {subclassIcon && (
+                                                    <img
+                                                        src={subclassIcon}
+                                                        alt={subclassInfo?.name || ''}
+                                                        className="operator-card-badge-icon"
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="operator-card-class">
+                                                {classInfo?.name || op.class_id || 'UNKNOWN'}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div
@@ -655,7 +684,6 @@ export default function OperatorListPageEditor() {
                                             title="Chỉnh sửa hồ sơ chi tiết"
                                         >
                                             <Edit3 size={13} />
-                                            <span>Sửa Hồ Sơ</span>
                                         </button>
 
                                         <button
@@ -664,7 +692,6 @@ export default function OperatorListPageEditor() {
                                             title="Viết kịch bản kí sự cán viên"
                                         >
                                             <BookOpen size={13} />
-                                            <span>Viết Kí Sự</span>
                                         </button>
 
                                         <button
@@ -691,7 +718,7 @@ export default function OperatorListPageEditor() {
                             <span>Thao Tác</span>
                         </div>
                         {filteredOperators.map(op => {
-                            const imgSrc = op.avatar_url || op.portraitUrl || ''
+                            const imgSrc = getAssetUrl(op.avatar_url || FALLBACK_AVATAR)
                             const classInfo = CLASSES_MAP[op.class_id || op.class]
                             const factionInfo = FACTIONS_MAP[op.factions?.[0] || op.faction]
 
@@ -702,16 +729,15 @@ export default function OperatorListPageEditor() {
                                     </span>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        {imgSrc ? (
-                                            <img
-                                                className="operator-list-avatar"
-                                                src={imgSrc}
-                                                alt={op.name}
-                                                onError={(e) => { e.target.style.display = 'none' }}
-                                            />
-                                        ) : (
-                                            <div className="operator-list-avatar" style={{ background: '#222' }} />
-                                        )}
+                                        <img
+                                            className="operator-list-avatar"
+                                            src={imgSrc}
+                                            alt={op.name}
+                                            onError={(e) => {
+                                                e.target.onerror = null
+                                                e.target.src = getAssetUrl(FALLBACK_AVATAR)
+                                            }}
+                                        />
                                         <span className="operator-list-name">{op.name}</span>
                                     </div>
 

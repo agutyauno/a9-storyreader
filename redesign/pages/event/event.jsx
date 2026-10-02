@@ -433,58 +433,58 @@ export default function RedesignEventPage() {
 
                                     {/* Suggestion Footer Bar inside Unified Hero Panel */}
                                     {suggestedEvents.length > 0 && (
-                                         <div className="event-suggestion-banner-container">
-                                             {suggestedEvents.filter(s => s.suggestionType === 'prev').length > 0 && (
-                                                 <div className="event-suggestion-banner prev-recommendation">
-                                                     <div className="sugg-banner-header">
-                                                         <span className="sugg-banner-tag technical-text prev-tag">
-                                                             SEC.PREV_RECOMMENDATION // GỢI Ý NÊN ĐỌC TRƯỚC
-                                                         </span>
-                                                     </div>
-                                                     <div className="sugg-cards-grid">
-                                                         {suggestedEvents.filter(s => s.suggestionType === 'prev').map(sugg => (
-                                                             <Link
-                                                                 key={sugg.suggestionId || sugg.event_id}
-                                                                 to={`/event/${sugg.event_id}`}
-                                                                 state={{ regionId: arc?.region_id }}
-                                                                 className="sugg-banner-btn prev-btn"
-                                                                 title={`Nên đọc trước: ${sugg.name}`}
-                                                             >
-                                                                 <span className="sugg-btn-type-badge prev">ĐỌC TRƯỚC</span>
-                                                                 <span className="sugg-btn-text">{sugg.name}</span>
-                                                                 <ArrowRight size={16} />
-                                                             </Link>
-                                                         ))}
-                                                     </div>
-                                                 </div>
-                                             )}
+                                        <div className="event-suggestion-banner-container">
+                                            {suggestedEvents.filter(s => s.suggestionType === 'prev').length > 0 && (
+                                                <div className="event-suggestion-banner prev-recommendation">
+                                                    <div className="sugg-banner-header">
+                                                        <span className="sugg-banner-tag technical-text prev-tag">
+                                                            GỢI Ý NÊN ĐỌC TRƯỚC
+                                                        </span>
+                                                    </div>
+                                                    <div className="sugg-cards-grid">
+                                                        {suggestedEvents.filter(s => s.suggestionType === 'prev').map(sugg => (
+                                                            <Link
+                                                                key={sugg.suggestionId || sugg.event_id}
+                                                                to={`/event/${sugg.event_id}`}
+                                                                state={{ regionId: arc?.region_id }}
+                                                                className="sugg-banner-btn prev-btn"
+                                                                title={`Nên đọc trước: ${sugg.name}`}
+                                                            >
+                                                                <span className="sugg-btn-type-badge prev">ĐỌC TRƯỚC</span>
+                                                                <span className="sugg-btn-text">{sugg.name}</span>
+                                                                <ArrowRight size={16} />
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                             {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 && (
-                                                 <div className="event-suggestion-banner next-recommendation">
-                                                     <div className="sugg-banner-header">
-                                                         <span className="sugg-banner-tag technical-text next-tag">
-                                                             SEC.NEXT_RECOMMENDATION // GỢI Ý SỰ KIỆN TIẾP THEO
-                                                         </span>
-                                                     </div>
-                                                     <div className="sugg-cards-grid">
-                                                         {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').map(sugg => (
-                                                             <Link
-                                                                 key={sugg.suggestionId || sugg.event_id}
-                                                                 to={`/event/${sugg.event_id}`}
-                                                                 state={{ regionId: arc?.region_id }}
-                                                                 className="sugg-banner-btn next-btn"
-                                                                 title={`Chuyển tới sự kiện gợi ý: ${sugg.name}`}
-                                                             >
-                                                                 <span className="sugg-btn-type-badge next">TIẾP THEO</span>
-                                                                 <span className="sugg-btn-text">{sugg.name}</span>
-                                                                 <ArrowRight size={16} />
-                                                             </Link>
-                                                         ))}
-                                                     </div>
-                                                 </div>
-                                             )}
-                                         </div>
-                                     )}
+                                            {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 && (
+                                                <div className="event-suggestion-banner next-recommendation">
+                                                    <div className="sugg-banner-header">
+                                                        <span className="sugg-banner-tag technical-text next-tag">
+                                                            GỢI Ý SỰ KIỆN TIẾP THEO
+                                                        </span>
+                                                    </div>
+                                                    <div className="sugg-cards-grid">
+                                                        {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').map(sugg => (
+                                                            <Link
+                                                                key={sugg.suggestionId || sugg.event_id}
+                                                                to={`/event/${sugg.event_id}`}
+                                                                state={{ regionId: arc?.region_id }}
+                                                                className="sugg-banner-btn next-btn"
+                                                                title={`Chuyển tới sự kiện gợi ý: ${sugg.name}`}
+                                                            >
+                                                                <span className="sugg-btn-type-badge next">TIẾP THEO</span>
+                                                                <span className="sugg-btn-text">{sugg.name}</span>
+                                                                <ArrowRight size={16} />
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* ── TAB BAR ── */}

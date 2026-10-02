@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { mockDatabase } from '../utils/mockStoryData';
 import { deleteFileFromGithub } from './githubService';
+import { getAssetUrl } from '../utils/assetUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TODO: Set to false when Supabase is fully configured.
@@ -48,6 +49,24 @@ const cleanUrl = (url) => {
       cleaned = '/' + cleaned.slice(p.length);
       break;
     }
+  }
+  return cleaned;
+};
+
+const cleanCombatInfo = (combatInfo) => {
+  if (!combatInfo) return combatInfo;
+  const cleaned = { ...combatInfo };
+  if (Array.isArray(cleaned.skills)) {
+    cleaned.skills = cleaned.skills.map(s => s ? { ...s, icon: cleanUrl(s.icon) } : s);
+  }
+  if (Array.isArray(cleaned.modules)) {
+    cleaned.modules = cleaned.modules.map(m => m ? { ...m, icon: cleanUrl(m.icon), imageUrl: cleanUrl(m.imageUrl) } : m);
+  }
+  if (Array.isArray(cleaned.baseSkills)) {
+    cleaned.baseSkills = cleaned.baseSkills.map(b => b ? { ...b, icon: cleanUrl(b.icon) } : b);
+  }
+  if (cleaned.token && cleaned.token.imageUrl) {
+    cleaned.token = { ...cleaned.token, imageUrl: cleanUrl(cleaned.token.imageUrl) };
   }
   return cleaned;
 };
@@ -1254,21 +1273,32 @@ const SupabaseAPI_Raw = {
 
       const skinMap = {};
       (skins || []).forEach(s => {
-        if (!skinMap[s.operator_id] || s.is_default) {
+        const existing = skinMap[s.operator_id];
+        if (!existing) {
+          skinMap[s.operator_id] = s;
+        } else if (s.is_default && s.avatar_url) {
+          skinMap[s.operator_id] = s;
+        } else if (!existing.is_default && s.is_default) {
+          skinMap[s.operator_id] = s;
+        } else if (!existing.avatar_url && s.avatar_url) {
           skinMap[s.operator_id] = s;
         }
       });
 
-      return data.map(op => ({
-        ...op,
-        id: op.operator_id,
-        class: op.class_id,
-        subclass: op.sub_class_id,
-        faction: (op.factions && op.factions.length > 0) ? op.factions[0] : null,
-        avatar_url: skinMap[op.operator_id]?.avatar_url || '',
-        full_url: skinMap[op.operator_id]?.full_url || '',
-        portraitUrl: skinMap[op.operator_id]?.full_url || skinMap[op.operator_id]?.avatar_url || ''
-      }));
+      return data.map(op => {
+        const rawAvatar = skinMap[op.operator_id]?.avatar_url || '';
+        const rawFull = skinMap[op.operator_id]?.full_url || '';
+        return {
+          ...op,
+          id: op.operator_id,
+          class: op.class_id,
+          subclass: op.sub_class_id,
+          faction: (op.factions && op.factions.length > 0) ? op.factions[0] : null,
+          avatar_url: rawAvatar ? getAssetUrl(rawAvatar) : '',
+          full_url: rawFull ? getAssetUrl(rawFull) : '',
+          portraitUrl: getAssetUrl(rawFull || rawAvatar || '')
+        };
+      });
     } catch (err) {
       console.warn('getOperators failed:', err);
       return [];
@@ -1294,8 +1324,10 @@ const SupabaseAPI_Raw = {
       const skins = (skinsRes.data || []).map(s => ({
         ...s,
         id: s.skin_id,
-        portraitUrl: s.full_url || s.avatar_url,
-        avatarUrl: s.avatar_url
+        avatar_url: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
+        full_url: s.full_url ? getAssetUrl(s.full_url) : '',
+        portraitUrl: getAssetUrl(s.full_url || s.avatar_url || ''),
+        avatarUrl: s.avatar_url ? getAssetUrl(s.avatar_url) : ''
       }));
 
       const defaultSkin = skins.find(s => s.is_default) || skins[0];
@@ -1314,16 +1346,29 @@ const SupabaseAPI_Raw = {
           id: d.dialogue_id,
           content: d.text_content,
           voiceLines: {
-            JP: d.audio_url_jp,
-            EN: d.audio_url_en,
-            CN: d.audio_url_cn
+            JP: d.audio_url_jp ? getAssetUrl(d.audio_url_jp, 'audio') : '',
+            EN: d.audio_url_en ? getAssetUrl(d.audio_url_en, 'audio') : '',
+            CN: d.audio_url_cn ? getAssetUrl(d.audio_url_cn, 'audio') : ''
           }
         })),
         talents: data.combat_info?.talents || [],
-        skills: data.combat_info?.skills || [],
-        modules: data.combat_info?.modules || [],
-        baseSkills: data.combat_info?.baseSkills || [],
-        token: data.combat_info?.token || null,
+        skills: (data.combat_info?.skills || []).map(sk => ({
+          ...sk,
+          icon: sk.icon ? getAssetUrl(sk.icon) : ''
+        })),
+        modules: (data.combat_info?.modules || []).map(m => ({
+          ...m,
+          icon: m.icon ? getAssetUrl(m.icon) : '',
+          imageUrl: m.imageUrl ? getAssetUrl(m.imageUrl) : ''
+        })),
+        baseSkills: (data.combat_info?.base_skills || data.combat_info?.baseSkills || []).map(bs => ({
+          ...bs,
+          icon: bs.icon ? getAssetUrl(bs.icon) : ''
+        })),
+        token: data.combat_info?.token ? {
+          ...data.combat_info.token,
+          imageUrl: data.combat_info.token.imageUrl ? getAssetUrl(data.combat_info.token.imageUrl) : ''
+        } : null,
         profiles: data.lore_info?.profiles || []
       };
     } catch (err) {
@@ -1335,6 +1380,9 @@ const SupabaseAPI_Raw = {
   async createOperator(payload) {
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
+    if (cleanPayload.combat_info) {
+      cleanPayload.combat_info = cleanCombatInfo(cleanPayload.combat_info);
+    }
     const { data, error } = await supabase
       .from('operators')
       .insert(cleanPayload)
@@ -1347,6 +1395,9 @@ const SupabaseAPI_Raw = {
   async updateOperator(operatorId, payload) {
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
+    if (cleanPayload.combat_info) {
+      cleanPayload.combat_info = cleanCombatInfo(cleanPayload.combat_info);
+    }
     const { data, error } = await supabase
       .from('operators')
       .update(cleanPayload)
@@ -1400,7 +1451,13 @@ const SupabaseAPI_Raw = {
         console.warn('getOperatorSkins warning:', error.message);
         return [];
       }
-      return data || [];
+      return (data || []).map(s => ({
+        ...s,
+        avatar_url: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
+        full_url: s.full_url ? getAssetUrl(s.full_url) : '',
+        avatarUrl: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
+        portraitUrl: getAssetUrl(s.full_url || s.avatar_url || '')
+      }));
     } catch (err) {
       console.warn('getOperatorSkins failed:', err);
       return [];
@@ -1409,6 +1466,11 @@ const SupabaseAPI_Raw = {
 
   async createOperatorSkin(payload) {
     const cleanPayload = { ...payload };
+    if (!cleanPayload.skin_id || String(cleanPayload.skin_id).startsWith('temp_')) {
+      cleanPayload.skin_id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `skin_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
     if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
     if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
     const { data, error } = await supabase
@@ -1466,6 +1528,11 @@ const SupabaseAPI_Raw = {
 
   async createOperatorDialogue(payload) {
     const cleanPayload = { ...payload };
+    if (!cleanPayload.dialogue_id || String(cleanPayload.dialogue_id).startsWith('temp_')) {
+      cleanPayload.dialogue_id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `dlg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
     if (cleanPayload.audio_url_jp) cleanPayload.audio_url_jp = cleanUrl(cleanPayload.audio_url_jp);
     if (cleanPayload.audio_url_en) cleanPayload.audio_url_en = cleanUrl(cleanPayload.audio_url_en);
     if (cleanPayload.audio_url_cn) cleanPayload.audio_url_cn = cleanUrl(cleanPayload.audio_url_cn);
@@ -1540,6 +1607,11 @@ const SupabaseAPI_Raw = {
 
   async createOperatorRecord(payload) {
     const cleanPayload = { ...payload };
+    if (!cleanPayload.record_id || String(cleanPayload.record_id).startsWith('temp_')) {
+      cleanPayload.record_id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `rec_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
     cleanPayload.updated_at = new Date().toISOString();
     const { data, error } = await supabase
       .from('operator_records')

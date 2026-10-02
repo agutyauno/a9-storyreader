@@ -132,7 +132,12 @@ function SkillTab({ operator }) {
                                 icon={
                                     <div className="skill-icon-inner">
                                         {skill.icon ? (
-                                            <img src={skill.icon} alt="" className="skill-icon-img" />
+                                            <img
+                                                src={getAssetUrl(skill.icon)}
+                                                alt=""
+                                                className="skill-icon-img"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
                                         ) : (
                                             <Zap className="skill-icon-placeholder" />
                                         )}
@@ -169,7 +174,7 @@ function SkillTab({ operator }) {
                                                 <span className={`skill-meta-tag recovery-tag type-${skill.spRecoveryType}`}>
                                                     {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
                                                         skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
-                                                        skill.spRecoveryType === 'defensive' ? 'Defensive Recovery' : 'Passive'}
+                                                            skill.spRecoveryType === 'defensive' ? 'Defensive Recovery' : 'Passive'}
                                                 </span>
                                             )}
                                         </div>
@@ -198,7 +203,13 @@ function SkillTab({ operator }) {
                     {operator.modules.map((mod, idx) => (
                         <Collapsible
                             key={idx}
-                            icon={<Package size={16} />}
+                            icon={mod.icon ? (
+                                <img
+                                    src={getAssetUrl(mod.icon)}
+                                    alt={mod.name}
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                            ) : null}
                             title={mod.name}
                             subtitle={`Module ${idx + 1}`}
                             variant="module"
@@ -206,7 +217,12 @@ function SkillTab({ operator }) {
                             <div className="module-collapsible-content">
                                 {mod.imageUrl && (
                                     <div className="module-banner-container">
-                                        <img src={mod.imageUrl} alt={mod.name} className="module-banner-image" />
+                                        <img
+                                            src={getAssetUrl(mod.imageUrl)}
+                                            alt={mod.name}
+                                            className="module-banner-image"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
                                     </div>
                                 )}
                                 <div className="module-text-container">
@@ -270,7 +286,12 @@ function SkillTab({ operator }) {
                     <div className="operator-section-title">Tín vật</div>
                     <div className="operator-token-card">
                         {operator.token.imageUrl ? (
-                            <img className="operator-token-img" src={operator.token.imageUrl} alt={operator.token.name || 'Token'} />
+                            <img
+                                className="operator-token-img"
+                                src={getAssetUrl(operator.token.imageUrl)}
+                                alt={operator.token.name || 'Token'}
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                            />
                         ) : (
                             <div className="operator-token-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Package size={24} color="var(--color-cream)" />
@@ -488,7 +509,8 @@ export default function OperatorDetailPage() {
     }, [id])
 
     // Get current portrait based on selected skin
-    const currentPortrait = operator?.skins?.find(s => s.id === selectedSkinId)?.portraitUrl || operator?.portraitUrl
+    const activeSkin = operator?.skins?.find(s => s.id === selectedSkinId) || operator?.skins?.[0]
+    const currentPortrait = getAssetUrl(activeSkin?.full_url || activeSkin?.portraitUrl || operator?.portraitUrl || '')
 
     const renderStars = (rarity) => {
         return Array.from({ length: rarity }, (_, i) => (
@@ -559,11 +581,12 @@ export default function OperatorDetailPage() {
                             <div className="operator-portrait-wrap">
                                 <img
                                     className="operator-portrait-img"
-                                    src={currentPortrait}
+                                    src={getAssetUrl(currentPortrait)}
                                     alt={operator.name}
                                     onClick={() => setIsPortraitModalOpen(true)}
                                     onError={(e) => {
                                         e.target.onerror = null
+                                        e.target.src = getAssetUrl('/assets/images/character/blank.png')
                                         e.target.style.opacity = '0.3'
                                     }}
                                 />
@@ -624,7 +647,14 @@ export default function OperatorDetailPage() {
                                                     onClick={() => setSelectedSkinId(skin.id)}
                                                     title={skin.name}
                                                 >
-                                                    <img src={skin.portraitUrl} alt={skin.name} />
+                                                    <img
+                                                        src={getAssetUrl(skin.avatar_url || skin.avatarUrl || skin.portraitUrl || skin.full_url || '/assets/images/character/blank.png')}
+                                                        alt={skin.name}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null
+                                                            e.target.src = getAssetUrl('/assets/images/character/blank.png')
+                                                        }}
+                                                    />
                                                 </button>
                                             ))}
                                         </div>
@@ -669,7 +699,7 @@ export default function OperatorDetailPage() {
                         <button className="modal-close-btn" onClick={() => setIsPortraitModalOpen(false)}>
                             &times;
                         </button>
-                        <img src={currentPortrait} alt={operator.name} className="modal-portrait-img" />
+                        <img src={getAssetUrl(currentPortrait)} alt={operator.name} className="modal-portrait-img" />
                         <div className="modal-caption technical-text">
                             {operator.name} // {operator.skins.find(s => s.id === selectedSkinId)?.name || 'Default'}
                         </div>

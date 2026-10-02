@@ -9,6 +9,8 @@ import { Search, Grid, List, Star, UserX, Filter, ChevronDown } from 'lucide-rea
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import './operator.css'
 
+const FALLBACK_AVATAR = '/assets/images/character/blank.png'
+
 // Custom renderer for class options with PNG icons
 const renderClassOption = (opt) => {
     if (!opt.value) return opt.label
@@ -441,36 +443,70 @@ export default function OperatorListPage() {
                     ) : viewMode === 'grid' ? (
                         /* Grid View */
                         <div className="operator-grid">
-                            {filteredOperators.map(op => (
-                                <Link
-                                    key={op.id}
-                                    to={`/operator/${op.id}`}
-                                    className="operator-card"
-                                    id={`operator-card-${op.id}`}
-                                >
-                                    <div className="operator-card-img-wrap">
-                                        <img
-                                            className="operator-card-img"
-                                            src={op.portraitUrl || op.avatar_url}
-                                            alt={op.name}
-                                            onError={(e) => {
-                                                e.target.onerror = null
-                                                e.target.style.display = 'none'
-                                            }}
-                                        />
-                                        <div className="operator-card-rarity">
-                                            {renderStars(op.rarity)}
+                            {filteredOperators.map(op => {
+                                const classInfo = CLASSES_MAP[op.class]
+                                const subclassInfo = SUBCLASSES_MAP[op.subclass]
+                                const classIcon = classInfo?.icon ? getAssetUrl(classInfo.icon) : ''
+                                const subclassIcon = subclassInfo?.icon ? getAssetUrl(subclassInfo.icon) : ''
+                                const badgeTitle = subclassInfo
+                                    ? `${classInfo?.name || op.class || ''} // ${subclassInfo.name}`
+                                    : (classInfo?.name || op.class || '')
+
+                                return (
+                                    <Link
+                                        key={op.id}
+                                        to={`/operator/${op.id}`}
+                                        className="operator-card"
+                                        id={`operator-card-${op.id}`}
+                                    >
+                                        <div className="operator-card-img-wrap">
+                                            <img
+                                                className="operator-card-img"
+                                                src={getAssetUrl(op.avatar_url || FALLBACK_AVATAR)}
+                                                alt={op.name}
+                                                onError={(e) => {
+                                                    e.target.onerror = null
+                                                    e.target.src = getAssetUrl(FALLBACK_AVATAR)
+                                                }}
+                                            />
+                                            <div className="operator-card-rarity">
+                                                {renderStars(op.rarity)}
+                                            </div>
+                                            {(classIcon || subclassIcon) ? (
+                                                <div className="operator-card-badges" title={badgeTitle}>
+                                                    {classIcon && (
+                                                        <img
+                                                            src={classIcon}
+                                                            alt={classInfo?.name || ''}
+                                                            className="operator-card-badge-icon"
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                    )}
+                                                    {classIcon && subclassIcon && (
+                                                        <span className="operator-card-badges-divider" />
+                                                    )}
+                                                    {subclassIcon && (
+                                                        <img
+                                                            src={subclassIcon}
+                                                            alt={subclassInfo?.name || ''}
+                                                            className="operator-card-badge-icon"
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="operator-card-class">
+                                                    {classInfo?.name || op.class}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="operator-card-class">
-                                            {CLASSES_MAP[op.class]?.name}
+                                        <div className="operator-card-info">
+                                            <span className="operator-card-name">{op.name}</span>
+                                            <span className="operator-card-faction">{FACTIONS_MAP[op.faction]?.name}</span>
                                         </div>
-                                    </div>
-                                    <div className="operator-card-info">
-                                        <span className="operator-card-name">{op.name}</span>
-                                        <span className="operator-card-faction">{FACTIONS_MAP[op.faction]?.name}</span>
-                                    </div>
-                                </Link>
-                            ))}
+                                    </Link>
+                                )
+                            })}
                         </div>
                     ) : (
                         /* List View */
@@ -491,11 +527,11 @@ export default function OperatorListPage() {
                                 >
                                     <img
                                         className="operator-list-avatar"
-                                        src={op.avatar_url || op.portraitUrl}
+                                        src={getAssetUrl(op.avatar_url || FALLBACK_AVATAR)}
                                         alt={op.name}
                                         onError={(e) => {
                                             e.target.onerror = null
-                                            e.target.style.display = 'none'
+                                            e.target.src = getAssetUrl(FALLBACK_AVATAR)
                                         }}
                                     />
                                     <span className="operator-list-name">{op.name}</span>

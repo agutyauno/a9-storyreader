@@ -402,9 +402,13 @@
     max-width: 220px;
     max-height: 180px;
     border: var(--border-thick, 2px solid #181818);
-    background-color: #ffffff;
+    background-color: var(--color-charcoal, #181818);
     box-shadow: 3px 3px 0px var(--color-charcoal, #181818);
     overflow: hidden;
+}
+
+.img-upload-preview.dark-preview {
+    background-color: #121416;
 }
 
 .img-upload-preview img {
@@ -412,6 +416,7 @@
     height: 100%;
     object-fit: contain;
     display: block;
+    padding: 4px;
 }
 
 .img-upload-preview-meta {
