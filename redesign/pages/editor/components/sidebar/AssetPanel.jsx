@@ -25,12 +25,9 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
     const audioRef = useRef(null);
 
     useEffect(() => {
-        if (!audioRef.current) return;
-        if (isPlaying) {
-            audioRef.current.play().catch(() => {});
-        } else {
-            audioRef.current.pause();
-        }
+        if (!isPlaying || !audioRef.current) return;
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
     }, [isPlaying]);
 
     const copyId = (e) => {
@@ -74,11 +71,14 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
                 
                 {isAudio && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                        <audio
-                            ref={audioRef}
-                            src={getAssetUrl(asset.url)}
-                            onEnded={() => onTogglePlay(null)}
-                        />
+                        {isPlaying && (
+                            <audio
+                                ref={audioRef}
+                                autoPlay
+                                src={getAssetUrl(asset.url)}
+                                onEnded={() => onTogglePlay(null)}
+                            />
+                        )}
                         <button
                             className="redesign-audio-preview-btn"
                             title={isPlaying ? "Tạm dừng" : "Nghe thử"}
@@ -199,7 +199,10 @@ const CharacterCard = React.memo(function CharacterCard({ character, onDetail, o
     );
 });
 
-export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) {
+const INITIAL_RENDER_LIMIT = 48;
+const RENDER_BATCH_SIZE = 48;
+
+const AssetPanel = React.memo(function AssetPanel({ onAddAsset, showNotification, reloadRef, isActive }) {
     const [activeCat, setActiveCat] = useState('all');
     const [catOpen, setCatOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -402,20 +405,60 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
 
     const totalDisplayCount = isCharCat ? filteredChars.length : (activeCat === 'all' ? (filteredAssets.length + filteredChars.length) : filteredAssets.length);
 
+    const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
+
+    // Reset render limit when category or search changes
+    useEffect(() => {
+        setRenderLimit(INITIAL_RENDER_LIMIT);
+    }, [activeCat, search]);
+
+    const scrollContainerRef = useRef(null);
+    const lastScrollTopRef = useRef(0);
+
+    const handleScroll = useCallback((e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        lastScrollTopRef.current = scrollTop;
+        if (scrollHeight - scrollTop - clientHeight < 350) {
+            setRenderLimit(prev => Math.min(prev + RENDER_BATCH_SIZE, totalDisplayCount));
+        }
+    }, [totalDisplayCount]);
+
+    // Restore scroll position when tab becomes active
+    useEffect(() => {
+        if (isActive && scrollContainerRef.current && lastScrollTopRef.current > 0) {
+            scrollContainerRef.current.scrollTop = lastScrollTopRef.current;
+        }
+    }, [isActive]);
+
+    // Slice visible characters and assets based on renderLimit
+    const visibleChars = useMemo(() => {
+        if (!isCharCat && activeCat !== 'all') return [];
+        return filteredChars.slice(0, renderLimit);
+    }, [filteredChars, renderLimit, isCharCat, activeCat]);
+
+    const visibleAssets = useMemo(() => {
+        if (isCharCat) return [];
+        if (activeCat === 'all') {
+            const charCount = filteredChars.length;
+            if (renderLimit <= charCount) return [];
+            return filteredAssets.slice(0, renderLimit - charCount);
+        }
+        return filteredAssets.slice(0, renderLimit);
+    }, [filteredAssets, filteredChars.length, renderLimit, isCharCat, activeCat]);
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top Toolbar */}
-            <div style={{ padding: '0.65rem 0.75rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>QUẢN LÝ ASSET</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', backgroundColor: 'rgba(245,237,220,0.1)', color: '#F5EDDC', padding: '1px 6px', borderRadius: '10px' }}>
+            <div className="editor-panel-toolbar">
+                <div className="editor-toolbar-header">
+                    <span className="editor-toolbar-title">QUẢN LÝ ASSET</span>
+                    <span className="editor-toolbar-badge">
                         {totalDisplayCount}
                     </span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <div className="editor-toolbar-actions">
                     <button
-                        className="redesign-tool-btn"
-                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', cursor: isReloading ? 'not-allowed' : 'pointer' }}
+                        className="editor-toolbar-btn"
                         onClick={() => loadData(true)}
                         disabled={isReloading}
                         title="Làm mới danh sách asset từ máy chủ"
@@ -424,11 +467,11 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                         <span>Làm mới</span>
                     </button>
                     <button
-                        className="redesign-btn primary"
-                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.7rem' }}
+                        className="editor-toolbar-btn primary"
                         onClick={() => onAddAsset(activeCat)}
                     >
-                        <Plus size={12} /> Thêm Asset
+                        <Plus size={12} />
+                        <span>Thêm Asset</span>
                     </button>
                 </div>
             </div>
@@ -502,7 +545,7 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
             </div>
 
             {/* Grid Content Area */}
-            <div className="redesign-asset-scroll-area">
+            <div ref={scrollContainerRef} className="redesign-asset-scroll-area" onScroll={handleScroll}>
                 {loading ? (
                     <div style={{ padding: '3rem 1rem', textAlign: 'center', opacity: 0.6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                         <Loader className="spinning" size={18} /> Đang tải dữ liệu asset...
@@ -519,41 +562,17 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                             </button>
                         )}
                     </div>
-                ) : isCharCat ? (
-                    <div className="redesign-asset-grid">
-                        {filteredChars.map((char, idx) => (
-                            <CharacterCard
-                                key={`char-${char.character_id || idx}-${idx}`}
-                                character={char}
-                                onDetail={handleDetailChar}
-                                onDelete={handleDeleteChar}
-                            />
-                        ))}
-                    </div>
-                ) : activeCat === 'all' ? (
-                    <div className="redesign-asset-grid">
-                        {filteredChars.map((char, idx) => (
-                            <CharacterCard
-                                key={`char-${char.character_id || idx}-${idx}`}
-                                character={char}
-                                onDetail={handleDetailChar}
-                                onDelete={handleDeleteChar}
-                            />
-                        ))}
-                        {filteredAssets.map((asset, idx) => (
-                            <AssetCard
-                                key={`asset-${asset.category || 'misc'}-${asset.asset_id || idx}-${idx}`}
-                                asset={asset}
-                                isPlaying={playingAudioId === asset.asset_id}
-                                onTogglePlay={handleTogglePlay}
-                                onDetail={handleDetailAsset}
-                                onDelete={handleDeleteAsset}
-                            />
-                        ))}
-                    </div>
                 ) : (
                     <div className="redesign-asset-grid">
-                        {filteredAssets.map((asset, idx) => (
+                        {visibleChars.map((char, idx) => (
+                            <CharacterCard
+                                key={`char-${char.character_id || idx}-${idx}`}
+                                character={char}
+                                onDetail={handleDetailChar}
+                                onDelete={handleDeleteChar}
+                            />
+                        ))}
+                        {visibleAssets.map((asset, idx) => (
                             <AssetCard
                                 key={`asset-${asset.category || 'misc'}-${asset.asset_id || idx}-${idx}`}
                                 asset={asset}
@@ -563,6 +582,18 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
                                 onDelete={handleDeleteAsset}
                             />
                         ))}
+                        {renderLimit < totalDisplayCount && (
+                            <div style={{
+                                gridColumn: '1 / -1',
+                                textAlign: 'center',
+                                padding: '0.75rem 0.5rem',
+                                color: 'rgba(245,237,220,0.4)',
+                                fontSize: '0.68rem',
+                                fontFamily: 'var(--font-mono)'
+                            }}>
+                                Đang hiển thị {Math.min(renderLimit, totalDisplayCount)} / {totalDisplayCount} mục • Cuộn xuống để xem thêm
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -585,4 +616,6 @@ export default function AssetPanel({ onAddAsset, showNotification, reloadRef }) 
             />
         </div>
     );
-}
+});
+
+export default AssetPanel;

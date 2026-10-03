@@ -387,15 +387,43 @@ export const StoryScriptParser = {
             }
 
             // @sfx
-            const sfxMatch = trimmed.match(/^@sfx\s+"([^"]*)"\s*(.*)/);
-            if (sfxMatch && currentBackground) {
-                const params = ScriptUtils.parseParams(sfxMatch[2]);
-                pushToParent({
-                    type: 'sfx',
-                    name: sfxMatch[1],
-                    src: params.src || ''
-                });
-                continue;
+            if (trimmed.startsWith('@sfx') && currentBackground) {
+                // Case 1: @sfx "Name" ...
+                const sfxWithNameMatch = trimmed.match(/^@sfx\s+"([^"]*)"\s*(.*)/);
+                if (sfxWithNameMatch) {
+                    const params = ScriptUtils.parseParams(sfxWithNameMatch[2]);
+                    const sfxObj = {
+                        type: 'sfx',
+                        name: sfxWithNameMatch[1],
+                        src: params.src || ''
+                    };
+                    if (params.loop === 'true' || params.loop === true) sfxObj.loop = true;
+                    if (params.parallel === 'true' || params.parallel === true || params.queue === 'false' || params.queue === false) {
+                        sfxObj.parallel = true;
+                    }
+                    if (params.queue === 'true' || params.queue === true) sfxObj.queue = true;
+                    if (params.stop) sfxObj.stop = params.stop;
+                    pushToParent(sfxObj);
+                    continue;
+                }
+
+                // Case 2: @sfx stop="..." hoặc @sfx src="..."
+                const sfxParamsOnly = ScriptUtils.parseParams(trimmed.slice(4));
+                if (sfxParamsOnly.stop || sfxParamsOnly.src) {
+                    const sfxObj = {
+                        type: 'sfx',
+                        name: sfxParamsOnly.name || (sfxParamsOnly.stop ? 'Dừng âm thanh' : 'Hiệu ứng'),
+                        src: sfxParamsOnly.src || ''
+                    };
+                    if (sfxParamsOnly.loop === 'true' || sfxParamsOnly.loop === true) sfxObj.loop = true;
+                    if (sfxParamsOnly.parallel === 'true' || sfxParamsOnly.parallel === true || sfxParamsOnly.queue === 'false' || sfxParamsOnly.queue === false) {
+                        sfxObj.parallel = true;
+                    }
+                    if (sfxParamsOnly.queue === 'true' || sfxParamsOnly.queue === true) sfxObj.queue = true;
+                    if (sfxParamsOnly.stop) sfxObj.stop = sfxParamsOnly.stop;
+                    pushToParent(sfxObj);
+                    continue;
+                }
             }
 
             // @narrator: text OR @narrator {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, ChevronRight, ChevronDown, Layers, BookOpen, Bookmark, FileText, Loader, Trash2, Edit, Eye, EyeOff, Search, X, RotateCw } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import { EditorCache } from '../../../../../src/services/editorCache';
@@ -261,14 +261,15 @@ function TreeNode({
     );
 }
 
-export default function StoryTreePanel({
+const StoryTreePanel = React.memo(function StoryTreePanel({
     onStorySelect,
     onAddItem,
     onEditItem,
     currentStoryId,
     selectedEntityId,
     showNotification,
-    reloadRef
+    reloadRef,
+    isActive
 }) {
     const [tree, setTree] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -289,6 +290,20 @@ export default function StoryTreePanel({
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => { } });
+
+    const treeScrollRef = useRef(null);
+    const lastTreeScrollTopRef = useRef(0);
+
+    const handleTreeScroll = (e) => {
+        lastTreeScrollTopRef.current = e.currentTarget.scrollTop;
+    };
+
+    // Restore scroll position when tab becomes active
+    useEffect(() => {
+        if (isActive && treeScrollRef.current && lastTreeScrollTopRef.current > 0) {
+            treeScrollRef.current.scrollTop = lastTreeScrollTopRef.current;
+        }
+    }, [isActive]);
 
     useEffect(() => {
         loadTree();
@@ -484,12 +499,13 @@ export default function StoryTreePanel({
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top Toolbar */}
-            <div style={{ padding: '0.65rem 0.75rem', backgroundColor: '#141414', borderBottom: '1px solid rgba(245,237,220,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(245,237,220,0.6)' }}>CẤU TRÚC CỐT TRUYỆN</span>
-                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <div className="editor-panel-toolbar">
+                <div className="editor-toolbar-header">
+                    <span className="editor-toolbar-title">CẤU TRÚC CỐT TRUYỆN</span>
+                </div>
+                <div className="editor-toolbar-actions">
                     <button
-                        className="redesign-tool-btn"
-                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', cursor: isReloading ? 'not-allowed' : 'pointer' }}
+                        className="editor-toolbar-btn"
                         onClick={() => loadTree(true)}
                         disabled={isReloading}
                         title="Làm mới danh mục cốt truyện từ máy chủ"
@@ -498,11 +514,11 @@ export default function StoryTreePanel({
                         <span>Làm mới</span>
                     </button>
                     <button
-                        className="redesign-btn primary"
-                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
+                        className="editor-toolbar-btn primary"
                         onClick={() => onAddItem('region', null, () => loadTree(true), tree.length + 1)}
                     >
-                        <Plus size={12} /> Thêm Region
+                        <Plus size={12} />
+                        <span>Thêm Region</span>
                     </button>
                 </div>
             </div>
@@ -557,7 +573,7 @@ export default function StoryTreePanel({
             </div>
 
             {/* Tree Nodes List */}
-            <div className="redesign-tree-panel">
+            <div ref={treeScrollRef} className="redesign-tree-panel" onScroll={handleTreeScroll}>
                 {filteredTree.length === 0 ? (
                     <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(245,237,220,0.4)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
                         NO_ITEMS_FOUND // {statusFilter.toUpperCase()}
@@ -590,4 +606,6 @@ export default function StoryTreePanel({
             />
         </div>
     );
-}
+});
+
+export default StoryTreePanel;

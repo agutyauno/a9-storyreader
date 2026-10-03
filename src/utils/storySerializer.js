@@ -124,7 +124,18 @@ export const StoryScriptSerializer = {
                     break;
                 case 'sfx': {
                     const sfxSrc = d._asset_id || d.src || '';
-                    lines.push(`${indent}@sfx "${d.name || ''}" src="${sfxSrc}"`);
+                    if (d.stop) {
+                        if (d.name && d.name !== 'Dừng âm thanh') {
+                            lines.push(`${indent}@sfx "${d.name}" stop="${d.stop}"`);
+                        } else {
+                            lines.push(`${indent}@sfx stop="${d.stop}"`);
+                        }
+                    } else {
+                        let sfxLine = `${indent}@sfx "${d.name || ''}" src="${sfxSrc}"`;
+                        if (d.parallel || d.queue === false) sfxLine += ' parallel="true"';
+                        if (d.loop) sfxLine += ' loop="true"';
+                        lines.push(sfxLine);
+                    }
                     break;
                 }
                 case 'background_change': {

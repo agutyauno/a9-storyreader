@@ -164,13 +164,17 @@ const ScriptEditor = forwardRef(({ value, onChange, characters = [], assets = []
             };
 
             const options = [
-                { label: '@char', type: 'keyword', apply: snippet('@char Tên_Nhân_Vật [id="char_id", avatar="avatar_id", full="full_id", color="#00E5FF"]'), detail: 'Khai báo nhân vật (id, avatar, full, color)' },
+                { label: '@char', type: 'keyword', apply: snippet('@char Tên_Nhân_Vật [id="char_id", color="#00E5FF"]'), detail: 'Khai báo nhân vật (id, color)' },
                 { label: '@bg', type: 'keyword', apply: snippet('@bg "bg_asset_id"'), detail: 'Đổi hình nền bối cảnh' },
                 { label: '@bgm', type: 'keyword', apply: snippet('@bgm id="bgm_id" intro="intro_id" loop="loop_id"'), detail: 'Phát nhạc nền (id, intro, loop)' },
-                { label: '@sfx', type: 'keyword', apply: snippet('@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"'), detail: 'Hiệu ứng âm thanh tiếng động' },
+                { label: '@sfx', type: 'keyword', apply: snippet('@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"'), detail: 'Hiệu ứng âm thanh phát tuần tự (mặc định)' },
+                { label: '@sfx parallel', type: 'keyword', apply: snippet('@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" parallel="true"'), detail: 'Hiệu ứng âm thanh phát song song (parallel)' },
+                { label: '@sfx loop', type: 'keyword', apply: snippet('@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" loop="true"'), detail: 'Hiệu ứng âm thanh lặp liên tục (loop)' },
+                { label: '@sfx stop', type: 'keyword', apply: snippet('@sfx stop="sfx_asset_id"'), detail: 'Lệnh dừng âm thanh SFX' },
                 { label: '@video', type: 'keyword', apply: snippet('@video src="video_id_hoặc_url"'), detail: 'Phát video PV / Cutscene' },
                 { label: '@section', type: 'keyword', apply: snippet('@section'), detail: 'Bắt đầu phân đoạn / chương mới' },
                 { label: '@narrator', type: 'keyword', apply: snippet('@narrator {\n  Nội dung dẫn truyện ở đây...\n}'), detail: 'Khối lời dẫn truyện nhiều dòng' },
+                { label: '@narrator:', type: 'keyword', apply: snippet('@narrator: Nội dung lời dẫn truyện một dòng...'), detail: 'Lời dẫn truyện nhanh một dòng' },
                 { label: '@decision', type: 'keyword', apply: snippet('@decision "decision_group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2'), detail: 'Cây nhánh lựa chọn' },
                 { label: '@response', type: 'keyword', apply: snippet('@response "decision_group_id" 1 {\n  # Diễn biến khi chọn phương án 1\n  \n}'), detail: 'Khối phản hồi theo lựa chọn' },
                 { label: '@note', type: 'keyword', apply: snippet('@note note_id: Giải thích chi tiết về thuật ngữ'), detail: 'Định nghĩa mục ghi chú tra cứu' },
@@ -182,9 +186,9 @@ const ScriptEditor = forwardRef(({ value, onChange, characters = [], assets = []
         }
 
         // 2. Assets suggestions
-        const assetMatch = textBefore.match(/(?:id|src|image|loop|intro|at)\s*=\s*"([^"]*)$/);
+        const assetMatch = textBefore.match(/(?:id|src|image|loop|intro|at|stop|parallel)\s*=\s*"([^"]*)$/);
         const bgRawMatch = textBefore.match(/@bg\s+"([^"]*)$/);
-        const sfxRawMatch = textBefore.match(/@sfx\s+"([^"]*)"\s+src="([^"]*)$/);
+        const sfxRawMatch = textBefore.match(/@sfx\s+"([^"]*)"\s+(?:[^"]*=\s*"[^"]*"\s+)*src="([^"]*)$/);
 
         if (assetMatch || bgRawMatch || sfxRawMatch) {
             const currentWord = context.matchBefore(/[\w]*/);

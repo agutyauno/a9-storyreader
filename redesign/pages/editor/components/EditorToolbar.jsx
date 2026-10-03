@@ -27,26 +27,26 @@ const TOOL_GROUPS = [
         icon: Film,
         color: '#FF9E80',
         tools: [
-            { 
-                id: 'bg', 
-                label: 'Bối cảnh (BG)', 
-                icon: ImageIcon, 
-                template: '@bg "bg_asset_id"', 
-                hint: '@bg "bg_asset_id"' 
+            {
+                id: 'bg',
+                label: 'Bối cảnh (BG)',
+                icon: ImageIcon,
+                template: '@bg "bg_asset_id"',
+                hint: '@bg "bg_asset_id"'
             },
-            { 
-                id: 'video', 
-                label: 'Video (PV)', 
-                icon: Video, 
-                template: '@video src="video_id_hoặc_url"', 
-                hint: '@video src="video_id_hoặc_url"' 
+            {
+                id: 'video',
+                label: 'Video (PV)',
+                icon: Video,
+                template: '@video src="video_id_hoặc_url"',
+                hint: '@video src="video_id_hoặc_url"'
             },
-            { 
-                id: 'section', 
-                label: 'Phân đoạn (Section)', 
-                icon: Layers, 
-                template: '@section', 
-                hint: '@section - Bắt đầu phân đoạn mới' 
+            {
+                id: 'section',
+                label: 'Phân đoạn (Section)',
+                icon: Layers,
+                template: '@section',
+                hint: '@section - Bắt đầu phân đoạn mới'
             },
         ]
     },
@@ -56,19 +56,40 @@ const TOOL_GROUPS = [
         icon: Headphones,
         color: '#FFE082',
         tools: [
-            { 
-                id: 'bgm', 
-                label: 'Nhạc nền (BGM)', 
-                icon: Music, 
-                template: '@bgm id="bgm_id" intro="intro_audio_id" loop="loop_audio_id"', 
-                hint: '@bgm id="bgm_id" intro="intro_id" loop="loop_id"' 
+            {
+                id: 'bgm',
+                label: 'Nhạc nền (BGM)',
+                icon: Music,
+                template: '@bgm id="bgm_id" intro="intro_audio_id" loop="loop_audio_id"',
+                hint: '@bgm id="bgm_id" intro="intro_id" loop="loop_id"'
             },
-            { 
-                id: 'sfx', 
-                label: 'Âm thanh (SFX)', 
-                icon: Volume2, 
-                template: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"', 
-                hint: '@sfx "Tên_Hiệu_Ứng" src="sfx_id"' 
+            {
+                id: 'sfx',
+                label: 'Âm thanh (SFX)',
+                icon: Volume2,
+                template: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"',
+                hint: '@sfx "Tên" src="id" - Phát tuần tự theo hàng đợi'
+            },
+            {
+                id: 'sfx_parallel',
+                label: 'SFX Song song (Parallel)',
+                icon: Volume2,
+                template: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" parallel="true"',
+                hint: '@sfx "Tên" src="id" parallel="true" - Phát đè cùng lúc không cần đợi'
+            },
+            {
+                id: 'sfx_loop',
+                label: 'SFX Lặp (Loop)',
+                icon: Volume2,
+                template: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" loop="true"',
+                hint: '@sfx "Tên" src="id" loop="true" - Phát lặp liên tục'
+            },
+            {
+                id: 'sfx_stop',
+                label: 'SFX Dừng (Stop)',
+                icon: Volume2,
+                template: '@sfx stop="sfx_asset_id_hoặc_all"',
+                hint: '@sfx stop="sfx_id" hoặc @sfx stop="all"'
             },
         ]
     },
@@ -78,62 +99,84 @@ const TOOL_GROUPS = [
         icon: MessageCircle,
         color: '#A5D6A7',
         tools: [
-            { 
-                id: 'char', 
-                label: 'Khai báo nhân vật', 
-                icon: UserPlus, 
-                template: '@char Tên_Nhân_Vật [id="char_id", avatar="avatar_id", full="full_id", color="#00E5FF"]', 
-                hint: '@char Tên [id="", avatar="", full="", color=""]' 
+            {
+                id: 'char',
+                label: 'Khai báo nhân vật',
+                icon: UserPlus,
+                template: '@char Tên_Nhân_Vật [id="char_id", color="#00E5FF"]',
+                hint: '@char Tên [id="char_id", color="#hex"]'
             },
-            { 
-                id: 'dialogue', 
-                label: 'Lời thoại nhân vật', 
-                icon: MessageSquare, 
-                template: 'Tên_Nhân_Vật [Avatar_Trái.biểu_cảm, Avatar_Phải.biểu_cảm, color="#00E5FF"]: Lời thoại của nhân vật...', 
-                hint: 'Tên [Trái.biểu_cảm, Phải.biểu_cảm, color="#hex"]: Lời thoại' 
+            {
+                id: 'dialogue',
+                label: 'Lời thoại (Avatar & Biểu cảm)',
+                icon: MessageSquare,
+                template: 'Tên_Nhân_Vật [Avatar_Trái.biểu_cảm, Avatar_Phải.biểu_cảm, color="#00E5FF"]: Lời thoại của nhân vật...',
+                hint: 'Tên [Trái.biểu_cảm, Phải.biểu_cảm, color="#hex"]: Lời thoại'
             },
-            { 
-                id: 'narrator', 
-                label: 'Dẫn truyện', 
-                icon: MessageSquare, 
-                template: '@narrator {\n  Nội dung lời dẫn truyện ở đây (hỗ trợ chú thích [từ | note_id])...\n}', 
-                hint: '@narrator { nội dung }' 
+            {
+                id: 'dialogue_simple',
+                label: 'Lời thoại đơn giản',
+                icon: MessageSquare,
+                template: 'Tên_Nhân_Vật: Lời thoại của nhân vật...',
+                hint: 'Tên: Lời thoại'
             },
-            { 
-                id: 'decision', 
-                label: 'Nhánh lựa chọn', 
-                icon: GitMerge, 
-                template: '@decision "decision_group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2', 
-                hint: '@decision "group_id" [Trái, Phải]\n- Lựa chọn 1\n- Lựa chọn 2' 
+            {
+                id: 'narrator_block',
+                label: 'Dẫn truyện (Khối đa dòng)',
+                icon: MessageSquare,
+                template: '@narrator {\n  Nội dung lời dẫn truyện ở đây (hỗ trợ chú thích [từ | note_id] hoặc [note: giải thích])...\n}',
+                hint: '@narrator { nội dung nhiều dòng }'
             },
-            { 
-                id: 'response', 
-                label: 'Phản hồi lựa chọn', 
-                icon: CornerDownRight, 
-                template: '@response "decision_group_id" 1 {\n  # Kịch bản diễn biến khi chọn Lựa chọn 1\n  Tên_Nhân_Vật [biểu_cảm, ]: Phản hồi tương ứng...\n}', 
-                hint: '@response "group_id" 1 { ... }' 
+            {
+                id: 'narrator_inline',
+                label: 'Dẫn truyện (Một dòng)',
+                icon: MessageSquare,
+                template: '@narrator: Nội dung lời dẫn truyện một dòng ở đây...',
+                hint: '@narrator: nội dung một dòng'
             },
-            { 
-                id: 'note_def', 
-                label: 'Định nghĩa ghi chú', 
-                icon: HelpCircle, 
-                template: '@note note_id: Giải thích chi tiết về thuật ngữ hoặc bối cảnh tra cứu', 
-                hint: '@note note_id: nội dung giải thích' 
+            {
+                id: 'decision',
+                label: 'Nhánh lựa chọn',
+                icon: GitMerge,
+                template: '@decision "decision_group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2',
+                hint: '@decision "group_id" [Trái, Phải]\n- Lựa chọn 1\n- Lựa chọn 2'
             },
-            { 
-                id: 'note_link', 
-                label: 'Liên kết từ chú thích', 
-                icon: HelpCircle, 
-                template: '[Từ cần chú thích | note_id]', 
-                isInline: true, 
-                hint: '[Từ hiển thị | note_id]' 
+            {
+                id: 'response',
+                label: 'Phản hồi lựa chọn',
+                icon: CornerDownRight,
+                template: '@response "decision_group_id" 1 {\n  # Kịch bản diễn biến khi chọn Lựa chọn 1\n  Tên_Nhân_Vật [biểu_cảm, ]: Phản hồi tương ứng...\n}',
+                hint: '@response "group_id" 1 { ... }'
             },
-            { 
-                id: 'comment', 
-                label: 'Ghi chú kịch bản (#)', 
-                icon: FileText, 
-                template: '# Ghi chú kịch bản / TODO: ...', 
-                hint: '# Ghi chú kịch bản' 
+            {
+                id: 'note_def',
+                label: 'Định nghĩa ghi chú (@note)',
+                icon: HelpCircle,
+                template: '@note note_id: Giải thích chi tiết về thuật ngữ hoặc bối cảnh tra cứu',
+                hint: '@note note_id: nội dung giải thích'
+            },
+            {
+                id: 'note_link',
+                label: 'Liên kết từ chú thích',
+                icon: HelpCircle,
+                template: '[Từ cần chú thích | note_id]',
+                isInline: true,
+                hint: '[Từ hiển thị | note_id]'
+            },
+            {
+                id: 'note_direct',
+                label: 'Chú thích nhanh tại chỗ',
+                icon: HelpCircle,
+                template: '[note: Nội dung giải thích trực tiếp]',
+                isInline: true,
+                hint: '[note: giải thích trực tiếp không cần @note]'
+            },
+            {
+                id: 'comment',
+                label: 'Ghi chú kịch bản (#)',
+                icon: FileText,
+                template: '# Ghi chú kịch bản / TODO: ...',
+                hint: '# Ghi chú kịch bản'
             },
         ]
     }
@@ -226,9 +269,9 @@ export default function EditorToolbar({ onInsert }) {
             </div>
 
             {/* Syntax Help Cheatsheet Modal */}
-            <SyntaxHelpModal 
-                isOpen={helpModalOpen} 
-                onClose={() => setHelpModalOpen(false)} 
+            <SyntaxHelpModal
+                isOpen={helpModalOpen}
+                onClose={() => setHelpModalOpen(false)}
             />
         </>
     );

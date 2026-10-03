@@ -32,13 +32,28 @@ const SYNTAX_GUIDES = [
         items: [
             {
                 tag: '@bgm id="bgm_id" intro="intro_id" loop="loop_id"',
-                description: 'Phát nhạc nền BGM (id: bài nhạc chính, intro: đoạn dạo đầu phát 1 lần, loop: đoạn lặp lại).',
+                description: 'Phát nhạc nền BGM phân cảnh (id: bài nhạc chính, intro: đoạn dạo đầu phát 1 lần tùy chọn, loop: đoạn lặp lại tuần hoàn tùy chọn).',
                 example: '@bgm id="m_avg_theme" intro="m_avg_theme_intro" loop="m_avg_theme_loop"'
             },
             {
                 tag: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id"',
-                description: 'Kích hoạt âm thanh tiếng động kèm nhãn tên hiển thị trên giao diện.',
-                example: '@sfx "Tiếng sấm" src="e_avg_thunder"'
+                description: 'Hiệu ứng âm thanh phát tuần tự (Mặc định: các âm thanh được xếp vào hàng đợi phát lần lượt, âm trước kết thúc mới phát tiếp âm sau, đảm bảo rõ ràng không bị đè âm).',
+                example: '@sfx "Tiếng bước chân" src="e_avg_step_01"'
+            },
+            {
+                tag: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" parallel="true"',
+                description: 'Kích hoạt hiệu ứng phát song song / đa âm đồng thời (nhiều SFX phát đè lên nhau cùng lúc không cần đợi âm trước kết thúc).',
+                example: '@sfx "Tiếng súng" src="e_avg_gunshot" parallel="true"'
+            },
+            {
+                tag: '@sfx "Tên_Hiệu_Ứng" src="sfx_asset_id" loop="true"',
+                description: 'Kích hoạt âm thanh phát lặp tuần hoàn liên tục (nhạc môi trường, tiếng còi báo động, mưa rơi...). Người đọc có thể bấm vào để bật/tắt (toggle).',
+                example: '@sfx "Còi báo động" src="e_avg_alarm" loop="true"'
+            },
+            {
+                tag: '@sfx stop="sfx_asset_id"  hoặc  @sfx stop="all"',
+                description: 'Lệnh dừng một âm thanh SFX cụ thể hoặc dừng toàn bộ các âm thanh SFX đang phát/hàng đợi.',
+                example: '@sfx stop="e_avg_alarm"'
             }
         ]
     },
@@ -48,9 +63,9 @@ const SYNTAX_GUIDES = [
         color: '#A5D6A7',
         items: [
             {
-                tag: '@char Tên [id="...", avatar="...", full="...", color="#..."]',
-                description: 'Khai báo nhân vật với ID database, ảnh avatar, ảnh đứng full-body, và màu chữ tên hiển thị.',
-                example: '@char Amiya [id="char_002_amiya", avatar="char_002_amiya_1", full="char_002_amiya_1_full", color="#00E5FF"]'
+                tag: '@char Tên_Nhân_Vật [id="char_id", color="#00E5FF"]',
+                description: 'Khai báo nhân vật: liên kết tên trong kịch bản với ID nhân vật trong database. Toàn bộ ảnh đại diện (avatar), ảnh đứng toàn thân (full-body), và danh sách biểu cảm (.smile, .angry,...) được hệ thống tự động nạp từ database qua id.',
+                example: '@char Amiya [id="char_002_amiya", color="#00E5FF"]'
             },
             {
                 tag: 'Tên_Nhân_Vật [Trái.biểu_cảm, Phải.biểu_cảm, color="#..."]: Lời thoại',
@@ -58,9 +73,19 @@ const SYNTAX_GUIDES = [
                 example: 'Amiya [Amiya.smile, Kaltsit.serious, color="#00E5FF"]: Doctor, chúng ta đã đến nơi rồi!'
             },
             {
+                tag: 'Tên_Nhân_Vật: Lời thoại',
+                description: 'Tạo lời thoại nhanh đơn giản (tự động sử dụng màu tên và avatar mặc định đã khai báo tại @char).',
+                example: 'Doctor: Tôi hiểu rồi, hãy tiến về phía trước.'
+            },
+            {
                 tag: '@narrator {\n  Nội dung...\n}',
-                description: 'Khối lời dẫn truyện hoặc văn bản mô tả bối cảnh (hỗ trợ chú thích [từ | note_id]).',
+                description: 'Khối lời dẫn truyện hoặc văn bản mô tả bối cảnh nhiều dòng (hỗ trợ chú thích [từ | note_id] hoặc [note: giải thích]).',
                 example: '@narrator {\n  Màn đêm buông xuống thành phố Chernobog...\n  Năng lượng [Originium | originium] tỏa sáng trong đống đổ nát.\n}'
+            },
+            {
+                tag: '@narrator: Nội dung lời dẫn truyện...',
+                description: 'Lời dẫn truyện nhanh một dòng.',
+                example: '@narrator: Một khoảng lặng kéo dài giữa đống hoang tàn.'
             },
             {
                 tag: '@decision "group_id" [Avatar_Trái, Avatar_Phải]\n- Lựa chọn 1\n- Lựa chọn 2',
@@ -79,8 +104,13 @@ const SYNTAX_GUIDES = [
             },
             {
                 tag: '[Từ cần chú thích | note_id]',
-                description: 'Gắn liên kết giải thích thuật ngữ vào một từ ngữ bất kỳ trong lời thoại, dẫn truyện hoặc lựa chọn decision (cũng hỗ trợ [note: nội dung trực tiếp]).',
+                description: 'Gắn liên kết giải thích thuật ngữ vào một từ ngữ bất kỳ (tra cứu nội dung từ định nghĩa @note tương ứng).',
                 example: 'Năng lượng [Originium | originium] rất nguy hiểm đối với con người.'
+            },
+            {
+                tag: '[note: Nội dung giải thích trực tiếp]',
+                description: 'Hiển thị tooltip chú thích nhanh ngay tại chỗ mà không cần phải khai báo @note ở đầu kịch bản.',
+                example: 'Chúng ta cần cẩn thận với [note: Một thiết bị phát sóng cổ xưa] đang đặt ở góc phòng.'
             },
             {
                 tag: '# Ghi chú kịch bản / Comment',

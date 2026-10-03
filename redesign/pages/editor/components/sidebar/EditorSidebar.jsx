@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import SidebarTabs from './SidebarTabs';
 import StoryTreePanel from './StoryTreePanel';
 import OperatorTreePanel from '../../operator/components/OperatorTreePanel';
@@ -140,10 +140,10 @@ export default function EditorSidebar({
         }
     };
 
-    const handleOpenAddAsset = (category) => {
+    const handleOpenAddAsset = useCallback((category) => {
         setAssetModalCategory(category);
         setAssetModalOpen(true);
-    };
+    }, []);
 
     const handleAddAssetSubmit = async (assetData) => {
         try {
@@ -187,9 +187,9 @@ export default function EditorSidebar({
                 tab1Label={isRecord ? 'KÍ SỰ CÁN VIÊN' : 'STORY TREE'}
             />
 
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-                {activeTab === 'story' ? (
-                    isRecord ? (
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div className={`sidebar-panel-slot ${activeTab === 'story' ? 'active' : ''}`}>
+                    {isRecord ? (
                         <OperatorTreePanel
                             initialOperatorId={initialOperatorId}
                             currentRecordId={currentRecordId || currentStoryId}
@@ -207,15 +207,18 @@ export default function EditorSidebar({
                             selectedEntityId={selectedEntityId}
                             showNotification={showNotification}
                             reloadRef={reloadTreeRef}
+                            isActive={activeTab === 'story'}
                         />
-                    )
-                ) : (
+                    )}
+                </div>
+                <div className={`sidebar-panel-slot ${activeTab === 'assets' ? 'active' : ''}`}>
                     <AssetPanel
                         onAddAsset={handleOpenAddAsset}
                         showNotification={showNotification}
                         reloadRef={assetReloadRef}
+                        isActive={activeTab === 'assets'}
                     />
-                )}
+                </div>
             </div>
 
             <AddItemModal

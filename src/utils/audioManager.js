@@ -355,9 +355,19 @@ export class SFXManager {
     this.isEnabled = true;
     this.playedElements = new Set();
     this.scrollObserver = null;
-    this.currentAudio = null;
-    this.isPlaying = false;
+
+    // Parallel playback pool (đa âm thanh đồng thời)
+    this.activeAudios = new Set();
+    this.maxConcurrent = 10;
+
+    // Looping tracks (âm thanh lặp tuần hoàn)
+    this.activeLoops = new Map(); // key -> { audio, element }
+
+    // Sequential Queue (hàng đợi phát tuần tự)
     this.sfxQueue = [];
+    this.isQueueProcessing = false;
+    this.currentQueueAudio = null;
+
     this.loadState();
   }
 
@@ -368,21 +378,27 @@ export class SFXManager {
     if (savedVolume !== null) this.volume = parseFloat(savedVolume);
   }
 
+  resolveSrc(sfxSrc) {
+    if (!sfxSrc) return '';
+    let finalSrc = sfxSrc;
+    if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
+      finalSrc = this.basePath + sfxSrc;
+    }
+    return getAssetUrl(finalSrc, 'audio');
+  }
+
   setEnabled(enabled) {
     this.isEnabled = enabled;
     if (!enabled) {
-      this.sfxQueue = [];
-      this.isPlaying = false;
-      if (this.currentAudio) {
-        this.currentAudio.pause();
-        this.currentAudio = null;
-      }
+      this.stopSFX('all');
     }
   }
 
   setVolume(value) {
     this.volume = Math.max(0, Math.min(1, value));
-    if (this.currentAudio) this.currentAudio.volume = this.volume;
+    this.activeAudios.forEach(audio => { audio.volume = this.volume; });
+    this.activeLoops.forEach(({ audio }) => { audio.volume = this.volume; });
+    if (this.currentQueueAudio) this.currentQueueAudio.volume = this.volume;
   }
 
   init() {
@@ -395,6 +411,13 @@ export class SFXManager {
   }
 
   setupSFXElement(element, index) {
+    const sfxStop = element.dataset.sfxStop;
+    if (sfxStop) {
+      element.dataset.sfxIndex = index;
+      if (this.scrollObserver) this.scrollObserver.observe(element);
+      return;
+    }
+
     let sfxSrc = element.dataset.sfxSrc;
     let sfxName = element.dataset.sfxName || 'Sound Effect';
     let sfxAuto = element.dataset.sfxAuto !== 'false';
@@ -413,11 +436,13 @@ export class SFXManager {
     element.dataset.sfxAuto = sfxAuto;
 
     if (!element.innerHTML.includes('sfx-name')) {
-      element.innerHTML = `<div class="sfx-content"><span class="sfx-name">${sfxName}</span></div>`;
+      const loopBadge = element.dataset.sfxLoop === 'true' ? '<span class="sfx-loop-badge" title="Lặp lại">↻</span>' : '';
+      const parallelBadge = element.dataset.sfxParallel === 'true' ? '<span class="sfx-parallel-badge" title="Song song">⚡</span>' : '';
+      element.innerHTML = `<div class="sfx-content"><span class="sfx-name">${sfxName}</span>${loopBadge}${parallelBadge}</div>`;
     }
 
-    // Prevent multiple event attachments if init() runs twice
-    const handleClick = () => this.playSFX(element);
+    // Click handler: manual play or toggle loop
+    const handleClick = () => this.playSFX(element, false);
     element.removeEventListener('click', element._sfxClickHandler);
     element._sfxClickHandler = handleClick;
     element.addEventListener('click', handleClick);
@@ -436,6 +461,12 @@ export class SFXManager {
         if (entry.isIntersecting) {
           const el = entry.target;
           const index = el.dataset.sfxIndex;
+
+          if (el.dataset.sfxStop) {
+            this.stopSFX(el.dataset.sfxStop);
+            return;
+          }
+
           const autoPlay = el.dataset.sfxAuto !== 'false';
           if (autoPlay && !this.playedElements.has(index)) {
             this.playedElements.add(index);
@@ -446,61 +477,150 @@ export class SFXManager {
     }, { threshold: this.threshold, rootMargin: this.rootMargin });
 
     document.querySelectorAll(this.selector).forEach(el => {
-      if (el.dataset.sfxSrc) this.scrollObserver.observe(el);
+      if (el.dataset.sfxSrc || el.dataset.sfxStop) this.scrollObserver.observe(el);
     });
   }
 
   playSFX(element, isAutoTrigger = false) {
     if (!this.isEnabled) return;
+
+    // 1. Stop trigger
+    const stopTarget = element.dataset.sfxStop;
+    if (stopTarget) {
+      this.stopSFX(stopTarget);
+      return;
+    }
+
     const sfxSrc = element.dataset.sfxSrc;
     if (!sfxSrc) return;
+
+    const isLoop = element.dataset.sfxLoop === 'true';
+    const isParallel = element.dataset.sfxParallel === 'true' || element.dataset.sfxQueue === 'false';
+    const sfxKey = element.dataset.sfxIndex || sfxSrc;
+
+    // 2. Loop Mode
+    if (isLoop) {
+      if (this.activeLoops.has(sfxKey)) {
+        if (!isAutoTrigger) {
+          // Click toggle off
+          const { audio } = this.activeLoops.get(sfxKey);
+          audio.pause();
+          audio.currentTime = 0;
+          this.activeLoops.delete(sfxKey);
+          element.classList.remove('playing');
+        }
+        return;
+      }
+
+      try {
+        const audio = new Audio();
+        audio.src = this.resolveSrc(sfxSrc);
+        audio.volume = this.volume;
+        audio.loop = true;
+        this.activeLoops.set(sfxKey, { audio, element });
+        element.classList.add('playing');
+        audio.play().catch(err => {
+          console.warn('SFXManager loop play blocked:', err);
+          element.classList.remove('playing');
+          this.activeLoops.delete(sfxKey);
+        });
+      } catch (err) {
+        console.error('SFXManager loop error:', err);
+      }
+      return;
+    }
+
+    // 3. Parallel Mode (Chỉ khi được chỉ định rõ ràng parallel="true" hoặc queue="false")
+    if (isParallel) {
+      this.playParallel(element, sfxSrc);
+      return;
+    }
+
+    // 4. Default Mode: Queue (Mặc định phát tuần tự lần lượt sau khi âm trước kết thúc)
     this.sfxQueue.push(element);
-    if (!this.isPlaying) this.processQueue();
+    if (!this.isQueueProcessing) this.processQueue();
+  }
+
+  playParallel(element, sfxSrc) {
+    if (!this.isEnabled) return;
+
+    // Cap maximum concurrent parallel audios
+    if (this.activeAudios.size >= this.maxConcurrent) {
+      const oldest = this.activeAudios.values().next().value;
+      if (oldest) {
+        oldest.pause();
+        this.activeAudios.delete(oldest);
+      }
+    }
+
+    try {
+      const audio = new Audio();
+      audio.src = this.resolveSrc(sfxSrc);
+      audio.volume = this.volume;
+      this.activeAudios.add(audio);
+      element.classList.add('playing');
+
+      const cleanup = () => {
+        this.activeAudios.delete(audio);
+        element.classList.remove('playing');
+        element.classList.add('played');
+      };
+
+      audio.addEventListener('ended', cleanup, { once: true });
+      audio.addEventListener('error', () => {
+        this.activeAudios.delete(audio);
+        element.classList.remove('playing');
+        element.classList.add('error');
+      }, { once: true });
+
+      audio.play().catch(() => {
+        cleanup();
+      });
+    } catch (err) {
+      element.classList.remove('playing');
+    }
   }
 
   async processQueue() {
-    if (this.sfxQueue.length === 0 || this.isPlaying) return;
+    if (this.sfxQueue.length === 0 || this.isQueueProcessing) return;
     const element = this.sfxQueue.shift();
-    const sfxSrc = element.dataset.sfxSrc;
+    const sfxSrc = element?.dataset?.sfxSrc;
     if (!sfxSrc || !this.isEnabled) {
       this.processQueue();
       return;
     }
-    this.isPlaying = true;
+
+    this.isQueueProcessing = true;
     element.classList.add('playing');
 
     let isCleanedUp = false;
     const cleanup = () => {
       if (isCleanedUp) return;
       isCleanedUp = true;
-      this.currentAudio = null;
+      this.currentQueueAudio = null;
+      this.isQueueProcessing = false;
       setTimeout(() => {
-        this.isPlaying = false;
         this.processQueue();
-      }, 100);
+      }, 80);
     };
 
     try {
       const audio = new Audio();
-      let finalSrc = sfxSrc;
-      if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
-        finalSrc = this.basePath + sfxSrc;
-      }
-      audio.src = getAssetUrl(finalSrc, 'audio');
+      audio.src = this.resolveSrc(sfxSrc);
       audio.volume = this.volume;
-      this.currentAudio = audio;
+      this.currentQueueAudio = audio;
 
       audio.addEventListener('ended', () => {
         element.classList.remove('playing');
         element.classList.add('played');
         cleanup();
-      });
+      }, { once: true });
 
-      audio.addEventListener('error', (e) => {
+      audio.addEventListener('error', () => {
         element.classList.remove('playing');
         element.classList.add('error');
         cleanup();
-      });
+      }, { once: true });
 
       await audio.play();
     } catch (error) {
@@ -509,10 +629,57 @@ export class SFXManager {
     }
   }
 
+  stopSFX(target) {
+    if (!target) return;
+    if (target === 'all') {
+      // Dừng toàn bộ âm thanh lặp
+      this.activeLoops.forEach(({ audio, element }) => {
+        audio.pause();
+        audio.currentTime = 0;
+        if (element) element.classList.remove('playing');
+      });
+      this.activeLoops.clear();
+
+      // Dừng toàn bộ âm thanh song song
+      this.activeAudios.forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      this.activeAudios.clear();
+
+      // Dọn hàng đợi tuần tự
+      this.sfxQueue = [];
+      if (this.currentQueueAudio) {
+        this.currentQueueAudio.pause();
+        this.currentQueueAudio = null;
+      }
+      this.isQueueProcessing = false;
+      return;
+    }
+
+    // Dừng âm thanh cụ thể theo target key/src/name
+    this.activeLoops.forEach(({ audio, element }, key) => {
+      const src = element?.dataset?.sfxSrc || '';
+      const name = element?.dataset?.sfxName || '';
+      if (key === target || src.includes(target) || name === target) {
+        audio.pause();
+        audio.currentTime = 0;
+        if (element) element.classList.remove('playing');
+        this.activeLoops.delete(key);
+      }
+    });
+
+    if (this.currentQueueAudio && this.currentQueueAudio.src?.includes(target)) {
+      this.currentQueueAudio.pause();
+      this.currentQueueAudio = null;
+      this.isQueueProcessing = false;
+      this.processQueue();
+    }
+  }
+
   resetPlayedState() {
     this.playedElements.clear();
-    this.sfxQueue = [];
-    this.isPlaying = false;
+    this.stopSFX('all');
     document.querySelectorAll(this.selector).forEach(el => {
       el.classList.remove('played', 'playing', 'error');
     });
@@ -523,12 +690,7 @@ export class SFXManager {
       this.scrollObserver.disconnect();
       this.scrollObserver = null;
     }
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
-    }
-    this.sfxQueue = [];
-    this.isPlaying = false;
+    this.stopSFX('all');
     this.playedElements.clear();
   }
 }

@@ -9,7 +9,8 @@ export default function Sidebar({
     onItemSelect,
     loading = false,
     renderItem,
-    itemKey = 'id'
+    itemKey = 'id',
+    headerComponent = null
 }) {
     const defaultRender = (item) => <span>{item.name || item.title || String(item)}</span>
     const customRender = renderItem || defaultRender
@@ -22,6 +23,8 @@ export default function Sidebar({
             <div className="sidebar-title-block panel-stripes">
                 <span className="sidebar-title technical-text">{title}</span>
             </div>
+
+            {headerComponent}
 
             {loading ? (
                 <Loading text="POLLING_DATA..." />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
@@ -54,9 +54,13 @@ export default function RedesignEventPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [sidebarEvents, setSidebarEvents] = useState([])
     const [loadingSidebar, setLoadingSidebar] = useState(true)
-    const [loadedRegionId, setLoadedRegionId] = useState(null)
+    const [allRegions, setAllRegions] = useState([])
+    const [activeRegionId, setActiveRegionId] = useState(null)
     const [arc, setArc] = useState(null)
     const [region, setRegion] = useState(null)
+
+    // Event BGM Audio Ref
+    const bgmAudioRef = useRef(null)
 
     // Tab State
     const [activeTab, setActiveTab] = useState('stories')
@@ -85,11 +89,28 @@ export default function RedesignEventPage() {
 
                 // Restore arc & region từ cache nếu có
                 if (cached.event.arc_id) {
-                    const cachedArc = arcCache.get(cached.event.arc_id)
+                    let cachedArc = arcCache.get(cached.event.arc_id)
+                    if (!cachedArc) {
+                        try {
+                            cachedArc = await SupabaseAPI.getArc(cached.event.arc_id)
+                            if (cachedArc) arcCache.set(cached.event.arc_id, cachedArc)
+                        } catch (e) {
+                            console.warn('Failed to load arc from cache hit:', e)
+                        }
+                    }
                     if (cachedArc) {
                         setArc(cachedArc)
-                        const cachedRegion = regionCache.get(cachedArc.region_id)
+                        let cachedRegion = regionCache.get(cachedArc.region_id)
+                        if (!cachedRegion) {
+                            try {
+                                cachedRegion = await SupabaseAPI.getRegion(cachedArc.region_id)
+                                if (cachedRegion) regionCache.set(cachedArc.region_id, cachedRegion)
+                            } catch (e) {
+                                console.warn('Failed to load region from cache hit:', e)
+                            }
+                        }
                         if (cachedRegion) setRegion(cachedRegion)
+                        setActiveRegionId(cachedArc.region_id)
                     }
                 }
 
@@ -204,6 +225,7 @@ export default function RedesignEventPage() {
                             if (regionData) regionCache.set(arcData.region_id, regionData)
                         }
                         if (regionData) setRegion(regionData)
+                        setActiveRegionId(arcData.region_id)
                     }
                 }
             } catch (err) {
@@ -216,81 +238,173 @@ export default function RedesignEventPage() {
         loadEventData()
     }, [id])
 
-    // 2. Fetch Region Events & Suggestions for Sidebar
+    // 2. Load all available regions for the Sidebar Region Switcher
     useEffect(() => {
-        async function loadRegionEvents() {
-            if (!arc || arc.region_id === loadedRegionId) return
+        SupabaseAPI.getRegions().then(regs => {
+            if (regs && regs.length > 0) setAllRegions(regs)
+        }).catch(err => console.error('Failed to load all regions:', err))
+    }, [])
 
-            try {
-                setLoadingSidebar(true)
-                const arcs = await SupabaseAPI.getArcsByRegion(arc.region_id)
-                const allEvents = await SupabaseAPI.getEvents()
-                const allEventsMap = Object.fromEntries(allEvents.map(e => [e.event_id, e]))
+    // 3. Fetch Region Events & Suggestions for Sidebar
+    const loadRegionEvents = useCallback(async (targetRegionId) => {
+        if (!targetRegionId) return
 
-                // Fetch suggestions for all arcs in region
-                const suggestionsLists = await Promise.all(
-                    arcs.map(a => SupabaseAPI.getSuggestionsByArc(a.arc_id).catch(() => []))
-                )
+        try {
+            setLoadingSidebar(true)
+            const arcs = await SupabaseAPI.getArcsByRegion(targetRegionId)
+            const allEvents = await SupabaseAPI.getEvents()
+            const allEventsMap = Object.fromEntries(allEvents.map(e => [e.event_id, e]))
 
-                const arcMap = Object.fromEntries(arcs.map(a => [a.arc_id, { name: a.name, order: a.display_order ?? 0 }]))
-                const finalSidebarItems = []
+            // Fetch suggestions for all arcs in region
+            const suggestionsLists = await Promise.all(
+                arcs.map(a => SupabaseAPI.getSuggestionsByArc(a.arc_id).catch(() => []))
+            )
 
-                // Sort arcs by display_order
-                const sortedArcs = [...arcs].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+            const finalSidebarItems = []
+            const sortedArcs = [...arcs].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
 
-                sortedArcs.forEach((a) => {
-                    const originalArcIdx = arcs.findIndex(orig => orig.arc_id === a.arc_id)
-                    const arcEvents = allEvents.filter(e => e.arc_id === a.arc_id)
-                        .sort((x, y) => (x.display_order ?? 0) - (y.display_order ?? 0))
+            sortedArcs.forEach((a) => {
+                const originalArcIdx = arcs.findIndex(orig => orig.arc_id === a.arc_id)
+                const arcEvents = allEvents.filter(e => e.arc_id === a.arc_id)
+                    .sort((x, y) => (x.display_order ?? 0) - (y.display_order ?? 0))
 
-                    const suggs = suggestionsLists[originalArcIdx] || []
-                    const suggsByPos = new Map()
-                    suggs.forEach(s => {
-                        const target = allEventsMap[s.target_event_id]
-                        if (target) {
-                            if (!suggsByPos.has(s.position)) suggsByPos.set(s.position, [])
-                            suggsByPos.get(s.position).push({
-                                ...target,
-                                arc_name: a.name,
-                                isSuggestion: true,
-                                suggestionPosition: s.position,
-                                suggestionType: s.type || 'next'
-                            })
-                        }
-                    })
-
-                    const insertedPositions = new Set()
-                    arcEvents.forEach((evt, evtIdx) => {
-                        suggsByPos.forEach((sList, pos) => {
-                            if (!insertedPositions.has(pos) && pos <= evtIdx) {
-                                finalSidebarItems.push(...sList)
-                                insertedPositions.add(pos)
-                            }
+                const suggs = suggestionsLists[originalArcIdx] || []
+                const suggsByPos = new Map()
+                suggs.forEach(s => {
+                    const target = allEventsMap[s.target_event_id]
+                    if (target) {
+                        if (!suggsByPos.has(s.position)) suggsByPos.set(s.position, [])
+                        suggsByPos.get(s.position).push({
+                            ...target,
+                            arc_name: a.name,
+                            isSuggestion: true,
+                            suggestionPosition: s.position,
+                            suggestionType: s.type || 'next'
                         })
-                        finalSidebarItems.push({
-                            ...evt,
-                            arc_name: a.name
-                        })
-                    })
+                    }
+                })
 
+                const insertedPositions = new Set()
+                arcEvents.forEach((evt, evtIdx) => {
                     suggsByPos.forEach((sList, pos) => {
-                        if (!insertedPositions.has(pos)) {
+                        if (!insertedPositions.has(pos) && pos <= evtIdx) {
                             finalSidebarItems.push(...sList)
                             insertedPositions.add(pos)
                         }
                     })
+                    finalSidebarItems.push({
+                        ...evt,
+                        arc_name: a.name
+                    })
                 })
 
-                setSidebarEvents(finalSidebarItems)
-                setLoadedRegionId(arc.region_id)
-            } catch (err) {
-                console.error('Error loading sidebar events:', err)
-            } finally {
-                setLoadingSidebar(false)
+                suggsByPos.forEach((sList, pos) => {
+                    if (!insertedPositions.has(pos)) {
+                        finalSidebarItems.push(...sList)
+                        insertedPositions.add(pos)
+                    }
+                })
+            })
+
+            setSidebarEvents(finalSidebarItems)
+        } catch (err) {
+            console.error('Error loading sidebar events:', err)
+        } finally {
+            setLoadingSidebar(false)
+        }
+    }, [])
+
+    // Synchronize sidebar events whenever activeRegionId changes
+    useEffect(() => {
+        if (activeRegionId) {
+            loadRegionEvents(activeRegionId)
+        }
+    }, [activeRegionId, loadRegionEvents])
+
+    // 4. Event BGM Player (Plays ONLY if event has BGM, syncs with Header settings)
+    const getEffectiveVolume = useCallback(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
+            const isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
+            if (isMuted) return 0
+            const master = (saved.masterVolume ?? 80) / 100
+            const bgm = (saved.bgmVolume ?? 70) / 100
+            return master * bgm
+        } catch {
+            return 0.5
+        }
+    }, [])
+
+    useEffect(() => {
+        const bgmSrc = event?.bgm_url || event?.bgm || event?.bgm_id
+        if (!bgmSrc) {
+            if (bgmAudioRef.current) {
+                bgmAudioRef.current.pause()
+                bgmAudioRef.current = null
+            }
+            return
+        }
+
+        let finalSrc = bgmSrc
+        if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
+            finalSrc = '/assets/audio/bgm/' + finalSrc
+        }
+        const resolvedUrl = getAssetUrl(finalSrc, 'audio')
+
+        if (!bgmAudioRef.current || bgmAudioRef.current._src !== resolvedUrl) {
+            if (bgmAudioRef.current) {
+                bgmAudioRef.current.pause()
+                bgmAudioRef.current = null
+            }
+            const audio = new Audio(resolvedUrl)
+            audio.loop = true
+            audio._src = resolvedUrl
+            audio.volume = getEffectiveVolume()
+            bgmAudioRef.current = audio
+
+            const playPromise = audio.play()
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    const resumeOnInteraction = () => {
+                        if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
+                        document.removeEventListener('click', resumeOnInteraction)
+                        document.removeEventListener('keydown', resumeOnInteraction)
+                    }
+                    document.addEventListener('click', resumeOnInteraction, { once: true })
+                    document.addEventListener('keydown', resumeOnInteraction, { once: true })
+                })
+            }
+        } else {
+            bgmAudioRef.current.volume = getEffectiveVolume()
+        }
+    }, [event, getEffectiveVolume])
+
+    // Synchronize BGM Volume / Mute with Header Settings
+    useEffect(() => {
+        const handleVolumeSync = () => {
+            if (bgmAudioRef.current) {
+                bgmAudioRef.current.volume = getEffectiveVolume()
             }
         }
-        loadRegionEvents()
-    }, [arc, loadedRegionId])
+        window.addEventListener('cedBgmVolumeChange', handleVolumeSync)
+        window.addEventListener('ced_app_settings', handleVolumeSync)
+        window.addEventListener('storage', handleVolumeSync)
+        return () => {
+            window.removeEventListener('cedBgmVolumeChange', handleVolumeSync)
+            window.removeEventListener('ced_app_settings', handleVolumeSync)
+            window.removeEventListener('storage', handleVolumeSync)
+        }
+    }, [getEffectiveVolume])
+
+    // Cleanup audio on component unmount
+    useEffect(() => {
+        return () => {
+            if (bgmAudioRef.current) {
+                bgmAudioRef.current.pause()
+                bgmAudioRef.current = null
+            }
+        }
+    }, [])
 
     // 3. Close sidebar on click outside
     useEffect(() => {
@@ -335,9 +449,50 @@ export default function RedesignEventPage() {
                     sidebarOpen={sidebarOpen}
                     items={sidebarEvents}
                     selectedItemId={id}
-                    onItemSelect={(evt) => navigate(`/event/${evt.event_id}`, { state: { regionId: arc?.region_id } })}
+                    onItemSelect={(evt) => navigate(`/event/${evt.event_id}`, { state: { regionId: activeRegionId || arc?.region_id } })}
                     loading={loadingSidebar}
                     itemKey="event_id"
+                    headerComponent={
+                        allRegions.length > 0 ? (
+                            <div className="sidebar-region-selector-wrap" style={{ padding: '0.6rem 0.8rem', borderBottom: '1px solid rgba(245,237,220,0.12)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                    <span className="technical-text" style={{ fontSize: '0.68rem', color: 'var(--color-terracotta)', fontWeight: 700, letterSpacing: '0.5px' }}>
+                                        SYS.ACTIVE_REGION
+                                    </span>
+                                    <span style={{ fontSize: '0.68rem', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
+                                        {allRegions.length} KHU VỰC
+                                    </span>
+                                </div>
+                                <select
+                                    value={activeRegionId || ''}
+                                    onChange={(e) => {
+                                        const newRegId = e.target.value
+                                        setActiveRegionId(newRegId)
+                                    }}
+                                    className="sidebar-region-dropdown"
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#181818',
+                                        color: '#F5EDDC',
+                                        border: '1px solid rgba(245,237,220,0.2)',
+                                        padding: '0.45rem 0.6rem',
+                                        fontSize: '0.8rem',
+                                        fontFamily: 'var(--font-mono)',
+                                        borderRadius: '3px',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        boxSizing: 'border-box'
+                                    }}
+                                >
+                                    {allRegions.map(reg => (
+                                        <option key={reg.region_id} value={reg.region_id}>
+                                            {reg.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : null
+                    }
                     renderItem={(evt) => {
                         const isPrev = evt.isSuggestion && evt.suggestionType === 'prev';
                         return (

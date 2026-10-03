@@ -11,6 +11,7 @@ import LivePreview from './components/LivePreview'
 import SuggestionsManager from './components/managers/SuggestionsManager'
 import EventCharactersManager from './components/managers/EventCharactersManager'
 import EventGalleryManager from './components/managers/EventGalleryManager'
+import EventBgmManager from './components/managers/EventBgmManager'
 
 import AssetPickerModal from './components/modals/AssetPickerModal'
 import AssetDetailModal from './components/modals/AssetDetailModal'
@@ -807,6 +808,11 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                 )}
                                 {!isRecord && selectedEntity.type === 'event' && (
                                     <>
+                                        <EventBgmManager
+                                            eventId={selectedEntity.event_id || selectedEntity.id}
+                                            showNotification={showNotification}
+                                            onPickAsset={openPicker}
+                                        />
                                         <EventCharactersManager
                                             eventId={selectedEntity.event_id || selectedEntity.id}
                                             showNotification={showNotification}

@@ -230,10 +230,10 @@ const SupabaseAPI_Raw = {
     eventsByArcPromises[arcId] = (async () => {
       try {
         if (USE_MOCK_DB)
-          return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId));
+          return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId)).map(e => this._enrichEvent(e));
         const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
         if (error) throw error;
-        return data || [];
+        return (data || []).map(e => this._enrichEvent(e));
       } catch (err) {
         delete eventsByArcPromises[arcId]; // Clear cache on error
         throw err;
@@ -243,19 +243,34 @@ const SupabaseAPI_Raw = {
     return eventsByArcPromises[arcId];
   },
 
+  _enrichEvent(event) {
+    if (!event) return null;
+    const enriched = { ...event };
+    if (!enriched.bgm_url && enriched.description) {
+      const match = enriched.description.match(/\[bgm:\s*([^\]]+)\]/i);
+      if (match) {
+        enriched.bgm_url = match[1].trim();
+        enriched.description = enriched.description.replace(/\[bgm:\s*[^\]]+\]/gi, '').trim();
+      }
+    }
+    return enriched;
+  },
+
   async getEvents() {
-    if (USE_MOCK_DB) return sortByOrder(mockDatabase.events);
+    if (USE_MOCK_DB) return sortByOrder(mockDatabase.events).map(e => this._enrichEvent(e));
     const { data, error } = await supabase.from('events').select('*').order('display_order');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(e => this._enrichEvent(e));
   },
 
   async getEvent(eventId) {
-    if (USE_MOCK_DB)
-      return mockDatabase.events.find(e => e.event_id === eventId) || null;
+    if (USE_MOCK_DB) {
+      const found = mockDatabase.events.find(e => e.event_id === eventId);
+      return found ? this._enrichEvent(found) : null;
+    }
     const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
     if (error) throw error;
-    return data?.[0] || null;
+    return data?.[0] ? this._enrichEvent(data[0]) : null;
   },
 
   async createEvent(payload) {
@@ -263,16 +278,34 @@ const SupabaseAPI_Raw = {
     if (USE_MOCK_DB) {
       const newItem = { event_id: genId('event'), display_order: 0, ...payload };
       mockDatabase.events.push(newItem);
-      return newItem;
+      return this._enrichEvent(newItem);
     }
     const cleanPayload = { ...payload };
     if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
     if (cleanPayload.banner_url) cleanPayload.banner_url = cleanUrl(cleanPayload.banner_url);
     if (cleanPayload.wallpaper_url) cleanPayload.wallpaper_url = cleanUrl(cleanPayload.wallpaper_url);
 
-    const { data, error } = await supabase.from('events').insert(cleanPayload).select().single();
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.from('events').insert(cleanPayload).select().single();
+      if (error) {
+        if (error.code === 'PGRST204' && cleanPayload.bgm_url !== undefined) {
+          const bgmVal = cleanPayload.bgm_url;
+          delete cleanPayload.bgm_url;
+          if (bgmVal) {
+            cleanPayload.description = cleanPayload.description
+              ? `${cleanPayload.description}\n[bgm: ${bgmVal}]`
+              : `[bgm: ${bgmVal}]`;
+          }
+          const retry = await supabase.from('events').insert(cleanPayload).select().single();
+          if (retry.error) throw retry.error;
+          return this._enrichEvent(retry.data);
+        }
+        throw error;
+      }
+      return this._enrichEvent(data);
+    } catch (err) {
+      throw err;
+    }
   },
 
   async updateEvent(eventId, payload) {
@@ -281,16 +314,38 @@ const SupabaseAPI_Raw = {
       const idx = mockDatabase.events.findIndex(e => e.event_id === eventId);
       if (idx < 0) throw new Error('not-found');
       Object.assign(mockDatabase.events[idx], payload);
-      return mockDatabase.events[idx];
+      return this._enrichEvent(mockDatabase.events[idx]);
     }
     const cleanPayload = { ...payload };
     if (cleanPayload.image_url) cleanPayload.image_url = cleanUrl(cleanPayload.image_url);
     if (cleanPayload.banner_url) cleanPayload.banner_url = cleanUrl(cleanPayload.banner_url);
     if (cleanPayload.wallpaper_url) cleanPayload.wallpaper_url = cleanUrl(cleanPayload.wallpaper_url);
 
-    const { data, error } = await supabase.from('events').update(cleanPayload).eq('event_id', eventId).select();
-    if (error) throw error;
-    return data?.[0] || null;
+    try {
+      const { data, error } = await supabase.from('events').update(cleanPayload).eq('event_id', eventId).select();
+      if (error) {
+        if (error.code === 'PGRST204' && cleanPayload.bgm_url !== undefined) {
+          const bgmVal = cleanPayload.bgm_url;
+          delete cleanPayload.bgm_url;
+
+          // Fetch current event to retain description
+          const currentEv = await this.getEvent(eventId);
+          let desc = (cleanPayload.description !== undefined ? cleanPayload.description : currentEv?.description) || '';
+          desc = desc.replace(/\[bgm:\s*[^\]]+\]/gi, '').trim();
+          if (bgmVal) {
+            desc = desc ? `${desc}\n[bgm: ${bgmVal}]` : `[bgm: ${bgmVal}]`;
+          }
+          cleanPayload.description = desc;
+          const retryRes = await supabase.from('events').update(cleanPayload).eq('event_id', eventId).select();
+          if (retryRes.error) throw retryRes.error;
+          return this._enrichEvent(retryRes.data?.[0]);
+        }
+        throw error;
+      }
+      return this._enrichEvent(data?.[0]);
+    } catch (err) {
+      throw err;
+    }
   },
 
   async deleteEvent(eventId) {
