@@ -132,7 +132,7 @@ export const StoryScriptSerializer = {
                         }
                     } else {
                         let sfxLine = `${indent}@sfx "${d.name || ''}" src="${sfxSrc}"`;
-                        if (d.parallel || d.queue === false) sfxLine += ' parallel="true"';
+                        if (d.parallel) sfxLine += ' parallel="true"';
                         if (d.loop) sfxLine += ' loop="true"';
                         lines.push(sfxLine);
                     }

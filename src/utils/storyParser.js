@@ -398,10 +398,7 @@ export const StoryScriptParser = {
                         src: params.src || ''
                     };
                     if (params.loop === 'true' || params.loop === true) sfxObj.loop = true;
-                    if (params.parallel === 'true' || params.parallel === true || params.queue === 'false' || params.queue === false) {
-                        sfxObj.parallel = true;
-                    }
-                    if (params.queue === 'true' || params.queue === true) sfxObj.queue = true;
+                    if (params.parallel === 'true' || params.parallel === true) sfxObj.parallel = true;
                     if (params.stop) sfxObj.stop = params.stop;
                     pushToParent(sfxObj);
                     continue;
@@ -416,10 +413,7 @@ export const StoryScriptParser = {
                         src: sfxParamsOnly.src || ''
                     };
                     if (sfxParamsOnly.loop === 'true' || sfxParamsOnly.loop === true) sfxObj.loop = true;
-                    if (sfxParamsOnly.parallel === 'true' || sfxParamsOnly.parallel === true || sfxParamsOnly.queue === 'false' || sfxParamsOnly.queue === false) {
-                        sfxObj.parallel = true;
-                    }
-                    if (sfxParamsOnly.queue === 'true' || sfxParamsOnly.queue === true) sfxObj.queue = true;
+                    if (sfxParamsOnly.parallel === 'true' || sfxParamsOnly.parallel === true) sfxObj.parallel = true;
                     if (sfxParamsOnly.stop) sfxObj.stop = sfxParamsOnly.stop;
                     pushToParent(sfxObj);
                     continue;

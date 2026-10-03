@@ -435,11 +435,6 @@ export class SFXManager {
     element.dataset.sfxIndex = index;
     element.dataset.sfxAuto = sfxAuto;
 
-    if (!element.innerHTML.includes('sfx-name')) {
-      const loopBadge = element.dataset.sfxLoop === 'true' ? '<span class="sfx-loop-badge" title="Lặp lại">↻</span>' : '';
-      const parallelBadge = element.dataset.sfxParallel === 'true' ? '<span class="sfx-parallel-badge" title="Song song">⚡</span>' : '';
-      element.innerHTML = `<div class="sfx-content"><span class="sfx-name">${sfxName}</span>${loopBadge}${parallelBadge}</div>`;
-    }
 
     // Click handler: manual play or toggle loop
     const handleClick = () => this.playSFX(element, false);
@@ -495,7 +490,7 @@ export class SFXManager {
     if (!sfxSrc) return;
 
     const isLoop = element.dataset.sfxLoop === 'true';
-    const isParallel = element.dataset.sfxParallel === 'true' || element.dataset.sfxQueue === 'false';
+    const isParallel = element.dataset.sfxParallel === 'true';
     const sfxKey = element.dataset.sfxIndex || sfxSrc;
 
     // 2. Loop Mode
