@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { BookmarkCheck, ArrowRight } from 'lucide-react'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
-import { getLastRead, formatRelativeTime } from '../../../src/utils/readingHistory'
+import { getLastRead } from '../../../src/utils/readingHistory'
 import Header from '../../components/Header'
 import Sidebar from '../../components/Sidebar'
 import Footer from '../../components/Footer'
@@ -276,22 +276,7 @@ export default function RedesignHomePage() {
                                                 )}
                                                 <span className="home-resume-story">{lastRead.storyName}</span>
                                             </div>
-                                            <div className="home-resume-meta">
-                                                <div className="home-resume-progress-bar">
-                                                    <div
-                                                        className="home-resume-progress-fill"
-                                                        style={{ width: `${Math.max(5, lastRead.scrollPercent || 0)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="home-resume-percent technical-text">
-                                                    {lastRead.scrollPercent || 0}%
-                                                </span>
-                                                {lastRead.timestamp && (
-                                                    <span className="home-resume-time technical-text">
-                                                        ({formatRelativeTime(lastRead.timestamp)})
-                                                    </span>
-                                                )}
-                                            </div>
+
                                         </div>
                                         <div className="home-resume-action">
                                             <Link

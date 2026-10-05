@@ -488,36 +488,7 @@
     letter-spacing: 0.02em;
 }
 
-.home-resume-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
 
-.home-resume-progress-bar {
-    width: 140px;
-    height: 6px;
-    background-color: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    overflow: hidden;
-}
-
-.home-resume-progress-fill {
-    height: 100%;
-    background-color: var(--color-ochre, #BA8530);
-    transition: width 0.3s ease;
-}
-
-.home-resume-percent {
-    font-size: 0.75rem;
-    color: var(--color-ochre, #BA8530);
-    font-weight: 700;
-}
-
-.home-resume-time {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.45);
-}
 
 .home-resume-action {
     display: flex;
