@@ -671,29 +671,49 @@ export default function OperatorDetailPage() {
                                     <span className="operator-faction-name">{FACTIONS_MAP[operator.faction]?.name}</span>
                                 </div>
 
-                                {/* Skin Selector */}
-                                {operator.skins && operator.skins.length > 1 && (
+                                {/* Skin Selector & Description */}
+                                {operator.skins && operator.skins.length > 0 && (
                                     <div className="operator-skin-selector">
-                                        <span className="operator-skin-label">Skins ({operator.skins.length})</span>
-                                        <div className="operator-skin-list">
-                                            {operator.skins.map(skin => (
-                                                <button
-                                                    key={skin.id}
-                                                    className={`operator-skin-thumb ${selectedSkinId === skin.id ? 'active' : ''}`}
-                                                    onClick={() => setSelectedSkinId(skin.id)}
-                                                    title={skin.name}
-                                                >
-                                                    <img
-                                                        src={getAssetUrl(skin.avatar_url || skin.avatarUrl || skin.portraitUrl || skin.full_url || '/assets/images/character/blank.png')}
-                                                        alt={skin.name}
-                                                        onError={(e) => {
-                                                            e.target.onerror = null
-                                                            e.target.src = getAssetUrl('/assets/images/character/blank.png')
-                                                        }}
-                                                    />
-                                                </button>
-                                            ))}
+                                        <div className="operator-skin-header">
+                                            <span className="operator-skin-label">TRANG PHỤC // COSTUME</span>
+                                            <span className="operator-skin-current-name technical-text">
+                                                {activeSkin?.name || 'Mặc định'}
+                                            </span>
                                         </div>
+
+                                        {operator.skins.length > 1 && (
+                                            <div className="operator-skin-list">
+                                                {operator.skins.map(skin => (
+                                                    <button
+                                                        key={skin.id}
+                                                        className={`operator-skin-thumb ${selectedSkinId === skin.id ? 'active' : ''}`}
+                                                        onClick={() => setSelectedSkinId(skin.id)}
+                                                        title={skin.name}
+                                                    >
+                                                        <img
+                                                            src={getAssetUrl(skin.avatar_url || skin.avatarUrl || skin.portraitUrl || skin.full_url || '/assets/images/character/blank.png')}
+                                                            alt={skin.name}
+                                                            onError={(e) => {
+                                                                e.target.onerror = null
+                                                                e.target.src = getAssetUrl('/assets/images/character/blank.png')
+                                                            }}
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {activeSkin?.description && (
+                                            <div className="operator-skin-desc-card">
+                                                <div className="operator-skin-desc-header technical-text">
+                                                    <Sparkles size={12} color="var(--color-ochre)" />
+                                                    <span>MÔ TẢ TRANG PHỤC</span>
+                                                </div>
+                                                <p className="operator-skin-desc-text">
+                                                    {activeSkin.description}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -737,8 +757,13 @@ export default function OperatorDetailPage() {
                         </button>
                         <img src={getAssetUrl(currentPortrait)} alt={operator.name} className="modal-portrait-img" />
                         <div className="modal-caption technical-text">
-                            {operator.name} // {operator.skins.find(s => s.id === selectedSkinId)?.name || 'Default'}
+                            {operator.name} // {activeSkin?.name || 'Default'}
                         </div>
+                        {activeSkin?.description && (
+                            <div className="modal-skin-desc">
+                                {activeSkin.description}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

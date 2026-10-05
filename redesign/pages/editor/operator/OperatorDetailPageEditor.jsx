@@ -507,6 +507,22 @@ export default function OperatorDetailPageEditor() {
                 })
             } else {
                 await SupabaseAPI.updateOperator(id, payload)
+
+                // Đồng bộ cập nhật thông tin và mô tả skin
+                if (skins && skins.length > 0) {
+                    for (const s of skins) {
+                        if (s.skin_id && !String(s.skin_id).startsWith('temp_')) {
+                            await SupabaseAPI.updateOperatorSkin(s.skin_id, {
+                                name: s.name,
+                                avatar_url: s.avatar_url,
+                                full_url: s.full_url,
+                                description: s.description || '',
+                                is_default: s.is_default
+                            }).catch(err => console.warn('Skin sync failed:', s.skin_id, err))
+                        }
+                    }
+                }
+
                 showToast('Đã lưu hồ sơ cán viên thành công!', 'success')
             }
         } catch (err) {
@@ -518,6 +534,27 @@ export default function OperatorDetailPageEditor() {
     }
 
     // ─── SKINS HANDLERS ────────────────────────────────────────────────────────
+    const handleSaveActiveSkinDescription = async () => {
+        if (!activeSkin) return
+        if (isNew) {
+            showToast('Đã lưu mô tả skin vào bộ nhớ tạm.', 'success')
+            return
+        }
+        try {
+            await SupabaseAPI.updateOperatorSkin(activeSkin.skin_id, {
+                name: activeSkin.name,
+                avatar_url: activeSkin.avatar_url,
+                full_url: activeSkin.full_url,
+                description: activeSkin.description || '',
+                is_default: activeSkin.is_default
+            })
+            showToast(`Đã lưu mô tả cho trang phục "${activeSkin.name}"!`, 'success')
+        } catch (err) {
+            console.error('Save skin description failed:', err)
+            showToast('Lưu mô tả skin thất bại: ' + err.message, 'error')
+        }
+    }
+
     const handleOpenSkinModal = (skin = null) => {
         if (skin) {
             setEditingSkin(skin)
@@ -1193,6 +1230,7 @@ export default function OperatorDetailPageEditor() {
                                             </button>
                                             <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem' }}>
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleOpenSkinModal(s)}
                                                     className="brutalist-icon-btn"
                                                     style={{ width: '22px', height: '22px', border: '1px solid #181818' }}
@@ -1202,6 +1240,7 @@ export default function OperatorDetailPageEditor() {
                                                 </button>
                                                 {!s.is_default && (
                                                     <button
+                                                        type="button"
                                                         onClick={() => handleDeleteSkin(s.skin_id)}
                                                         className="brutalist-icon-btn danger"
                                                         style={{ width: '22px', height: '22px', border: '1px solid #181818' }}
@@ -1214,6 +1253,63 @@ export default function OperatorDetailPageEditor() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Active Skin Description & Quick Details */}
+                                {activeSkin && (
+                                    <div className="op-skin-details-card">
+                                        <div className="op-skin-details-header">
+                                            <div className="op-skin-details-title-row">
+                                                <span className="op-skin-badge technical-text">
+                                                    {activeSkin.is_default ? 'DEFAULT' : 'SKIN'}
+                                                </span>
+                                                <span className="op-skin-name-display" title={activeSkin.name}>
+                                                    {activeSkin.name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="brutalist-btn secondary technical-text op-skin-quick-edit-btn"
+                                                onClick={() => handleOpenSkinModal(activeSkin)}
+                                                title="Mở modal chỉnh sửa chi tiết skin (ảnh chân dung, avatar, tên)"
+                                            >
+                                                <Edit2 size={11} />
+                                                <span>SỬA CHI TIẾT</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="op-form-group" style={{ marginBottom: 0 }}>
+                                            <label className="op-form-label technical-text" style={{ fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span>MÔ TẢ TRANG PHỤC (LORE / QUOTE):</span>
+                                                <span style={{ opacity: 0.6, fontSize: '0.68rem' }}>{activeSkin.description?.length || 0} ký tự</span>
+                                            </label>
+                                            <textarea
+                                                className="op-form-textarea op-skin-desc-textarea"
+                                                rows={3}
+                                                value={activeSkin.description || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value
+                                                    setSkins(prev => prev.map(s => s.skin_id === activeSkin.skin_id ? { ...s, description: val } : s))
+                                                }}
+                                                placeholder="Nhập mô tả hoặc trích dẫn về trang phục này..."
+                                            />
+                                            <div className="op-skin-desc-actions">
+                                                <span className="op-skin-desc-hint technical-text">
+                                                    * Hiển thị trực tiếp bên dưới trang phục tại trang chi tiết.
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="brutalist-btn primary technical-text"
+                                                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.68rem' }}
+                                                    onClick={handleSaveActiveSkinDescription}
+                                                    title="Lưu ngay mô tả này vào cơ sở dữ liệu"
+                                                >
+                                                    <Sparkles size={11} />
+                                                    <span>LƯU MÔ TẢ</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

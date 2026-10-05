@@ -1311,3 +1311,76 @@
     color: #181818;
     box-shadow: 2px 2px 0px var(--color-charcoal, #181818);
 }
+
+/* ─── Selected Skin Details & Description Card in Editor ───────────────────── */
+.op-skin-details-card {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(24, 24, 24, 0.03);
+    border: 1.5px solid var(--border-color, #181818);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    box-shadow: 2px 2px 0px rgba(24, 24, 24, 0.15);
+}
+
+.op-skin-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px dashed rgba(24, 24, 24, 0.2);
+}
+
+.op-skin-details-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+}
+
+.op-skin-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-cream, #F5EDDC);
+    background: var(--color-charcoal, #181818);
+    padding: 0.1rem 0.4rem;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.op-skin-name-display {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-charcoal, #181818);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.op-skin-quick-edit-btn {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    flex-shrink: 0;
+}
+
+.op-skin-desc-textarea {
+    font-size: 0.82rem;
+    min-height: 70px;
+    resize: vertical;
+}
+
+.op-skin-desc-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+
+.op-skin-desc-hint {
+    font-size: 0.68rem;
+    color: rgba(24, 24, 24, 0.55);
+    line-height: 1.3;
+}
