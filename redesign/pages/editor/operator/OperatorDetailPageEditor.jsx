@@ -495,7 +495,7 @@ export default function OperatorDetailPageEditor() {
                             name: r.name,
                             description: r.description || '',
                             display_order: Number(r.display_order) || 1,
-                            story_content: r.story_content || { type: 'vns', script: `// Kịch bản kí sự: ${r.name}\n\n[dialog]\n${name}: Kí sự bắt đầu.\n` }
+                            story_content: r.story_content || { type: 'vns', script: `// Kịch bản kí sự: ${r.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
                         })
                     }
                 }
@@ -653,7 +653,7 @@ export default function OperatorDetailPageEditor() {
     // ─── SKILLS HANDLERS ───────────────────────────────────────────────────────
     const handleAddSkill = () => {
         setSkills([...skills, {
-            name: `Kĩ năng ${skills.length + 1}`,
+            name: `kỹ năng ${skills.length + 1}`,
             icon: '',
             initialSp: 0,
             spCost: 0,
@@ -695,7 +695,7 @@ export default function OperatorDetailPageEditor() {
 
     // ─── BASE SKILLS HANDLERS ──────────────────────────────────────────────────
     const handleAddBaseSkill = () => {
-        setBaseSkills([...baseSkills, { name: `Kĩ năng hậu cần ${baseSkills.length + 1}`, icon: '', description: '' }])
+        setBaseSkills([...baseSkills, { name: `kỹ năng hậu cần ${baseSkills.length + 1}`, icon: '', description: '' }])
     }
     const handleUpdateBaseSkill = (index, field, val) => {
         const next = [...baseSkills]
@@ -845,7 +845,7 @@ export default function OperatorDetailPageEditor() {
     const handleOpenRecordModal = () => {
         setRecordForm({
             record_id: `rec_${opId.replace('char_', '')}_${records.length + 1}`,
-            name: `Kí sự ${records.length + 1}`,
+            name: `kí sự ${records.length + 1}`,
             description: '',
             display_order: records.length + 1
         })
@@ -866,7 +866,7 @@ export default function OperatorDetailPageEditor() {
                     name: recordForm.name.trim(),
                     description: recordForm.description.trim(),
                     display_order: Number(recordForm.display_order) || 1,
-                    story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: Kí sự bắt đầu.\n` }
+                    story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
                 }
                 setRecords(prev => [...prev, newRec])
                 showToast('Đã thêm thông tin kí sự vào bộ nhớ tạm.', 'success')
@@ -880,7 +880,7 @@ export default function OperatorDetailPageEditor() {
                 name: recordForm.name.trim(),
                 description: recordForm.description.trim(),
                 display_order: Number(recordForm.display_order) || 1,
-                story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: Kí sự bắt đầu.\n` }
+                story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
             }
 
             await SupabaseAPI.createOperatorRecord(payload)
@@ -960,7 +960,7 @@ export default function OperatorDetailPageEditor() {
                             title="Chuyển sang soạn thảo kịch bản kí sự (Alt + S)"
                         >
                             <BookOpen size={14} />
-                            <span>KỊCH BẢN KÍ SỰ (ALT+S)</span>
+                            <span>KỊCH BẢN kí sự (ALT+S)</span>
                         </button>
                     )}
 
@@ -1244,12 +1244,12 @@ export default function OperatorDetailPageEditor() {
                                 className={`op-editor-tab-btn ${activeTab === 'record' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('record')}
                             >
-                                <span>KỸ SỰ</span>
+                                <span>KÝ SỰ</span>
                                 <span className="tab-count-badge">[{records.length}]</span>
                             </button>
                         </div>
 
-                        {/* Tab 1: Kĩ Năng & Chiến Đấu */}
+                        {/* Tab 1: Kỹ Năng & Chiến Đấu */}
                         {activeTab === 'skill' && (
                             <div className="op-tab-content-wrapper">
                                 {/* Talents section */}
@@ -1342,14 +1342,14 @@ export default function OperatorDetailPageEditor() {
                                                                 style={{ flex: 1, height: '30px', fontWeight: 600 }}
                                                                 value={skill.name}
                                                                 onChange={(e) => handleUpdateSkill(idx, 'name', e.target.value)}
-                                                                placeholder="Tên kĩ năng"
+                                                                placeholder="Tên kỹ năng"
                                                             />
                                                         </div>
                                                         <button
                                                             className="brutalist-icon-btn"
                                                             style={{ marginLeft: '0.5rem' }}
                                                             onClick={() => handleDeleteSkill(idx)}
-                                                            title="Xoá kĩ năng"
+                                                            title="Xoá kỹ năng"
                                                         >
                                                             <Trash2 size={13} color="var(--color-crimson, #802520)" />
                                                         </button>
@@ -1358,11 +1358,11 @@ export default function OperatorDetailPageEditor() {
                                                     <div className="op-sub-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                                         {/* Skill Icon */}
                                                         <ImageUploadField
-                                                            label="Icon kĩ năng:"
+                                                            label="Icon kỹ năng:"
                                                             folderPath="images/operators_images/skills"
                                                             value={skill.icon}
                                                             onChange={(url) => handleUpdateSkill(idx, 'icon', url)}
-                                                            placeholder="URL icon kĩ năng hoặc tải lên..."
+                                                            placeholder="URL icon kỹ năng hoặc tải lên..."
                                                             darkPreview={true}
                                                             onNotify={showToast}
                                                         />
@@ -1574,25 +1574,25 @@ export default function OperatorDetailPageEditor() {
                                                                 style={{ flex: 1, height: '30px', fontWeight: 600 }}
                                                                 value={bs.name}
                                                                 onChange={(e) => handleUpdateBaseSkill(idx, 'name', e.target.value)}
-                                                                placeholder="Tên kĩ năng..."
+                                                                placeholder="Tên kỹ năng..."
                                                             />
                                                         </div>
                                                         <button
                                                             className="brutalist-icon-btn"
                                                             style={{ marginLeft: '0.5rem' }}
                                                             onClick={() => handleDeleteBaseSkill(idx)}
-                                                            title="Xoá kĩ năng hậu cần"
+                                                            title="Xoá kỹ năng hậu cần"
                                                         >
                                                             <Trash2 size={13} color="var(--color-crimson, #802520)" />
                                                         </button>
                                                     </div>
                                                     <div className="op-sub-card-body">
                                                         <ImageUploadField
-                                                            label="Icon kĩ năng hậu cần:"
+                                                            label="Icon kỹ năng hậu cần:"
                                                             folderPath="images/operators_images/base_skills"
                                                             value={bs.icon || ''}
                                                             onChange={(url) => handleUpdateBaseSkill(idx, 'icon', url)}
-                                                            placeholder="URL icon kĩ năng hậu cần hoặc tải lên..."
+                                                            placeholder="URL icon kỹ năng hậu cần hoặc tải lên..."
                                                             darkPreview={true}
                                                         />
                                                         <div className="op-form-group">
@@ -1827,18 +1827,18 @@ export default function OperatorDetailPageEditor() {
                             </div>
                         )}
 
-                        {/* Tab 4: Kí Sự Cán Viên (Records) */}
+                        {/* Tab 4: kí sự Cán Viên (Records) */}
                         {activeTab === 'record' && (
                             <div className="op-tab-content-wrapper">
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
                                             <Sparkles size={16} color="var(--color-terracotta, #B2653B)" />
-                                            <span>Danh Sách Kí Sự Cán Viên ({records.length})</span>
+                                            <span>Danh Sách kí sự Cán Viên ({records.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleOpenRecordModal}>
                                             <Plus size={13} />
-                                            <span>Thêm Kí Sự Mới</span>
+                                            <span>Thêm kí sự Mới</span>
                                         </button>
                                     </div>
 
@@ -1847,7 +1847,7 @@ export default function OperatorDetailPageEditor() {
                                             <div className="op-empty-state-card">
                                                 <BookOpen size={36} color="var(--color-ochre, #BA8530)" />
                                                 <span className="op-empty-state-text">
-                                                    CHƯA CÓ KÍ SỰ NÀO ĐƯỢC TẠO
+                                                    CHƯA CÓ kí sự NÀO ĐƯỢC TẠO
                                                 </span>
                                                 <button
                                                     className="brutalist-btn primary"
@@ -1855,7 +1855,7 @@ export default function OperatorDetailPageEditor() {
                                                     onClick={handleOpenRecordModal}
                                                 >
                                                     <Plus size={14} />
-                                                    <span>Tạo Kí Sự Đầu Tiên</span>
+                                                    <span>Tạo kí sự Đầu Tiên</span>
                                                 </button>
                                             </div>
                                         ) : (
@@ -2092,7 +2092,7 @@ export default function OperatorDetailPageEditor() {
                 <div className="op-modal-backdrop" onClick={() => setRecordModalOpen(false)}>
                     <div className="op-modal-box" onClick={(e) => e.stopPropagation()}>
                         <div className="op-modal-header">
-                            <h3 className="op-modal-title">TẠO KÍ SỰ CÁN VIÊN MỚI</h3>
+                            <h3 className="op-modal-title">TẠO kí sự CÁN VIÊN MỚI</h3>
                             <button className="op-modal-close" onClick={() => setRecordModalOpen(false)}>
                                 &times;
                             </button>
@@ -2100,7 +2100,7 @@ export default function OperatorDetailPageEditor() {
 
                         <div className="op-modal-body">
                             <div className="op-form-group">
-                                <label className="op-form-label technical-text">MÃ KÍ SỰ (RECORD_ID):</label>
+                                <label className="op-form-label technical-text">MÃ kí sự (RECORD_ID):</label>
                                 <input
                                     type="text"
                                     className="op-form-input"
@@ -2111,13 +2111,13 @@ export default function OperatorDetailPageEditor() {
                             </div>
 
                             <div className="op-form-group">
-                                <label className="op-form-label technical-text">TÊN KÍ SỰ:</label>
+                                <label className="op-form-label technical-text">TÊN kí sự:</label>
                                 <input
                                     type="text"
                                     className="op-form-input"
                                     value={recordForm.name}
                                     onChange={(e) => setRecordForm({ ...recordForm, name: e.target.value })}
-                                    placeholder="Ví dụ: Kí sự 1 - Gió Lạnh Núi Cao..."
+                                    placeholder="Ví dụ: kí sự 1 - Gió Lạnh Núi Cao..."
                                 />
                             </div>
 
@@ -2148,7 +2148,7 @@ export default function OperatorDetailPageEditor() {
                                 Huỷ
                             </button>
                             <button className="brutalist-btn primary" onClick={handleCreateRecord}>
-                                Tạo Kí Sự
+                                Tạo kí sự
                             </button>
                         </div>
                     </div>

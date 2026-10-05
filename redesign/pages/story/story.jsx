@@ -107,7 +107,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
       try {
         setLoading(true)
         setError(null)
-        
+
         let fetchedStory = null
         if (isRecord) {
           const record = await SupabaseAPI.getOperatorRecord(id)
@@ -118,7 +118,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
               name: record.name,
               description: record.description
             }
-            
+
             // Load operator details and record list
             if (record.operator_id) {
               const [op, recs] = await Promise.all([
@@ -128,7 +128,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
               if (op) {
                 setEventData({
                   event_id: `operator/${record.operator_id}`,
-                  name: `Kí Sự Cán Viên: ${op.name}`
+                  name: `kí sự Cán Viên: ${op.name}`
                 })
               }
               const mappedStories = (recs || []).map(r => ({
@@ -604,7 +604,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
           {isRecord ? (
             <Link to={story?.operator_id ? `/operator/${story.operator_id}` : '/operator'} className="header-meta-bar panel-stripes" title={story?.operator_id ? `Đi tới hồ sơ cán viên: ${story.operator_id}` : 'Đi tới danh sách cán viên'}>
               <span className="technical-text header-dynamic-title">
-                {eventData?.name || story?.name || 'KÍ SỰ CÁN VIÊN'}
+                {eventData?.name || story?.name || 'kí sự CÁN VIÊN'}
               </span>
             </Link>
           ) : eventData ? (

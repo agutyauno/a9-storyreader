@@ -1214,8 +1214,6 @@
 .base-skill-icon {
     width: 36px;
     height: 36px;
-    border: 1.5px solid rgba(24, 24, 24, 0.15);
-    background-color: var(--color-charcoal);
     display: flex;
     align-items: center;
     justify-content: center;

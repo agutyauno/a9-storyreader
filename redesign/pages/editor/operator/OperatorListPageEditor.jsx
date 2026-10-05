@@ -469,7 +469,7 @@ export default function OperatorListPageEditor() {
                         title="Soạn thảo kịch bản kí sự cán viên"
                     >
                         <BookOpen size={14} />
-                        <span>KÍ SỰ CÁN VIÊN</span>
+                        <span>kí sự CÁN VIÊN</span>
                     </button>
 
                     <button
@@ -830,7 +830,7 @@ export default function OperatorListPageEditor() {
                                             title="Viết kí sự"
                                         >
                                             <BookOpen size={13} />
-                                            <span>Kí sự</span>
+                                            <span>kí sự</span>
                                         </button>
                                         <button
                                             className="operator-card-admin-btn danger"

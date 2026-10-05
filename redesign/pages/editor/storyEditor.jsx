@@ -251,7 +251,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 if (isRecord) {
                     const item = await SupabaseAPI.getOperatorRecord(currentId)
                     if (!item) {
-                        setError(`Không tìm thấy Kí sự cán viên với mã ID "${currentId}".`)
+                        setError(`Không tìm thấy kí sự cán viên với mã ID "${currentId}".`)
                         return
                     }
                     setMetadata({
@@ -406,7 +406,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     setMetadata(prev => ({ ...prev, record_id: created.record_id, story_id: created.record_id }))
                     setInitialScript(scriptText)
                     navigate(`/editor/operator/records/${created.record_id}`, { replace: true })
-                    if (!silent) showNotification('Kí sự cán viên mới đã được tạo!', 'success')
+                    if (!silent) showNotification('kí sự cán viên mới đã được tạo!', 'success')
                     return true
                 }
             } else {
@@ -568,7 +568,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
             setNewRecordTargetOp(operator)
             setNewRecordData({
                 record_id: `${operator.operator_id}_rec_${(operator.records?.length || 0) + 1}`,
-                name: `Kí sự ${(operator.records?.length || 0) + 1}`,
+                name: `kí sự ${(operator.records?.length || 0) + 1}`,
                 description: '',
                 display_order: (operator.records?.length || 0) + 1
             })
@@ -914,14 +914,14 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 onSaveAndConfirm={handleSaveAndConfirm}
             />
 
-            {/* Modal Tạo Kí Sự Mới */}
+            {/* Modal Tạo kí sự Mới */}
             {newRecordModalOpen && newRecordTargetOp && (
                 <div className="redesign-modal-backdrop" onClick={() => setNewRecordModalOpen(false)}>
                     <div className="redesign-modal-container" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
                         <div className="redesign-modal-header">
                             <h3 className="redesign-modal-title">
                                 <User size={18} />
-                                <span>THÊM KÍ SỰ // {newRecordTargetOp.name}</span>
+                                <span>THÊM kí sự // {newRecordTargetOp.name}</span>
                             </h3>
                             <button className="redesign-modal-close" onClick={() => setNewRecordModalOpen(false)}>
                                 <X size={16} />
@@ -931,7 +931,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                         <form onSubmit={handleCreateRecordSubmit}>
                             <div className="redesign-modal-body">
                                 <div className="redesign-form-group">
-                                    <label className="redesign-label">MÃ KÍ SỰ (RECORD_ID):</label>
+                                    <label className="redesign-label">MÃ kí sự (RECORD_ID):</label>
                                     <input
                                         type="text"
                                         required
@@ -942,11 +942,11 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                 </div>
 
                                 <div className="redesign-form-group">
-                                    <label className="redesign-label">TÊN KÍ SỰ:</label>
+                                    <label className="redesign-label">TÊN kí sự:</label>
                                     <input
                                         type="text"
                                         required
-                                        placeholder="Ví dụ: Kí sự 1 - Khởi đầu..."
+                                        placeholder="Ví dụ: kí sự 1 - Khởi đầu..."
                                         className="redesign-input"
                                         value={newRecordData.name}
                                         onChange={e => setNewRecordData({ ...newRecordData, name: e.target.value })}
@@ -980,7 +980,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                     HUỶ BỎ
                                 </button>
                                 <button type="submit" className="redesign-btn primary">
-                                    TẠO KÍ SỰ
+                                    TẠO kí sự
                                 </button>
                             </div>
                         </form>

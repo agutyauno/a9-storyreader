@@ -102,7 +102,7 @@ function SkillTab({ operator }) {
             {/* Talents */}
             {operator.talents.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Tài Năng</div>
+                    <div className="operator-section-title">Thiên Phú</div>
                     {operator.talents.map((talent, idx) => (
                         <Collapsible
                             key={idx}
@@ -121,7 +121,7 @@ function SkillTab({ operator }) {
             {/* Skills */}
             {operator.skills.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Kĩ Năng ({operator.skills.length})</div>
+                    <div className="operator-section-title">Kỹ Năng ({operator.skills.length})</div>
                     {operator.skills.map((skill, idx) => {
                         const hasInitSp = skill.initialSp !== undefined && skill.initialSp !== null && skill.initialSp !== '-' && skill.initialSp !== 0;
                         const hasSpCost = skill.spCost !== undefined && skill.spCost !== null && skill.spCost !== '-' && skill.spCost !== 0;
@@ -256,7 +256,7 @@ function SkillTab({ operator }) {
             {/* Base Skills */}
             {operator.baseSkills.length > 0 && (
                 <div className="operator-section">
-                    <div className="operator-section-title">Kĩ năng hậu cần</div>
+                    <div className="operator-section-title">Kỹ năng hậu cần</div>
                     {operator.baseSkills.map((bs, idx) => (
                         <div key={idx} className="base-skill-item">
                             <div className="base-skill-icon">
@@ -293,9 +293,7 @@ function SkillTab({ operator }) {
                                 onError={(e) => { e.target.style.display = 'none'; }}
                             />
                         ) : (
-                            <div className="operator-token-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Package size={24} color="var(--color-cream)" />
-                            </div>
+                            <div></div>
                         )}
                         <div className="operator-token-info">
                             {operator.token.name && (
@@ -423,7 +421,7 @@ function RecordTab({ operator }) {
     if (!operator.records || operator.records.length === 0) {
         return (
             <div className="operator-section">
-                <div className="operator-section-title">Kí sự</div>
+                <div className="operator-section-title">Ký sự</div>
                 <div className="operator-empty-state" style={{ margin: 0, border: 'var(--border-thin)' }}>
                     <span className="operator-empty-text technical-text">
                         NO_RECORDS_AVAILABLE // DATA_NOT_FOUND
@@ -435,7 +433,7 @@ function RecordTab({ operator }) {
 
     return (
         <div className="operator-section">
-            <div className="operator-section-title">Kí sự ({operator.records.length})</div>
+            <div className="operator-section-title">kí sự ({operator.records.length})</div>
             <div className="operator-records-list">
                 {operator.records.map((record, idx) => (
                     <Link
@@ -451,7 +449,7 @@ function RecordTab({ operator }) {
                         <span className="record-item-title">{record.title}</span>
                         {record.description && <span className="record-item-desc">{record.description}</span>}
                         <div className="record-item-action technical-text">
-                            <span>ĐỌC KÍ SỰ</span>
+                            <span>ĐỌC Ký SỰ</span>
                             <ArrowRight size={12} />
                         </div>
                     </Link>
@@ -528,10 +526,10 @@ export default function OperatorDetailPage() {
     }
 
     const TABS = [
-        { id: 'skill', label: 'Kĩ năng' },
+        { id: 'skill', label: 'kỹ năng' },
         { id: 'profile', label: 'Hồ Sơ' },
         { id: 'dialogue', label: 'Lời Thoại' },
-        { id: 'record', label: 'Kí sự' },
+        { id: 'record', label: 'kí sự' },
     ]
 
     if (loading) {

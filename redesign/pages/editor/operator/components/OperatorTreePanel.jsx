@@ -70,7 +70,7 @@ export default function OperatorTreePanel({
             {/* Header */}
             <div className="operator-tree-header">
                 <div className="tree-header-top">
-                    <span className="tree-header-title technical-text">KÍ SỰ CÁN VIÊN // TREE</span>
+                    <span className="tree-header-title technical-text">kí sự CÁN VIÊN // TREE</span>
                     <button
                         className="tree-icon-btn"
                         onClick={fetchTree}
@@ -176,7 +176,7 @@ export default function OperatorTreePanel({
                                                         <div className="tree-node-left">
                                                             <FileText size={13} className="tree-record-icon" />
                                                             <span className="tree-node-title" title={rec.name}>
-                                                                {rec.name || `Kí sự ${idx + 1}`}
+                                                                {rec.name || `kí sự ${idx + 1}`}
                                                             </span>
                                                         </div>
 
