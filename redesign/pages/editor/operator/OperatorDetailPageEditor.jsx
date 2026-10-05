@@ -501,9 +501,9 @@ export default function OperatorDetailPageEditor() {
                 }
 
                 showToast('Đã tạo cán viên mới và lưu toàn bộ dữ liệu thành công!', 'success')
-                navigate(`/editor/operator/${confirmedOpId}`, { 
-                    replace: true, 
-                    state: { toastMessage: 'Đã tạo cán viên mới thành công!', toastType: 'success' } 
+                navigate(`/editor/operator/${confirmedOpId}`, {
+                    replace: true,
+                    state: { toastMessage: 'Đã tạo cán viên mới thành công!', toastType: 'success' }
                 })
             } else {
                 await SupabaseAPI.updateOperator(id, payload)
@@ -1142,7 +1142,7 @@ export default function OperatorDetailPageEditor() {
                                     />
                                 </div>
                                 <div className="op-form-group">
-                                    <label className="op-form-label technical-text" title="PHE PHÁI (FACTION)">PHE PHÁI (FACTION):</label>
+                                    <label className="op-form-label technical-text" title="PHE PHÁI (FACTION)">PHE (FACTION):</label>
                                     <CustomSelect
                                         id="operator-faction-select"
                                         value={selectedFactions[0] || 'rhodes_island'}
@@ -1256,18 +1256,18 @@ export default function OperatorDetailPageEditor() {
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
-                                            <span>Tài Năng ({talents.length})</span>
+                                            <span>THIÊN PHÚ ({talents.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleAddTalent}>
                                             <Plus size={13} />
-                                            <span>Thêm Tài Năng</span>
+                                            <span>Thêm Thiên Phú</span>
                                         </button>
                                     </div>
 
                                     <div className="op-content-card-body">
                                         {talents.length === 0 ? (
                                             <div className="op-empty-state-card">
-                                                <span className="op-empty-state-text">CHƯA CÓ TÀI NĂNG</span>
+                                                <span className="op-empty-state-text">CHƯA CÓ THIÊN PHÚ</span>
                                             </div>
                                         ) : (
                                             talents.map((talent, idx) => (

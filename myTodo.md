@@ -1,7 +1,7 @@
 # Arknights Story Reader todo list
 ## quan trọng cần làm gấp
-- chỉnh sửa lại giao diện mobile(footer, sidebar)
-- chỉnh sửa lại giao diện sidebar-region-dropdown cho đẹp hơn
+- [x] chỉnh sửa lại giao diện mobile(footer, sidebar) (Đã hoàn thành)
+- [x] chỉnh sửa lại giao diện sidebar-region-dropdown cho đẹp hơn (Đã hoàn thành)
 ## sẽ làm
 - [x] thêm tính năng cho sfx (loop, phát nhiều sfx cùng lúc hoặc phát tuần tự) (Đã hoàn thành)
 - import story bằng file (word/txt/md,...)

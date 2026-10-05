@@ -4,6 +4,7 @@ import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
 import Header from '../../components/Header'
 import Sidebar from '../../components/Sidebar'
+import SidebarRegionDropdown from '../../components/SidebarRegionDropdown'
 import Footer from '../../components/Footer'
 import Loading from '../../components/Loading'
 import Modal from '../../components/Modal'
@@ -449,48 +450,21 @@ export default function RedesignEventPage() {
                     sidebarOpen={sidebarOpen}
                     items={sidebarEvents}
                     selectedItemId={id}
-                    onItemSelect={(evt) => navigate(`/event/${evt.event_id}`, { state: { regionId: activeRegionId || arc?.region_id } })}
+                    onItemSelect={(evt) => {
+                        navigate(`/event/${evt.event_id}`, { state: { regionId: activeRegionId || arc?.region_id } })
+                        if (window.innerWidth <= 900) {
+                            setSidebarOpen(false)
+                        }
+                    }}
                     loading={loadingSidebar}
                     itemKey="event_id"
                     headerComponent={
                         allRegions.length > 0 ? (
-                            <div className="sidebar-region-selector-wrap" style={{ padding: '0.6rem 0.8rem', borderBottom: '1px solid rgba(245,237,220,0.12)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                                    <span className="technical-text" style={{ fontSize: '0.68rem', color: 'var(--color-terracotta)', fontWeight: 700, letterSpacing: '0.5px' }}>
-                                        SYS.ACTIVE_REGION
-                                    </span>
-                                    <span style={{ fontSize: '0.68rem', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
-                                        {allRegions.length} KHU VỰC
-                                    </span>
-                                </div>
-                                <select
-                                    value={activeRegionId || ''}
-                                    onChange={(e) => {
-                                        const newRegId = e.target.value
-                                        setActiveRegionId(newRegId)
-                                    }}
-                                    className="sidebar-region-dropdown"
-                                    style={{
-                                        width: '100%',
-                                        backgroundColor: '#181818',
-                                        color: '#F5EDDC',
-                                        border: '1px solid rgba(245,237,220,0.2)',
-                                        padding: '0.45rem 0.6rem',
-                                        fontSize: '0.8rem',
-                                        fontFamily: 'var(--font-mono)',
-                                        borderRadius: '3px',
-                                        cursor: 'pointer',
-                                        outline: 'none',
-                                        boxSizing: 'border-box'
-                                    }}
-                                >
-                                    {allRegions.map(reg => (
-                                        <option key={reg.region_id} value={reg.region_id}>
-                                            {reg.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            <SidebarRegionDropdown
+                                regions={allRegions}
+                                activeRegionId={activeRegionId || arc?.region_id}
+                                onSelectRegion={(newRegId) => setActiveRegionId(newRegId)}
+                            />
                         ) : null
                     }
                     renderItem={(evt) => {

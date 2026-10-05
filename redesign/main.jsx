@@ -39,7 +39,8 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-ReactDOM.createRoot(document.getElementById('redesign-root')).render(
+const rootElement = document.getElementById('root') || document.getElementById('redesign-root')
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <AuthProvider>
       <NotificationProvider>
