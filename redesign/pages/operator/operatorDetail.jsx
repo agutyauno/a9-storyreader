@@ -433,7 +433,7 @@ function RecordTab({ operator }) {
 
     return (
         <div className="operator-section">
-            <div className="operator-section-title">kí sự ({operator.records.length})</div>
+            <div className="operator-section-title">ký sự ({operator.records.length})</div>
             <div className="operator-records-list">
                 {operator.records.map((record, idx) => (
                     <Link
@@ -529,7 +529,7 @@ export default function OperatorDetailPage() {
         { id: 'skill', label: 'kỹ năng' },
         { id: 'profile', label: 'Hồ Sơ' },
         { id: 'dialogue', label: 'Lời Thoại' },
-        { id: 'record', label: 'kí sự' },
+        { id: 'record', label: 'ký sự' },
     ]
 
     if (loading) {

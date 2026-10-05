@@ -128,7 +128,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
               if (op) {
                 setEventData({
                   event_id: `operator/${record.operator_id}`,
-                  name: `kí sự Cán Viên: ${op.name}`
+                  name: `ký sự Cán Viên: ${op.name}`
                 })
               }
               const mappedStories = (recs || []).map(r => ({
@@ -191,7 +191,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
         }
 
         if (!fetchedStory) {
-          setError(isRecord ? 'Không tìm thấy kí sự cán viên này.' : 'Không tìm thấy cốt truyện này.')
+          setError(isRecord ? 'Không tìm thấy ký sự cán viên này.' : 'Không tìm thấy cốt truyện này.')
           setLoading(false)
           return
         }
@@ -604,7 +604,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
           {isRecord ? (
             <Link to={story?.operator_id ? `/operator/${story.operator_id}` : '/operator'} className="header-meta-bar panel-stripes" title={story?.operator_id ? `Đi tới hồ sơ cán viên: ${story.operator_id}` : 'Đi tới danh sách cán viên'}>
               <span className="technical-text header-dynamic-title">
-                {eventData?.name || story?.name || 'kí sự CÁN VIÊN'}
+                {eventData?.name || story?.name || 'ký sự CÁN VIÊN'}
               </span>
             </Link>
           ) : eventData ? (

@@ -184,7 +184,7 @@ export default function EditorSidebar({
             <SidebarTabs
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
-                tab1Label={isRecord ? 'kí sự CÁN VIÊN' : 'STORY TREE'}
+                tab1Label={isRecord ? 'ký sự CÁN VIÊN' : 'STORY TREE'}
             />
 
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>

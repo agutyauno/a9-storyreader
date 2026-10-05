@@ -495,7 +495,7 @@ export default function OperatorDetailPageEditor() {
                             name: r.name,
                             description: r.description || '',
                             display_order: Number(r.display_order) || 1,
-                            story_content: r.story_content || { type: 'vns', script: `// Kịch bản kí sự: ${r.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
+                            story_content: r.story_content || { type: 'vns', script: `// Kịch bản ký sự: ${r.name}\n\n[dialog]\n${name}: ký sự bắt đầu.\n` }
                         })
                     }
                 }
@@ -845,7 +845,7 @@ export default function OperatorDetailPageEditor() {
     const handleOpenRecordModal = () => {
         setRecordForm({
             record_id: `rec_${opId.replace('char_', '')}_${records.length + 1}`,
-            name: `kí sự ${records.length + 1}`,
+            name: `ký sự ${records.length + 1}`,
             description: '',
             display_order: records.length + 1
         })
@@ -854,7 +854,7 @@ export default function OperatorDetailPageEditor() {
 
     const handleCreateRecord = async () => {
         if (!recordForm.record_id.trim() || !recordForm.name.trim()) {
-            showToast('Mã kí sự và Tên không được để trống.', 'error')
+            showToast('Mã ký sự và Tên không được để trống.', 'error')
             return
         }
 
@@ -866,10 +866,10 @@ export default function OperatorDetailPageEditor() {
                     name: recordForm.name.trim(),
                     description: recordForm.description.trim(),
                     display_order: Number(recordForm.display_order) || 1,
-                    story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
+                    story_content: { type: 'vns', script: `// Kịch bản ký sự: ${recordForm.name}\n\n[dialog]\n${name}: ký sự bắt đầu.\n` }
                 }
                 setRecords(prev => [...prev, newRec])
-                showToast('Đã thêm thông tin kí sự vào bộ nhớ tạm.', 'success')
+                showToast('Đã thêm thông tin ký sự vào bộ nhớ tạm.', 'success')
                 setRecordModalOpen(false)
                 return
             }
@@ -880,34 +880,34 @@ export default function OperatorDetailPageEditor() {
                 name: recordForm.name.trim(),
                 description: recordForm.description.trim(),
                 display_order: Number(recordForm.display_order) || 1,
-                story_content: { type: 'vns', script: `// Kịch bản kí sự: ${recordForm.name}\n\n[dialog]\n${name}: kí sự bắt đầu.\n` }
+                story_content: { type: 'vns', script: `// Kịch bản ký sự: ${recordForm.name}\n\n[dialog]\n${name}: ký sự bắt đầu.\n` }
             }
 
             await SupabaseAPI.createOperatorRecord(payload)
-            showToast('Đã tạo kí sự mới!', 'success')
+            showToast('Đã tạo ký sự mới!', 'success')
             const updated = await SupabaseAPI.getOperatorRecords(opId)
             setRecords(updated || [])
             setRecordModalOpen(false)
         } catch (err) {
             console.error('Create record failed:', err)
-            showToast('Tạo kí sự thất bại: ' + err.message, 'error')
+            showToast('Tạo ký sự thất bại: ' + err.message, 'error')
         }
     }
 
     const handleDeleteRecord = async (recordId) => {
-        if (window.confirm(`Xoá kí sự "${recordId}" cùng kịch bản của nó?`)) {
+        if (window.confirm(`Xoá ký sự "${recordId}" cùng kịch bản của nó?`)) {
             if (isNew) {
                 setRecords(prev => prev.filter(r => r.record_id !== recordId))
-                showToast('Đã xoá kí sự khỏi bộ nhớ tạm.', 'success')
+                showToast('Đã xoá ký sự khỏi bộ nhớ tạm.', 'success')
                 return
             }
             try {
                 await SupabaseAPI.deleteOperatorRecord(recordId)
-                showToast('Đã xoá kí sự.', 'success')
+                showToast('Đã xoá ký sự.', 'success')
                 const updated = await SupabaseAPI.getOperatorRecords(opId)
                 setRecords(updated || [])
             } catch (err) {
-                showToast('Xoá kí sự thất bại: ' + err.message, 'error')
+                showToast('Xoá ký sự thất bại: ' + err.message, 'error')
             }
         }
     }
@@ -957,10 +957,10 @@ export default function OperatorDetailPageEditor() {
                         <button
                             className="brutalist-btn secondary technical-text"
                             onClick={() => navigate(`/editor/operator/records?operatorId=${opId}`)}
-                            title="Chuyển sang soạn thảo kịch bản kí sự (Alt + S)"
+                            title="Chuyển sang soạn thảo kịch bản ký sự (Alt + S)"
                         >
                             <BookOpen size={14} />
-                            <span>KỊCH BẢN kí sự (ALT+S)</span>
+                            <span>KỊCH BẢN ký sự (ALT+S)</span>
                         </button>
                     )}
 
@@ -1827,18 +1827,18 @@ export default function OperatorDetailPageEditor() {
                             </div>
                         )}
 
-                        {/* Tab 4: kí sự Cán Viên (Records) */}
+                        {/* Tab 4: ký sự Cán Viên (Records) */}
                         {activeTab === 'record' && (
                             <div className="op-tab-content-wrapper">
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">
                                         <h3 className="op-content-card-title">
                                             <Sparkles size={16} color="var(--color-terracotta, #B2653B)" />
-                                            <span>Danh Sách kí sự Cán Viên ({records.length})</span>
+                                            <span>Danh Sách ký sự Cán Viên ({records.length})</span>
                                         </h3>
                                         <button className="brutalist-btn secondary" onClick={handleOpenRecordModal}>
                                             <Plus size={13} />
-                                            <span>Thêm kí sự Mới</span>
+                                            <span>Thêm ký sự Mới</span>
                                         </button>
                                     </div>
 
@@ -1847,7 +1847,7 @@ export default function OperatorDetailPageEditor() {
                                             <div className="op-empty-state-card">
                                                 <BookOpen size={36} color="var(--color-ochre, #BA8530)" />
                                                 <span className="op-empty-state-text">
-                                                    CHƯA CÓ kí sự NÀO ĐƯỢC TẠO
+                                                    CHƯA CÓ ký sự NÀO ĐƯỢC TẠO
                                                 </span>
                                                 <button
                                                     className="brutalist-btn primary"
@@ -1855,7 +1855,7 @@ export default function OperatorDetailPageEditor() {
                                                     onClick={handleOpenRecordModal}
                                                 >
                                                     <Plus size={14} />
-                                                    <span>Tạo kí sự Đầu Tiên</span>
+                                                    <span>Tạo ký sự Đầu Tiên</span>
                                                 </button>
                                             </div>
                                         ) : (
@@ -1897,7 +1897,7 @@ export default function OperatorDetailPageEditor() {
                                                         <button
                                                             className="brutalist-icon-btn"
                                                             onClick={() => handleDeleteRecord(rec.record_id)}
-                                                            title="Xoá kí sự"
+                                                            title="Xoá ký sự"
                                                         >
                                                             <Trash2 size={13} color="var(--color-crimson, #802520)" />
                                                         </button>
@@ -2092,7 +2092,7 @@ export default function OperatorDetailPageEditor() {
                 <div className="op-modal-backdrop" onClick={() => setRecordModalOpen(false)}>
                     <div className="op-modal-box" onClick={(e) => e.stopPropagation()}>
                         <div className="op-modal-header">
-                            <h3 className="op-modal-title">TẠO kí sự CÁN VIÊN MỚI</h3>
+                            <h3 className="op-modal-title">TẠO ký sự CÁN VIÊN MỚI</h3>
                             <button className="op-modal-close" onClick={() => setRecordModalOpen(false)}>
                                 &times;
                             </button>
@@ -2100,7 +2100,7 @@ export default function OperatorDetailPageEditor() {
 
                         <div className="op-modal-body">
                             <div className="op-form-group">
-                                <label className="op-form-label technical-text">MÃ kí sự (RECORD_ID):</label>
+                                <label className="op-form-label technical-text">MÃ ký sự (RECORD_ID):</label>
                                 <input
                                     type="text"
                                     className="op-form-input"
@@ -2111,13 +2111,13 @@ export default function OperatorDetailPageEditor() {
                             </div>
 
                             <div className="op-form-group">
-                                <label className="op-form-label technical-text">TÊN kí sự:</label>
+                                <label className="op-form-label technical-text">TÊN ký sự:</label>
                                 <input
                                     type="text"
                                     className="op-form-input"
                                     value={recordForm.name}
                                     onChange={(e) => setRecordForm({ ...recordForm, name: e.target.value })}
-                                    placeholder="Ví dụ: kí sự 1 - Gió Lạnh Núi Cao..."
+                                    placeholder="Ví dụ: ký sự 1 - Gió Lạnh Núi Cao..."
                                 />
                             </div>
 
@@ -2127,7 +2127,7 @@ export default function OperatorDetailPageEditor() {
                                     className="op-form-textarea"
                                     value={recordForm.description}
                                     onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
-                                    placeholder="Tóm tắt phân cảnh kí sự..."
+                                    placeholder="Tóm tắt phân cảnh ký sự..."
                                     rows={3}
                                 />
                             </div>
@@ -2148,7 +2148,7 @@ export default function OperatorDetailPageEditor() {
                                 Huỷ
                             </button>
                             <button className="brutalist-btn primary" onClick={handleCreateRecord}>
-                                Tạo kí sự
+                                Tạo ký sự
                             </button>
                         </div>
                     </div>

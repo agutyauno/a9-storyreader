@@ -70,7 +70,7 @@ export default function OperatorTreePanel({
             {/* Header */}
             <div className="operator-tree-header">
                 <div className="tree-header-top">
-                    <span className="tree-header-title technical-text">kí sự CÁN VIÊN // TREE</span>
+                    <span className="tree-header-title technical-text">ký sự CÁN VIÊN // TREE</span>
                     <button
                         className="tree-icon-btn"
                         onClick={fetchTree}
@@ -84,7 +84,7 @@ export default function OperatorTreePanel({
                     <Search size={13} className="tree-search-icon" />
                     <input
                         type="text"
-                        placeholder="Tìm cán viên / kí sự..."
+                        placeholder="Tìm cán viên / ký sự..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="tree-search-input"
@@ -127,7 +127,7 @@ export default function OperatorTreePanel({
                                             {op.name}
                                         </span>
 
-                                        <span className="tree-badge" title="Số lượng kí sự">
+                                        <span className="tree-badge" title="Số lượng ký sự">
                                             {recCount}
                                         </span>
                                     </div>
@@ -136,7 +136,7 @@ export default function OperatorTreePanel({
                                     <div className="tree-node-actions" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             className="tree-btn-action"
-                                            title="Thêm kí sự mới cho cán viên này"
+                                            title="Thêm ký sự mới cho cán viên này"
                                             onClick={() => onNewRecord(op)}
                                         >
                                             <Plus size={13} />
@@ -156,12 +156,12 @@ export default function OperatorTreePanel({
                                     <div className="tree-sub-list">
                                         {recCount === 0 ? (
                                             <div className="tree-record-empty">
-                                                <span>Chưa có kí sự.</span>
+                                                <span>Chưa có ký sự.</span>
                                                 <button
                                                     className="tree-link-btn"
                                                     onClick={() => onNewRecord(op)}
                                                 >
-                                                    + Tạo kí sự
+                                                    + Tạo ký sự
                                                 </button>
                                             </div>
                                         ) : (
@@ -176,14 +176,14 @@ export default function OperatorTreePanel({
                                                         <div className="tree-node-left">
                                                             <FileText size={13} className="tree-record-icon" />
                                                             <span className="tree-node-title" title={rec.name}>
-                                                                {rec.name || `kí sự ${idx + 1}`}
+                                                                {rec.name || `ký sự ${idx + 1}`}
                                                             </span>
                                                         </div>
 
                                                         <div className="tree-node-actions" onClick={(e) => e.stopPropagation()}>
                                                             <button
                                                                 className="tree-btn-action danger"
-                                                                title="Xoá kí sự này"
+                                                                title="Xoá ký sự này"
                                                                 onClick={() => onDeleteRecord(rec, op)}
                                                             >
                                                                 <Trash2 size={12} />

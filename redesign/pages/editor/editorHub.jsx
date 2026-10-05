@@ -82,7 +82,7 @@ export default function EditorHubPage() {
                             <div className="hub-card-meta technical-text">MODULE_02 // SEC.OPERATOR</div>
                             <h2 className="hub-card-title">Hồ Sơ Cán Viên</h2>
                             <p className="hub-card-desc">
-                                Thiết lập lý lịch chi tiết, lưu trữ biểu cảm skin, đồng bộ tệp thoại lồng tiếng đa ngôn ngữ và biên soạn kịch bản kí sự cán viên.
+                                Thiết lập lý lịch chi tiết, lưu trữ biểu cảm skin, đồng bộ tệp thoại lồng tiếng đa ngôn ngữ và biên soạn kịch bản ký sự cán viên.
                             </p>
                         </div>
                     </div>

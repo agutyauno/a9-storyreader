@@ -274,7 +274,7 @@ export default function OperatorListPageEditor() {
     }, [])
 
     const handleDelete = async (operator) => {
-        const confirmMsg = `Bạn có chắc muốn xoá vĩnh viễn cán viên "${operator.name}" (${operator.operator_id}) cùng tất cả skins, thoại và kí sự liên quan?`
+        const confirmMsg = `Bạn có chắc muốn xoá vĩnh viễn cán viên "${operator.name}" (${operator.operator_id}) cùng tất cả skins, thoại và ký sự liên quan?`
         if (window.confirm(confirmMsg)) {
             try {
                 await SupabaseAPI.deleteOperator(operator.operator_id)
@@ -466,10 +466,10 @@ export default function OperatorListPageEditor() {
                     <button
                         className="brutalist-btn secondary technical-text"
                         onClick={() => navigate('/editor/operator/records')}
-                        title="Soạn thảo kịch bản kí sự cán viên"
+                        title="Soạn thảo kịch bản ký sự cán viên"
                     >
                         <BookOpen size={14} />
-                        <span>kí sự CÁN VIÊN</span>
+                        <span>ký sự CÁN VIÊN</span>
                     </button>
 
                     <button
@@ -745,7 +745,7 @@ export default function OperatorListPageEditor() {
                                         <button
                                             className="operator-card-admin-btn"
                                             onClick={() => navigate(`/editor/operator/records?operatorId=${op.operator_id}`)}
-                                            title="Viết kịch bản kí sự cán viên"
+                                            title="Viết kịch bản ký sự cán viên"
                                         >
                                             <BookOpen size={13} />
                                         </button>
@@ -827,10 +827,10 @@ export default function OperatorListPageEditor() {
                                         <button
                                             className="operator-card-admin-btn"
                                             onClick={() => navigate(`/editor/operator/records?operatorId=${op.operator_id}`)}
-                                            title="Viết kí sự"
+                                            title="Viết ký sự"
                                         >
                                             <BookOpen size={13} />
-                                            <span>kí sự</span>
+                                            <span>ký sự</span>
                                         </button>
                                         <button
                                             className="operator-card-admin-btn danger"

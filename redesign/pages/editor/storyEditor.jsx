@@ -251,7 +251,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 if (isRecord) {
                     const item = await SupabaseAPI.getOperatorRecord(currentId)
                     if (!item) {
-                        setError(`Không tìm thấy kí sự cán viên với mã ID "${currentId}".`)
+                        setError(`Không tìm thấy ký sự cán viên với mã ID "${currentId}".`)
                         return
                     }
                     setMetadata({
@@ -292,7 +292,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 }
             } catch (err) {
                 console.error('Failed to load content:', err)
-                setError(isRecord ? 'Không thể tải dữ liệu kí sự cán viên.' : 'Không thể tải dữ liệu cốt truyện.')
+                setError(isRecord ? 'Không thể tải dữ liệu ký sự cán viên.' : 'Không thể tải dữ liệu cốt truyện.')
             } finally {
                 setLoading(false)
             }
@@ -399,14 +399,14 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 if (metadata.record_id) {
                     await SupabaseAPI.updateOperatorRecord(metadata.record_id, payload)
                     setInitialScript(scriptText)
-                    if (!silent) showNotification('Đã lưu kịch bản kí sự cán viên!', 'success')
+                    if (!silent) showNotification('Đã lưu kịch bản ký sự cán viên!', 'success')
                     return true
                 } else {
                     const created = await SupabaseAPI.createOperatorRecord(payload)
                     setMetadata(prev => ({ ...prev, record_id: created.record_id, story_id: created.record_id }))
                     setInitialScript(scriptText)
                     navigate(`/editor/operator/records/${created.record_id}`, { replace: true })
-                    if (!silent) showNotification('kí sự cán viên mới đã được tạo!', 'success')
+                    if (!silent) showNotification('ký sự cán viên mới đã được tạo!', 'success')
                     return true
                 }
             } else {
@@ -528,7 +528,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         }
 
         const targetName = targetNode?.name || (storyId ? `chương "${storyId}"` : 'mục khác')
-        const currentName = metadata.name || (isRecord ? 'kí sự hiện tại' : 'chương hiện tại')
+        const currentName = metadata.name || (isRecord ? 'ký sự hiện tại' : 'chương hiện tại')
 
         const action = () => {
             if (targetNode?.type === 'story' || (storyId && (!targetNode || targetNode.type === 'story'))) {
@@ -568,7 +568,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
             setNewRecordTargetOp(operator)
             setNewRecordData({
                 record_id: `${operator.operator_id}_rec_${(operator.records?.length || 0) + 1}`,
-                name: `kí sự ${(operator.records?.length || 0) + 1}`,
+                name: `ký sự ${(operator.records?.length || 0) + 1}`,
                 description: '',
                 display_order: (operator.records?.length || 0) + 1
             })
@@ -579,7 +579,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
     const handleCreateRecordSubmit = async (e) => {
         e?.preventDefault?.()
         if (!newRecordData.record_id.trim() || !newRecordData.name.trim()) {
-            showNotification('Vui lòng điền mã và tên kí sự!', 'warning')
+            showNotification('Vui lòng điền mã và tên ký sự!', 'warning')
             return
         }
         try {
@@ -592,22 +592,22 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 story_content: { type: 'vns', script: `@bg ""\n\n${newRecordTargetOp.name}: ...\n` }
             }
             await SupabaseAPI.createOperatorRecord(payload)
-            showNotification(`Đã tạo kí sự "${payload.name}"!`, 'success')
+            showNotification(`Đã tạo ký sự "${payload.name}"!`, 'success')
             setNewRecordModalOpen(false)
             setRecordReloadTrigger(prev => prev + 1)
             navigate(`/editor/operator/records/${payload.record_id}`)
         } catch (err) {
             console.error('Create record failed:', err)
-            showNotification(`Lỗi tạo kí sự: ${err.message}`, 'error')
+            showNotification(`Lỗi tạo ký sự: ${err.message}`, 'error')
         }
     }
 
     const handleDeleteRecord = (rec, op) => {
-        if (window.confirm(`Bạn có chắc muốn xoá kí sự "${rec.name}" của cán viên "${op.name}"?`)) {
+        if (window.confirm(`Bạn có chắc muốn xoá ký sự "${rec.name}" của cán viên "${op.name}"?`)) {
             (async () => {
                 try {
                     await SupabaseAPI.deleteOperatorRecord(rec.record_id)
-                    showNotification(`Đã xoá kí sự "${rec.name}"`, 'success')
+                    showNotification(`Đã xoá ký sự "${rec.name}"`, 'success')
                     setRecordReloadTrigger(prev => prev + 1)
                     if (metadata.record_id === rec.record_id) {
                         navigate('/editor/operator/records')
@@ -616,7 +616,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     }
                 } catch (err) {
                     console.error('Delete record failed:', err)
-                    showNotification(`Lỗi xoá kí sự: ${err.message}`, 'error')
+                    showNotification(`Lỗi xoá ký sự: ${err.message}`, 'error')
                 }
             })()
         }
@@ -839,7 +839,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                 <span className="technical-text text-muted">SYS_AWAITING_SELECTION</span>
                                 <p>
                                     {isRecord
-                                        ? 'Chọn một kí sự từ danh mục bên trái hoặc nhấn nút [+] trên cán viên để tạo mới kịch bản kí sự...'
+                                        ? 'Chọn một ký sự từ danh mục bên trái hoặc nhấn nút [+] trên cán viên để tạo mới kịch bản ký sự...'
                                         : 'Chọn một chương cốt truyện từ danh mục Story Tree ở bên trái để bắt đầu viết kịch bản...'
                                     }
                                 </p>
@@ -914,14 +914,14 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 onSaveAndConfirm={handleSaveAndConfirm}
             />
 
-            {/* Modal Tạo kí sự Mới */}
+            {/* Modal Tạo ký sự Mới */}
             {newRecordModalOpen && newRecordTargetOp && (
                 <div className="redesign-modal-backdrop" onClick={() => setNewRecordModalOpen(false)}>
                     <div className="redesign-modal-container" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
                         <div className="redesign-modal-header">
                             <h3 className="redesign-modal-title">
                                 <User size={18} />
-                                <span>THÊM kí sự // {newRecordTargetOp.name}</span>
+                                <span>THÊM ký sự // {newRecordTargetOp.name}</span>
                             </h3>
                             <button className="redesign-modal-close" onClick={() => setNewRecordModalOpen(false)}>
                                 <X size={16} />
@@ -931,7 +931,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                         <form onSubmit={handleCreateRecordSubmit}>
                             <div className="redesign-modal-body">
                                 <div className="redesign-form-group">
-                                    <label className="redesign-label">MÃ kí sự (RECORD_ID):</label>
+                                    <label className="redesign-label">MÃ ký sự (RECORD_ID):</label>
                                     <input
                                         type="text"
                                         required
@@ -942,11 +942,11 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                 </div>
 
                                 <div className="redesign-form-group">
-                                    <label className="redesign-label">TÊN kí sự:</label>
+                                    <label className="redesign-label">TÊN ký sự:</label>
                                     <input
                                         type="text"
                                         required
-                                        placeholder="Ví dụ: kí sự 1 - Khởi đầu..."
+                                        placeholder="Ví dụ: ký sự 1 - Khởi đầu..."
                                         className="redesign-input"
                                         value={newRecordData.name}
                                         onChange={e => setNewRecordData({ ...newRecordData, name: e.target.value })}
@@ -957,7 +957,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                     <label className="redesign-label">TÓM TẮT HỒ SƠ:</label>
                                     <textarea
                                         rows={3}
-                                        placeholder="Mô tả tóm tắt nội dung kí sự..."
+                                        placeholder="Mô tả tóm tắt nội dung ký sự..."
                                         className="redesign-textarea"
                                         value={newRecordData.description}
                                         onChange={e => setNewRecordData({ ...newRecordData, description: e.target.value })}
@@ -980,7 +980,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                                     HUỶ BỎ
                                 </button>
                                 <button type="submit" className="redesign-btn primary">
-                                    TẠO kí sự
+                                    TẠO ký sự
                                 </button>
                             </div>
                         </form>
