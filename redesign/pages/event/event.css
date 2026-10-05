@@ -1232,8 +1232,17 @@
     box-sizing: border-box;
     position: relative;
     z-index: 2;
-    border-top: 1px solid rgba(24, 24, 24, 0.12);
     background-color: rgba(24, 24, 24, 0.02);
+}
+
+.event-suggestion-banner-container.top-banner {
+    border-top: none;
+    border-bottom: 1px solid rgba(24, 24, 24, 0.12);
+    background-color: rgba(33, 150, 243, 0.05);
+}
+
+.event-suggestion-banner-container.bottom-banner {
+    border-top: 1px solid rgba(24, 24, 24, 0.12);
 }
 
 .event-suggestion-banner {

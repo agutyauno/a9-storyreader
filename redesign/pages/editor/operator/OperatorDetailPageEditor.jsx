@@ -288,7 +288,8 @@ export default function OperatorDetailPageEditor() {
         avatar_url: '',
         full_url: '',
         description: '',
-        is_default: false
+        is_default: false,
+        display_order: 0
     })
 
     const [dialogueModalOpen, setDialogueModalOpen] = useState(false)
@@ -299,7 +300,8 @@ export default function OperatorDetailPageEditor() {
         skin_id: '',
         audio_url_jp: '',
         audio_url_en: '',
-        audio_url_cn: ''
+        audio_url_cn: '',
+        display_order: 1
     })
 
     const [recordModalOpen, setRecordModalOpen] = useState(false)
@@ -378,7 +380,11 @@ export default function OperatorDetailPageEditor() {
 
                     // Dialogues
                     const dbDialogues = await SupabaseAPI.getOperatorDialogues(id)
-                    setDialogues(dbDialogues || [])
+                    const sortedDialogues = (dbDialogues || []).map((d, idx) => ({
+                        ...d,
+                        display_order: Number(d.display_order ?? (idx + 1))
+                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    setDialogues(sortedDialogues)
 
                     // Records
                     const dbRecords = await SupabaseAPI.getOperatorRecords(id)
@@ -470,7 +476,8 @@ export default function OperatorDetailPageEditor() {
                         avatar_url: '',
                         full_url: '',
                         description: 'Trang phục mặc định của cán viên.',
-                        is_default: true
+                        is_default: true,
+                        display_order: 0
                     })
                     if (createdDefault?.skin_id) {
                         skinIdMap.set('default', createdDefault.skin_id)
@@ -483,7 +490,8 @@ export default function OperatorDetailPageEditor() {
                             avatar_url: s.avatar_url,
                             full_url: s.full_url,
                             description: s.description,
-                            is_default: s.is_default
+                            is_default: s.is_default,
+                            display_order: Number(s.display_order) || 0
                         })
                         if (s.skin_id && createdSkin?.skin_id) {
                             skinIdMap.set(s.skin_id, createdSkin.skin_id)
@@ -493,7 +501,8 @@ export default function OperatorDetailPageEditor() {
 
                 // 2. Batch create dialogues with mapped skin_id
                 if (dialogues.length > 0) {
-                    for (const d of dialogues) {
+                    for (let idx = 0; idx < dialogues.length; idx++) {
+                        const d = dialogues[idx]
                         const targetSkinId = d.skin_id ? (skinIdMap.get(d.skin_id) || null) : null
                         await SupabaseAPI.createOperatorDialogue({
                             operator_id: confirmedOpId,
@@ -503,7 +512,7 @@ export default function OperatorDetailPageEditor() {
                             audio_url_jp: d.audio_url_jp || null,
                             audio_url_en: d.audio_url_en || null,
                             audio_url_cn: d.audio_url_cn || null,
-                            display_order: d.display_order ?? 0
+                            display_order: Number(d.display_order ?? (idx + 1))
                         })
                     }
                 }
@@ -538,8 +547,26 @@ export default function OperatorDetailPageEditor() {
                                 avatar_url: s.avatar_url,
                                 full_url: s.full_url,
                                 description: s.description || '',
-                                is_default: s.is_default
+                                is_default: s.is_default,
+                                display_order: Number(s.display_order) || 0
                             }).catch(err => console.warn('Skin sync failed:', s.skin_id, err))
+                        }
+                    }
+                }
+
+                // Đồng bộ thứ tự và thông tin lời thoại
+                if (dialogues && dialogues.length > 0) {
+                    for (const d of dialogues) {
+                        if (d.dialogue_id && !String(d.dialogue_id).startsWith('temp_')) {
+                            await SupabaseAPI.updateOperatorDialogue(d.dialogue_id, {
+                                title: d.title,
+                                text_content: d.text_content,
+                                skin_id: d.skin_id || null,
+                                audio_url_jp: d.audio_url_jp || null,
+                                audio_url_en: d.audio_url_en || null,
+                                audio_url_cn: d.audio_url_cn || null,
+                                display_order: Number(d.display_order) || 1
+                            }).catch(err => console.warn('Dialogue sync failed:', d.dialogue_id, err))
                         }
                     }
                 }
@@ -563,16 +590,21 @@ export default function OperatorDetailPageEditor() {
                 avatar_url: skin.avatar_url || '',
                 full_url: skin.full_url || '',
                 description: skin.description || '',
-                is_default: skin.is_default || false
+                is_default: skin.is_default || false,
+                display_order: skin.display_order ?? 0
             })
         } else {
             setEditingSkin(null)
+            const nextOrder = skins.length > 0
+                ? Math.max(...skins.map(s => Number(s.display_order) || 0), 0) + 1
+                : 0
             setSkinForm({
                 name: skins.length === 0 ? 'Mặc định' : `Skin ${skins.length + 1}`,
                 avatar_url: '',
                 full_url: '',
                 description: '',
-                is_default: skins.length === 0
+                is_default: skins.length === 0,
+                display_order: nextOrder
             })
         }
         setSkinModalOpen(true)
@@ -585,6 +617,8 @@ export default function OperatorDetailPageEditor() {
         }
 
         try {
+            const orderVal = Number(skinForm.display_order) || 0
+
             if (isNew) {
                 // In-memory state for new operator
                 if (editingSkin) {
@@ -596,11 +630,12 @@ export default function OperatorDetailPageEditor() {
                                 avatar_url: skinForm.avatar_url,
                                 full_url: skinForm.full_url,
                                 description: skinForm.description,
-                                is_default: skinForm.is_default
+                                is_default: skinForm.is_default,
+                                display_order: orderVal
                             }
                         }
                         return skinForm.is_default ? { ...s, is_default: false } : s
-                    }))
+                    }).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0)))
                     showToast('Đã cập nhật skin vào bộ nhớ tạm.', 'success')
                 } else {
                     const newSkinId = `temp_skin_${Date.now()}`
@@ -612,11 +647,12 @@ export default function OperatorDetailPageEditor() {
                         avatar_url: skinForm.avatar_url,
                         full_url: skinForm.full_url,
                         description: skinForm.description,
-                        is_default: isDef
+                        is_default: isDef,
+                        display_order: orderVal
                     }
                     setSkins(prev => {
                         const updated = isDef ? prev.map(s => ({ ...s, is_default: false })) : [...prev]
-                        return [...updated, newSkin]
+                        return [...updated, newSkin].sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
                     })
                     if (!selectedSkinId || isDef) {
                         setSelectedSkinId(newSkinId)
@@ -633,7 +669,8 @@ export default function OperatorDetailPageEditor() {
                 avatar_url: skinForm.avatar_url,
                 full_url: skinForm.full_url,
                 description: skinForm.description,
-                is_default: skinForm.is_default
+                is_default: skinForm.is_default,
+                display_order: orderVal
             }
 
             if (editingSkin) {
@@ -765,6 +802,20 @@ export default function OperatorDetailPageEditor() {
     }
 
     // ─── DIALOGUES HANDLERS ────────────────────────────────────────────────────
+    const handleMoveDialogue = (index, direction) => {
+        const targetIndex = index + direction
+        if (targetIndex < 0 || targetIndex >= dialogues.length) return
+        const next = [...dialogues]
+        const temp = next[index]
+        next[index] = next[targetIndex]
+        next[targetIndex] = temp
+        const updated = next.map((d, i) => ({
+            ...d,
+            display_order: i + 1
+        }))
+        setDialogues(updated)
+    }
+
     const handleOpenDialogueModal = (dialogue = null) => {
         if (dialogue) {
             setEditingDialogue(dialogue)
@@ -774,9 +825,13 @@ export default function OperatorDetailPageEditor() {
                 skin_id: dialogue.skin_id || '',
                 audio_url_jp: dialogue.audio_url_jp || '',
                 audio_url_en: dialogue.audio_url_en || '',
-                audio_url_cn: dialogue.audio_url_cn || ''
+                audio_url_cn: dialogue.audio_url_cn || '',
+                display_order: dialogue.display_order ?? (dialogues.findIndex(d => d.dialogue_id === dialogue.dialogue_id) + 1)
             })
         } else {
+            const nextOrder = dialogues.length > 0
+                ? Math.max(...dialogues.map(d => Number(d.display_order) || 0), 0) + 1
+                : 1
             setEditingDialogue(null)
             setDialogueForm({
                 title: 'Thoại mới',
@@ -784,7 +839,8 @@ export default function OperatorDetailPageEditor() {
                 skin_id: '',
                 audio_url_jp: '',
                 audio_url_en: '',
-                audio_url_cn: ''
+                audio_url_cn: '',
+                display_order: nextOrder
             })
         }
         setDialogueModalOpen(true)
@@ -796,23 +852,29 @@ export default function OperatorDetailPageEditor() {
             return
         }
 
+        const orderVal = Number(dialogueForm.display_order) || 1
+
         try {
             if (isNew) {
                 if (editingDialogue) {
-                    setDialogues(prev => prev.map(d => {
-                        if (d.dialogue_id === editingDialogue.dialogue_id) {
-                            return {
-                                ...d,
-                                title: dialogueForm.title.trim(),
-                                text_content: dialogueForm.text_content.trim(),
-                                skin_id: dialogueForm.skin_id || null,
-                                audio_url_jp: dialogueForm.audio_url_jp || null,
-                                audio_url_en: dialogueForm.audio_url_en || null,
-                                audio_url_cn: dialogueForm.audio_url_cn || null
+                    setDialogues(prev => {
+                        const updated = prev.map(d => {
+                            if (d.dialogue_id === editingDialogue.dialogue_id) {
+                                return {
+                                    ...d,
+                                    title: dialogueForm.title.trim(),
+                                    text_content: dialogueForm.text_content.trim(),
+                                    skin_id: dialogueForm.skin_id || null,
+                                    audio_url_jp: dialogueForm.audio_url_jp || null,
+                                    audio_url_en: dialogueForm.audio_url_en || null,
+                                    audio_url_cn: dialogueForm.audio_url_cn || null,
+                                    display_order: orderVal
+                                }
                             }
-                        }
-                        return d
-                    }))
+                            return d
+                        })
+                        return updated.sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    })
                     showToast('Đã cập nhật dòng thoại vào bộ nhớ tạm.', 'success')
                 } else {
                     const newDialogue = {
@@ -823,9 +885,10 @@ export default function OperatorDetailPageEditor() {
                         skin_id: dialogueForm.skin_id || null,
                         audio_url_jp: dialogueForm.audio_url_jp || null,
                         audio_url_en: dialogueForm.audio_url_en || null,
-                        audio_url_cn: dialogueForm.audio_url_cn || null
+                        audio_url_cn: dialogueForm.audio_url_cn || null,
+                        display_order: orderVal
                     }
-                    setDialogues(prev => [...prev, newDialogue])
+                    setDialogues(prev => [...prev, newDialogue].sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0)))
                     showToast('Đã thêm dòng thoại vào bộ nhớ tạm.', 'success')
                 }
                 setDialogueModalOpen(false)
@@ -839,7 +902,8 @@ export default function OperatorDetailPageEditor() {
                 skin_id: dialogueForm.skin_id || null,
                 audio_url_jp: dialogueForm.audio_url_jp || null,
                 audio_url_en: dialogueForm.audio_url_en || null,
-                audio_url_cn: dialogueForm.audio_url_cn || null
+                audio_url_cn: dialogueForm.audio_url_cn || null,
+                display_order: orderVal
             }
 
             if (editingDialogue) {
@@ -851,7 +915,11 @@ export default function OperatorDetailPageEditor() {
             }
 
             const updated = await SupabaseAPI.getOperatorDialogues(opId)
-            setDialogues(updated || [])
+            const sorted = (updated || []).map((d, idx) => ({
+                ...d,
+                display_order: Number(d.display_order ?? (idx + 1))
+            })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+            setDialogues(sorted)
             setDialogueModalOpen(false)
         } catch (err) {
             console.error('Save dialogue failed:', err)
@@ -870,7 +938,11 @@ export default function OperatorDetailPageEditor() {
                 await SupabaseAPI.deleteOperatorDialogue(dialogueId)
                 showToast('Đã xoá dòng thoại.', 'success')
                 const updated = await SupabaseAPI.getOperatorDialogues(opId)
-                setDialogues(updated || [])
+                const sorted = (updated || []).map((d, idx) => ({
+                    ...d,
+                    display_order: Number(d.display_order ?? (idx + 1))
+                })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                setDialogues(sorted)
             } catch (err) {
                 showToast('Xoá thoại thất bại: ' + err.message, 'error')
             }
@@ -979,8 +1051,9 @@ export default function OperatorDetailPageEditor() {
                 avatar_url: s.avatar_url || '',
                 full_url: s.full_url || '',
                 description: s.description || '',
-                is_default: !!s.is_default
-            })),
+                is_default: !!s.is_default,
+                display_order: Number(s.display_order ?? idx)
+            })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0)),
             dialogues: (dialogues || []).map((d, idx) => ({
                 dialogue_id: d.dialogue_id || `dlg_${idx}`,
                 id: d.dialogue_id || `dlg_${idx}`,
@@ -989,8 +1062,9 @@ export default function OperatorDetailPageEditor() {
                 audio_url_jp: d.audio_url_jp || '',
                 audio_url_en: d.audio_url_en || '',
                 audio_url_cn: d.audio_url_cn || '',
-                unlock_condition: d.unlock_condition || ''
-            })),
+                unlock_condition: d.unlock_condition || '',
+                display_order: Number(d.display_order ?? (idx + 1))
+            })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0)),
             records: (records || []).map((r, idx) => ({
                 record_id: r.record_id || `rec_${idx}`,
                 id: r.record_id || `rec_${idx}`,
@@ -1292,7 +1366,7 @@ export default function OperatorDetailPageEditor() {
                                                 type="button"
                                                 className={`operator-skin-thumb ${selectedSkinId === s.skin_id ? 'active' : ''}`}
                                                 onClick={() => setSelectedSkinId(s.skin_id)}
-                                                title={`${s.name} ${s.is_default ? '(Mặc định)' : ''}`}
+                                                title={`${s.name} ${s.is_default ? '(Mặc định)' : ''} [Thứ tự: ${s.display_order ?? 0}]`}
                                                 style={{ border: selectedSkinId === s.skin_id ? '2px solid var(--color-terracotta, #B2653B)' : '2px solid #181818' }}
                                             >
                                                 {s.avatar_url ? (
@@ -1303,6 +1377,9 @@ export default function OperatorDetailPageEditor() {
                                                     </div>
                                                 )}
                                             </button>
+                                            <span style={{ fontSize: '0.62rem', fontFamily: 'var(--font-mono)', opacity: 0.65, marginTop: '2px' }}>
+                                                #{s.display_order ?? 0}
+                                            </span>
                                             <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem' }}>
                                                 <button
                                                     type="button"
@@ -1883,6 +1960,9 @@ export default function OperatorDetailPageEditor() {
                                                             <span className="technical-text" style={{ color: 'var(--color-terracotta, #B2653B)', fontWeight: 800, fontSize: '0.75rem' }}>
                                                                 LINE_{String(idx + 1).padStart(2, '0')}
                                                             </span>
+                                                            <span className="technical-text" style={{ opacity: 0.65, fontSize: '0.75rem' }} title="Thứ tự hiển thị">
+                                                                #{dlg.display_order ?? (idx + 1)}
+                                                            </span>
                                                             <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{dlg.title}</span>
                                                             {dlg.skin_id && (
                                                                 <span className="tab-count-badge">SKIN VARIANT</span>
@@ -1890,8 +1970,27 @@ export default function OperatorDetailPageEditor() {
                                                         </div>
 
                                                         <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                                            <button
+                                                                type="button"
+                                                                className="brutalist-icon-btn"
+                                                                title="Di chuyển lên"
+                                                                onClick={() => handleMoveDialogue(idx, -1)}
+                                                                disabled={idx === 0}
+                                                            >
+                                                                <MoveUp size={12} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="brutalist-icon-btn"
+                                                                title="Di chuyển xuống"
+                                                                onClick={() => handleMoveDialogue(idx, 1)}
+                                                                disabled={idx === dialogues.length - 1}
+                                                            >
+                                                                <MoveDown size={12} />
+                                                            </button>
                                                             {dlg.audio_url_jp && (
                                                                 <button
+                                                                    type="button"
                                                                     className="brutalist-icon-btn"
                                                                     title="Nghe audio JP"
                                                                     onClick={() => {
@@ -1905,6 +2004,7 @@ export default function OperatorDetailPageEditor() {
                                                                 </button>
                                                             )}
                                                             <button
+                                                                type="button"
                                                                 className="brutalist-icon-btn"
                                                                 title="Sửa dòng thoại"
                                                                 onClick={() => handleOpenDialogueModal(dlg)}
@@ -1912,6 +2012,7 @@ export default function OperatorDetailPageEditor() {
                                                                 <Edit2 size={12} />
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="brutalist-icon-btn"
                                                                 title="Xoá dòng thoại"
                                                                 onClick={() => handleDeleteDialogue(dlg.dialogue_id)}
@@ -2083,6 +2184,17 @@ export default function OperatorDetailPageEditor() {
                                 />
                             </div>
 
+                            <div className="op-form-group">
+                                <label className="op-form-label technical-text">THỨ TỰ HIỂN THỊ (DISPLAY_ORDER):</label>
+                                <input
+                                    type="number"
+                                    className="op-form-input"
+                                    value={skinForm.display_order}
+                                    onChange={(e) => setSkinForm({ ...skinForm, display_order: parseInt(e.target.value, 10) || 0 })}
+                                    placeholder="0, 1, 2..."
+                                />
+                            </div>
+
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
                                 <input
                                     type="checkbox"
@@ -2138,6 +2250,17 @@ export default function OperatorDetailPageEditor() {
                                     onChange={(e) => setDialogueForm({ ...dialogueForm, text_content: e.target.value })}
                                     placeholder="Lời thoại của cán viên..."
                                     rows={4}
+                                />
+                            </div>
+
+                            <div className="op-form-group">
+                                <label className="op-form-label technical-text">THỨ TỰ HIỂN THỊ (DISPLAY_ORDER):</label>
+                                <input
+                                    type="number"
+                                    className="op-form-input"
+                                    value={dialogueForm.display_order}
+                                    onChange={(e) => setDialogueForm({ ...dialogueForm, display_order: parseInt(e.target.value, 10) || 0 })}
+                                    placeholder="1, 2, 3..."
                                 />
                             </div>
 

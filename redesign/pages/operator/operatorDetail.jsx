@@ -563,8 +563,9 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         portraitUrl: getAssetUrl(s.full_url || s.avatar_url || ''),
                         avatarUrl: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
                         description: s.description || '',
-                        is_default: !!s.is_default
-                    }))
+                        is_default: !!s.is_default,
+                        display_order: Number(s.display_order ?? idx)
+                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
                     const defaultSkin = skins.find(s => s.is_default) || skins[0]
 
                     // Normalize dialogues
@@ -574,12 +575,13 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         id: d.dialogue_id || d.id || `dlg_${idx}`,
                         title: d.title || `Thoại ${idx + 1}`,
                         content: d.text_content || d.content || '',
+                        display_order: Number(d.display_order ?? (idx + 1)),
                         voiceLines: d.voiceLines || {
                             JP: d.audio_url_jp ? getAssetUrl(d.audio_url_jp, 'audio') : '',
                             EN: d.audio_url_en ? getAssetUrl(d.audio_url_en, 'audio') : '',
                             CN: d.audio_url_cn ? getAssetUrl(d.audio_url_cn, 'audio') : ''
                         }
-                    }))
+                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
 
                     // Normalize combat info
                     const talents = Array.isArray(data.talents) ? data.talents : (Array.isArray(data.combat_info?.talents) ? data.combat_info.talents : [])

@@ -314,18 +314,27 @@ export default function RedesignEventPage() {
 
                 const insertedPositions = new Set()
                 arcEvents.forEach((evt, evtIdx) => {
-                    suggsByPos.forEach((sList, pos) => {
-                        if (!insertedPositions.has(pos) && pos <= evtIdx) {
-                            finalSidebarItems.push(...sList)
-                            insertedPositions.add(pos)
-                        }
-                    })
+                    const currentPos = evtIdx + 1
+                    const suggsForCurrent = suggsByPos.get(currentPos) || []
+
+                    // 1. Chèn gợi ý "Đọc trước" (prev) PHÍA TRƯỚC event này
+                    const prevSuggs = suggsForCurrent.filter(s => s.suggestionType === 'prev')
+                    finalSidebarItems.push(...prevSuggs)
+
+                    // 2. Chèn chính event này
                     finalSidebarItems.push({
                         ...evt,
                         arc_name: a.name
                     })
+
+                    // 3. Chèn gợi ý "Tiếp theo" (next) PHÍA SAU event này
+                    const nextSuggs = suggsForCurrent.filter(s => (s.suggestionType || 'next') === 'next')
+                    finalSidebarItems.push(...nextSuggs)
+
+                    insertedPositions.add(currentPos)
                 })
 
+                // 4. Các gợi ý còn lại (nếu có vị trí vượt quá số lượng event)
                 suggsByPos.forEach((sList, pos) => {
                     if (!insertedPositions.has(pos)) {
                         finalSidebarItems.push(...sList)
@@ -647,8 +656,36 @@ export default function RedesignEventPage() {
                                         </Link>
                                     )}
 
+                                    {/* Prerequisite (Đọc trước) Suggestion Banner - Hiển thị phía trước Event */}
+                                    {suggestedEvents.filter(s => s.suggestionType === 'prev').length > 0 && (
+                                        <div className="event-suggestion-banner-container top-banner">
+                                            <div className="event-suggestion-banner prev-recommendation">
+                                                <div className="sugg-banner-header">
+                                                    <span className="sugg-banner-tag technical-text prev-tag">
+                                                        GỢI Ý NÊN ĐỌC TRƯỚC
+                                                    </span>
+                                                </div>
+                                                <div className="sugg-cards-grid">
+                                                    {suggestedEvents.filter(s => s.suggestionType === 'prev').map(sugg => (
+                                                        <Link
+                                                            key={sugg.suggestionId || sugg.event_id}
+                                                            to={`/event/${sugg.event_id}`}
+                                                            state={{ regionId: arc?.region_id }}
+                                                            className="sugg-banner-btn prev-btn"
+                                                            title={`Nên đọc trước: ${sugg.name}`}
+                                                        >
+                                                            <span className="sugg-btn-type-badge prev">ĐỌC TRƯỚC</span>
+                                                            <span className="sugg-btn-text">{sugg.name}</span>
+                                                            <ArrowRight size={16} />
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Main Hero Body */}
-                                    <div className={`event-hero-body ${suggestedEvents.length > 0 ? 'has-suggestion' : ''}`}>
+                                    <div className={`event-hero-body ${suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 ? 'has-suggestion' : ''}`}>
                                         {/* Info Column */}
                                         <div className="event-hero-info">
                                             <div className="event-hero-breadcrumb technical-text">
@@ -710,58 +747,31 @@ export default function RedesignEventPage() {
                                         )}
                                     </div>
 
-                                    {/* Suggestion Footer Bar inside Unified Hero Panel */}
-                                    {suggestedEvents.length > 0 && (
-                                        <div className="event-suggestion-banner-container">
-                                            {suggestedEvents.filter(s => s.suggestionType === 'prev').length > 0 && (
-                                                <div className="event-suggestion-banner prev-recommendation">
-                                                    <div className="sugg-banner-header">
-                                                        <span className="sugg-banner-tag technical-text prev-tag">
-                                                            GỢI Ý NÊN ĐỌC TRƯỚC
-                                                        </span>
-                                                    </div>
-                                                    <div className="sugg-cards-grid">
-                                                        {suggestedEvents.filter(s => s.suggestionType === 'prev').map(sugg => (
-                                                            <Link
-                                                                key={sugg.suggestionId || sugg.event_id}
-                                                                to={`/event/${sugg.event_id}`}
-                                                                state={{ regionId: arc?.region_id }}
-                                                                className="sugg-banner-btn prev-btn"
-                                                                title={`Nên đọc trước: ${sugg.name}`}
-                                                            >
-                                                                <span className="sugg-btn-type-badge prev">ĐỌC TRƯỚC</span>
-                                                                <span className="sugg-btn-text">{sugg.name}</span>
-                                                                <ArrowRight size={16} />
-                                                            </Link>
-                                                        ))}
-                                                    </div>
+                                    {/* Next Suggestion (Tiếp theo) Banner - Hiển thị phía sau Event */}
+                                    {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 && (
+                                        <div className="event-suggestion-banner-container bottom-banner">
+                                            <div className="event-suggestion-banner next-recommendation">
+                                                <div className="sugg-banner-header">
+                                                    <span className="sugg-banner-tag technical-text next-tag">
+                                                        GỢI Ý SỰ KIỆN TIẾP THEO
+                                                    </span>
                                                 </div>
-                                            )}
-
-                                            {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 && (
-                                                <div className="event-suggestion-banner next-recommendation">
-                                                    <div className="sugg-banner-header">
-                                                        <span className="sugg-banner-tag technical-text next-tag">
-                                                            GỢI Ý SỰ KIỆN TIẾP THEO
-                                                        </span>
-                                                    </div>
-                                                    <div className="sugg-cards-grid">
-                                                        {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').map(sugg => (
-                                                            <Link
-                                                                key={sugg.suggestionId || sugg.event_id}
-                                                                to={`/event/${sugg.event_id}`}
-                                                                state={{ regionId: arc?.region_id }}
-                                                                className="sugg-banner-btn next-btn"
-                                                                title={`Chuyển tới sự kiện gợi ý: ${sugg.name}`}
-                                                            >
-                                                                <span className="sugg-btn-type-badge next">TIẾP THEO</span>
-                                                                <span className="sugg-btn-text">{sugg.name}</span>
-                                                                <ArrowRight size={16} />
-                                                            </Link>
-                                                        ))}
-                                                    </div>
+                                                <div className="sugg-cards-grid">
+                                                    {suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').map(sugg => (
+                                                        <Link
+                                                            key={sugg.suggestionId || sugg.event_id}
+                                                            to={`/event/${sugg.event_id}`}
+                                                            state={{ regionId: arc?.region_id }}
+                                                            className="sugg-banner-btn next-btn"
+                                                            title={`Chuyển tới sự kiện gợi ý: ${sugg.name}`}
+                                                        >
+                                                            <span className="sugg-btn-type-badge next">TIẾP THEO</span>
+                                                            <span className="sugg-btn-text">{sugg.name}</span>
+                                                            <ArrowRight size={16} />
+                                                        </Link>
+                                                    ))}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
