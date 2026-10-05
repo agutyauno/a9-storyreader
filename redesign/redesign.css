@@ -1133,6 +1133,17 @@ button.settings-trigger-btn {
 .settings-item-icon {
     color: var(--color-ochre);
     margin-top: 2px;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.settings-item-icon.is-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.settings-item-icon.is-clickable:hover {
+    color: var(--color-terracotta);
+    transform: scale(1.15);
 }
 
 .settings-item-info {
@@ -1238,6 +1249,21 @@ button.settings-trigger-btn {
 }
 
 .ced-range::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.ced-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--color-ochre);
+    border: 2px solid var(--color-charcoal);
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--color-cream);
+    transition: transform 0.1s;
+    border-radius: 0;
+}
+
+.ced-range::-moz-range-thumb:hover {
     transform: scale(1.1);
 }
 

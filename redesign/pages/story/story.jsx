@@ -296,9 +296,13 @@ export default function RedesignStoryPage({ isRecord = false }) {
     window.bgmManager.isEnabled = !muted
 
     // Apply to SFX
-    window.sfxManager.volume = finalSfx
-    if (window.sfxManager.currentAudio) {
-      window.sfxManager.currentAudio.volume = finalSfx
+    if (window.sfxManager.setVolume) {
+      window.sfxManager.setVolume(finalSfx)
+    } else {
+      window.sfxManager.volume = finalSfx
+      if (window.sfxManager.currentAudio) {
+        window.sfxManager.currentAudio.volume = finalSfx
+      }
     }
     window.sfxManager.setEnabled(!muted)
 
@@ -317,15 +321,21 @@ export default function RedesignStoryPage({ isRecord = false }) {
     const handleVolumeChange = () => applyAudioSettings()
 
     window.addEventListener('cedVolumeChange', handleVolumeChange)
+    window.addEventListener('cedMasterVolumeChange', handleVolumeChange)
     window.addEventListener('cedBgmVolumeChange', handleVolumeChange)
     window.addEventListener('cedSfxVolumeChange', handleVolumeChange)
     window.addEventListener('cedMuteChange', handleVolumeChange)
+    window.addEventListener('ced_app_settings', handleVolumeChange)
+    window.addEventListener('storage', handleVolumeChange)
 
     return () => {
       window.removeEventListener('cedVolumeChange', handleVolumeChange)
+      window.removeEventListener('cedMasterVolumeChange', handleVolumeChange)
       window.removeEventListener('cedBgmVolumeChange', handleVolumeChange)
       window.removeEventListener('cedSfxVolumeChange', handleVolumeChange)
       window.removeEventListener('cedMuteChange', handleVolumeChange)
+      window.removeEventListener('ced_app_settings', handleVolumeChange)
+      window.removeEventListener('storage', handleVolumeChange)
     }
   }, [htmlContent])
 

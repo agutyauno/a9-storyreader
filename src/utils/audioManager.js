@@ -34,7 +34,7 @@ export class BGMManager {
         const parsed = JSON.parse(savedSettings);
         if (parsed.soundMuted !== undefined) this.isEnabled = !parsed.soundMuted;
         
-        const masterVol = parsed.soundVolume ?? 50;
+        const masterVol = parsed.soundVolume ?? parsed.masterVolume ?? 50;
         const bgmVol = parsed.bgmVolume ?? 80;
         this.volume = (masterVol / 100) * (bgmVol / 100);
         

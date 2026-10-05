@@ -76,9 +76,15 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
                 finalSrc = '/assets/audio/bgm/' + finalSrc;
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio');
-            const audio = new Audio(resolvedUrl);
-            audioRef.current = audio;
-            audio.volume = 0.8;
+            let previewVol = 0.8;
+            try {
+                const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}');
+                const isMuted = saved.soundMuted ?? false;
+                const master = (saved.soundVolume ?? saved.masterVolume ?? 50) / 100;
+                const bgm = (saved.bgmVolume ?? 80) / 100;
+                previewVol = isMuted ? 0 : master * bgm;
+            } catch (e) {}
+            audio.volume = previewVol;
             audio.loop = true;
 
             audio.addEventListener('error', (e) => {

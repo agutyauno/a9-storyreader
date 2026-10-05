@@ -328,11 +328,11 @@ export default function RedesignEventPage() {
             const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
             const isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
             if (isMuted) return 0
-            const master = (saved.masterVolume ?? 80) / 100
-            const bgm = (saved.bgmVolume ?? 70) / 100
+            const master = (saved.soundVolume ?? saved.masterVolume ?? 50) / 100
+            const bgm = (saved.bgmVolume ?? 80) / 100
             return master * bgm
         } catch {
-            return 0.5
+            return 0.4
         }
     }, [])
 
@@ -369,6 +369,8 @@ export default function RedesignEventPage() {
 
             if (isCancelled) return
 
+            const effectiveVol = getEffectiveVolume()
+
             if (!bgmAudioRef.current || bgmAudioRef.current._src !== resolvedUrl) {
                 if (bgmAudioRef.current) {
                     bgmAudioRef.current.pause()
@@ -377,23 +379,31 @@ export default function RedesignEventPage() {
                 const audio = new Audio(resolvedUrl)
                 audio.loop = true
                 audio._src = resolvedUrl
-                audio.volume = getEffectiveVolume()
+                audio.volume = effectiveVol
                 bgmAudioRef.current = audio
 
-                const playPromise = audio.play()
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        const resumeOnInteraction = () => {
-                            if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
-                            document.removeEventListener('click', resumeOnInteraction)
-                            document.removeEventListener('keydown', resumeOnInteraction)
-                        }
-                        document.addEventListener('click', resumeOnInteraction, { once: true })
-                        document.addEventListener('keydown', resumeOnInteraction, { once: true })
-                    })
+                let isMuted = false
+                try {
+                    const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
+                    isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
+                } catch (e) {}
+
+                if (!isMuted && effectiveVol > 0) {
+                    const playPromise = audio.play()
+                    if (playPromise !== undefined) {
+                        playPromise.catch(() => {
+                            const resumeOnInteraction = () => {
+                                if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
+                                document.removeEventListener('click', resumeOnInteraction)
+                                document.removeEventListener('keydown', resumeOnInteraction)
+                            }
+                            document.addEventListener('click', resumeOnInteraction, { once: true })
+                            document.addEventListener('keydown', resumeOnInteraction, { once: true })
+                        })
+                    }
                 }
             } else {
-                bgmAudioRef.current.volume = getEffectiveVolume()
+                bgmAudioRef.current.volume = effectiveVol
             }
         }
 
@@ -408,14 +418,37 @@ export default function RedesignEventPage() {
     useEffect(() => {
         const handleVolumeSync = () => {
             if (bgmAudioRef.current) {
-                bgmAudioRef.current.volume = getEffectiveVolume()
+                const effectiveVol = getEffectiveVolume()
+                bgmAudioRef.current.volume = effectiveVol
+
+                let isMuted = false
+                try {
+                    const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
+                    isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
+                } catch (e) {}
+
+                if (isMuted || effectiveVol === 0) {
+                    if (!bgmAudioRef.current.paused) {
+                        bgmAudioRef.current.pause()
+                    }
+                } else {
+                    if (bgmAudioRef.current.paused) {
+                        bgmAudioRef.current.play().catch(() => {})
+                    }
+                }
             }
         }
+        window.addEventListener('cedVolumeChange', handleVolumeSync)
+        window.addEventListener('cedMasterVolumeChange', handleVolumeSync)
         window.addEventListener('cedBgmVolumeChange', handleVolumeSync)
+        window.addEventListener('cedMuteChange', handleVolumeSync)
         window.addEventListener('ced_app_settings', handleVolumeSync)
         window.addEventListener('storage', handleVolumeSync)
         return () => {
+            window.removeEventListener('cedVolumeChange', handleVolumeSync)
+            window.removeEventListener('cedMasterVolumeChange', handleVolumeSync)
             window.removeEventListener('cedBgmVolumeChange', handleVolumeSync)
+            window.removeEventListener('cedMuteChange', handleVolumeSync)
             window.removeEventListener('ced_app_settings', handleVolumeSync)
             window.removeEventListener('storage', handleVolumeSync)
         }
