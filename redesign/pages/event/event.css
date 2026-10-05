@@ -160,7 +160,7 @@
     font-size: 0.9rem;
     color: rgba(24, 24, 24, 0.85);
     line-height: 1.5;
-    max-height: 140px;
+    /* max-height: 140px; */
     word-break: break-word;
     white-space: pre-wrap;
     overflow-y: auto;
@@ -224,43 +224,6 @@
     background-color: rgba(245, 237, 220, 0.15);
 }
 
-/* Event Hero Quick Resume Button */
-.event-hero-resume-box {
-    margin-top: 1rem;
-    align-self: flex-start;
-}
-
-.btn-event-hero-resume {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.65rem 1.25rem;
-    background-color: var(--color-charcoal);
-    color: #ffffff;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: var(--border-thin);
-    box-shadow: 3px 3px 0px var(--color-ochre, #BA8530);
-    text-decoration: none;
-    transition: var(--transition-smooth);
-}
-
-.btn-event-hero-resume:hover {
-    background-color: var(--color-ochre, #BA8530);
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 4px 4px 0px var(--color-charcoal);
-}
-
-.btn-event-hero-resume .resume-progress-badge {
-    background-color: rgba(255, 255, 255, 0.2);
-    padding: 0.15rem 0.4rem;
-    border-radius: 2px;
-    font-size: 0.72rem;
-}
 
 /* Banner Image Column */
 .event-hero-image-wrap {
@@ -960,7 +923,6 @@
     }
 
     .event-hero-stats {
-        margin-top: auto;
         flex-shrink: 0;
         width: 100%;
         display: flex;
@@ -984,26 +946,6 @@
         font-size: 0.62rem;
     }
 
-    .event-hero-resume-box {
-        margin-top: 0.5rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .btn-event-hero-resume {
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.76rem;
-    }
-
-    .btn-event-hero-resume span:not(.resume-progress-badge) {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
 
     .event-float-nav {
         top: 12px;

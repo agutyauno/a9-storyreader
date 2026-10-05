@@ -96,6 +96,27 @@ const renderRarityOption = (opt) => {
     )
 }
 
+// Helper to normalize SP recovery type values
+const normalizeSpRecoveryValue = (val) => {
+    if (!val) return 'auto'
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự sạc' || s === 'tu sac' || s.includes('auto')) return 'auto'
+    if (s === 'offensive' || s === 'công sạc' || s === 'cong sac' || s.includes('offensive')) return 'offensive'
+    if (s === 'defensive' || s === 'thủ sạc' || s === 'thu sac' || s.includes('defensive')) return 'defensive'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'passive'
+    return s
+}
+
+// Helper to normalize activation type values
+const normalizeActivationTypeValue = (val) => {
+    if (!val) return 'auto'
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự động' || s === 'tu dong' || s.includes('auto')) return 'auto'
+    if (s === 'manual' || s === 'thủ công' || s === 'thu cong' || s.includes('manual')) return 'manual'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'passive'
+    return s
+}
+
 // Reusable Swiss-Brutalist Custom Select Component with Portal rendering to prevent clipping
 function CustomSelect({ id, value, onChange, options, placeholder, renderOption }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -534,27 +555,6 @@ export default function OperatorDetailPageEditor() {
     }
 
     // ─── SKINS HANDLERS ────────────────────────────────────────────────────────
-    const handleSaveActiveSkinDescription = async () => {
-        if (!activeSkin) return
-        if (isNew) {
-            showToast('Đã lưu mô tả skin vào bộ nhớ tạm.', 'success')
-            return
-        }
-        try {
-            await SupabaseAPI.updateOperatorSkin(activeSkin.skin_id, {
-                name: activeSkin.name,
-                avatar_url: activeSkin.avatar_url,
-                full_url: activeSkin.full_url,
-                description: activeSkin.description || '',
-                is_default: activeSkin.is_default
-            })
-            showToast(`Đã lưu mô tả cho trang phục "${activeSkin.name}"!`, 'success')
-        } catch (err) {
-            console.error('Save skin description failed:', err)
-            showToast('Lưu mô tả skin thất bại: ' + err.message, 'error')
-        }
-    }
-
     const handleOpenSkinModal = (skin = null) => {
         if (skin) {
             setEditingSkin(skin)
@@ -676,7 +676,7 @@ export default function OperatorDetailPageEditor() {
 
     // ─── TALENTS HANDLERS ──────────────────────────────────────────────────────
     const handleAddTalent = () => {
-        setTalents([...talents, { name: `Tài năng ${talents.length + 1}`, description: '' }])
+        setTalents([...talents, { name: `thiên phú ${talents.length + 1}`, description: '' }])
     }
     const handleUpdateTalent = (index, field, val) => {
         const next = [...talents]
@@ -716,7 +716,6 @@ export default function OperatorDetailPageEditor() {
             icon: '',
             imageUrl: '',
             lore: '',
-            stats: { hp: 120, atk: 45 },
             description: '',
             skillDescription: ''
         }])
@@ -1273,6 +1272,7 @@ export default function OperatorDetailPageEditor() {
                                         DANH SÁCH SKINS [{skins.length}]
                                     </span>
                                     <button
+                                        type="button"
                                         className="brutalist-btn secondary technical-text"
                                         style={{ padding: '0.25rem 0.6rem', fontSize: '0.7rem' }}
                                         onClick={() => handleOpenSkinModal()}
@@ -1328,63 +1328,6 @@ export default function OperatorDetailPageEditor() {
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Active Skin Description & Quick Details */}
-                                {activeSkin && (
-                                    <div className="op-skin-details-card">
-                                        <div className="op-skin-details-header">
-                                            <div className="op-skin-details-title-row">
-                                                <span className="op-skin-badge technical-text">
-                                                    {activeSkin.is_default ? 'DEFAULT' : 'SKIN'}
-                                                </span>
-                                                <span className="op-skin-name-display" title={activeSkin.name}>
-                                                    {activeSkin.name}
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="brutalist-btn secondary technical-text op-skin-quick-edit-btn"
-                                                onClick={() => handleOpenSkinModal(activeSkin)}
-                                                title="Mở modal chỉnh sửa chi tiết skin (ảnh chân dung, avatar, tên)"
-                                            >
-                                                <Edit2 size={11} />
-                                                <span>SỬA CHI TIẾT</span>
-                                            </button>
-                                        </div>
-
-                                        <div className="op-form-group" style={{ marginBottom: 0 }}>
-                                            <label className="op-form-label technical-text" style={{ fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span>MÔ TẢ TRANG PHỤC (LORE / QUOTE):</span>
-                                                <span style={{ opacity: 0.6, fontSize: '0.68rem' }}>{activeSkin.description?.length || 0} ký tự</span>
-                                            </label>
-                                            <textarea
-                                                className="op-form-textarea op-skin-desc-textarea"
-                                                rows={3}
-                                                value={activeSkin.description || ''}
-                                                onChange={(e) => {
-                                                    const val = e.target.value
-                                                    setSkins(prev => prev.map(s => s.skin_id === activeSkin.skin_id ? { ...s, description: val } : s))
-                                                }}
-                                                placeholder="Nhập mô tả hoặc trích dẫn về trang phục này..."
-                                            />
-                                            <div className="op-skin-desc-actions">
-                                                <span className="op-skin-desc-hint technical-text">
-                                                    * Hiển thị trực tiếp bên dưới trang phục tại trang chi tiết.
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    className="brutalist-btn primary technical-text"
-                                                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.68rem' }}
-                                                    onClick={handleSaveActiveSkinDescription}
-                                                    title="Lưu ngay mô tả này vào cơ sở dữ liệu"
-                                                >
-                                                    <Sparkles size={11} />
-                                                    <span>LƯU MÔ TẢ</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -1454,14 +1397,14 @@ export default function OperatorDetailPageEditor() {
                                                                 style={{ flex: 1, height: '30px' }}
                                                                 value={talent.name}
                                                                 onChange={(e) => handleUpdateTalent(idx, 'name', e.target.value)}
-                                                                placeholder="Tên tài năng"
+                                                                placeholder="Tên thiên phú"
                                                             />
                                                         </div>
                                                         <button
                                                             className="brutalist-icon-btn"
                                                             style={{ marginLeft: '0.5rem' }}
                                                             onClick={() => handleDeleteTalent(idx)}
-                                                            title="Xoá tài năng"
+                                                            title="Xoá thiên phú"
                                                         >
                                                             <Trash2 size={13} color="var(--color-crimson, #802520)" />
                                                         </button>
@@ -1469,7 +1412,7 @@ export default function OperatorDetailPageEditor() {
                                                     <div className="op-sub-card-body">
                                                         <textarea
                                                             className="op-form-textarea"
-                                                            placeholder="Mô tả hiệu ứng tài năng..."
+                                                            placeholder="Mô tả hiệu ứng thiên phú..."
                                                             value={talent.description}
                                                             onChange={(e) => handleUpdateTalent(idx, 'description', e.target.value)}
                                                             rows={2}
@@ -1562,25 +1505,25 @@ export default function OperatorDetailPageEditor() {
                                                                 <label className="op-form-label technical-text">Kích Hoạt:</label>
                                                                 <select
                                                                     className="op-form-select"
-                                                                    value={skill.activationType || 'auto'}
+                                                                    value={normalizeActivationTypeValue(skill.activationType)}
                                                                     onChange={(e) => handleUpdateSkill(idx, 'activationType', e.target.value)}
                                                                 >
-                                                                    <option value="auto">Auto (Tự động)</option>
-                                                                    <option value="manual">Manual (Thủ công)</option>
-                                                                    <option value="passive">Passive (Bị động)</option>
+                                                                    <option value="auto">Tự Động</option>
+                                                                    <option value="manual">Thủ Công</option>
+                                                                    <option value="passive">Bị Động</option>
                                                                 </select>
                                                             </div>
                                                             <div className="op-form-group">
                                                                 <label className="op-form-label technical-text">Hồi SP:</label>
                                                                 <select
                                                                     className="op-form-select"
-                                                                    value={skill.spRecoveryType || 'auto'}
+                                                                    value={normalizeSpRecoveryValue(skill.spRecoveryType)}
                                                                     onChange={(e) => handleUpdateSkill(idx, 'spRecoveryType', e.target.value)}
                                                                 >
-                                                                    <option value="auto">Auto Recovery</option>
-                                                                    <option value="offensive">Offensive Recovery</option>
-                                                                    <option value="defensive">Defensive Recovery</option>
-                                                                    <option value="passive">Passive</option>
+                                                                    <option value="auto">Tự Sạc</option>
+                                                                    <option value="offensive">Công Sạc</option>
+                                                                    <option value="defensive">Thủ Sạc</option>
+                                                                    <option value="passive">Bị Động</option>
                                                                 </select>
                                                             </div>
                                                             <div className="op-form-group">
@@ -1698,13 +1641,13 @@ export default function OperatorDetailPageEditor() {
                                                         </div>
 
                                                         <div className="op-form-group">
-                                                            <label className="op-form-label technical-text">NÂNG CẤP TÀI NĂNG (TALENT ENHANCEMENT):</label>
+                                                            <label className="op-form-label technical-text">NÂNG CẤP thiên phú (TALENT ENHANCEMENT):</label>
                                                             <input
                                                                 type="text"
                                                                 className="op-form-input"
                                                                 value={mod.skillDescription || ''}
                                                                 onChange={(e) => handleUpdateModule(idx, 'skillDescription', e.target.value)}
-                                                                placeholder="Hiệu ứng tăng cường tài năng..."
+                                                                placeholder="Hiệu ứng tăng cường thiên phú..."
                                                             />
                                                         </div>
                                                     </div>

@@ -99,6 +99,20 @@ export function getSetting(id) {
     }
   } catch (e) { }
 
+  // Fallback to legacy audio keys if not explicitly set in ced_app_settings
+  if (id === 'soundVolume' || id === 'masterVolume') {
+    const legacyVol = localStorage.getItem('audio_volume')
+    if (legacyVol !== null) {
+      const num = parseFloat(legacyVol)
+      if (!isNaN(num)) return Math.round(num * 100)
+    }
+  } else if (id === 'soundMuted') {
+    const legacyEnabled = localStorage.getItem('audio_enabled')
+    if (legacyEnabled !== null) {
+      return legacyEnabled === 'false'
+    }
+  }
+
   const item = SETTINGS_SCHEMA.find(i => i.id === id)
   return item ? item.defaultValue : null
 }

@@ -146,10 +146,6 @@ export default function ImageUploadField({
                             e.target.style.display = 'block'
                         }}
                     />
-                    <div className="img-upload-preview-meta technical-text">
-                        <Check size={12} color="var(--color-accent-gold, #cf9d46)" />
-                        <span>PREVIEW // READY</span>
-                    </div>
                 </div>
             )}
         </div>

@@ -57,6 +57,46 @@ const getSubclassIconUrl = (subclassId, classId) => {
     return clazz ? getAssetUrl(clazz.icon) : '';
 }
 
+// ─── SP Recovery Helpers ───────────────────────────────────────────────────────
+const getSpRecoveryLabel = (val) => {
+    if (!val || val === '-') return ''
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự sạc' || s === 'tu sac' || s.includes('auto')) return 'Tự Sạc'
+    if (s === 'offensive' || s === 'công sạc' || s === 'cong sac' || s.includes('offensive')) return 'Công Sạc'
+    if (s === 'defensive' || s === 'thủ sạc' || s === 'thu sac' || s.includes('defensive')) return 'Thủ Sạc'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'Bị Động'
+    return val
+}
+
+const getSpRecoveryClass = (val) => {
+    if (!val) return 'auto'
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự sạc' || s === 'tu sac' || s.includes('auto')) return 'auto'
+    if (s === 'offensive' || s === 'công sạc' || s === 'cong sac' || s.includes('offensive')) return 'offensive'
+    if (s === 'defensive' || s === 'thủ sạc' || s === 'thu sac' || s.includes('defensive')) return 'defensive'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'passive'
+    return 'auto'
+}
+
+// ─── Activation Type Helpers ───────────────────────────────────────────────────
+const getActivationLabel = (val) => {
+    if (!val) return ''
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự động' || s === 'tu dong' || s.includes('auto')) return 'Tự Động'
+    if (s === 'manual' || s === 'thủ công' || s === 'thu cong' || s.includes('manual')) return 'Thủ Công'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'Bị Động'
+    return val
+}
+
+const getActivationClass = (val) => {
+    if (!val) return 'auto'
+    const s = String(val).trim().toLowerCase()
+    if (s === 'auto' || s === 'tự động' || s === 'tu dong' || s.includes('auto')) return 'auto'
+    if (s === 'manual' || s === 'thủ công' || s === 'thu cong' || s.includes('manual')) return 'manual'
+    if (s === 'passive' || s === 'bị động' || s === 'bi dong' || s.includes('passive')) return 'passive'
+    return s
+}
+
 // ─── Skill Tab Content ─────────────────────────────────────────────────────────
 function SkillTab({ operator }) {
     const classIconUrl = getClassIconUrl(operator.class)
@@ -166,15 +206,13 @@ function SkillTab({ operator }) {
                                     <div className="skill-meta-row">
                                         <div className="skill-meta-group primary-group">
                                             {skill.activationType && (
-                                                <span className={`skill-meta-tag activation-tag type-${skill.activationType}`}>
-                                                    {skill.activationType === 'auto' ? 'Auto' : 'Manual'}
+                                                <span className={`skill-meta-tag activation-tag type-${getActivationClass(skill.activationType)}`}>
+                                                    {getActivationLabel(skill.activationType)}
                                                 </span>
                                             )}
-                                            {skill.spRecoveryType && skill.spRecoveryType !== '-' && skill.activationType !== 'passive' && (
-                                                <span className={`skill-meta-tag recovery-tag type-${skill.spRecoveryType}`}>
-                                                    {skill.spRecoveryType === 'auto' ? 'Auto Recovery' :
-                                                        skill.spRecoveryType === 'offensive' ? 'Offensive Recovery' :
-                                                            skill.spRecoveryType === 'defensive' ? 'Defensive Recovery' : 'Passive'}
+                                            {skill.spRecoveryType && skill.spRecoveryType !== '-' && getActivationClass(skill.activationType) !== 'passive' && (
+                                                <span className={`skill-meta-tag recovery-tag type-${getSpRecoveryClass(skill.spRecoveryType)}`}>
+                                                    {getSpRecoveryLabel(skill.spRecoveryType)}
                                                 </span>
                                             )}
                                         </div>
@@ -230,15 +268,6 @@ function SkillTab({ operator }) {
                                         <p className="module-lore-text">
                                             <em>"{mod.lore}"</em>
                                         </p>
-                                    )}
-                                    {mod.stats && (
-                                        <div className="module-stats-grid">
-                                            {Object.entries(mod.stats).map(([key, val]) => (
-                                                <span key={key} className="module-stat-badge">
-                                                    {key.toUpperCase()} +{val}
-                                                </span>
-                                            ))}
-                                        </div>
                                     )}
                                     <p className="skill-description">{mod.description}</p>
                                     {mod.skillDescription && (
@@ -593,7 +622,7 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         name: data.name || 'CÁN VIÊN',
                         appellation: data.appellation || '',
                         rarity: Number(data.rarity) || 5,
-                        class: data.class_id || data.class || 'guard',
+                        class: data.class_id || data.class || '',
                         subclass: data.sub_class_id || data.subclass || '',
                         faction: (Array.isArray(data.factions) && data.factions.length > 0) ? data.factions[0] : (data.faction || null),
                         portraitUrl: defaultSkin?.portraitUrl || data.portraitUrl || '',
@@ -786,6 +815,8 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                                     className="operator-portrait-img"
                                     src={getAssetUrl(currentPortrait)}
                                     alt={operator.name}
+                                    loading="eager"
+                                    decoding="sync"
                                     onClick={() => setIsPortraitModalOpen(true)}
                                     onError={(e) => {
                                         e.target.onerror = null
@@ -796,6 +827,16 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                                 <div className="operator-rarity-stars">
                                     {renderStars(operator.rarity)}
                                 </div>
+
+                                {/* Hidden in-memory preload elements to keep skin bitmaps warmed up */}
+                                {operator.skins && operator.skins.length > 1 && (
+                                    <div style={{ display: 'none' }} aria-hidden="true">
+                                        {operator.skins.map((s, idx) => {
+                                            const pSrc = getAssetUrl(s.full_url || s.portraitUrl || '')
+                                            return pSrc ? <img key={s.id || idx} src={pSrc} alt="" loading="eager" decoding="async" /> : null
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Info */}

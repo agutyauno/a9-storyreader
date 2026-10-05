@@ -11,6 +11,7 @@ import Modal from '../../components/Modal'
 import Tabs from '../../components/Tabs'
 import { ArrowLeft, ArrowRight, ExternalLink, Sparkles, BookmarkCheck } from 'lucide-react'
 import { getLastRead } from '../../../src/utils/readingHistory'
+import { getSetting } from '../../utils/settings'
 import './event.css'
 
 const EVENT_TABS = [
@@ -23,6 +24,19 @@ const EVENT_TABS = [
 const eventCache = new Map()  // event_id → { event, stories, characters, gallery }
 const arcCache = new Map()  // arc_id   → arcData
 const regionCache = new Map()  // region_id → regionData
+
+// Helper to cleanly stop and release an audio element
+const stopAndDestroyAudio = (audio) => {
+    if (!audio) return
+    try {
+        audio.pause()
+        audio.currentTime = 0
+        audio.removeAttribute('src')
+        audio.load()
+    } catch (e) {
+        console.warn('Error stopping BGM:', e)
+    }
+}
 
 export default function RedesignEventPage() {
     const { id } = useParams()
@@ -60,8 +74,10 @@ export default function RedesignEventPage() {
     const [arc, setArc] = useState(null)
     const [region, setRegion] = useState(null)
 
-    // Event BGM Audio Ref
+    // Event BGM Audio Refs & Session State
     const bgmAudioRef = useRef(null)
+    const currentBgmSessionRef = useRef(0)
+    const interactionCleanupRef = useRef(null)
 
     // Tab State
     const [activeTab, setActiveTab] = useState('stories')
@@ -75,6 +91,17 @@ export default function RedesignEventPage() {
 
     // 1. Fetch Event Specific Content
     useEffect(() => {
+        // Immediately stop and destroy previous event's BGM when id changes
+        currentBgmSessionRef.current++
+        if (bgmAudioRef.current) {
+            stopAndDestroyAudio(bgmAudioRef.current)
+            bgmAudioRef.current = null
+        }
+        if (interactionCleanupRef.current) {
+            interactionCleanupRef.current()
+            interactionCleanupRef.current = null
+        }
+
         async function loadEventData() {
             if (!id) return
 
@@ -325,23 +352,31 @@ export default function RedesignEventPage() {
     // 4. Event BGM Player (Plays ONLY if event has BGM, syncs with Header settings)
     const getEffectiveVolume = useCallback(() => {
         try {
-            const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
-            const isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
+            const isMuted = !!getSetting('soundMuted')
             if (isMuted) return 0
-            const master = (saved.soundVolume ?? saved.masterVolume ?? 50) / 100
-            const bgm = (saved.bgmVolume ?? 80) / 100
-            return master * bgm
+            const master = Number(getSetting('soundVolume') ?? 50)
+            const bgm = Number(getSetting('bgmVolume') ?? 80)
+            const vol = (master / 100) * (bgm / 100)
+            return Math.max(0, Math.min(1, isNaN(vol) ? 0.4 : vol))
         } catch {
             return 0.4
         }
     }, [])
 
     useEffect(() => {
+        const sessionId = ++currentBgmSessionRef.current
         let isCancelled = false
+
+        // Clean up any pending interaction listener
+        if (interactionCleanupRef.current) {
+            interactionCleanupRef.current()
+            interactionCleanupRef.current = null
+        }
+
         const rawBgm = event?.bgm_url || event?.bgm || event?.bgm_id
         if (!rawBgm) {
             if (bgmAudioRef.current) {
-                bgmAudioRef.current.pause()
+                stopAndDestroyAudio(bgmAudioRef.current)
                 bgmAudioRef.current = null
             }
             return
@@ -367,43 +402,66 @@ export default function RedesignEventPage() {
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio')
 
-            if (isCancelled) return
+            // If session changed, effect unmounted, or route changed during async fetch, ABORT!
+            if (isCancelled || sessionId !== currentBgmSessionRef.current) return
 
             const effectiveVol = getEffectiveVolume()
+            const isMuted = !!getSetting('soundMuted')
 
-            if (!bgmAudioRef.current || bgmAudioRef.current._src !== resolvedUrl) {
-                if (bgmAudioRef.current) {
-                    bgmAudioRef.current.pause()
-                    bgmAudioRef.current = null
-                }
-                const audio = new Audio(resolvedUrl)
-                audio.loop = true
-                audio._src = resolvedUrl
-                audio.volume = effectiveVol
-                bgmAudioRef.current = audio
-
-                let isMuted = false
-                try {
-                    const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
-                    isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
-                } catch (e) {}
-
-                if (!isMuted && effectiveVol > 0) {
-                    const playPromise = audio.play()
-                    if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                            const resumeOnInteraction = () => {
-                                if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
-                                document.removeEventListener('click', resumeOnInteraction)
-                                document.removeEventListener('keydown', resumeOnInteraction)
-                            }
-                            document.addEventListener('click', resumeOnInteraction, { once: true })
-                            document.addEventListener('keydown', resumeOnInteraction, { once: true })
-                        })
-                    }
-                }
-            } else {
+            // If audio already exists with this exact source, just update volume & play state
+            if (bgmAudioRef.current && bgmAudioRef.current._src === resolvedUrl) {
                 bgmAudioRef.current.volume = effectiveVol
+                if (isMuted || effectiveVol === 0) {
+                    if (!bgmAudioRef.current.paused) bgmAudioRef.current.pause()
+                } else if (bgmAudioRef.current.paused) {
+                    bgmAudioRef.current.play().catch(() => {})
+                }
+                return
+            }
+
+            // Stop any existing audio before starting a new track
+            if (bgmAudioRef.current) {
+                stopAndDestroyAudio(bgmAudioRef.current)
+                bgmAudioRef.current = null
+            }
+
+            // Create new Audio element
+            const audio = new Audio()
+            // CRITICAL: Set volume BEFORE setting src to prevent initial loud volume burst!
+            audio.volume = effectiveVol
+            audio.loop = true
+            audio._src = resolvedUrl
+            audio._sessionId = sessionId
+            audio.src = resolvedUrl
+            bgmAudioRef.current = audio
+
+            if (!isMuted && effectiveVol > 0) {
+                const playPromise = audio.play()
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        // Autoplay blocked by browser policy
+                        if (isCancelled || sessionId !== currentBgmSessionRef.current) return
+
+                        const onUserInteract = () => {
+                            if (bgmAudioRef.current && bgmAudioRef.current._sessionId === sessionId) {
+                                bgmAudioRef.current.play().catch(() => {})
+                            }
+                            cleanupInteraction()
+                        }
+
+                        const cleanupInteraction = () => {
+                            document.removeEventListener('click', onUserInteract)
+                            document.removeEventListener('keydown', onUserInteract)
+                            if (interactionCleanupRef.current === cleanupInteraction) {
+                                interactionCleanupRef.current = null
+                            }
+                        }
+
+                        interactionCleanupRef.current = cleanupInteraction
+                        document.addEventListener('click', onUserInteract, { once: true })
+                        document.addEventListener('keydown', onUserInteract, { once: true })
+                    })
+                }
             }
         }
 
@@ -411,39 +469,40 @@ export default function RedesignEventPage() {
 
         return () => {
             isCancelled = true
+            if (interactionCleanupRef.current) {
+                interactionCleanupRef.current()
+                interactionCleanupRef.current = null
+            }
         }
     }, [event, getEffectiveVolume])
 
     // Synchronize BGM Volume / Mute with Header Settings
     useEffect(() => {
         const handleVolumeSync = () => {
-            if (bgmAudioRef.current) {
-                const effectiveVol = getEffectiveVolume()
-                bgmAudioRef.current.volume = effectiveVol
+            if (!bgmAudioRef.current) return
+            const effectiveVol = getEffectiveVolume()
+            const isMuted = !!getSetting('soundMuted')
 
-                let isMuted = false
-                try {
-                    const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}')
-                    isMuted = saved.soundMuted ?? (localStorage.getItem('audio_enabled') === 'false')
-                } catch (e) {}
+            bgmAudioRef.current.volume = effectiveVol
 
-                if (isMuted || effectiveVol === 0) {
-                    if (!bgmAudioRef.current.paused) {
-                        bgmAudioRef.current.pause()
-                    }
-                } else {
-                    if (bgmAudioRef.current.paused) {
-                        bgmAudioRef.current.play().catch(() => {})
-                    }
+            if (isMuted || effectiveVol === 0) {
+                if (!bgmAudioRef.current.paused) {
+                    bgmAudioRef.current.pause()
+                }
+            } else {
+                if (bgmAudioRef.current.paused) {
+                    bgmAudioRef.current.play().catch(() => {})
                 }
             }
         }
+
         window.addEventListener('cedVolumeChange', handleVolumeSync)
         window.addEventListener('cedMasterVolumeChange', handleVolumeSync)
         window.addEventListener('cedBgmVolumeChange', handleVolumeSync)
         window.addEventListener('cedMuteChange', handleVolumeSync)
         window.addEventListener('ced_app_settings', handleVolumeSync)
         window.addEventListener('storage', handleVolumeSync)
+
         return () => {
             window.removeEventListener('cedVolumeChange', handleVolumeSync)
             window.removeEventListener('cedMasterVolumeChange', handleVolumeSync)
@@ -457,9 +516,14 @@ export default function RedesignEventPage() {
     // Cleanup audio on component unmount
     useEffect(() => {
         return () => {
+            currentBgmSessionRef.current++
             if (bgmAudioRef.current) {
-                bgmAudioRef.current.pause()
+                stopAndDestroyAudio(bgmAudioRef.current)
                 bgmAudioRef.current = null
+            }
+            if (interactionCleanupRef.current) {
+                interactionCleanupRef.current()
+                interactionCleanupRef.current = null
             }
         }
     }, [])
@@ -621,21 +685,6 @@ export default function RedesignEventPage() {
                                                     <span className="event-stat-label technical-text">MEDIA</span>
                                                 </div>
                                             </div>
-
-                                            {/* Quick Resume Button if last read story belongs to this event */}
-                                            {lastRead && lastRead.eventId === id && (
-                                                <div className="event-hero-resume-box">
-                                                    <Link
-                                                        to={`/story/${lastRead.storyId}`}
-                                                        className="btn-event-hero-resume"
-                                                    >
-                                                        <BookmarkCheck size={16} />
-                                                        <span>TIẾP TỤC ĐỌC: {lastRead.storyName}</span>
-                                                        <span className="resume-progress-badge">{lastRead.scrollPercent || 0}%</span>
-                                                        <ArrowRight size={16} />
-                                                    </Link>
-                                                </div>
-                                            )}
                                         </div>
 
                                         {/* Banner Image Column */}
