@@ -52,6 +52,7 @@ ReactDOM.createRoot(rootElement).render(
             <Route path="/story/:id" element={<RedesignStoryPage />} />
             <Route path="/operator-record/:id" element={<RedesignStoryPage isRecord={true} />} />
             <Route path="/operator" element={<OperatorListPage />} />
+            <Route path="/operator/preview" element={<OperatorDetailPage isPreview={true} />} />
             <Route path="/operator/:id" element={<OperatorDetailPage />} />
             <Route path="/login" element={<RedesignLoginPage />} />
             

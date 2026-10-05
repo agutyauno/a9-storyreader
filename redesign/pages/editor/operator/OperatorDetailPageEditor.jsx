@@ -949,6 +949,68 @@ export default function OperatorDetailPageEditor() {
         }
     }
 
+    // ─── STANDALONE PREVIEW HANDLER ─────────────────────────────────────────────
+    const handleOpenPreview = () => {
+        const previewPayload = {
+            operator_id: opId || 'preview',
+            id: opId || 'preview',
+            name: name.trim() || 'CÁN VIÊN MỚI',
+            appellation: appellation.trim() || '',
+            rarity: Number(rarity) || 5,
+            class_id: classId,
+            class: classId,
+            sub_class_id: subClassId,
+            subclass: subClassId,
+            factions: selectedFactions,
+            status: status || 'draft',
+            combat_info: {
+                talents,
+                skills,
+                modules,
+                base_skills: baseSkills,
+                token
+            },
+            lore_info: {
+                profiles
+            },
+            skins: (skins || []).map((s, idx) => ({
+                skin_id: s.skin_id || `skin_${idx}`,
+                id: s.skin_id || `skin_${idx}`,
+                name: s.name || 'Mặc định',
+                avatar_url: s.avatar_url || '',
+                full_url: s.full_url || '',
+                description: s.description || '',
+                is_default: !!s.is_default
+            })),
+            dialogues: (dialogues || []).map((d, idx) => ({
+                dialogue_id: d.dialogue_id || `dlg_${idx}`,
+                id: d.dialogue_id || `dlg_${idx}`,
+                title: d.title || `Thoại ${idx + 1}`,
+                text_content: d.text_content || '',
+                audio_url_jp: d.audio_url_jp || '',
+                audio_url_en: d.audio_url_en || '',
+                audio_url_cn: d.audio_url_cn || '',
+                unlock_condition: d.unlock_condition || ''
+            })),
+            records: (records || []).map((r, idx) => ({
+                record_id: r.record_id || `rec_${idx}`,
+                id: r.record_id || `rec_${idx}`,
+                name: r.name || `Ký sự ${idx + 1}`,
+                description: r.description || '',
+                story_content: r.story_content
+            }))
+        }
+
+        try {
+            sessionStorage.setItem('preview_operator', JSON.stringify(previewPayload))
+            const targetUrl = `#/operator/${opId && opId !== 'new' ? opId : 'preview'}?preview=1`
+            window.open(targetUrl, '_blank')
+        } catch (e) {
+            console.error('Failed to save preview data:', e)
+            showToast('Không thể tạo dữ liệu xem trước: ' + e.message, 'error')
+        }
+    }
+
     if (loading) {
         return (
             <div className="op-editor-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -989,34 +1051,47 @@ export default function OperatorDetailPageEditor() {
                 </div>
 
                 <div className="op-editor-header-right">
+                    {/* Standalone Preview Button */}
+                    <button
+                        type="button"
+                        className="brutalist-btn secondary technical-text"
+                        onClick={handleOpenPreview}
+                        title="Xem trước giao diện cán viên (kể cả khi chưa lưu hoặc đang ở chế độ bản nháp)"
+                    >
+                        <Eye size={14} />
+                        <span>XEM TRƯỚC (PREVIEW)</span>
+                    </button>
+
                     {/* Quick Switcher to Record Editor */}
                     {!isNew && (
                         <button
+                            type="button"
                             className="brutalist-btn secondary technical-text"
                             onClick={() => navigate(`/editor/operator/records?operatorId=${opId}`)}
                             title="Chuyển sang soạn thảo kịch bản ký sự (Alt + S)"
                         >
                             <BookOpen size={14} />
-                            <span>KỊCH BẢN ký sự (ALT+S)</span>
+                            <span>KỊCH BẢN KÝ SỰ (ALT+S)</span>
                         </button>
                     )}
 
-                    {/* View Public Page */}
-                    {!isNew && (
+                    {/* View Public Page (only if published) */}
+                    {!isNew && status === 'published' && (
                         <a
                             href={`#/operator/${opId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="brutalist-btn secondary technical-text"
-                            title="Xem trang hiển thị cho người dùng"
+                            title="Xem trang hiển thị công khai cho người dùng"
                         >
                             <ExternalLink size={14} />
-                            <span>XEM TRANG PUBLIC</span>
+                            <span>TRANG PUBLIC</span>
                         </a>
                     )}
 
                     {/* Save Button */}
                     <button
+                        type="button"
                         className="brutalist-btn primary technical-text"
                         onClick={handleSave}
                         disabled={saving}

@@ -726,6 +726,17 @@ export default function OperatorListPageEditor() {
 
                                     {/* Admin Action Buttons */}
                                     <div className="operator-card-admin-bar">
+                                        <a
+                                            href={`#/operator/${op.operator_id}?preview=1`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="operator-card-admin-btn"
+                                            title="Xem trước hồ sơ (Bỏ qua giới hạn bản nháp)"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <ExternalLink size={13} />
+                                        </a>
+
                                         <button
                                             className={`operator-card-admin-btn status-btn ${op.status === 'draft' ? 'is-draft' : 'is-published'}`}
                                             onClick={(e) => handleToggleStatus(op, e)}
@@ -809,6 +820,15 @@ export default function OperatorListPageEditor() {
                                     <span className="operator-list-rarity">{renderStars(op.rarity)}</span>
 
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <a
+                                            href={`#/operator/${op.operator_id}?preview=1`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="operator-card-admin-btn"
+                                            title="Xem trước hồ sơ (Bỏ qua giới hạn bản nháp)"
+                                        >
+                                            <ExternalLink size={13} />
+                                        </a>
                                         <button
                                             className={`operator-card-admin-btn status-btn ${op.status === 'draft' ? 'is-draft' : 'is-published'}`}
                                             onClick={(e) => handleToggleStatus(op, e)}

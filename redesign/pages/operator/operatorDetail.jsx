@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './operatorMapping'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
 import { getAssetUrl } from '../../../src/utils/assetUtils'
@@ -13,7 +13,7 @@ import {
     Timer, Coins, Square, Zap,
     Home, Package,
     Crosshair, Flame, PlusCircle, Flag, Target, Activity, HelpCircle, Clock,
-    BookOpen, ArrowRight
+    BookOpen, ArrowRight, Eye, Edit3
 } from 'lucide-react'
 import './operator.css'
 
@@ -463,8 +463,13 @@ function RecordTab({ operator }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function OperatorDetailPage() {
+export default function OperatorDetailPage({ isPreview: isPreviewProp = false }) {
     const { id } = useParams()
+    const location = useLocation()
+    const navigate = useNavigate()
+    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+    const isPreview = isPreviewProp || queryParams.get('preview') === '1' || queryParams.get('preview') === 'true' || id === 'preview'
+
     const [operator, setOperator] = useState(null)
     const [isDraft, setIsDraft] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -478,42 +483,151 @@ export default function OperatorDetailPage() {
         async function fetchOperatorDetail() {
             try {
                 setLoading(true)
-                const data = await SupabaseAPI.getOperator(id)
+                let data = null
+                let records = []
+
+                // 1. If in preview mode, try reading from sessionStorage first
+                if (isPreview) {
+                    const raw = sessionStorage.getItem('preview_operator')
+                    if (raw) {
+                        try {
+                            const parsed = JSON.parse(raw)
+                            // If previewing generic 'preview' or ID matches
+                            if (!id || id === 'preview' || parsed.operator_id === id || parsed.id === id) {
+                                data = parsed
+                                records = parsed.records || []
+                            }
+                        } catch (e) {
+                            console.warn('Error reading preview_operator from sessionStorage:', e)
+                        }
+                    }
+                }
+
+                // 2. If not found in session or not a session preview, fetch from Supabase by ID
+                if (!data && id && id !== 'preview') {
+                    data = await SupabaseAPI.getOperator(id)
+                    if (data) {
+                        const recs = await SupabaseAPI.getOperatorRecords(id)
+                        records = recs || []
+                    }
+                }
+
                 if (data) {
-                    if (data.status === 'draft') {
+                    // Check draft status: ONLY block when NOT in preview mode!
+                    if (data.status === 'draft' && !isPreview) {
                         setIsDraft(true)
                         setOperator(null)
                         document.title = `HỒ SƠ SOẠN THẢO // Civilight Eterna Database`
                         return
                     }
+
                     setIsDraft(false)
-                    const records = await SupabaseAPI.getOperatorRecords(id)
-                    setOperator({
+
+                    // Normalize skins
+                    const rawSkins = Array.isArray(data.skins) ? data.skins : []
+                    const skins = rawSkins.map((s, idx) => ({
+                        ...s,
+                        id: s.skin_id || s.id || `skin_${idx}`,
+                        name: s.name || 'Mặc định',
+                        avatar_url: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
+                        full_url: s.full_url ? getAssetUrl(s.full_url) : '',
+                        portraitUrl: getAssetUrl(s.full_url || s.avatar_url || ''),
+                        avatarUrl: s.avatar_url ? getAssetUrl(s.avatar_url) : '',
+                        description: s.description || '',
+                        is_default: !!s.is_default
+                    }))
+                    const defaultSkin = skins.find(s => s.is_default) || skins[0]
+
+                    // Normalize dialogues
+                    const rawDialogues = Array.isArray(data.dialogues) ? data.dialogues : []
+                    const dialogues = rawDialogues.map((d, idx) => ({
+                        ...d,
+                        id: d.dialogue_id || d.id || `dlg_${idx}`,
+                        title: d.title || `Thoại ${idx + 1}`,
+                        content: d.text_content || d.content || '',
+                        voiceLines: d.voiceLines || {
+                            JP: d.audio_url_jp ? getAssetUrl(d.audio_url_jp, 'audio') : '',
+                            EN: d.audio_url_en ? getAssetUrl(d.audio_url_en, 'audio') : '',
+                            CN: d.audio_url_cn ? getAssetUrl(d.audio_url_cn, 'audio') : ''
+                        }
+                    }))
+
+                    // Normalize combat info
+                    const talents = Array.isArray(data.talents) ? data.talents : (Array.isArray(data.combat_info?.talents) ? data.combat_info.talents : [])
+                    const rawSkills = Array.isArray(data.skills) ? data.skills : (Array.isArray(data.combat_info?.skills) ? data.combat_info.skills : [])
+                    const skillsList = rawSkills.map(sk => ({
+                        ...sk,
+                        icon: sk.icon ? getAssetUrl(sk.icon) : ''
+                    }))
+                    const rawModules = Array.isArray(data.modules) ? data.modules : (Array.isArray(data.combat_info?.modules) ? data.combat_info.modules : [])
+                    const modulesList = rawModules.map(m => ({
+                        ...m,
+                        icon: m.icon ? getAssetUrl(m.icon) : '',
+                        imageUrl: m.imageUrl ? getAssetUrl(m.imageUrl) : ''
+                    }))
+                    const rawBaseSkills = Array.isArray(data.baseSkills) ? data.baseSkills : (Array.isArray(data.combat_info?.base_skills || data.combat_info?.baseSkills) ? (data.combat_info.base_skills || data.combat_info.baseSkills) : [])
+                    const baseSkillsList = rawBaseSkills.map(bs => ({
+                        ...bs,
+                        icon: bs.icon ? getAssetUrl(bs.icon) : ''
+                    }))
+                    const tokenData = data.token || (data.combat_info?.token ? {
+                        ...data.combat_info.token,
+                        imageUrl: data.combat_info.token.imageUrl ? getAssetUrl(data.combat_info.token.imageUrl) : ''
+                    } : null)
+
+                    // Normalize lore profiles
+                    const profiles = Array.isArray(data.profiles) ? data.profiles : (Array.isArray(data.lore_info?.profiles) ? data.lore_info.profiles : [])
+
+                    // Normalize records
+                    const recordsList = (records || []).map((r, idx) => ({
+                        ...r,
+                        id: r.record_id || r.id || `rec_${idx}`,
+                        title: r.name || r.title || `ký sự ${idx + 1}`,
+                        description: r.description || ''
+                    }))
+
+                    const formattedOperator = {
                         ...data,
-                        records: (records || []).map(r => ({
-                            ...r,
-                            id: r.record_id,
-                            title: r.name,
-                            description: r.description
-                        }))
-                    })
-                    document.title = `${data.name} // Civilight Eterna Database`
+                        id: data.operator_id || data.id,
+                        operator_id: data.operator_id || data.id,
+                        name: data.name || 'CÁN VIÊN',
+                        appellation: data.appellation || '',
+                        rarity: Number(data.rarity) || 5,
+                        class: data.class_id || data.class || 'guard',
+                        subclass: data.sub_class_id || data.subclass || '',
+                        faction: (Array.isArray(data.factions) && data.factions.length > 0) ? data.factions[0] : (data.faction || null),
+                        portraitUrl: defaultSkin?.portraitUrl || data.portraitUrl || '',
+                        avatarUrl: defaultSkin?.avatarUrl || data.avatarUrl || '',
+                        skins,
+                        dialogues,
+                        talents,
+                        skills: skillsList,
+                        modules: modulesList,
+                        baseSkills: baseSkillsList,
+                        token: tokenData,
+                        profiles,
+                        records: recordsList
+                    }
+
+                    setOperator(formattedOperator)
+                    setSelectedSkinId(defaultSkin?.id || 'default')
+                    document.title = `${isPreview ? '[XEM TRƯỚC] ' : ''}${formattedOperator.name} // Civilight Eterna Database`
                 } else {
                     setIsDraft(false)
                     setOperator(null)
                 }
             } catch (err) {
-                console.error("Failed to load operator from Supabase:", err)
+                console.error("Failed to load operator from Supabase/Session:", err)
                 setOperator(null)
             } finally {
                 setLoading(false)
             }
         }
+
         fetchOperatorDetail()
-        setSelectedSkinId('default')
         setActiveTab('skill')
         window.scrollTo({ top: 0, behavior: 'instant' })
-    }, [id])
+    }, [id, isPreview, location.search])
 
     // Get current portrait based on selected skin
     const activeSkin = operator?.skins?.find(s => s.id === selectedSkinId) || operator?.skins?.[0]
@@ -581,9 +695,18 @@ export default function OperatorDetailPage() {
                     <div className="content-area expanded">
                         <div className="redesign-container" style={{ padding: '4rem 2.5rem' }}>
                             <div className="error-container">
-                                <p className="technical-text">SYS_ERROR: OPERATOR_NOT_FOUND // ID: {id}</p>
-                                <Link to="/operator" className="btn-link" style={{ marginTop: '1.5rem', display: 'inline-flex' }}>
-                                    QUAY LẠI DANH SÁCH
+                                <p className="technical-text">
+                                    {isPreview
+                                        ? "SYS_PREVIEW_EMPTY // KHÔNG TÌM THẤY DỮ LIỆU XEM TRƯỚC"
+                                        : `SYS_ERROR: OPERATOR_NOT_FOUND // ID: ${id}`}
+                                </p>
+                                <p style={{ maxWidth: '480px', margin: '0.75rem auto 1.5rem', color: 'rgba(24, 24, 24, 0.7)', fontSize: '0.9rem' }}>
+                                    {isPreview
+                                        ? "Chưa có dữ liệu bản nháp nào được gửi sang từ Trình biên tập Cán viên (Operator Editor), hoặc dữ liệu xem trước đã hết hạn."
+                                        : "Không tìm thấy hồ sơ cán viên tương ứng trong hệ thống cơ sở dữ liệu."}
+                                </p>
+                                <Link to={isPreview ? "/editor/operator" : "/operator"} className="btn-link" style={{ marginTop: '0.5rem', display: 'inline-flex' }}>
+                                    {isPreview ? "ĐẾN TRÌNH BIÊN TẬP CÁN VIÊN" : "QUAY LẠI DANH SÁCH"}
                                 </Link>
                             </div>
                         </div>
@@ -600,6 +723,50 @@ export default function OperatorDetailPage() {
     return (
         <div className="app-wrapper">
             <Header BASE_URL={BASE_URL} />
+
+            {/* PREVIEW MODE BANNER */}
+            {isPreview && (
+                <aside className="operator-preview-banner" aria-label="Chế độ xem trước">
+                    <div className="operator-preview-banner-left">
+                        <span className="operator-preview-badge">
+                            <Eye size={14} />
+                            CHẾ ĐỘ XEM TRƯỚC
+                        </span>
+                        <span className={`operator-preview-status-pill ${operator.status === 'draft' ? 'draft' : 'published'}`}>
+                            {operator.status === 'draft' ? 'BẢN NHÁP (DRAFT)' : 'ĐÃ XUẤT BẢN'}
+                        </span>
+                        <span className="operator-preview-text technical-text">
+                            Hồ sơ đang hiển thị ở chế độ xem trước (bỏ qua giới hạn bản nháp).
+                        </span>
+                    </div>
+
+                    <div className="operator-preview-banner-right">
+                        {(operator.operator_id || operator.id) && (operator.operator_id !== 'preview' && operator.id !== 'preview') && (
+                            <Link
+                                to={`/editor/operator/${operator.operator_id || operator.id}`}
+                                className="operator-preview-btn primary"
+                            >
+                                <Edit3 size={13} />
+                                <span>VỀ TRÌNH BIÊN TẬP</span>
+                            </Link>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (window.opener) {
+                                    window.close()
+                                } else {
+                                    navigate(operator.operator_id && operator.operator_id !== 'preview' ? `/editor/operator/${operator.operator_id}` : '/editor/operator')
+                                }
+                            }}
+                            className="operator-preview-btn"
+                            title="Đóng chế độ xem trước"
+                        >
+                            <span>ĐÓNG XEM TRƯỚC</span>
+                        </button>
+                    </div>
+                </aside>
+            )}
 
             <div className="main-layout">
                 <div className="content-area operator-page-wrapper operator-detail-page expanded page-fade-in">
@@ -675,7 +842,7 @@ export default function OperatorDetailPage() {
                                 {operator.skins && operator.skins.length > 0 && (
                                     <div className="operator-skin-selector">
                                         <div className="operator-skin-header">
-                                            <span className="operator-skin-label">TRANG PHỤC // COSTUME</span>
+                                            <span className="operator-skin-label">TRANG PHỤC</span>
                                             <span className="operator-skin-current-name technical-text">
                                                 {activeSkin?.name || 'Mặc định'}
                                             </span>
@@ -706,7 +873,6 @@ export default function OperatorDetailPage() {
                                         {activeSkin?.description && (
                                             <div className="operator-skin-desc-card">
                                                 <div className="operator-skin-desc-header technical-text">
-                                                    <Sparkles size={12} color="var(--color-ochre)" />
                                                     <span>MÔ TẢ TRANG PHỤC</span>
                                                 </div>
                                                 <p className="operator-skin-desc-text">
