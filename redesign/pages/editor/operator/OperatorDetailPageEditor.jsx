@@ -1226,7 +1226,7 @@ export default function OperatorDetailPageEditor() {
                                 className={`op-editor-tab-btn ${activeTab === 'skill' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('skill')}
                             >
-                                <span>KĨ NĂNG</span>
+                                <span>KỸ NĂNG</span>
                             </button>
                             <button
                                 className={`op-editor-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
@@ -1244,7 +1244,7 @@ export default function OperatorDetailPageEditor() {
                                 className={`op-editor-tab-btn ${activeTab === 'record' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('record')}
                             >
-                                <span>KÍ SỰ</span>
+                                <span>KỸ SỰ</span>
                                 <span className="tab-count-badge">[{records.length}]</span>
                             </button>
                         </div>

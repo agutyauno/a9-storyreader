@@ -46,7 +46,7 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
         setIsPlaying(false);
     };
 
-    const togglePreview = () => {
+    const togglePreview = async () => {
         if (isPlaying) {
             stopPreview();
             return;
@@ -61,6 +61,17 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
         try {
             stopPreview();
             let finalSrc = srcToPlay;
+
+            // Resolve asset_id if it doesn't have an extension or slash
+            if (!finalSrc.includes('.') && !finalSrc.includes('/') && !finalSrc.startsWith('http')) {
+                try {
+                    const asset = await SupabaseAPI.getAsset(finalSrc);
+                    if (asset?.url) finalSrc = asset.url;
+                } catch (e) {
+                    console.warn('Failed to resolve BGM asset in preview:', e);
+                }
+            }
+
             if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
                 finalSrc = '/assets/audio/bgm/' + finalSrc;
             }

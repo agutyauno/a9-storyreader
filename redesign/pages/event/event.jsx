@@ -337,8 +337,9 @@ export default function RedesignEventPage() {
     }, [])
 
     useEffect(() => {
-        const bgmSrc = event?.bgm_url || event?.bgm || event?.bgm_id
-        if (!bgmSrc) {
+        let isCancelled = false
+        const rawBgm = event?.bgm_url || event?.bgm || event?.bgm_id
+        if (!rawBgm) {
             if (bgmAudioRef.current) {
                 bgmAudioRef.current.pause()
                 bgmAudioRef.current = null
@@ -346,37 +347,60 @@ export default function RedesignEventPage() {
             return
         }
 
-        let finalSrc = bgmSrc
-        if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
-            finalSrc = '/assets/audio/bgm/' + finalSrc
-        }
-        const resolvedUrl = getAssetUrl(finalSrc, 'audio')
+        async function initAudio() {
+            let finalSrc = String(rawBgm).trim()
 
-        if (!bgmAudioRef.current || bgmAudioRef.current._src !== resolvedUrl) {
-            if (bgmAudioRef.current) {
-                bgmAudioRef.current.pause()
-                bgmAudioRef.current = null
-            }
-            const audio = new Audio(resolvedUrl)
-            audio.loop = true
-            audio._src = resolvedUrl
-            audio.volume = getEffectiveVolume()
-            bgmAudioRef.current = audio
-
-            const playPromise = audio.play()
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    const resumeOnInteraction = () => {
-                        if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
-                        document.removeEventListener('click', resumeOnInteraction)
-                        document.removeEventListener('keydown', resumeOnInteraction)
+            // Resolve asset_id if it doesn't contain a file extension or slash
+            if (!finalSrc.includes('.') && !finalSrc.includes('/') && !finalSrc.startsWith('http')) {
+                try {
+                    const asset = await SupabaseAPI.getAsset(finalSrc)
+                    if (asset?.url) {
+                        finalSrc = asset.url
                     }
-                    document.addEventListener('click', resumeOnInteraction, { once: true })
-                    document.addEventListener('keydown', resumeOnInteraction, { once: true })
-                })
+                } catch (err) {
+                    console.warn('Failed to resolve BGM asset ID:', err)
+                }
             }
-        } else {
-            bgmAudioRef.current.volume = getEffectiveVolume()
+
+            if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
+                finalSrc = '/assets/audio/bgm/' + finalSrc
+            }
+            const resolvedUrl = getAssetUrl(finalSrc, 'audio')
+
+            if (isCancelled) return
+
+            if (!bgmAudioRef.current || bgmAudioRef.current._src !== resolvedUrl) {
+                if (bgmAudioRef.current) {
+                    bgmAudioRef.current.pause()
+                    bgmAudioRef.current = null
+                }
+                const audio = new Audio(resolvedUrl)
+                audio.loop = true
+                audio._src = resolvedUrl
+                audio.volume = getEffectiveVolume()
+                bgmAudioRef.current = audio
+
+                const playPromise = audio.play()
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        const resumeOnInteraction = () => {
+                            if (bgmAudioRef.current) bgmAudioRef.current.play().catch(() => {})
+                            document.removeEventListener('click', resumeOnInteraction)
+                            document.removeEventListener('keydown', resumeOnInteraction)
+                        }
+                        document.addEventListener('click', resumeOnInteraction, { once: true })
+                        document.addEventListener('keydown', resumeOnInteraction, { once: true })
+                    })
+                }
+            } else {
+                bgmAudioRef.current.volume = getEffectiveVolume()
+            }
+        }
+
+        initAudio()
+
+        return () => {
+            isCancelled = true
         }
     }, [event, getEffectiveVolume])
 
