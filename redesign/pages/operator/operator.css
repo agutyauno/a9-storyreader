@@ -1866,6 +1866,9 @@
 /* ─────────────────────────────────────────────────────────────────────────────── */
 /* CUSTOM ENHANCEMENTS: CLASS/SUBCLASS ICONS & MODULE BANNER/LORE                  */
 /* ─────────────────────────────────────────────────────────────────────────────── */
+.dark-preview {
+    background-color: var(--color-charcoal);
+}
 
 .operator-class-value-with-icon {
     display: flex;

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import NotificationToast from '../components/NotificationToast'
+import ConfirmModal from '../components/modals/ConfirmModal'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
@@ -315,6 +316,9 @@ export default function OperatorDetailPageEditor() {
     const showToast = (message, type = 'success') => {
         setNotification({ message, type })
     }
+
+    const [confirmOpen, setConfirmOpen] = useState(false)
+    const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: () => { } })
 
     // Catch toast message from redirect location state
     useEffect(() => {
@@ -690,25 +694,31 @@ export default function OperatorDetailPageEditor() {
         }
     }
 
-    const handleDeleteSkin = async (skinId) => {
-        if (window.confirm('Bạn có chắc muốn xoá skin này?')) {
-            if (isNew) {
-                setSkins(prev => prev.filter(s => s.skin_id !== skinId))
-                if (selectedSkinId === skinId) {
-                    setSelectedSkinId(skins.find(s => s.skin_id !== skinId)?.skin_id || null)
+    const handleDeleteSkin = (skinId) => {
+        setConfirmData({
+            title: 'XÓA TRANG PHỤC',
+            message: 'Bạn có chắc chắn muốn xóa trang phục (skin) này không?',
+            onConfirm: async () => {
+                setConfirmOpen(false)
+                if (isNew) {
+                    setSkins(prev => prev.filter(s => s.skin_id !== skinId))
+                    if (selectedSkinId === skinId) {
+                        setSelectedSkinId(skins.find(s => s.skin_id !== skinId)?.skin_id || null)
+                    }
+                    showToast('Đã xoá skin khỏi bộ nhớ tạm.', 'success')
+                    return
                 }
-                showToast('Đã xoá skin khỏi bộ nhớ tạm.', 'success')
-                return
+                try {
+                    await SupabaseAPI.deleteOperatorSkin(skinId)
+                    showToast('Đã xoá skin.', 'success')
+                    const updated = await SupabaseAPI.getOperatorSkins(opId)
+                    setSkins(updated || [])
+                } catch (err) {
+                    showToast('Xoá skin thất bại: ' + err.message, 'error')
+                }
             }
-            try {
-                await SupabaseAPI.deleteOperatorSkin(skinId)
-                showToast('Đã xoá skin.', 'success')
-                const updated = await SupabaseAPI.getOperatorSkins(opId)
-                setSkins(updated || [])
-            } catch (err) {
-                showToast('Xoá skin thất bại: ' + err.message, 'error')
-            }
-        }
+        })
+        setConfirmOpen(true)
     }
 
     // ─── TALENTS HANDLERS ──────────────────────────────────────────────────────
@@ -927,26 +937,32 @@ export default function OperatorDetailPageEditor() {
         }
     }
 
-    const handleDeleteDialogue = async (dialogueId) => {
-        if (window.confirm('Xoá dòng thoại này?')) {
-            if (isNew) {
-                setDialogues(prev => prev.filter(d => d.dialogue_id !== dialogueId))
-                showToast('Đã xoá dòng thoại khỏi bộ nhớ tạm.', 'success')
-                return
+    const handleDeleteDialogue = (dialogueId) => {
+        setConfirmData({
+            title: 'XÓA DÒNG THOẠI',
+            message: 'Bạn có chắc chắn muốn xóa dòng thoại này không?',
+            onConfirm: async () => {
+                setConfirmOpen(false)
+                if (isNew) {
+                    setDialogues(prev => prev.filter(d => d.dialogue_id !== dialogueId))
+                    showToast('Đã xoá dòng thoại khỏi bộ nhớ tạm.', 'success')
+                    return
+                }
+                try {
+                    await SupabaseAPI.deleteOperatorDialogue(dialogueId)
+                    showToast('Đã xoá dòng thoại.', 'success')
+                    const updated = await SupabaseAPI.getOperatorDialogues(opId)
+                    const sorted = (updated || []).map((d, idx) => ({
+                        ...d,
+                        display_order: Number(d.display_order ?? (idx + 1))
+                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    setDialogues(sorted)
+                } catch (err) {
+                    showToast('Xoá thoại thất bại: ' + err.message, 'error')
+                }
             }
-            try {
-                await SupabaseAPI.deleteOperatorDialogue(dialogueId)
-                showToast('Đã xoá dòng thoại.', 'success')
-                const updated = await SupabaseAPI.getOperatorDialogues(opId)
-                const sorted = (updated || []).map((d, idx) => ({
-                    ...d,
-                    display_order: Number(d.display_order ?? (idx + 1))
-                })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
-                setDialogues(sorted)
-            } catch (err) {
-                showToast('Xoá thoại thất bại: ' + err.message, 'error')
-            }
-        }
+        })
+        setConfirmOpen(true)
     }
 
     // ─── RECORDS HANDLERS ──────────────────────────────────────────────────────
@@ -1002,22 +1018,28 @@ export default function OperatorDetailPageEditor() {
         }
     }
 
-    const handleDeleteRecord = async (recordId) => {
-        if (window.confirm(`Xoá ký sự "${recordId}" cùng kịch bản của nó?`)) {
-            if (isNew) {
-                setRecords(prev => prev.filter(r => r.record_id !== recordId))
-                showToast('Đã xoá ký sự khỏi bộ nhớ tạm.', 'success')
-                return
+    const handleDeleteRecord = (recordId) => {
+        setConfirmData({
+            title: 'XÓA KÝ SỰ',
+            message: `Bạn có chắc chắn muốn xóa ký sự "${recordId}" cùng toàn bộ kịch bản liên quan không?`,
+            onConfirm: async () => {
+                setConfirmOpen(false)
+                if (isNew) {
+                    setRecords(prev => prev.filter(r => r.record_id !== recordId))
+                    showToast('Đã xoá ký sự khỏi bộ nhớ tạm.', 'success')
+                    return
+                }
+                try {
+                    await SupabaseAPI.deleteOperatorRecord(recordId)
+                    showToast('Đã xoá ký sự.', 'success')
+                    const updated = await SupabaseAPI.getOperatorRecords(opId)
+                    setRecords(updated || [])
+                } catch (err) {
+                    showToast('Xoá ký sự thất bại: ' + err.message, 'error')
+                }
             }
-            try {
-                await SupabaseAPI.deleteOperatorRecord(recordId)
-                showToast('Đã xoá ký sự.', 'success')
-                const updated = await SupabaseAPI.getOperatorRecords(opId)
-                setRecords(updated || [])
-            } catch (err) {
-                showToast('Xoá ký sự thất bại: ' + err.message, 'error')
-            }
-        }
+        })
+        setConfirmOpen(true)
     }
 
     // ─── STANDALONE PREVIEW HANDLER ─────────────────────────────────────────────
@@ -1174,13 +1196,6 @@ export default function OperatorDetailPageEditor() {
                     </button>
                 </div>
             </header>
-
-            {/* Notification Toast */}
-            {notification.message && (
-                <div className={`notification-toast ${notification.type} show`} style={{ position: 'fixed', top: '70px', right: '20px', zIndex: 9999 }}>
-                    <span>{notification.message}</span>
-                </div>
-            )}
 
             {/* WYSIWYG Editor Body */}
             <main className="content-area operator-page-wrapper operator-detail-page expanded" style={{ padding: '1.25rem 2rem' }}>
@@ -1784,7 +1799,7 @@ export default function OperatorDetailPageEditor() {
                                                             value={bs.icon || ''}
                                                             onChange={(url) => handleUpdateBaseSkill(idx, 'icon', url)}
                                                             placeholder="URL icon kỹ năng hậu cần hoặc tải lên..."
-                                                            darkPreview={true}
+                                                            darkPreview={false}
                                                         />
                                                         <div className="op-form-group">
                                                             <label className="op-form-label technical-text">MÔ TẢ HIỆU ỨNG CĂN CỨ:</label>
@@ -2391,6 +2406,14 @@ export default function OperatorDetailPageEditor() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmOpen}
+                title={confirmData.title}
+                message={confirmData.message}
+                onConfirm={confirmData.onConfirm}
+                onCancel={() => setConfirmOpen(false)}
+            />
 
             <NotificationToast
                 message={notification.message}

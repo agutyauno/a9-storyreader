@@ -773,9 +773,11 @@ const SupabaseAPI_Raw = {
     if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
     if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
 
-    const { data, error } = await supabase.from('character_expressions').insert(cleanPayload).select().single();
+    const { data, error } = await supabase.from('character_expressions')
+      .upsert(cleanPayload, { onConflict: 'character_id,name' })
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || cleanPayload;
   },
 
   async updateExpression(characterId, name, payload) {
@@ -792,10 +794,14 @@ const SupabaseAPI_Raw = {
     const { data, error } = await supabase.from('character_expressions')
       .update(cleanPayload)
       .match({ character_id: characterId, name: name })
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+
+    // If no row was matched/updated (e.g. name changed or not found in DB), fallback to upsert
+    if (!data || data.length === 0) {
+      return this.createExpression(cleanPayload);
+    }
+    return data[0];
   },
 
   async deleteExpression(characterId, name, forceDbDelete = false) {
@@ -1483,10 +1489,9 @@ const SupabaseAPI_Raw = {
     const { data, error } = await supabase
       .from('operators')
       .insert(cleanPayload)
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || cleanPayload;
   },
 
   async updateOperator(operatorId, payload) {
@@ -1499,10 +1504,9 @@ const SupabaseAPI_Raw = {
       .from('operators')
       .update(cleanPayload)
       .eq('operator_id', operatorId)
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async toggleOperatorStatus(operatorId, status) {
@@ -1510,10 +1514,9 @@ const SupabaseAPI_Raw = {
       .from('operators')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('operator_id', operatorId)
-      .select('operator_id, status')
-      .single();
+      .select('operator_id, status');
     if (error) throw error;
-    return data;
+    return data?.[0] || null;
   },
 
   async deleteOperator(operatorId) {
@@ -1583,11 +1586,10 @@ const SupabaseAPI_Raw = {
     if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
     const { data, error } = await supabase
       .from('operator_skins')
-      .insert(cleanPayload)
-      .select()
-      .single();
+      .upsert(cleanPayload, { onConflict: 'skin_id' })
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || cleanPayload;
   },
 
   async updateOperatorSkin(skinId, payload) {
@@ -1598,10 +1600,12 @@ const SupabaseAPI_Raw = {
       .from('operator_skins')
       .update(cleanPayload)
       .eq('skin_id', skinId)
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+    if (!data || data.length === 0) {
+      return this.createOperatorSkin({ ...cleanPayload, skin_id: skinId });
+    }
+    return data[0];
   },
 
   async deleteOperatorSkin(skinId) {
@@ -1646,11 +1650,10 @@ const SupabaseAPI_Raw = {
     if (cleanPayload.audio_url_cn) cleanPayload.audio_url_cn = cleanUrl(cleanPayload.audio_url_cn);
     const { data, error } = await supabase
       .from('operator_dialogues')
-      .insert(cleanPayload)
-      .select()
-      .single();
+      .upsert(cleanPayload, { onConflict: 'dialogue_id' })
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || cleanPayload;
   },
 
   async updateOperatorDialogue(dialogueId, payload) {
@@ -1662,10 +1665,12 @@ const SupabaseAPI_Raw = {
       .from('operator_dialogues')
       .update(cleanPayload)
       .eq('dialogue_id', dialogueId)
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+    if (!data || data.length === 0) {
+      return this.createOperatorDialogue({ ...cleanPayload, dialogue_id: dialogueId });
+    }
+    return data[0];
   },
 
   async deleteOperatorDialogue(dialogueId) {
@@ -1723,11 +1728,10 @@ const SupabaseAPI_Raw = {
     cleanPayload.updated_at = new Date().toISOString();
     const { data, error } = await supabase
       .from('operator_records')
-      .insert(cleanPayload)
-      .select()
-      .single();
+      .upsert(cleanPayload, { onConflict: 'record_id' })
+      .select();
     if (error) throw error;
-    return data;
+    return data?.[0] || cleanPayload;
   },
 
   async updateOperatorRecord(recordId, payload) {
@@ -1737,10 +1741,12 @@ const SupabaseAPI_Raw = {
       .from('operator_records')
       .update(cleanPayload)
       .eq('record_id', recordId)
-      .select()
-      .single();
+      .select();
     if (error) throw error;
-    return data;
+    if (!data || data.length === 0) {
+      return this.createOperatorRecord({ ...cleanPayload, record_id: recordId });
+    }
+    return data[0];
   },
 
   async deleteOperatorRecord(recordId) {

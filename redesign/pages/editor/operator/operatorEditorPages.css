@@ -414,6 +414,10 @@
     padding: 4px;
 }
 
+.dark-preview {
+    background-color: var(--color-charcoal);
+}
+
 /* Audio Upload Preview */
 .audio-upload-preview {
     margin-top: 0.45rem;
