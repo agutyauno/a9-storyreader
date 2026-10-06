@@ -23,6 +23,7 @@ export default function EditorSidebar({
     selectedEntityId,
     onRecordSelect,
     onNewRecord,
+    onEditRecord,
     onDeleteRecord,
     recordReloadTrigger,
 }) {
@@ -195,6 +196,7 @@ export default function EditorSidebar({
                             currentRecordId={currentRecordId || currentStoryId}
                             onSelectRecord={onRecordSelect || onStorySelect}
                             onNewRecord={onNewRecord}
+                            onEditRecord={onEditRecord}
                             onDeleteRecord={onDeleteRecord}
                             reloadTrigger={recordReloadTrigger}
                         />

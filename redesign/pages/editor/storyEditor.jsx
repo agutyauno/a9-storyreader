@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../src/contexts/AuthContext'
-import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Save, Loader, PanelLeft, PanelRight, LogOut, User, X, Eye, EyeOff, Edit3, Edit } from 'lucide-react'
 
 import EditorSidebar from './components/sidebar/EditorSidebar'
 import EditorToolbar from './components/EditorToolbar'
@@ -18,6 +18,8 @@ import AssetDetailModal from './components/modals/AssetDetailModal'
 import AssetPreviewModal from './components/modals/AssetPreviewModal'
 import NotificationToast from './components/NotificationToast'
 import UnsavedChangesModal from './components/modals/UnsavedChangesModal'
+import RecordModal from './components/modals/RecordModal'
+import ConfirmModal from './components/modals/ConfirmModal'
 
 import { StoryScriptParser } from '../../../src/utils/storyParser'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
@@ -86,6 +88,14 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         confirmText: 'Xác nhận rời trang',
         saveText: 'Lưu và xác nhận',
         cancelText: 'Quay lại'
+    })
+
+    const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+    const [confirmModalData, setConfirmModalData] = useState({
+        title: 'XÓA KÝ SỰ',
+        message: '',
+        confirmText: 'Xác nhận xoá',
+        onConfirm: () => { }
     })
 
     const confirmNavigation = (action, customData = null) => {
@@ -187,6 +197,15 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         display_order: 1
     })
 
+    const [editRecordModalOpen, setEditRecordModalOpen] = useState(false)
+    const [editRecordTargetOp, setEditRecordTargetOp] = useState(null)
+    const [editRecordData, setEditRecordData] = useState({
+        record_id: '',
+        name: '',
+        description: '',
+        display_order: 1
+    })
+
     const [scriptText, setScriptText] = useState('')
     const [allCharacters, setAllCharacters] = useState([])
     const [eventCharacters, setEventCharacters] = useState([])
@@ -254,11 +273,21 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                         setError(`Không tìm thấy ký sự cán viên với mã ID "${currentId}".`)
                         return
                     }
+                    let opName = ''
+                    if (item.operator_id) {
+                        try {
+                            const op = await SupabaseAPI.getOperator(item.operator_id)
+                            opName = op?.name || ''
+                        } catch (e) {
+                            console.warn('Failed to load operator name for record:', e)
+                        }
+                    }
                     setMetadata({
                         name: item.name,
                         description: item.description || '',
                         display_order: item.display_order ?? null,
                         operator_id: item.operator_id ?? null,
+                        operator_name: opName,
                         record_id: item.record_id,
                         story_id: item.record_id,
                     })
@@ -576,19 +605,14 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         })
     }
 
-    const handleCreateRecordSubmit = async (e) => {
-        e?.preventDefault?.()
-        if (!newRecordData.record_id.trim() || !newRecordData.name.trim()) {
-            showNotification('Vui lòng điền mã và tên ký sự!', 'warning')
-            return
-        }
+    const handleCreateRecordSubmit = async (recordData) => {
         try {
             const payload = {
-                record_id: newRecordData.record_id.trim(),
+                record_id: recordData.record_id.trim(),
                 operator_id: newRecordTargetOp.operator_id,
-                name: newRecordData.name.trim(),
-                description: newRecordData.description || '',
-                display_order: Number(newRecordData.display_order) || 1,
+                name: recordData.name.trim(),
+                description: recordData.description || '',
+                display_order: Number(recordData.display_order) || 1,
                 story_content: { type: 'vns', script: `@bg ""\n\n${newRecordTargetOp.name}: ...\n` }
             }
             await SupabaseAPI.createOperatorRecord(payload)
@@ -599,15 +623,63 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
         } catch (err) {
             console.error('Create record failed:', err)
             showNotification(`Lỗi tạo ký sự: ${err.message}`, 'error')
+            throw err
+        }
+    }
+
+    const handleOpenEditRecordModal = (record, operator) => {
+        const targetOp = operator || {
+            operator_id: record.operator_id || metadata.operator_id,
+            name: operator?.name || metadata.operator_name || 'Cán viên'
+        }
+        setEditRecordTargetOp(targetOp)
+        setEditRecordData({
+            record_id: record.record_id,
+            name: record.name || '',
+            description: record.description || '',
+            display_order: record.display_order ?? 1
+        })
+        setEditRecordModalOpen(true)
+    }
+
+    const handleEditRecordSubmit = async (recordData) => {
+        try {
+            const payload = {
+                name: recordData.name.trim(),
+                description: recordData.description || '',
+                display_order: Number(recordData.display_order) || 1
+            }
+            await SupabaseAPI.updateOperatorRecord(recordData.record_id, payload)
+            if (metadata.record_id === recordData.record_id) {
+                setMetadata(prev => ({
+                    ...prev,
+                    name: payload.name,
+                    description: payload.description,
+                    display_order: payload.display_order
+                }))
+            }
+            showNotification(`Đã cập nhật thông tin ký sự "${payload.name}"!`, 'success')
+            setEditRecordModalOpen(false)
+            setRecordReloadTrigger(prev => prev + 1)
+        } catch (err) {
+            console.error('Update record failed:', err)
+            showNotification(`Lỗi cập nhật ký sự: ${err.message}`, 'error')
+            throw err
         }
     }
 
     const handleDeleteRecord = (rec, op) => {
-        if (window.confirm(`Bạn có chắc muốn xoá ký sự "${rec.name}" của cán viên "${op.name}"?`)) {
-            (async () => {
+        const opName = op?.name || metadata.operator_name || 'cán viên'
+        const recName = rec.name || rec.record_id
+        setConfirmModalData({
+            title: 'XÓA KÝ SỰ',
+            message: `Bạn có chắc chắn muốn xóa ký sự "${recName}" của cán viên "${opName}" cùng toàn bộ kịch bản liên quan không? Thao tác này không thể hoàn tác.`,
+            confirmText: 'Xác nhận xoá',
+            onConfirm: async () => {
+                setConfirmModalOpen(false)
                 try {
                     await SupabaseAPI.deleteOperatorRecord(rec.record_id)
-                    showNotification(`Đã xoá ký sự "${rec.name}"`, 'success')
+                    showNotification(`Đã xoá ký sự "${recName}"`, 'success')
                     setRecordReloadTrigger(prev => prev + 1)
                     if (metadata.record_id === rec.record_id) {
                         navigate('/editor/operator/records')
@@ -618,8 +690,9 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                     console.error('Delete record failed:', err)
                     showNotification(`Lỗi xoá ký sự: ${err.message}`, 'error')
                 }
-            })()
-        }
+            }
+        })
+        setConfirmModalOpen(true)
     }
 
     if (error) {
@@ -668,14 +741,29 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
 
                 <div className="header-right">
                     {isRecord && (
-                        <button
-                            onClick={() => confirmNavigation(() => navigate(metadata.operator_id ? `/editor/operator/${metadata.operator_id}` : '/editor/operator'))}
-                            className="brutalist-btn secondary technical-text"
-                            title="Chuyển sang sửa hồ sơ chi tiết cán viên (Alt+S)"
-                        >
-                            <User size={14} />
-                            <span>SỬA HỒ SƠ (ALT+S)</span>
-                        </button>
+                        <>
+                            {metadata.record_id && (
+                                <button
+                                    onClick={() => handleOpenEditRecordModal(metadata, {
+                                        operator_id: metadata.operator_id,
+                                        name: metadata.operator_name || 'Cán viên'
+                                    })}
+                                    className="brutalist-btn secondary technical-text"
+                                    title="Chỉnh sửa thông tin hồ sơ ký sự này (Tên, mô tả, thứ tự)"
+                                >
+                                    <Edit size={14} />
+                                    <span>SỬA KÝ SỰ</span>
+                                </button>
+                            )}
+                            <button
+                                onClick={() => confirmNavigation(() => navigate(metadata.operator_id ? `/editor/operator/${metadata.operator_id}` : '/editor/operator'))}
+                                className="brutalist-btn secondary technical-text"
+                                title="Chuyển sang sửa hồ sơ chi tiết cán viên (Alt+S)"
+                            >
+                                <User size={14} />
+                                <span>SỬA HỒ SƠ (ALT+S)</span>
+                            </button>
+                        </>
                     )}
 
                     {editorMode === 'story' && (
@@ -757,6 +845,7 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                             initialOperatorId={urlOperatorId}
                             onRecordSelect={handleRecordSelect}
                             onNewRecord={handleOpenNewRecordModal}
+                            onEditRecord={handleOpenEditRecordModal}
                             onDeleteRecord={handleDeleteRecord}
                             recordReloadTrigger={recordReloadTrigger}
                         />
@@ -914,79 +1003,36 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 onSaveAndConfirm={handleSaveAndConfirm}
             />
 
-            {/* Modal Tạo ký sự Mới */}
-            {newRecordModalOpen && newRecordTargetOp && (
-                <div className="redesign-modal-backdrop" onClick={() => setNewRecordModalOpen(false)}>
-                    <div className="redesign-modal-container" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
-                        <div className="redesign-modal-header">
-                            <h3 className="redesign-modal-title">
-                                <User size={18} />
-                                <span>THÊM ký sự // {newRecordTargetOp.name}</span>
-                            </h3>
-                            <button className="redesign-modal-close" onClick={() => setNewRecordModalOpen(false)}>
-                                <X size={16} />
-                            </button>
-                        </div>
+            {/* Modal Thêm Ký Sự Mới */}
+            <RecordModal
+                isOpen={newRecordModalOpen}
+                isEditMode={false}
+                targetOp={newRecordTargetOp}
+                initialData={newRecordData}
+                onClose={() => setNewRecordModalOpen(false)}
+                onSubmit={handleCreateRecordSubmit}
+            />
 
-                        <form onSubmit={handleCreateRecordSubmit}>
-                            <div className="redesign-modal-body">
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">MÃ ký sự (RECORD_ID):</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="redesign-input"
-                                        value={newRecordData.record_id}
-                                        onChange={e => setNewRecordData({ ...newRecordData, record_id: e.target.value })}
-                                    />
-                                </div>
+            {/* Modal Chỉnh Sửa Ký Sự */}
+            <RecordModal
+                isOpen={editRecordModalOpen}
+                isEditMode={true}
+                targetOp={editRecordTargetOp}
+                initialData={editRecordData}
+                onClose={() => setEditRecordModalOpen(false)}
+                onSubmit={handleEditRecordSubmit}
+            />
 
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">TÊN ký sự:</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Ví dụ: ký sự 1 - Khởi đầu..."
-                                        className="redesign-input"
-                                        value={newRecordData.name}
-                                        onChange={e => setNewRecordData({ ...newRecordData, name: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">TÓM TẮT HỒ SƠ:</label>
-                                    <textarea
-                                        rows={3}
-                                        placeholder="Mô tả tóm tắt nội dung ký sự..."
-                                        className="redesign-textarea"
-                                        value={newRecordData.description}
-                                        onChange={e => setNewRecordData({ ...newRecordData, description: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="redesign-form-group">
-                                    <label className="redesign-label">THỨ TỰ HIỂN THỊ (DISPLAY ORDER):</label>
-                                    <input
-                                        type="number"
-                                        className="redesign-input"
-                                        value={newRecordData.display_order}
-                                        onChange={e => setNewRecordData({ ...newRecordData, display_order: Number(e.target.value) })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="redesign-modal-footer">
-                                <button type="button" className="redesign-btn" onClick={() => setNewRecordModalOpen(false)}>
-                                    HUỶ BỎ
-                                </button>
-                                <button type="submit" className="redesign-btn primary">
-                                    TẠO ký sự
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* Modal Xác Nhận Xoá */}
+            <ConfirmModal
+                isOpen={confirmModalOpen}
+                title={confirmModalData.title}
+                message={confirmModalData.message}
+                confirmText={confirmModalData.confirmText || 'Xác nhận xoá'}
+                danger={true}
+                onConfirm={confirmModalData.onConfirm}
+                onCancel={() => setConfirmModalOpen(false)}
+            />
         </div>
     )
 }

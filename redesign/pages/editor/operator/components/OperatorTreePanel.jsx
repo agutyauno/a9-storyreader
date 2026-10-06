@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronRight, ChevronDown, Plus, Trash2, User, Search, RefreshCw, FileText, Star, BookOpen } from 'lucide-react'
+import { ChevronRight, ChevronDown, Plus, Trash2, User, Search, RefreshCw, FileText, Star, BookOpen, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi'
 
@@ -8,6 +8,7 @@ export default function OperatorTreePanel({
     currentRecordId,
     onSelectRecord,
     onNewRecord,
+    onEditRecord,
     onDeleteRecord,
     reloadTrigger = 0
 }) {
@@ -182,11 +183,18 @@ export default function OperatorTreePanel({
 
                                                         <div className="tree-node-actions" onClick={(e) => e.stopPropagation()}>
                                                             <button
+                                                                className="tree-btn-action edit-btn"
+                                                                title="Chỉnh sửa thông tin ký sự"
+                                                                onClick={() => onEditRecord?.(rec, op)}
+                                                            >
+                                                                <Edit size={13} />
+                                                            </button>
+                                                            <button
                                                                 className="tree-btn-action danger"
                                                                 title="Xoá ký sự này"
                                                                 onClick={() => onDeleteRecord(rec, op)}
                                                             >
-                                                                <Trash2 size={12} />
+                                                                <Trash2 size={13} />
                                                             </button>
                                                         </div>
                                                     </div>

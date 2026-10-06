@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import NotificationToast from '../components/NotificationToast'
 import ConfirmModal from '../components/modals/ConfirmModal'
+import RecordModal from '../components/modals/RecordModal'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import { supabase } from '../../../../src/services/supabaseClient'
 import {
@@ -307,6 +308,7 @@ export default function OperatorDetailPageEditor() {
     })
 
     const [recordModalOpen, setRecordModalOpen] = useState(false)
+    const [recordModalMode, setRecordModalMode] = useState('create')
     const [recordForm, setRecordForm] = useState({
         record_id: '',
         name: '',
@@ -1000,31 +1002,68 @@ export default function OperatorDetailPageEditor() {
     }
 
     // ─── RECORDS HANDLERS ──────────────────────────────────────────────────────
-    const handleOpenRecordModal = () => {
-        setRecordForm({
-            record_id: `rec_${opId.replace('char_', '')}_${records.length + 1}`,
-            name: `ký sự ${records.length + 1}`,
-            description: '',
-            display_order: records.length + 1
-        })
+    const handleOpenRecordModal = (rec = null) => {
+        if (rec) {
+            setRecordForm({
+                record_id: rec.record_id,
+                name: rec.name || '',
+                description: rec.description || '',
+                display_order: rec.display_order ?? 1
+            })
+            setRecordModalMode('edit')
+        } else {
+            setRecordForm({
+                record_id: `rec_${opId.replace('char_', '')}_${records.length + 1}`,
+                name: `Ký sự ${records.length + 1}`,
+                description: '',
+                display_order: records.length + 1
+            })
+            setRecordModalMode('create')
+        }
         setRecordModalOpen(true)
     }
 
-    const handleCreateRecord = async () => {
-        if (!recordForm.record_id.trim() || !recordForm.name.trim()) {
+    const handleRecordModalSubmit = async (formData) => {
+        if (!formData.record_id.trim() || !formData.name.trim()) {
             showToast('Mã ký sự và Tên không được để trống.', 'error')
             return
         }
 
         try {
+            if (recordModalMode === 'edit') {
+                if (isNew) {
+                    setRecords(prev => prev.map(r => r.record_id === formData.record_id ? {
+                        ...r,
+                        name: formData.name.trim(),
+                        description: (formData.description || '').trim(),
+                        display_order: Number(formData.display_order) || 1
+                    } : r))
+                    showToast('Đã cập nhật thông tin ký sự trong bộ nhớ tạm.', 'success')
+                    setRecordModalOpen(false)
+                    return
+                }
+
+                await SupabaseAPI.updateOperatorRecord(formData.record_id, {
+                    name: formData.name.trim(),
+                    description: (formData.description || '').trim(),
+                    display_order: Number(formData.display_order) || 1
+                })
+                showToast('Đã cập nhật ký sự!', 'success')
+                const updated = await SupabaseAPI.getOperatorRecords(opId)
+                setRecords(updated || [])
+                setRecordModalOpen(false)
+                return
+            }
+
+            // Create mode
             if (isNew) {
                 const newRec = {
-                    record_id: recordForm.record_id.trim(),
+                    record_id: formData.record_id.trim(),
                     operator_id: opId,
-                    name: recordForm.name.trim(),
-                    description: recordForm.description.trim(),
-                    display_order: Number(recordForm.display_order) || 1,
-                    story_content: { type: 'vns', script: `// Kịch bản ký sự: ${recordForm.name}\n\n[dialog]\n${name}: ký sự bắt đầu.\n` }
+                    name: formData.name.trim(),
+                    description: (formData.description || '').trim(),
+                    display_order: Number(formData.display_order) || 1,
+                    story_content: { type: 'vns', script: `// Kịch bản ký sự: ${formData.name}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
                 }
                 setRecords(prev => [...prev, newRec])
                 showToast('Đã thêm thông tin ký sự vào bộ nhớ tạm.', 'success')
@@ -1033,12 +1072,12 @@ export default function OperatorDetailPageEditor() {
             }
 
             const payload = {
-                record_id: recordForm.record_id.trim(),
+                record_id: formData.record_id.trim(),
                 operator_id: opId,
-                name: recordForm.name.trim(),
-                description: recordForm.description.trim(),
-                display_order: Number(recordForm.display_order) || 1,
-                story_content: { type: 'vns', script: `// Kịch bản ký sự: ${recordForm.name}\n\n[dialog]\n${name}: ký sự bắt đầu.\n` }
+                name: formData.name.trim(),
+                description: (formData.description || '').trim(),
+                display_order: Number(formData.display_order) || 1,
+                story_content: { type: 'vns', script: `// Kịch bản ký sự: ${formData.name}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
             }
 
             await SupabaseAPI.createOperatorRecord(payload)
@@ -1047,15 +1086,19 @@ export default function OperatorDetailPageEditor() {
             setRecords(updated || [])
             setRecordModalOpen(false)
         } catch (err) {
-            console.error('Create record failed:', err)
-            showToast('Tạo ký sự thất bại: ' + err.message, 'error')
+            console.error('Submit record failed:', err)
+            showToast('Lỗi lưu ký sự: ' + err.message, 'error')
+            throw err
         }
     }
 
-    const handleDeleteRecord = (recordId) => {
+    const handleDeleteRecord = (recOrId) => {
+        const recordId = typeof recOrId === 'string' ? recOrId : recOrId.record_id
+        const recName = (typeof recOrId === 'object' && (recOrId.name || recOrId.title)) ? recOrId.name || recOrId.title : recordId
         setConfirmData({
             title: 'XÓA KÝ SỰ',
-            message: `Bạn có chắc chắn muốn xóa ký sự "${recordId}" cùng toàn bộ kịch bản liên quan không?`,
+            message: `Bạn có chắc chắn muốn xóa ký sự "${recName}" cùng toàn bộ kịch bản liên quan không? Thao tác này không thể hoàn tác.`,
+            confirmText: 'Xác nhận xoá',
             onConfirm: async () => {
                 setConfirmOpen(false)
                 if (isNew) {
@@ -1065,7 +1108,7 @@ export default function OperatorDetailPageEditor() {
                 }
                 try {
                     await SupabaseAPI.deleteOperatorRecord(recordId)
-                    showToast('Đã xoá ký sự.', 'success')
+                    showToast(`Đã xoá ký sự "${recName}".`, 'success')
                     const updated = await SupabaseAPI.getOperatorRecords(opId)
                     setRecords(updated || [])
                 } catch (err) {
@@ -2160,7 +2203,15 @@ export default function OperatorDetailPageEditor() {
 
                                                         <button
                                                             className="brutalist-icon-btn"
-                                                            onClick={() => handleDeleteRecord(rec.record_id)}
+                                                            onClick={() => handleOpenRecordModal(rec)}
+                                                            title="Chỉnh sửa thông tin ký sự"
+                                                        >
+                                                            <Edit2 size={13} />
+                                                        </button>
+
+                                                        <button
+                                                            className="brutalist-icon-btn"
+                                                            onClick={() => handleDeleteRecord(rec)}
                                                             title="Xoá ký sự"
                                                         >
                                                             <Trash2 size={13} color="var(--color-crimson, #802520)" />
@@ -2373,73 +2424,15 @@ export default function OperatorDetailPageEditor() {
                 </div>
             )}
 
-            {/* ─── MODAL: New Record ──────────────────────────────────────── */}
-            {recordModalOpen && (
-                <div className="op-modal-backdrop" onClick={() => setRecordModalOpen(false)}>
-                    <div className="op-modal-box" onClick={(e) => e.stopPropagation()}>
-                        <div className="op-modal-header">
-                            <h3 className="op-modal-title">TẠO ký sự CÁN VIÊN MỚI</h3>
-                            <button className="op-modal-close" onClick={() => setRecordModalOpen(false)}>
-                                &times;
-                            </button>
-                        </div>
-
-                        <div className="op-modal-body">
-                            <div className="op-form-group">
-                                <label className="op-form-label technical-text">MÃ ký sự (RECORD_ID):</label>
-                                <input
-                                    type="text"
-                                    className="op-form-input"
-                                    value={recordForm.record_id}
-                                    onChange={(e) => setRecordForm({ ...recordForm, record_id: e.target.value })}
-                                    placeholder="rec_silverash_1"
-                                />
-                            </div>
-
-                            <div className="op-form-group">
-                                <label className="op-form-label technical-text">TÊN ký sự:</label>
-                                <input
-                                    type="text"
-                                    className="op-form-input"
-                                    value={recordForm.name}
-                                    onChange={(e) => setRecordForm({ ...recordForm, name: e.target.value })}
-                                    placeholder="Ví dụ: ký sự 1 - Gió Lạnh Núi Cao..."
-                                />
-                            </div>
-
-                            <div className="op-form-group">
-                                <label className="op-form-label technical-text">MÔ TẢ TÓM TẮT:</label>
-                                <textarea
-                                    className="op-form-textarea"
-                                    value={recordForm.description}
-                                    onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
-                                    placeholder="Tóm tắt phân cảnh ký sự..."
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className="op-form-group">
-                                <label className="op-form-label technical-text">THỨ TỰ HIỂN THỊ:</label>
-                                <input
-                                    type="number"
-                                    className="op-form-input"
-                                    value={recordForm.display_order}
-                                    onChange={(e) => setRecordForm({ ...recordForm, display_order: Number(e.target.value) })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="op-modal-footer">
-                            <button className="brutalist-btn secondary" onClick={() => setRecordModalOpen(false)}>
-                                Huỷ
-                            </button>
-                            <button className="brutalist-btn primary" onClick={handleCreateRecord}>
-                                Tạo ký sự
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ─── MODAL: Record Modal ─────────────────────────────────────── */}
+            <RecordModal
+                isOpen={recordModalOpen}
+                isEditMode={recordModalMode === 'edit'}
+                targetOp={{ operator_id: opId, name: name || 'Cán viên' }}
+                initialData={recordModalMode === 'edit' ? recordForm : null}
+                onClose={() => setRecordModalOpen(false)}
+                onSubmit={handleRecordModalSubmit}
+            />
 
             <ConfirmModal
                 isOpen={confirmOpen}
