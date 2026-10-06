@@ -18,6 +18,20 @@ const sortByOrder = (arr) =>
 const genId = (prefix) => `${prefix}_${Math.floor(Math.random() * 1000000)}`;
 const genNumericId = () => Math.floor(Math.random() * 1000000000);
 
+/** Generate a RFC4122 compliant UUID v4 string */
+const generateUuid = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    try {
+      return crypto.randomUUID();
+    } catch (e) {}
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 /** Handle common Supabase errors, especially 401 Unauthorized */
 const handleAuthError = (error) => {
   if (error?.status === 401 || error?.code === '401' || error?.message?.includes('JWT expired')) {
@@ -1483,12 +1497,21 @@ const SupabaseAPI_Raw = {
   async createOperator(payload) {
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
+    if (cleanPayload.display_order === undefined || cleanPayload.display_order === null) {
+      cleanPayload.display_order = 0;
+    }
+    if (cleanPayload.rarity) {
+      cleanPayload.rarity = Number(cleanPayload.rarity) || 5;
+    }
+    if (cleanPayload.status) {
+      cleanPayload.status = cleanPayload.status || 'published';
+    }
     if (cleanPayload.combat_info) {
       cleanPayload.combat_info = cleanCombatInfo(cleanPayload.combat_info);
     }
     const { data, error } = await supabase
       .from('operators')
-      .insert(cleanPayload)
+      .upsert(cleanPayload, { onConflict: 'operator_id' })
       .select();
     if (error) throw error;
     return data?.[0] || cleanPayload;
@@ -1578,12 +1601,12 @@ const SupabaseAPI_Raw = {
   async createOperatorSkin(payload) {
     const cleanPayload = { ...payload };
     if (!cleanPayload.skin_id || String(cleanPayload.skin_id).startsWith('temp_')) {
-      cleanPayload.skin_id = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `skin_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      cleanPayload.skin_id = generateUuid();
     }
     if (cleanPayload.avatar_url) cleanPayload.avatar_url = cleanUrl(cleanPayload.avatar_url);
     if (cleanPayload.full_url) cleanPayload.full_url = cleanUrl(cleanPayload.full_url);
+    cleanPayload.display_order = Number(cleanPayload.display_order) || 0;
+    cleanPayload.is_default = Boolean(cleanPayload.is_default);
     const { data, error } = await supabase
       .from('operator_skins')
       .upsert(cleanPayload, { onConflict: 'skin_id' })
@@ -1641,13 +1664,12 @@ const SupabaseAPI_Raw = {
   async createOperatorDialogue(payload) {
     const cleanPayload = { ...payload };
     if (!cleanPayload.dialogue_id || String(cleanPayload.dialogue_id).startsWith('temp_')) {
-      cleanPayload.dialogue_id = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `dlg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      cleanPayload.dialogue_id = generateUuid();
     }
     if (cleanPayload.audio_url_jp) cleanPayload.audio_url_jp = cleanUrl(cleanPayload.audio_url_jp);
     if (cleanPayload.audio_url_en) cleanPayload.audio_url_en = cleanUrl(cleanPayload.audio_url_en);
     if (cleanPayload.audio_url_cn) cleanPayload.audio_url_cn = cleanUrl(cleanPayload.audio_url_cn);
+    cleanPayload.display_order = Number(cleanPayload.display_order) || 1;
     const { data, error } = await supabase
       .from('operator_dialogues')
       .upsert(cleanPayload, { onConflict: 'dialogue_id' })
@@ -1721,10 +1743,9 @@ const SupabaseAPI_Raw = {
   async createOperatorRecord(payload) {
     const cleanPayload = { ...payload };
     if (!cleanPayload.record_id || String(cleanPayload.record_id).startsWith('temp_')) {
-      cleanPayload.record_id = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `rec_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      cleanPayload.record_id = generateUuid();
     }
+    cleanPayload.display_order = Number(cleanPayload.display_order) || 1;
     cleanPayload.updated_at = new Date().toISOString();
     const { data, error } = await supabase
       .from('operator_records')

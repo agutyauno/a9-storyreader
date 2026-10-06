@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import NotificationToast from '../components/NotificationToast'
 import ConfirmModal from '../components/modals/ConfirmModal'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
+import { supabase } from '../../../../src/services/supabaseClient'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
     getHierarchicalFactions
@@ -444,6 +445,17 @@ export default function OperatorDetailPageEditor() {
             return
         }
 
+        // Kiểm tra phiên đăng nhập sớm để cảnh báo người dùng nếu chưa có quyền
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) {
+                showToast('Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để lưu cán viên!', 'error')
+                return
+            }
+        } catch (authErr) {
+            console.warn('Check auth session warning:', authErr)
+        }
+
         setSaving(true)
         try {
             const confirmedOpId = opId.trim()
@@ -451,11 +463,12 @@ export default function OperatorDetailPageEditor() {
                 operator_id: confirmedOpId,
                 name: name.trim(),
                 appellation: appellation.trim(),
-                rarity: Number(rarity),
+                rarity: Number(rarity) || 5,
                 status: status || 'published',
                 class_id: classId || null,
                 sub_class_id: subClassId || null,
-                factions: selectedFactions,
+                factions: Array.isArray(selectedFactions) ? selectedFactions : ['rhodes_island'],
+                display_order: 0,
                 combat_info: {
                     talents,
                     skills,
@@ -491,10 +504,10 @@ export default function OperatorDetailPageEditor() {
                         const createdSkin = await SupabaseAPI.createOperatorSkin({
                             operator_id: confirmedOpId,
                             name: s.name,
-                            avatar_url: s.avatar_url,
-                            full_url: s.full_url,
-                            description: s.description,
-                            is_default: s.is_default,
+                            avatar_url: s.avatar_url || '',
+                            full_url: s.full_url || '',
+                            description: s.description || '',
+                            is_default: Boolean(s.is_default),
                             display_order: Number(s.display_order) || 0
                         })
                         if (s.skin_id && createdSkin?.skin_id) {
@@ -526,6 +539,7 @@ export default function OperatorDetailPageEditor() {
                     for (const r of records) {
                         await SupabaseAPI.createOperatorRecord({
                             operator_id: confirmedOpId,
+                            record_id: r.record_id && !String(r.record_id).startsWith('temp_') ? r.record_id : undefined,
                             name: r.name,
                             description: r.description || '',
                             display_order: Number(r.display_order) || 1,
@@ -551,7 +565,7 @@ export default function OperatorDetailPageEditor() {
                                 avatar_url: s.avatar_url,
                                 full_url: s.full_url,
                                 description: s.description || '',
-                                is_default: s.is_default,
+                                is_default: Boolean(s.is_default),
                                 display_order: Number(s.display_order) || 0
                             }).catch(err => console.warn('Skin sync failed:', s.skin_id, err))
                         }
@@ -579,7 +593,13 @@ export default function OperatorDetailPageEditor() {
             }
         } catch (err) {
             console.error('Save operator failed:', err)
-            showToast('Lưu cán viên thất bại: ' + err.message, 'error')
+            let errMsg = err?.message || 'Có lỗi xảy ra khi lưu'
+            if (err?.code === '42501' || errMsg.includes('row-level security') || errMsg.includes('permission denied')) {
+                errMsg = 'Lỗi phân quyền RLS Supabase (42501).'
+            } else if (err?.code === '23505' || errMsg.includes('unique constraint') || errMsg.includes('duplicate key')) {
+                errMsg = 'Mã cán viên (operator_id) này đã tồn tại trong cơ sở dữ liệu! Vui lòng đổi mã khác.'
+            }
+            showToast('Lưu cán viên thất bại: ' + errMsg, 'error')
         } finally {
             setSaving(false)
         }
