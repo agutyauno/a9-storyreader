@@ -388,7 +388,13 @@ export default function OperatorDetailPageEditor() {
                     const sortedDialogues = (dbDialogues || []).map((d, idx) => ({
                         ...d,
                         display_order: Number(d.display_order ?? (idx + 1))
-                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    })).sort((a, b) => {
+                        const diff = (Number(a.display_order) || 0) - (Number(b.display_order) || 0)
+                        if (diff !== 0) return diff
+                        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+                        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+                        return timeA - timeB
+                    })
                     setDialogues(sortedDialogues)
 
                     // Records
@@ -558,7 +564,8 @@ export default function OperatorDetailPageEditor() {
 
                 // Đồng bộ cập nhật thông tin và mô tả skin
                 if (skins && skins.length > 0) {
-                    for (const s of skins) {
+                    for (let sIdx = 0; sIdx < skins.length; sIdx++) {
+                        const s = skins[sIdx]
                         if (s.skin_id && !String(s.skin_id).startsWith('temp_')) {
                             await SupabaseAPI.updateOperatorSkin(s.skin_id, {
                                 name: s.name,
@@ -566,15 +573,16 @@ export default function OperatorDetailPageEditor() {
                                 full_url: s.full_url,
                                 description: s.description || '',
                                 is_default: Boolean(s.is_default),
-                                display_order: Number(s.display_order) || 0
+                                display_order: sIdx
                             }).catch(err => console.warn('Skin sync failed:', s.skin_id, err))
                         }
                     }
                 }
 
-                // Đồng bộ thứ tự và thông tin lời thoại
+                // Đồng bộ thứ tự và thông tin lời thoại theo đúng thứ tự mảng hiện tại
                 if (dialogues && dialogues.length > 0) {
-                    for (const d of dialogues) {
+                    for (let idx = 0; idx < dialogues.length; idx++) {
+                        const d = dialogues[idx]
                         if (d.dialogue_id && !String(d.dialogue_id).startsWith('temp_')) {
                             await SupabaseAPI.updateOperatorDialogue(d.dialogue_id, {
                                 title: d.title,
@@ -583,7 +591,7 @@ export default function OperatorDetailPageEditor() {
                                 audio_url_jp: d.audio_url_jp || null,
                                 audio_url_en: d.audio_url_en || null,
                                 audio_url_cn: d.audio_url_cn || null,
-                                display_order: Number(d.display_order) || 1
+                                display_order: idx + 1
                             }).catch(err => console.warn('Dialogue sync failed:', d.dialogue_id, err))
                         }
                     }
@@ -948,7 +956,13 @@ export default function OperatorDetailPageEditor() {
             const sorted = (updated || []).map((d, idx) => ({
                 ...d,
                 display_order: Number(d.display_order ?? (idx + 1))
-            })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+            })).sort((a, b) => {
+                const diff = (Number(a.display_order) || 0) - (Number(b.display_order) || 0)
+                if (diff !== 0) return diff
+                const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+                const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+                return timeA - timeB
+            })
             setDialogues(sorted)
             setDialogueModalOpen(false)
         } catch (err) {
@@ -1753,7 +1767,7 @@ export default function OperatorDetailPageEditor() {
                                                         </div>
 
                                                         <div className="op-form-group">
-                                                            <label className="op-form-label technical-text">NÂNG CẤP thiên phú (TALENT ENHANCEMENT):</label>
+                                                            <label className="op-form-label technical-text">cải thiện thiên phú</label>
                                                             <input
                                                                 type="text"
                                                                 className="op-form-input"

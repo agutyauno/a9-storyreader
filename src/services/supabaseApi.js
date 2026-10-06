@@ -1433,8 +1433,8 @@ const SupabaseAPI_Raw = {
 
       // Fetch skins and dialogues in parallel
       const [skinsRes, dialoguesRes] = await Promise.all([
-        supabase.from('operator_skins').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true }),
-        supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true })
+        supabase.from('operator_skins').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true }).order('created_at', { ascending: true }),
+        supabase.from('operator_dialogues').select('*').eq('operator_id', operatorId).order('display_order', { ascending: true }).order('created_at', { ascending: true })
       ]);
 
       const skins = (skinsRes.data || []).map(s => ({

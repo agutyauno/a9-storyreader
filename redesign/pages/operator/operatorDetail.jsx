@@ -272,7 +272,7 @@ function SkillTab({ operator }) {
                                     <p className="skill-description">{mod.description}</p>
                                     {mod.skillDescription && (
                                         <p className="skill-description" style={{ marginTop: '0.5rem' }}>
-                                            <strong>Talent Enhancement:</strong> {mod.skillDescription}
+                                            <strong>cải thiện thiên phú</strong> {mod.skillDescription}
                                         </p>
                                     )}
                                 </div>
@@ -565,7 +565,13 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         description: s.description || '',
                         is_default: !!s.is_default,
                         display_order: Number(s.display_order ?? idx)
-                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    })).sort((a, b) => {
+                        const diff = (Number(a.display_order) || 0) - (Number(b.display_order) || 0)
+                        if (diff !== 0) return diff
+                        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+                        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+                        return timeA - timeB
+                    })
                     const defaultSkin = skins.find(s => s.is_default) || skins[0]
 
                     // Normalize dialogues
@@ -581,7 +587,13 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                             EN: d.audio_url_en ? getAssetUrl(d.audio_url_en, 'audio') : '',
                             CN: d.audio_url_cn ? getAssetUrl(d.audio_url_cn, 'audio') : ''
                         }
-                    })).sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0))
+                    })).sort((a, b) => {
+                        const diff = (Number(a.display_order) || 0) - (Number(b.display_order) || 0)
+                        if (diff !== 0) return diff
+                        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+                        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+                        return timeA - timeB
+                    })
 
                     // Normalize combat info
                     const talents = Array.isArray(data.talents) ? data.talents : (Array.isArray(data.combat_info?.talents) ? data.combat_info.talents : [])
