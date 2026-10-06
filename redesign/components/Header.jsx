@@ -58,8 +58,8 @@ export default function Header({ sidebarOpen, setSidebarOpen, BASE_URL = '/' }) 
                             className="header-nav-item resume-reading-nav"
                             title={`Tiếp tục đọc: ${lastRead.eventName ? `${lastRead.eventName} // ` : ''}${lastRead.storyName} (${lastRead.scrollPercent || 0}%)`}
                         >
-                            <BookmarkCheck size={16} className="header-nav-icon" style={{ color: 'var(--color-cream)' }} />
-                            <span className="header-nav-text" style={{ color: 'var(--color-cream)' }}>
+                            <BookmarkCheck size={16} className="header-nav-icon" />
+                            <span className="header-nav-text">
                                 TIẾP TỤC ĐỌC
                             </span>
                         </a>
