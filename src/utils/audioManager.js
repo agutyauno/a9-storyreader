@@ -349,8 +349,8 @@ export class SFXManager {
   constructor(options = {}) {
     this.basePath = options.basePath || '/assets/audio/sfx/';
     this.selector = options.selector || '.sfx_player';
-    this.threshold = options.threshold || 0.5;
-    this.rootMargin = options.rootMargin || '0px 0px -50% 0px';
+    this.threshold = options.threshold !== undefined ? options.threshold : 0.1;
+    this.rootMargin = options.rootMargin || '0px 0px -20% 0px';
     this.volume = options.volume || 1;
     this.isEnabled = true;
     this.playedElements = new Set();
@@ -372,6 +372,20 @@ export class SFXManager {
   }
 
   loadState() {
+    try {
+      const savedSettings = localStorage.getItem('ced_app_settings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.soundMuted !== undefined) this.isEnabled = !parsed.soundMuted;
+        const masterVol = parsed.soundVolume ?? parsed.masterVolume ?? 50;
+        const sfxVol = parsed.sfxVolume ?? 80;
+        this.volume = (masterVol / 100) * (sfxVol / 100);
+        return;
+      }
+    } catch (e) {
+      console.warn("SFXManager: Failed to parse global settings, falling back to legacy keys.");
+    }
+
     const savedEnabled = localStorage.getItem('audio_enabled');
     const savedVolume = localStorage.getItem('audio_volume');
     if (savedEnabled !== null) this.isEnabled = savedEnabled === 'true';
@@ -383,6 +397,9 @@ export class SFXManager {
     let finalSrc = sfxSrc;
     if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
       finalSrc = this.basePath + sfxSrc;
+    }
+    if (!finalSrc.startsWith('data:') && !/\.(mp3|wav|ogg|flac|aac|m4a)$/i.test(finalSrc)) {
+      finalSrc = `${finalSrc}.mp3`;
     }
     return getAssetUrl(finalSrc, 'audio');
   }
@@ -661,6 +678,15 @@ export class SFXManager {
         audio.currentTime = 0;
         if (element) element.classList.remove('playing');
         this.activeLoops.delete(key);
+      }
+    });
+
+    // Dừng âm thanh song song cụ thể
+    this.activeAudios.forEach(audio => {
+      if (audio.src?.includes(target)) {
+        audio.pause();
+        audio.currentTime = 0;
+        this.activeAudios.delete(audio);
       }
     });
 

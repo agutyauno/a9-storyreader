@@ -273,7 +273,7 @@ export const StoryRenderer = {
   renderSFX(sfx, styles) {
     if (sfx.stop) {
       return `
-        <div class="${cx('sfx_player sfx_stop_trigger', styles)}" data-sfx-stop="${sfx.stop}" style="display: none;"></div>
+        <div class="${cx('sfx_player sfx_stop_trigger', styles)}" data-sfx-stop="${sfx.stop}"></div>
       `;
     }
 
@@ -281,16 +281,10 @@ export const StoryRenderer = {
     const isParallel = !!sfx.parallel;
     const loopAttr = isLoop ? ' data-sfx-loop="true"' : '';
     const parallelAttr = isParallel ? ' data-sfx-parallel="true"' : '';
-    const loopBadge = isLoop ? `<span class="${cx('sfx-loop-badge', styles)}" title="Âm thanh lặp tuần hoàn (Click để bật/tắt)">↻</span>` : '';
-    const parallelBadge = isParallel ? `<span class="${cx('sfx-parallel-badge', styles)}" title="Phát song song (Đa âm)">⚡</span>` : '';
 
     return `
-      <div class="${cx(`sfx_player ${isLoop ? 'sfx_loop' : ''} ${isParallel ? 'sfx_parallel' : 'sfx_queue'}`, styles)}" data-sfx-src="${getAssetUrl(sfx.src)}" data-sfx-name="${sfx.name || ''}"${loopAttr}${parallelAttr}>
-        <div class="${cx('sfx-content', styles)}">
-          <span class="${cx('sfx-name', styles)}">${sfx.name || 'Sound Effect'}</span>
-          ${loopBadge}
-          ${parallelBadge}
-        </div>
+      <div class="${cx(`sfx_player ${isLoop ? 'sfx_loop' : ''} ${isParallel ? 'sfx_parallel' : 'sfx_queue'}`, styles)}" data-sfx-src="${getAssetUrl(sfx.src)}" data-sfx-name="${sfx.name || ''}"${loopAttr}${parallelAttr} title="Âm thanh hiệu ứng: Click để phát lại">
+        <span class="${cx('sfx-name', styles)}">${sfx.name || 'Sound Effect'}</span>
       </div>
     `;
   },
