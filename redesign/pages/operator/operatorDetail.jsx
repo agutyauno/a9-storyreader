@@ -272,7 +272,7 @@ function SkillTab({ operator }) {
                                     <p className="skill-description">{mod.description}</p>
                                     {mod.skillDescription && (
                                         <p className="skill-description" style={{ marginTop: '0.5rem' }}>
-                                            <strong>Cải thiện thiên phú</strong> {mod.skillDescription}
+                                            <strong>Cải thiện Thiên Phú</strong> {mod.skillDescription}
                                         </p>
                                     )}
                                 </div>
