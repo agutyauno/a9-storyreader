@@ -107,7 +107,7 @@ function SkillTab({ operator }) {
             {/* Class / Subclass Info */}
             <div className="operator-class-info">
                 <div className="operator-class-block">
-                    <span className="operator-class-label">Class</span>
+                    <span className="operator-class-label">Lớp</span>
                     <div className="operator-class-value-with-icon">
                         {classIconUrl && (
                             <img
@@ -121,7 +121,7 @@ function SkillTab({ operator }) {
                     </div>
                 </div>
                 <div className="operator-class-block">
-                    <span className="operator-class-label">Subclass</span>
+                    <span className="operator-class-label">Phân lớp</span>
                     <div className="operator-class-value-with-icon">
                         {subclassIconUrl && (
                             <img

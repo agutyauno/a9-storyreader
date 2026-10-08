@@ -1390,7 +1390,7 @@ export default function OperatorDetailPageEditor() {
                                     />
                                 </div>
                                 <div className="op-form-group">
-                                    <label className="op-form-label technical-text" title="CLASS">CLASS:</label>
+                                    <label className="op-form-label technical-text" title="LỚP (CLASS)">LỚP:</label>
                                     <CustomSelect
                                         id="operator-class-select"
                                         value={classId}
@@ -1399,7 +1399,7 @@ export default function OperatorDetailPageEditor() {
                                             setSubClassId('')
                                         }}
                                         options={classOptions}
-                                        placeholder="Chọn class"
+                                        placeholder="Chọn lớp"
                                         renderOption={renderClassOption}
                                     />
                                 </div>
@@ -1408,13 +1408,13 @@ export default function OperatorDetailPageEditor() {
                             {/* Subclass & Faction with CustomSelect */}
                             <div className="op-form-row">
                                 <div className="op-form-group">
-                                    <label className="op-form-label technical-text" title="SUBCLASS (PHÂN NHÁNH)">SUBCLASS (NHÁNH):</label>
+                                    <label className="op-form-label technical-text" title="PHÂN LỚP (SUBCLASS)">PHÂN LỚP:</label>
                                     <CustomSelect
                                         id="operator-subclass-select"
                                         value={subClassId}
                                         onChange={(val) => setSubClassId(val)}
                                         options={subclassOptions}
-                                        placeholder="-- Chọn Subclass --"
+                                        placeholder="-- Chọn phân lớp --"
                                         renderOption={renderSubclassOption}
                                     />
                                 </div>

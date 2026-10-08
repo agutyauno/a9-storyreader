@@ -571,52 +571,52 @@ export default function OperatorListPageEditor() {
                     <div className={`operator-filters-panel ${mobileFiltersOpen ? 'open' : ''}`}>
                         {/* Faction Filter */}
                         <div className="operator-filter-group">
-                            <span className="operator-filter-label">Faction:</span>
+                            <span className="operator-filter-label">Phe:</span>
                             <CustomSelect
                                 id="faction-select-dropdown"
                                 value={selectedFaction}
                                 onChange={setSelectedFaction}
                                 options={factionOptions}
-                                placeholder="ALL FACTIONS"
+                                placeholder="TẤT CẢ PHE"
                                 renderOption={renderFactionOption}
                             />
                         </div>
 
                         {/* Class Filter */}
                         <div className="operator-filter-group">
-                            <span className="operator-filter-label">Class:</span>
+                            <span className="operator-filter-label">Lớp:</span>
                             <CustomSelect
                                 id="class-select-dropdown"
                                 value={selectedClass}
                                 onChange={handleClassChange}
                                 options={classOptions}
-                                placeholder="ALL CLASSES"
+                                placeholder="TẤT CẢ LỚP"
                                 renderOption={renderClassOption}
                             />
                         </div>
 
                         {/* Subclass Filter */}
                         <div className="operator-filter-group">
-                            <span className="operator-filter-label">Subclass:</span>
+                            <span className="operator-filter-label">Phân lớp:</span>
                             <CustomSelect
                                 id="subclass-select-dropdown"
                                 value={selectedSubclass}
                                 onChange={handleSubclassChange}
                                 options={subclassOptions}
-                                placeholder="ALL SUBCLASSES"
+                                placeholder="TẤT CẢ PHÂN LỚP"
                                 renderOption={renderSubclassOption}
                             />
                         </div>
 
                         {/* Rarity Filter */}
                         <div className="operator-filter-group">
-                            <span className="operator-filter-label">Rarity:</span>
+                            <span className="operator-filter-label">Độ hiếm:</span>
                             <CustomSelect
                                 id="rarity-select-dropdown"
                                 value={selectedRarity}
                                 onChange={setSelectedRarity}
                                 options={rarityOptions}
-                                placeholder="ALL RARITIES"
+                                placeholder="TẤT CẢ ĐỘ HIẾM"
                                 renderOption={renderRarityOption}
                             />
                         </div>
@@ -780,8 +780,8 @@ export default function OperatorListPageEditor() {
                             <span>Mã</span>
                             <span>Cán Viên</span>
                             <span>Trạng Thái</span>
-                            <span>Phe Phái</span>
-                            <span>Class</span>
+                            <span>Phe</span>
+                            <span>Lớp</span>
                             <span>Độ Hiếm</span>
                             <span>Thao Tác</span>
                         </div>
