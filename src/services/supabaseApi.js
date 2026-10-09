@@ -1457,6 +1457,7 @@ const SupabaseAPI_Raw = {
         faction: (data.factions && data.factions.length > 0) ? data.factions[0] : null,
         portraitUrl: defaultSkin?.portraitUrl || '',
         avatarUrl: defaultSkin?.avatarUrl || '',
+        description: data.combat_info?.description || data.combat_info?.overview || data.description || '',
         skins: skins,
         dialogues: (dialoguesRes.data || []).map(d => ({
           ...d,

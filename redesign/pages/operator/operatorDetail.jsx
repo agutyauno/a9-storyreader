@@ -104,6 +104,18 @@ function SkillTab({ operator }) {
 
     return (
         <>
+            {/* Giới thiệu / Introduction */}
+            {operator.description && operator.description.trim() && (
+                <div className="operator-section operator-intro-section">
+                    <div className="operator-section-title">Giới Thiệu</div>
+                    <div className="operator-intro-card">
+                        <p className="operator-intro-text">
+                            {operator.description}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Class / Subclass Info */}
             <div className="operator-class-info">
                 <div className="operator-class-block">
@@ -629,6 +641,8 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         description: r.description || ''
                     }))
 
+                    const operatorDescription = data.description || data.combat_info?.description || data.combat_info?.overview || ''
+
                     const formattedOperator = {
                         ...data,
                         id: data.operator_id || data.id,
@@ -641,6 +655,7 @@ export default function OperatorDetailPage({ isPreview: isPreviewProp = false })
                         faction: (Array.isArray(data.factions) && data.factions.length > 0) ? data.factions[0] : (data.faction || null),
                         portraitUrl: defaultSkin?.portraitUrl || data.portraitUrl || '',
                         avatarUrl: defaultSkin?.avatarUrl || data.avatarUrl || '',
+                        description: operatorDescription,
                         skins,
                         dialogues,
                         talents,

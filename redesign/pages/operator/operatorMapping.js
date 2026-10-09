@@ -580,11 +580,11 @@ export const FACTIONS = [
   // Rhodes Island
   { id: 'elite_op', name: 'Cán viên Tinh nhuệ', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Elite_Op.png' },
   { id: 'sweep', name: 'SWEEP', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/S.W.E.E.P.png' },
-  { id: 'op_reserve_a1', name: 'Đội Dự bị Tác chiến A1', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A1.png' },
-  { id: 'op_reserve_a4', name: 'Đội Dự bị Tác chiến A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A4.png' },
-  { id: 'op_reserve_a6', name: 'Đội Dự bị Tác chiến A6', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A6.png' },
+  { id: 'op_reserve_a1', name: 'Đội Tác Chiến Dự Bị A1', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A1.png' },
+  { id: 'op_reserve_a4', name: 'Đội Tác Chiến Dự Bị A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A4.png' },
+  { id: 'op_reserve_a6', name: 'Đội Tác Chiến Dự Bị A6', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A6.png' },
   { id: 'op_a4', name: 'Đội Tác chiến A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_A4.png' },
-  { id: 'followers', name: 'Followers', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Followers.png' },
+  { id: 'followers', name: 'Sứ Đồ', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Followers.png' },
 
   // Yan
   { id: 'lungmen', name: 'Long Môn', parentId: 'yan', icon: '/assets/images/icon/factions/Lungmen.png' },
@@ -608,7 +608,7 @@ export const FACTIONS = [
   { id: 'pinus_sylvestris', name: 'Pinus Sylvestris', parentId: 'kazimierz', icon: '/assets/images/icon/factions/Pinus_Sylvestris.png' },
 
   // Kjerag
-  { id: 'karlan_trade', name: 'Karlan Trade', parentId: 'kjerag', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
+  { id: 'karlan_trade', name: 'Mậu Dịch Karlan', parentId: 'kjerag', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
 
   // Aegir
   { id: 'abyssal_hunters', name: 'Thợ săn Vực thẳm', parentId: 'aegir', icon: '/assets/images/icon/factions/Abyssal_Hunters.png' },

@@ -258,6 +258,7 @@ export default function OperatorDetailPageEditor() {
     const [status, setStatus] = useState('published') // 'published' | 'draft'
 
     // Combat info state
+    const [description, setDescription] = useState('')
     const [talents, setTalents] = useState([])
     const [skills, setSkills] = useState([])
     const [modules, setModules] = useState([])
@@ -367,6 +368,7 @@ export default function OperatorDetailPageEditor() {
 
                     // Combat info
                     const combat = op.combat_info || {}
+                    setDescription(combat.description || combat.overview || op.description || '')
                     setTalents(combat.talents || [])
                     setSkills(combat.skills || [])
                     setModules(combat.modules || [])
@@ -478,6 +480,7 @@ export default function OperatorDetailPageEditor() {
                 factions: Array.isArray(selectedFactions) ? selectedFactions : ['rhodes_island'],
                 display_order: 0,
                 combat_info: {
+                    description: description.trim(),
                     talents,
                     skills,
                     modules,
@@ -1133,7 +1136,9 @@ export default function OperatorDetailPageEditor() {
             subclass: subClassId,
             factions: selectedFactions,
             status: status || 'draft',
+            description: description.trim(),
             combat_info: {
+                description: description.trim(),
                 talents,
                 skills,
                 modules,
@@ -1535,6 +1540,28 @@ export default function OperatorDetailPageEditor() {
                         {/* Tab 1: Kỹ Năng & Chiến Đấu */}
                         {activeTab === 'skill' && (
                             <div className="op-tab-content-wrapper">
+                                {/* Giới thiệu Cán Viên section */}
+                                <div className="op-content-card">
+                                    <div className="op-content-card-header">
+                                        <h3 className="op-content-card-title">
+                                            <span>GIỚI THIỆU CÁN VIÊN</span>
+                                        </h3>
+                                    </div>
+                                    <div className="op-content-card-body">
+                                        <div className="op-form-group">
+                                            <label className="op-form-label technical-text">NỘI DUNG GIỚI THIỆU:</label>
+                                            <textarea
+                                                className="op-form-textarea"
+                                                rows={4}
+                                                placeholder="Nhập thông tin giới thiệu của cán viên (sẽ hiển thị ở đầu mục Kỹ năng). Để trống nếu không muốn hiển thị..."
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                style={{ width: '100%', resize: 'vertical', minHeight: '90px', lineHeight: '1.5' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Talents section */}
                                 <div className="op-content-card">
                                     <div className="op-content-card-header">

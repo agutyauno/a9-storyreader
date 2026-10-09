@@ -874,6 +874,26 @@
 
 /* Skill Tab */
 
+.operator-intro-section {
+    margin-bottom: 1.5rem;
+}
+
+.operator-intro-card {
+    padding: 1.25rem;
+    border: var(--border-thick);
+    background-color: #FCFAF5;
+    box-shadow: 2px 2px 0px rgba(24, 24, 24, 0.08);
+}
+
+.operator-intro-text {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--color-charcoal);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+}
+
 .operator-class-info {
     display: flex;
     gap: 2rem;
