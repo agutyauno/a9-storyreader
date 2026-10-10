@@ -482,7 +482,7 @@ export const SUBCLASSES = [
     id: 'hookmaster',
     name: 'Lôi Kéo',
     classId: 'specialist',
-    description: 'Có thể Kéo kẻ địch bằng kỹ năng, có thể triển khai trên Ô Cao.',
+    description: 'Có thể Kéo kẻ địch bằng kỹ năng, có thể triển khai trên Ô Tầm Xa.',
     icon: '/assets/images/icon/class/Hookmaster_Specialist.png'
   },
   {
