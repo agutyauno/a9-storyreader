@@ -575,6 +575,7 @@ export const FACTIONS = [
   { id: 'siesta', name: 'Siesta', icon: '/assets/images/icon/factions/Siesta.png' },
   { id: 'babel', name: 'Babel', icon: '/assets/images/icon/factions/Babel.png' },
   { id: 'team_rainbow', name: 'Team Rainbow', icon: '/assets/images/icon/factions/Team_Rainbow.png' },
+  { id: 'ave_mujica', name: 'Ave Mujica', icon: '/assets/images/icon/factions/Rhodes_Island.png' },
 
   // ─── Subfactions / Affiliated Groups ───────────────────────────────────────
   // Rhodes Island
@@ -611,7 +612,7 @@ export const FACTIONS = [
   { id: 'karlan_trade', name: 'Mậu Dịch Karlan', parentId: 'kjerag', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
 
   // Aegir
-  { id: 'abyssal_hunters', name: 'Thợ săn Vực thẳm', parentId: 'aegir', icon: '/assets/images/icon/factions/Abyssal_Hunters.png' },
+  { id: 'abyssal_hunters', name: 'Thợ Săn Vực thẳm', parentId: 'aegir', icon: '/assets/images/icon/factions/Abyssal_Hunters.png' },
 ]
 
 export const FACTIONS_MAP = FACTIONS.reduce((acc, item) => {
