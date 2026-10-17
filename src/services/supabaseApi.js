@@ -862,14 +862,26 @@ const SupabaseAPI_Raw = {
     if (error) throw error;
   },
 
-  // ===========================================================================
-  // ASSETS
-  // ===========================================================================
   async getAssets() {
     if (USE_MOCK_DB) return [...mockDatabase.assets];
-    const { data, error } = await supabase.from('assets').select('*');
-    if (error) throw error;
-    return data || [];
+    let allAssets = [];
+    let page = 0;
+    const pageSize = 1000;
+    while (true) {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .order('id', { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      allAssets.push(...data);
+      if (data.length < pageSize) break;
+      page++;
+    }
+    return allAssets;
   },
 
   async getAssetsByCategory(category) {

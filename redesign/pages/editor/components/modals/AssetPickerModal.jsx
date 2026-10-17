@@ -113,7 +113,8 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
         const matchesCat = activeCat === 'all' || item.category === activeCat || item.type === activeCat;
         const matchesSearch = !search || 
             (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
-            (item.asset_id && item.asset_id.toLowerCase().includes(search.toLowerCase()));
+            (item.asset_id && item.asset_id.toLowerCase().includes(search.toLowerCase())) ||
+            (item.url && item.url.toLowerCase().includes(search.toLowerCase()));
         return matchesCat && matchesSearch;
     });
 

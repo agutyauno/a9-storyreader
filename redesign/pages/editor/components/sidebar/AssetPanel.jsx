@@ -389,7 +389,8 @@ const AssetPanel = React.memo(function AssetPanel({ onAddAsset, showNotification
             const matchesCat = matchesCategory(a, activeCat);
             const matchesSearch = !q || 
                 (a.name && a.name.toLowerCase().includes(q)) ||
-                (a.asset_id && a.asset_id.toLowerCase().includes(q));
+                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
+                (a.url && a.url.toLowerCase().includes(q));
             return matchesCat && matchesSearch;
         });
     }, [assets, activeCat, search, matchesCategory]);
