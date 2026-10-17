@@ -579,19 +579,19 @@ export const FACTIONS = [
 
   // ─── Subfactions / Affiliated Groups ───────────────────────────────────────
   // Rhodes Island
-  { id: 'elite_op', name: 'Cán viên Tinh nhuệ', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Elite_Op.png' },
+  { id: 'elite_op', name: 'Cán Viên Tinh Nhuệ', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Elite_Op.png' },
   { id: 'sweep', name: 'SWEEP', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/S.W.E.E.P.png' },
   { id: 'op_reserve_a1', name: 'Đội Tác Chiến Dự Bị A1', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A1.png' },
   { id: 'op_reserve_a4', name: 'Đội Tác Chiến Dự Bị A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A4.png' },
   { id: 'op_reserve_a6', name: 'Đội Tác Chiến Dự Bị A6', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_Reserve_A6.png' },
-  { id: 'op_a4', name: 'Đội Tác chiến A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_A4.png' },
+  { id: 'op_a4', name: 'Đội Tác Chiến A4', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Op_A4.png' },
   { id: 'followers', name: 'Sứ Đồ', parentId: 'rhodes_island', icon: '/assets/images/icon/factions/Followers.png' },
 
   // Yan
   { id: 'lungmen', name: 'Long Môn', parentId: 'yan', icon: '/assets/images/icon/factions/Lungmen.png' },
-  { id: 'lungmen_guard', name: 'Cục Cảnh vệ Long Môn', parentId: 'yan', icon: '/assets/images/icon/factions/Lungmen_Guard_Department.png' },
-  { id: 'penguin_logistics', name: 'Chuyển phát Cánh Cụt', parentId: 'yan', icon: '/assets/images/icon/factions/Penguin_Logistics.png' },
-  { id: 'lee_detective', name: 'Văn phòng Thám tử Lý', parentId: 'yan', icon: "/assets/images/icon/factions/Lee's_Detective_Agency.png" },
+  { id: 'lungmen_guard', name: 'Cục Cảnh Vệ Long Môn', parentId: 'yan', icon: '/assets/images/icon/factions/Lungmen_Guard_Department.png' },
+  { id: 'penguin_logistics', name: 'Chuyển Phát Cánh Cụt', parentId: 'yan', icon: '/assets/images/icon/factions/Penguin_Logistics.png' },
+  { id: 'lee_detective', name: 'Văn Phòng Thám Tử Lý', parentId: 'yan', icon: "/assets/images/icon/factions/Lee's_Detective_Agency.png" },
   { id: 'sui', name: 'Tuế', parentId: 'yan', icon: '/assets/images/icon/factions/Sui.png' },
 
   // Victoria
@@ -599,7 +599,7 @@ export const FACTIONS = [
   { id: 'tara', name: 'Tara / Dublinn', parentId: 'victoria', icon: '/assets/images/icon/factions/Tara.png' },
 
   // Ursus
-  { id: 'ursus_students', name: 'Hội Học sinh Tự trị Ursus', parentId: 'ursus', icon: '/assets/images/icon/factions/Ursus_Student_Self-Governing_Group.png' },
+  { id: 'ursus_students', name: 'Hội Học Sinh Tự Trị Ursus', parentId: 'ursus', icon: '/assets/images/icon/factions/Ursus_Student_Self-Governing_Group.png' },
 
   // Columbia
   { id: 'rhine_lab', name: 'Viện Rhine', parentId: 'columbia', icon: '/assets/images/icon/factions/Rhine_Lab.png' },
@@ -612,7 +612,7 @@ export const FACTIONS = [
   { id: 'karlan_trade', name: 'Mậu Dịch Karlan', parentId: 'kjerag', icon: '/assets/images/icon/factions/Karlan_Trade.png' },
 
   // Aegir
-  { id: 'abyssal_hunters', name: 'Thợ Săn Vực thẳm', parentId: 'aegir', icon: '/assets/images/icon/factions/Abyssal_Hunters.png' },
+  { id: 'abyssal_hunters', name: 'Thợ Săn Vực Thẳm', parentId: 'aegir', icon: '/assets/images/icon/factions/Abyssal_Hunters.png' },
 ]
 
 export const FACTIONS_MAP = FACTIONS.reduce((acc, item) => {

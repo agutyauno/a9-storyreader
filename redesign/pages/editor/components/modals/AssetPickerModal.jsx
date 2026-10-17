@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader, Image as ImageIcon, Plus, RotateCw } from 'lucide-react';
+import { X, Search, Loader, Image as ImageIcon, Plus, RotateCw, Music, Video } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import { EditorCache } from '../../../../../src/services/editorCache';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
@@ -208,11 +208,33 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
                                             onClick={() => toggleSelect(item)}
                                         >
                                             <div className="redesign-asset-thumb">
-                                                {item.url ? (
-                                                    <img src={getAssetUrl(item.url)} alt={item.name} loading="lazy" />
-                                                ) : (
-                                                    <ImageIcon size={32} style={{ opacity: 0.3 }} />
-                                                )}
+                                                {(() => {
+                                                    const isItemAudio = item.type === 'audio' || item.category === 'bgm' || item.category === 'sfx' || (item.url && /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(item.url)) || (item.url && item.url.includes('/audio/'));
+                                                    const isItemVideo = item.type === 'video' || item.category === 'video' || item.category === 'PV' || (item.url && /\.(mp4|webm)(\?.*)?$/i.test(item.url)) || (item.url && item.url.includes('/video/'));
+
+                                                    if (isItemAudio) {
+                                                        return (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#D84315' }}>
+                                                                <Music size={26} />
+                                                                <span style={{ fontSize: '0.55rem', fontFamily: 'var(--font-mono)', opacity: 0.8 }}>
+                                                                    {item.category?.toUpperCase() || 'AUDIO'}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (isItemVideo) {
+                                                        return (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#E1BEE7' }}>
+                                                                <Video size={26} />
+                                                                <span style={{ fontSize: '0.55rem', fontFamily: 'var(--font-mono)' }}>VIDEO</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (item.url) {
+                                                        return <img src={getAssetUrl(item.url, 'image')} alt={item.name} loading="lazy" />;
+                                                    }
+                                                    return <ImageIcon size={32} style={{ opacity: 0.3 }} />;
+                                                })()}
                                             </div>
                                             <div className="redesign-asset-info">
                                                 <span className="redesign-asset-name">{item.name}</span>

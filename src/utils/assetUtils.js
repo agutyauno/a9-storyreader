@@ -5,7 +5,7 @@
  */
 
 // import.meta.env.BASE_URL is provided by Vite during build/dev
-const BASE_URL = import.meta.env.BASE_URL || '/';
+const BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 
 /**
  * Resolves a path to a full URL relative to the application base.
@@ -16,28 +16,62 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 export function getAssetUrl(path, type = null) {
   if (!path) return '';
 
-  const isVideo = type === 'video' || path.match(/\.(mp4|webm)$/i);
-  const isAudio = type === 'audio' || type === 'bgm' || type === 'sfx' || type === 'voice' || path.match(/\.(mp3|wav|flac|ogg|m4a|aac)$/i) || path.includes('/audio/');
+  let processedPath = String(path).trim();
+  if (!processedPath) return '';
 
-  // Redirect local audio asset paths to external repository paths if we want them raw from GitHub
-  let processedPath = path;
+  // Clean any duplicated / concatenated prefixes (e.g. /assets/audio/bgm/audio/bgm/ -> /audio/bgm/)
+  if (processedPath.includes('/audio/bgm/audio/bgm/')) {
+    processedPath = processedPath.replace('/audio/bgm/audio/bgm/', '/audio/bgm/');
+  }
+  if (processedPath.includes('/audio/sfx/audio/sfx/')) {
+    processedPath = processedPath.replace('/audio/sfx/audio/sfx/', '/audio/sfx/');
+  }
+  if (processedPath.startsWith('/assets/audio/bgm/audio/')) {
+    processedPath = processedPath.replace('/assets/audio/bgm/audio/', '/audio/');
+  }
+  if (processedPath.startsWith('/assets/audio/sfx/audio/')) {
+    processedPath = processedPath.replace('/assets/audio/sfx/audio/', '/audio/');
+  }
+  if (processedPath.startsWith('/assets/audio/audio/')) {
+    processedPath = processedPath.replace('/assets/audio/audio/', '/audio/');
+  }
+
+  // Detect type
+  const isVideo = type === 'video' ||
+    processedPath.startsWith('video/') ||
+    processedPath.startsWith('/video/') ||
+    processedPath.includes('/video/') ||
+    /\.(mp4|webm)(\?.*)?$/i.test(processedPath);
+
+  const isAudio = type === 'audio' ||
+    type === 'bgm' ||
+    type === 'sfx' ||
+    type === 'voice' ||
+    processedPath.startsWith('audio/') ||
+    processedPath.startsWith('/audio/') ||
+    processedPath.includes('/audio/') ||
+    /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(processedPath);
+
+  // If local audio asset path starts with /assets/, redirect to external repository raw path
   if (isAudio && processedPath.startsWith('/assets/')) {
     processedPath = processedPath.replace('/assets/', '/');
+  } else if (isAudio && processedPath.startsWith('assets/')) {
+    processedPath = processedPath.replace('assets/', '');
   }
 
   // Normalize paths targeting data repository folders without a leading slash
-  if (!processedPath.startsWith('/') && !processedPath.startsWith('http') && !processedPath.startsWith('data:')) {
+  if (!processedPath.startsWith('/') && !processedPath.startsWith('http') && !processedPath.startsWith('data:') && !processedPath.startsWith('blob:')) {
     if (processedPath.startsWith('images/') || processedPath.startsWith('audio/') || processedPath.startsWith('video/')) {
       processedPath = '/' + processedPath;
     }
   }
 
-  // If it is already an absolute URL or a data URI
-  if (processedPath.startsWith('http') || processedPath.startsWith('data:')) {
-    const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
-    const GITHUB_RAW_READER = 'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/';
-    const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
+  const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
+  const GITHUB_RAW_READER = 'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/';
+  const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
 
+  // If it is already an absolute URL or a data URI / blob
+  if (processedPath.startsWith('http') || processedPath.startsWith('data:') || processedPath.startsWith('blob:')) {
     if (isVideo || isAudio) {
       // Do not convert to jsDelivr for videos and audios. If it's already jsdelivr, convert to raw.
       if (processedPath.startsWith(JSDELIVR_CDN)) {
@@ -62,19 +96,23 @@ export function getAssetUrl(path, type = null) {
   if (processedPath.startsWith('/')) {
     // If it's a local Vite asset (starts with /assets/), handle normally
     if (processedPath.startsWith('/assets/')) {
-        const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-        const cleanPath = processedPath.slice(1);
-        return `${cleanBase}${cleanPath}`;
+      const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
+      const cleanPath = processedPath.slice(1);
+      return `${cleanBase}${cleanPath}`;
     }
     
     // Otherwise, assume it's a relative path to our shared DATA repository
     if (isVideo || isAudio) {
-      const GITHUB_RAW_DATA = 'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/';
       return `${GITHUB_RAW_DATA}${processedPath.slice(1)}`;
     } else {
-      const JSDELIVR_CDN = 'https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/';
       return `${JSDELIVR_CDN}${processedPath.slice(1)}`;
     }
+  }
+
+  // If not starting with '/' but recognized as audio or video
+  if (isVideo || isAudio) {
+    const cleanPath = processedPath.startsWith('/') ? processedPath.slice(1) : processedPath;
+    return `${GITHUB_RAW_DATA}${cleanPath}`;
   }
 
   // Fallback for any other relative paths

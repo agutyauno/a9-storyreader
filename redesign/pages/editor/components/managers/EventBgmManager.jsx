@@ -72,10 +72,13 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
                 }
             }
 
-            if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
+            if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:') && !finalSrc.startsWith('audio/') && !finalSrc.startsWith('assets/')) {
                 finalSrc = '/assets/audio/bgm/' + finalSrc;
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio');
+            const audio = new Audio(resolvedUrl);
+            audioRef.current = audio;
+
             let previewVol = 0.8;
             try {
                 const saved = JSON.parse(localStorage.getItem('ced_app_settings') || '{}');

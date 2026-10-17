@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, CheckCircle2, ZoomIn } from 'lucide-react';
+import { X, Plus, Trash2, Loader, Save, Upload, Image as ImageIcon, CheckCircle2, ZoomIn, Music, Video } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import { EditorCache } from '../../../../../src/services/editorCache';
 import { uploadFileToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
@@ -238,32 +238,55 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                 </div>
 
                                 {/* Large Preview Section */}
-                                {externalUrl && (
-                                    <div style={{ backgroundColor: '#0A0A0A', border: '1px solid rgba(245,237,220,0.18)', padding: '1rem', textAlign: 'center', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '320px' }}>
-                                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                                            <span style={{ fontSize: '0.7rem', color: 'rgba(245,237,220,0.6)', fontFamily: 'var(--font-mono)', letterSpacing: '0.5px' }}>PREVIEW HÌNH ẢNH / MEDIA</span>
-                                            <button 
-                                                type="button"
-                                                onClick={() => setLightboxImage({ url: externalUrl, title: name || asset.asset_id })}
-                                                style={{ background: 'none', border: 'none', color: 'var(--color-terracotta)', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem', fontFamily: 'var(--font-mono)' }}
-                                            >
-                                                <ZoomIn size={13} /> Phóng to
-                                            </button>
-                                        </div>
+                                {externalUrl && (() => {
+                                    const isMediaAudio = asset.type === 'audio' || asset.category === 'bgm' || asset.category === 'sfx' || category === 'bgm' || category === 'sfx' || /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(externalUrl) || externalUrl.includes('/audio/');
+                                    const isMediaVideo = asset.type === 'video' || asset.category === 'video' || category === 'PV' || category === 'video' || /\.(mp4|webm)(\?.*)?$/i.test(externalUrl) || externalUrl.includes('/video/');
 
-                                        {(asset.type === 'video' || asset.category === 'video' || category === 'PV' || externalUrl.match(/\.(mp4|webm|ogg)$/i)) ? (
-                                            <video src={getAssetUrl(externalUrl)} controls style={{ maxHeight: '480px', maxWidth: '100%', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.15)' }} />
-                                        ) : (
-                                            <img 
-                                                src={getAssetUrl(externalUrl)} 
-                                                alt="" 
-                                                onClick={() => setLightboxImage({ url: externalUrl, title: name || asset.asset_id })}
-                                                title="Bấm để xem ảnh kích thước gốc"
-                                                style={{ maxHeight: '520px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', border: '1px solid rgba(245,237,220,0.15)', cursor: 'zoom-in' }} 
-                                            />
-                                        )}
-                                    </div>
-                                )}
+                                    return (
+                                        <div style={{ backgroundColor: '#0A0A0A', border: '1px solid rgba(245,237,220,0.18)', padding: '1rem', textAlign: 'center', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '320px' }}>
+                                            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                                                <span style={{ fontSize: '0.7rem', color: 'rgba(245,237,220,0.6)', fontFamily: 'var(--font-mono)', letterSpacing: '0.5px' }}>
+                                                    {isMediaAudio ? 'PREVIEW ÂM THANH' : isMediaVideo ? 'PREVIEW VIDEO' : 'PREVIEW HÌNH ẢNH'}
+                                                </span>
+                                                {!isMediaAudio && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setLightboxImage({ url: externalUrl, title: name || asset.asset_id })}
+                                                        style={{ background: 'none', border: 'none', color: 'var(--color-terracotta)', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem', fontFamily: 'var(--font-mono)' }}
+                                                    >
+                                                        <ZoomIn size={13} /> Phóng to
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {isMediaAudio ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '2rem 1rem', width: '100%' }}>
+                                                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(216,67,21,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D84315', border: '1px solid rgba(216,67,21,0.3)' }}>
+                                                        <Music size={32} />
+                                                    </div>
+                                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#F5EDDC', opacity: 0.8 }}>
+                                                        {asset.category?.toUpperCase() || 'AUDIO FILE'}
+                                                    </span>
+                                                    <audio 
+                                                        src={getAssetUrl(externalUrl, 'audio')} 
+                                                        controls 
+                                                        style={{ width: '100%', maxWidth: '380px', marginTop: '0.5rem' }} 
+                                                    />
+                                                </div>
+                                            ) : isMediaVideo ? (
+                                                <video src={getAssetUrl(externalUrl, 'video')} controls style={{ maxHeight: '480px', maxWidth: '100%', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.15)' }} />
+                                            ) : (
+                                                <img 
+                                                    src={getAssetUrl(externalUrl, 'image')} 
+                                                    alt="" 
+                                                    onClick={() => setLightboxImage({ url: externalUrl, title: name || asset.asset_id })}
+                                                    title="Bấm để xem ảnh kích thước gốc"
+                                                    style={{ maxHeight: '520px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', border: '1px solid rgba(245,237,220,0.15)', cursor: 'zoom-in' }} 
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         ) : (
                             <>

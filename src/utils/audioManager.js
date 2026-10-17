@@ -90,7 +90,7 @@ export class BGMManager {
 
     const resolvePath = (src) => {
       if (!src) return '';
-      if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
+      if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:') && !src.startsWith('audio/') && !src.startsWith('assets/')) {
         return getAssetUrl(this.basePath + src, 'audio');
       }
       return getAssetUrl(src, 'audio');
@@ -103,8 +103,9 @@ export class BGMManager {
       this.introAudio.removeAttribute('src');
       this.introAudio.load();
     }
-    if (track.loop) {
-      this.loopAudio.src = resolvePath(track.loop);
+    const loopSrc = track.loop || (track.intro ? null : track.id);
+    if (loopSrc) {
+      this.loopAudio.src = resolvePath(loopSrc);
       this.loopAudio.load();
     } else {
       this.loopAudio.removeAttribute('src');
@@ -395,7 +396,7 @@ export class SFXManager {
   resolveSrc(sfxSrc) {
     if (!sfxSrc) return '';
     let finalSrc = sfxSrc;
-    if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:')) {
+    if (!sfxSrc.startsWith('http') && !sfxSrc.startsWith('/') && !sfxSrc.startsWith('data:') && !sfxSrc.startsWith('audio/') && !sfxSrc.startsWith('assets/')) {
       finalSrc = this.basePath + sfxSrc;
     }
     if (!finalSrc.startsWith('data:') && !/\.(mp3|wav|ogg|flac|aac|m4a)$/i.test(finalSrc)) {

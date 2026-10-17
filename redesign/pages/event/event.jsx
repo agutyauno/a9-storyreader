@@ -406,7 +406,7 @@ export default function RedesignEventPage() {
                 }
             }
 
-            if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:')) {
+            if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:') && !finalSrc.startsWith('audio/') && !finalSrc.startsWith('assets/')) {
                 finalSrc = '/assets/audio/bgm/' + finalSrc
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio')

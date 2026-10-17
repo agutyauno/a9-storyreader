@@ -37,9 +37,9 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
         setTimeout(() => setCopied(false), 1500);
     };
 
-    const isImage = asset.type === 'image';
-    const isAudio = asset.type === 'audio';
-    const isVideo = asset.type === 'video';
+    const isAudio = asset.type === 'audio' || asset.category === 'bgm' || asset.category === 'sfx' || (asset.url && /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/audio/'));
+    const isVideo = !isAudio && (asset.type === 'video' || asset.category === 'video' || asset.category === 'PV' || (asset.url && /\.(mp4|webm)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/video/')));
+    const isImage = !isAudio && !isVideo && (asset.type === 'image' || !asset.type);
 
     const getBadgeClass = (cat) => {
         if (cat === 'character') return 'badge-character';
@@ -60,7 +60,7 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
                     </span>
                 )}
 
-                {isImage && <img src={getAssetUrl(asset.url)} alt={asset.name} loading="lazy" />}
+                {isImage && <img src={getAssetUrl(asset.url, 'image')} alt={asset.name} loading="lazy" />}
                 
                 {isVideo && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', color: '#E1BEE7' }}>
@@ -75,7 +75,7 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
                             <audio
                                 ref={audioRef}
                                 autoPlay
-                                src={getAssetUrl(asset.url)}
+                                src={getAssetUrl(asset.url, 'audio')}
                                 onEnded={() => onTogglePlay(null)}
                             />
                         )}
