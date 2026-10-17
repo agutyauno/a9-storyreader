@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Upload, X, Play, Square, Loader2, Volume2 } from 'lucide-react'
 import { uploadFileToGithub } from '../../../../../src/services/githubService'
-import { getAssetUrl } from '../../../../../src/utils/assetUtils'
+import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtils'
 
 /**
  * AudioUploadField
@@ -79,25 +79,28 @@ export default function AudioUploadField({
         }
     }
 
-    const togglePlay = () => {
+    const togglePlay = async () => {
         if (!value) return
-        const targetUrl = getAssetUrl(value)
+        const targetUrl = getAssetUrl(value, 'audio')
         if (!targetUrl) return
 
         if (isPlaying) {
             audioRef.current?.pause()
             setIsPlaying(false)
         } else {
-            if (!audioRef.current || audioRef.current.src !== targetUrl) {
+            const safeUrl = await getSafeAudioUrl(targetUrl)
+            if (!audioRef.current || audioRef.current._src !== targetUrl) {
                 if (audioRef.current) {
                     audioRef.current.pause()
                 }
-                audioRef.current = new Audio(targetUrl)
-                audioRef.current.onended = () => setIsPlaying(false)
-                audioRef.current.onerror = () => {
+                const audio = new Audio(safeUrl)
+                audio._src = targetUrl
+                audio.onended = () => setIsPlaying(false)
+                audio.onerror = () => {
                     setIsPlaying(false)
                     setUploadError('Không thể phát file âm thanh từ URL này.')
                 }
+                audioRef.current = audio
             }
             audioRef.current.play()
                 .then(() => setIsPlaying(true))

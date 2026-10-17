@@ -4,7 +4,7 @@ import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import { EditorCache } from '../../../../../src/services/editorCache';
 import { uploadFileToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
 import ConfirmModal from './ConfirmModal';
-import { getAssetUrl } from '../../../../../src/utils/assetUtils';
+import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtils';
 import '../editorComponents.css';
 
 export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdated, onPickAsset, showNotification }) {
@@ -260,19 +260,10 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                                             </div>
 
                                             {isMediaAudio ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '2rem 1rem', width: '100%' }}>
-                                                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(216,67,21,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D84315', border: '1px solid rgba(216,67,21,0.3)' }}>
-                                                        <Music size={32} />
-                                                    </div>
-                                                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#F5EDDC', opacity: 0.8 }}>
-                                                        {asset.category?.toUpperCase() || 'AUDIO FILE'}
-                                                    </span>
-                                                    <audio 
-                                                        src={getAssetUrl(externalUrl, 'audio')} 
-                                                        controls 
-                                                        style={{ width: '100%', maxWidth: '380px', marginTop: '0.5rem' }} 
-                                                    />
-                                                </div>
+                                                <AudioPlayerPreview 
+                                                    url={getAssetUrl(externalUrl, 'audio')} 
+                                                    category={asset.category} 
+                                                />
                                             ) : isMediaVideo ? (
                                                 <video src={getAssetUrl(externalUrl, 'video')} controls style={{ maxHeight: '480px', maxWidth: '100%', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.15)' }} />
                                             ) : (
@@ -465,5 +456,49 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
                 </div>
             )}
         </>
+    );
+}
+
+function AudioPlayerPreview({ url, category }) {
+    const [audioSrc, setAudioSrc] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isCancelled = false;
+        setLoading(true);
+        getSafeAudioUrl(url).then(safe => {
+            if (!isCancelled) {
+                setAudioSrc(safe);
+                setLoading(false);
+            }
+        }).catch(() => {
+            if (!isCancelled) {
+                setAudioSrc(url);
+                setLoading(false);
+            }
+        });
+        return () => { isCancelled = true; };
+    }, [url]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', padding: '1.5rem 1rem', width: '100%' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(216,67,21,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D84315', border: '1px solid rgba(216,67,21,0.3)' }}>
+                <Music size={32} />
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#F5EDDC', opacity: 0.8 }}>
+                {category?.toUpperCase() || 'AUDIO FILE'}
+            </span>
+            {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(245,237,220,0.6)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                    <Loader size={14} className="spinning" /> Đang tải dữ liệu âm thanh...
+                </div>
+            ) : (
+                <audio 
+                    src={audioSrc} 
+                    controls 
+                    style={{ width: '100%', maxWidth: '380px', marginTop: '0.5rem' }} 
+                />
+            )}
+        </div>
     );
 }

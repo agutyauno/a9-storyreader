@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Music, Play, Square, Save, Trash2, FolderPlus, Loader } from 'lucide-react';
 import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
-import { getAssetUrl } from '../../../../../src/utils/assetUtils';
+import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtils';
 import '../editorComponents.css';
 
 export default function EventBgmManager({ eventId, showNotification, onPickAsset }) {
@@ -76,7 +76,8 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
                 finalSrc = '/assets/audio/bgm/' + finalSrc;
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio');
-            const audio = new Audio(resolvedUrl);
+            const safeUrl = await getSafeAudioUrl(resolvedUrl);
+            const audio = new Audio(safeUrl);
             audioRef.current = audio;
 
             let previewVol = 0.8;

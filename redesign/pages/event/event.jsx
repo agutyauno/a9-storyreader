@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
-import { getAssetUrl } from '../../../src/utils/assetUtils'
+import { getAssetUrl, getSafeAudioUrl } from '../../../src/utils/assetUtils'
 import Header from '../../components/Header'
 import Sidebar from '../../components/Sidebar'
 import SidebarRegionDropdown from '../../components/SidebarRegionDropdown'
@@ -410,6 +410,7 @@ export default function RedesignEventPage() {
                 finalSrc = '/assets/audio/bgm/' + finalSrc
             }
             const resolvedUrl = getAssetUrl(finalSrc, 'audio')
+            const safeUrl = await getSafeAudioUrl(resolvedUrl)
 
             // If session changed, effect unmounted, or route changed during async fetch, ABORT!
             if (isCancelled || sessionId !== currentBgmSessionRef.current) return
@@ -441,7 +442,7 @@ export default function RedesignEventPage() {
             audio.loop = true
             audio._src = resolvedUrl
             audio._sessionId = sessionId
-            audio.src = resolvedUrl
+            audio.src = safeUrl
             bgmAudioRef.current = audio
 
             if (!isMuted && effectiveVol > 0) {

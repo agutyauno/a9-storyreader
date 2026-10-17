@@ -4,7 +4,7 @@ import { SupabaseAPI } from '../../../../../src/services/supabaseApi';
 import { EditorCache } from '../../../../../src/services/editorCache';
 import AssetDetailModal from '../modals/AssetDetailModal';
 import ConfirmModal from '../modals/ConfirmModal';
-import { getAssetUrl } from '../../../../../src/utils/assetUtils';
+import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtils';
 import '../editorComponents.css';
 
 const CATEGORIES = [
@@ -22,13 +22,42 @@ const CATEGORIES = [
 
 const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isPlaying, onTogglePlay }) {
     const [copied, setCopied] = useState(false);
+    const [safeAudioSrc, setSafeAudioSrc] = useState('');
+    const [audioLoading, setAudioLoading] = useState(false);
     const audioRef = useRef(null);
 
+    const isAudio = asset.type === 'audio' || asset.category === 'bgm' || asset.category === 'sfx' || (asset.url && /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/audio/'));
+    const isVideo = !isAudio && (asset.type === 'video' || asset.category === 'video' || asset.category === 'PV' || (asset.url && /\.(mp4|webm)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/video/')));
+    const isImage = !isAudio && !isVideo && (asset.type === 'image' || !asset.type);
+
     useEffect(() => {
-        if (!isPlaying || !audioRef.current) return;
+        if (!isPlaying || !isAudio) {
+            setSafeAudioSrc('');
+            setAudioLoading(false);
+            return;
+        }
+        let isCancelled = false;
+        const rawUrl = getAssetUrl(asset.url, 'audio');
+        setAudioLoading(true);
+        getSafeAudioUrl(rawUrl).then(safe => {
+            if (!isCancelled) {
+                setSafeAudioSrc(safe);
+                setAudioLoading(false);
+            }
+        }).catch(() => {
+            if (!isCancelled) {
+                setSafeAudioSrc(rawUrl);
+                setAudioLoading(false);
+            }
+        });
+        return () => { isCancelled = true; };
+    }, [isPlaying, isAudio, asset.url]);
+
+    useEffect(() => {
+        if (!isPlaying || !audioRef.current || !safeAudioSrc) return;
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
-    }, [isPlaying]);
+    }, [isPlaying, safeAudioSrc]);
 
     const copyId = (e) => {
         e.stopPropagation();
@@ -36,10 +65,6 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
-
-    const isAudio = asset.type === 'audio' || asset.category === 'bgm' || asset.category === 'sfx' || (asset.url && /\.(mp3|wav|flac|ogg|m4a|aac)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/audio/'));
-    const isVideo = !isAudio && (asset.type === 'video' || asset.category === 'video' || asset.category === 'PV' || (asset.url && /\.(mp4|webm)(\?.*)?$/i.test(asset.url)) || (asset.url && asset.url.includes('/video/')));
-    const isImage = !isAudio && !isVideo && (asset.type === 'image' || !asset.type);
 
     const getBadgeClass = (cat) => {
         if (cat === 'character') return 'badge-character';
@@ -71,23 +96,24 @@ const AssetCard = React.memo(function AssetCard({ asset, onDelete, onDetail, isP
                 
                 {isAudio && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                        {isPlaying && (
+                        {isPlaying && safeAudioSrc && (
                             <audio
                                 ref={audioRef}
                                 autoPlay
-                                src={getAssetUrl(asset.url, 'audio')}
+                                src={safeAudioSrc}
                                 onEnded={() => onTogglePlay(null)}
                             />
                         )}
                         <button
                             className="redesign-audio-preview-btn"
                             title={isPlaying ? "Tạm dừng" : "Nghe thử"}
+                            disabled={audioLoading}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onTogglePlay(asset.asset_id);
                             }}
                         >
-                            {isPlaying ? <Pause size={13} /> : <Play size={13} style={{ marginLeft: '1px' }} />}
+                            {audioLoading ? <Loader size={13} className="spinning" /> : isPlaying ? <Pause size={13} /> : <Play size={13} style={{ marginLeft: '1px' }} />}
                         </button>
                         {isPlaying ? (
                             <div className="redesign-equalizer">

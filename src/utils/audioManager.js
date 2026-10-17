@@ -1,4 +1,4 @@
-import { getAssetUrl } from './assetUtils';
+import { getAssetUrl, getSafeAudioUrl } from './assetUtils';
 
 export class BGMManager {
   constructor(options = {}) {
@@ -25,6 +25,24 @@ export class BGMManager {
     this.loopAudio.preload = 'auto';
     this.loopAudio.loop = true;
     this.loopAudio.volume = this.volume;
+
+    const handleCorbError = async (audioEl) => {
+      const src = audioEl.src;
+      if (!src || src.startsWith('blob:') || src.startsWith('data:')) return;
+      try {
+        const safe = await getSafeAudioUrl(src);
+        if (safe && safe !== src) {
+          audioEl.src = safe;
+          audioEl.load();
+          if (this.isPlaying) {
+            audioEl.play().catch(() => {});
+          }
+        }
+      } catch (e) {}
+    };
+
+    this.introAudio.addEventListener('error', () => handleCorbError(this.introAudio));
+    this.loopAudio.addEventListener('error', () => handleCorbError(this.loopAudio));
   }
 
   loadState() {
@@ -87,6 +105,7 @@ export class BGMManager {
     this.stopAudio();
     this.currentTrack = track;
     this.isNewTrack = true;
+    const token = ++this.playToken;
 
     const resolvePath = (src) => {
       if (!src) return '';
@@ -97,16 +116,26 @@ export class BGMManager {
     };
 
     if (track.intro) {
-      this.introAudio.src = resolvePath(track.intro);
-      this.introAudio.load();
+      const introRaw = resolvePath(track.intro);
+      getSafeAudioUrl(introRaw).then(safeIntro => {
+        if (this.playToken === token) {
+          this.introAudio.src = safeIntro;
+          this.introAudio.load();
+        }
+      });
     } else {
       this.introAudio.removeAttribute('src');
       this.introAudio.load();
     }
     const loopSrc = track.loop || (track.intro ? null : track.id);
     if (loopSrc) {
-      this.loopAudio.src = resolvePath(loopSrc);
-      this.loopAudio.load();
+      const loopRaw = resolvePath(loopSrc);
+      getSafeAudioUrl(loopRaw).then(safeLoop => {
+        if (this.playToken === token) {
+          this.loopAudio.src = safeLoop;
+          this.loopAudio.load();
+        }
+      });
     } else {
       this.loopAudio.removeAttribute('src');
       this.loopAudio.load();

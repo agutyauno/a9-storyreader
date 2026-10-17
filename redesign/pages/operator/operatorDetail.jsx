@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { CLASSES_MAP, SUBCLASSES_MAP, FACTIONS_MAP } from './operatorMapping'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
-import { getAssetUrl } from '../../../src/utils/assetUtils'
+import { getAssetUrl, getSafeAudioUrl } from '../../../src/utils/assetUtils'
 import { useNotification } from '../../components/Notification'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -376,14 +376,19 @@ function DialogueTab({ operator, selectedSkinId }) {
     const [voiceLang, setVoiceLang] = useState('JP')
     const { showNotification } = useNotification()
 
-    const handlePlayVoice = (dialogue) => {
+    const handlePlayVoice = async (dialogue) => {
         const rawUrl = dialogue.voiceLines?.[voiceLang]
-        const voiceUrl = rawUrl ? getAssetUrl(rawUrl) : ''
+        const voiceUrl = rawUrl ? getAssetUrl(rawUrl, 'audio') : ''
         if (voiceUrl) {
-            const audio = new Audio(voiceUrl)
-            audio.play().catch(() => {
+            try {
+                const safeUrl = await getSafeAudioUrl(voiceUrl)
+                const audio = new Audio(safeUrl)
+                audio.play().catch(() => {
+                    showNotification('warning', 'Playback Error', 'Không thể phát âm thanh từ tệp này.')
+                })
+            } catch (err) {
                 showNotification('warning', 'Playback Error', 'Không thể phát âm thanh từ tệp này.')
-            })
+            }
         } else {
             showNotification('info', 'Audio Unavailable', `Voice line (${voiceLang}) chưa có trong cơ sở dữ liệu.`)
         }
