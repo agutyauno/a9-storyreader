@@ -72,6 +72,8 @@
     width: 8px;
     height: calc(100% + 4px);
     background-color: var(--color-terracotta);
+    z-index: 5;
+    pointer-events: none;
 }
 
 /* Floating PREV / NEXT arrow buttons */
@@ -1231,14 +1233,20 @@
     padding: 1.25rem 2.5rem;
     box-sizing: border-box;
     position: relative;
-    z-index: 2;
+    z-index: 1;
     background-color: rgba(24, 24, 24, 0.02);
 }
 
 .event-suggestion-banner-container.top-banner {
     border-top: none;
-    border-bottom: 1px solid rgba(24, 24, 24, 0.12);
-    background-color: rgba(33, 150, 243, 0.05);
+    border-bottom: none;
+    background-color: #ffffff;
+    padding: 1.5rem 2.5rem 0.5rem 2.5rem;
+}
+
+.event-hero-body.has-top-suggestion,
+.event-suggestion-banner-container.top-banner + .event-hero-body {
+    padding-top: 1.25rem;
 }
 
 .event-suggestion-banner-container.bottom-banner {
@@ -1336,6 +1344,10 @@
 @media (max-width: 768px) {
     .event-suggestion-banner-container {
         padding: 1rem 1.25rem;
+    }
+
+    .event-suggestion-banner-container.top-banner {
+        padding: 1rem 1.25rem 0.25rem 1.25rem;
     }
 
     .sugg-cards-grid {

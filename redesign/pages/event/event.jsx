@@ -686,7 +686,7 @@ export default function RedesignEventPage() {
                                     )}
 
                                     {/* Main Hero Body */}
-                                    <div className={`event-hero-body ${suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 ? 'has-suggestion' : ''}`}>
+                                    <div className={`event-hero-body ${suggestedEvents.filter(s => (s.suggestionType || 'next') === 'next').length > 0 ? 'has-suggestion' : ''} ${suggestedEvents.filter(s => s.suggestionType === 'prev').length > 0 ? 'has-top-suggestion' : ''}`}>
                                         {/* Info Column */}
                                         <div className="event-hero-info">
                                             <div className="event-hero-breadcrumb technical-text">
