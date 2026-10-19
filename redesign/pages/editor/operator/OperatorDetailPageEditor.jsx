@@ -620,7 +620,8 @@ export default function OperatorDetailPageEditor() {
 
     // ─── SKINS HANDLERS ────────────────────────────────────────────────────────
     const handleOpenSkinModal = (skin = null) => {
-        if (skin) {
+        const isActualSkin = skin && typeof skin === 'object' && !skin.nativeEvent && skin.skin_id !== undefined
+        if (isActualSkin) {
             setEditingSkin(skin)
             setSkinForm({
                 name: skin.name,
@@ -860,7 +861,8 @@ export default function OperatorDetailPageEditor() {
     }
 
     const handleOpenDialogueModal = (dialogue = null) => {
-        if (dialogue) {
+        const isActualDialogue = dialogue && typeof dialogue === 'object' && !dialogue.nativeEvent && (dialogue.dialogue_id !== undefined || dialogue.title !== undefined)
+        if (isActualDialogue) {
             setEditingDialogue(dialogue)
             setDialogueForm({
                 title: dialogue.title,
@@ -1006,7 +1008,8 @@ export default function OperatorDetailPageEditor() {
 
     // ─── RECORDS HANDLERS ──────────────────────────────────────────────────────
     const handleOpenRecordModal = (rec = null) => {
-        if (rec) {
+        const isActualRecord = rec && typeof rec === 'object' && !rec.nativeEvent && rec.record_id !== undefined
+        if (isActualRecord) {
             setRecordForm({
                 record_id: rec.record_id,
                 name: rec.name || '',
@@ -1015,11 +1018,13 @@ export default function OperatorDetailPageEditor() {
             })
             setRecordModalMode('edit')
         } else {
+            const cleanOpId = (opId || 'op').replace(/^char_/, '').replace(/_+$/, '')
+            const nextIdx = records.length + 1
             setRecordForm({
-                record_id: `rec_${opId.replace('char_', '')}_${records.length + 1}`,
-                name: `Ký sự ${records.length + 1}`,
+                record_id: `rec_${cleanOpId}_${nextIdx}`,
+                name: `Ký sự ${nextIdx}`,
                 description: '',
-                display_order: records.length + 1
+                display_order: nextIdx
             })
             setRecordModalMode('create')
         }
@@ -1027,7 +1032,10 @@ export default function OperatorDetailPageEditor() {
     }
 
     const handleRecordModalSubmit = async (formData) => {
-        if (!formData.record_id.trim() || !formData.name.trim()) {
+        const trimmedRecordId = (formData.record_id || '').trim()
+        const trimmedName = (formData.name || '').trim()
+
+        if (!trimmedRecordId || !trimmedName) {
             showToast('Mã ký sự và Tên không được để trống.', 'error')
             return
         }
@@ -1035,9 +1043,9 @@ export default function OperatorDetailPageEditor() {
         try {
             if (recordModalMode === 'edit') {
                 if (isNew) {
-                    setRecords(prev => prev.map(r => r.record_id === formData.record_id ? {
+                    setRecords(prev => prev.map(r => r.record_id === trimmedRecordId ? {
                         ...r,
-                        name: formData.name.trim(),
+                        name: trimmedName,
                         description: (formData.description || '').trim(),
                         display_order: Number(formData.display_order) || 1
                     } : r))
@@ -1046,8 +1054,8 @@ export default function OperatorDetailPageEditor() {
                     return
                 }
 
-                await SupabaseAPI.updateOperatorRecord(formData.record_id, {
-                    name: formData.name.trim(),
+                await SupabaseAPI.updateOperatorRecord(trimmedRecordId, {
+                    name: trimmedName,
                     description: (formData.description || '').trim(),
                     display_order: Number(formData.display_order) || 1
                 })
@@ -1060,13 +1068,18 @@ export default function OperatorDetailPageEditor() {
 
             // Create mode
             if (isNew) {
+                if (records.some(r => r.record_id === trimmedRecordId)) {
+                    showToast(`Mã ký sự "${trimmedRecordId}" đã tồn tại. Vui lòng nhập mã khác.`, 'error')
+                    return
+                }
+
                 const newRec = {
-                    record_id: formData.record_id.trim(),
+                    record_id: trimmedRecordId,
                     operator_id: opId,
-                    name: formData.name.trim(),
+                    name: trimmedName,
                     description: (formData.description || '').trim(),
                     display_order: Number(formData.display_order) || 1,
-                    story_content: { type: 'vns', script: `// Kịch bản ký sự: ${formData.name}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
+                    story_content: { type: 'vns', script: `// Kịch bản ký sự: ${trimmedName}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
                 }
                 setRecords(prev => [...prev, newRec])
                 showToast('Đã thêm thông tin ký sự vào bộ nhớ tạm.', 'success')
@@ -1074,13 +1087,18 @@ export default function OperatorDetailPageEditor() {
                 return
             }
 
+            if (records.some(r => r.record_id === trimmedRecordId)) {
+                showToast(`Mã ký sự "${trimmedRecordId}" đã tồn tại. Vui lòng nhập mã khác.`, 'error')
+                return
+            }
+
             const payload = {
-                record_id: formData.record_id.trim(),
+                record_id: trimmedRecordId,
                 operator_id: opId,
-                name: formData.name.trim(),
+                name: trimmedName,
                 description: (formData.description || '').trim(),
                 display_order: Number(formData.display_order) || 1,
-                story_content: { type: 'vns', script: `// Kịch bản ký sự: ${formData.name}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
+                story_content: { type: 'vns', script: `// Kịch bản ký sự: ${trimmedName}\n\n[dialog]\n${name}: Ký sự bắt đầu.\n` }
             }
 
             await SupabaseAPI.createOperatorRecord(payload)
@@ -2170,7 +2188,7 @@ export default function OperatorDetailPageEditor() {
                                             <Sparkles size={16} color="var(--color-terracotta, #B2653B)" />
                                             <span>Danh Sách ký sự Cán Viên ({records.length})</span>
                                         </h3>
-                                        <button className="brutalist-btn secondary" onClick={handleOpenRecordModal}>
+                                        <button className="brutalist-btn secondary" onClick={() => handleOpenRecordModal()}>
                                             <Plus size={13} />
                                             <span>Thêm ký sự Mới</span>
                                         </button>
@@ -2186,7 +2204,7 @@ export default function OperatorDetailPageEditor() {
                                                 <button
                                                     className="brutalist-btn primary"
                                                     style={{ marginTop: '0.5rem' }}
-                                                    onClick={handleOpenRecordModal}
+                                                    onClick={() => handleOpenRecordModal()}
                                                 >
                                                     <Plus size={14} />
                                                     <span>Tạo ký sự Đầu Tiên</span>
@@ -2455,8 +2473,8 @@ export default function OperatorDetailPageEditor() {
             <RecordModal
                 isOpen={recordModalOpen}
                 isEditMode={recordModalMode === 'edit'}
-                targetOp={{ operator_id: opId, name: name || 'Cán viên' }}
-                initialData={recordModalMode === 'edit' ? recordForm : null}
+                targetOp={{ operator_id: opId, name: name || 'Cán viên', records }}
+                initialData={recordForm}
                 onClose={() => setRecordModalOpen(false)}
                 onSubmit={handleRecordModalSubmit}
             />

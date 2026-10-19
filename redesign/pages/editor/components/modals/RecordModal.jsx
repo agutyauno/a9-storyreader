@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Loader, Plus, Save } from 'lucide-react';
 import '../editorComponents.css';
 
@@ -16,22 +16,24 @@ export default function RecordModal({
     const [displayOrder, setDisplayOrder] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const wasOpenRef = useRef(false);
 
     useEffect(() => {
-        if (!isOpen) return;
-
-        if (initialData) {
-            setRecordId(initialData.record_id || '');
-            setName(initialData.name || '');
-            setDescription(initialData.description || '');
-            setDisplayOrder(initialData.display_order ?? '');
-        } else {
-            setRecordId(targetOp ? `${targetOp.operator_id}_rec_${(targetOp.records?.length || 0) + 1}` : '');
-            setName('');
-            setDescription('');
-            setDisplayOrder(targetOp ? (targetOp.records?.length || 0) + 1 : 1);
+        if (isOpen && !wasOpenRef.current) {
+            if (initialData) {
+                setRecordId(initialData.record_id || '');
+                setName(initialData.name || '');
+                setDescription(initialData.description || '');
+                setDisplayOrder(initialData.display_order ?? '');
+            } else {
+                setRecordId(targetOp ? `${targetOp.operator_id}_rec_${(targetOp.records?.length || 0) + 1}` : '');
+                setName('');
+                setDescription('');
+                setDisplayOrder(targetOp ? (targetOp.records?.length || 0) + 1 : 1);
+            }
+            setError(null);
         }
-        setError(null);
+        wasOpenRef.current = isOpen;
     }, [isOpen, initialData, targetOp]);
 
     if (!isOpen) return null;
