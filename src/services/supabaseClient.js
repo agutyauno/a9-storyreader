@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://parvlcffmaufvyaoyica.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_bXR2KzMrDFAeIxr9d4BLlg_DDF2OkQv';
+const RAW_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://a9-db-proxy.buihoainam2606.workers.dev';
+const SUPABASE_URL = RAW_URL.replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_bXR2KzMrDFAeIxr9d4BLlg_DDF2OkQv';
 
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true }

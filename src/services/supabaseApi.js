@@ -85,30 +85,123 @@ const cleanCombatInfo = (combatInfo) => {
   return cleaned;
 };
 
-let regionsPromise = null;
-let arcsByRegionPromises = {};
-let eventsByArcPromises = {};
+// ─── TTL CONFIGURATION (ms) ───────────────────────────────────────────────────
+export const API_CACHE_TTL = {
+  REGIONS_ARCS: 24 * 60 * 60 * 1000, // 24 hours
+  EVENTS: 12 * 60 * 60 * 1000,       // 12 hours
+  CHARACTERS: 12 * 60 * 60 * 1000,   // 12 hours
+  ASSETS: 12 * 60 * 60 * 1000,       // 12 hours
+  GALLERY: 12 * 60 * 60 * 1000,      // 12 hours
+  STORIES_META: 2 * 60 * 60 * 1000,  // 2 hours
+  STORY_CONTENT: 2 * 60 * 60 * 1000, // 2 hours
+};
+
+// Summary columns for story listings - excludes large 'story_content' JSON script
+export const STORY_SUMMARY_COLUMNS = 'story_id, event_id, name, description, display_order, status';
+
+const STORAGE_CACHE_PREFIX = 'a9_api_cache_';
+const memoryCache = new Map();
+const inFlightPromises = new Map();
+
+function getCachedData(key, ttl) {
+  const mem = memoryCache.get(key);
+  if (mem && (Date.now() - mem.time < ttl)) {
+    return mem.data;
+  }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const raw = window.sessionStorage.getItem(STORAGE_CACHE_PREFIX + key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.time < ttl) {
+          memoryCache.set(key, parsed);
+          return parsed.data;
+        } else {
+          window.sessionStorage.removeItem(STORAGE_CACHE_PREFIX + key);
+        }
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function setCachedData(key, data) {
+  const item = { data, time: Date.now() };
+  memoryCache.set(key, item);
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(STORAGE_CACHE_PREFIX + key, JSON.stringify(item));
+    }
+  } catch (e) {}
+}
+
+export function invalidateCacheByPrefix(prefix) {
+  for (const k of memoryCache.keys()) {
+    if (k.startsWith(prefix)) memoryCache.delete(k);
+  }
+  inFlightPromises.clear();
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+        const k = window.sessionStorage.key(i);
+        if (k && k.startsWith(STORAGE_CACHE_PREFIX + prefix)) {
+          window.sessionStorage.removeItem(k);
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+export function clearAllApiCache() {
+  memoryCache.clear();
+  inFlightPromises.clear();
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+        const k = window.sessionStorage.key(i);
+        if (k && k.startsWith(STORAGE_CACHE_PREFIX)) {
+          window.sessionStorage.removeItem(k);
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+async function fetchWithCache(key, ttl, fetcher) {
+  const cached = getCachedData(key, ttl);
+  if (cached !== null) return cached;
+
+  if (inFlightPromises.has(key)) {
+    return inFlightPromises.get(key);
+  }
+
+  const promise = (async () => {
+    try {
+      const result = await fetcher();
+      if (result !== undefined && result !== null) {
+        setCachedData(key, result);
+      }
+      return result;
+    } finally {
+      inFlightPromises.delete(key);
+    }
+  })();
+
+  inFlightPromises.set(key, promise);
+  return promise;
+}
 
 const SupabaseAPI_Raw = {
   // ===========================================================================
   // REGIONS
   // ===========================================================================
   async getRegions() {
-    if (regionsPromise) return regionsPromise;
-
-    regionsPromise = (async () => {
-      try {
-        if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
-        const { data, error } = await supabase.from('regions').select('*').order('display_order');
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        regionsPromise = null; // Clear cache on error
-        throw err;
-      }
-    })();
-
-    return regionsPromise;
+    return fetchWithCache('regions_all', API_CACHE_TTL.REGIONS_ARCS, async () => {
+      if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
+      const { data, error } = await supabase.from('regions').select('*').order('display_order');
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getRegion(regionId) {
@@ -123,7 +216,8 @@ const SupabaseAPI_Raw = {
   },
 
   async createRegion(payload) {
-    regionsPromise = null; // Clear cache on mutation
+    invalidateCacheByPrefix('regions');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const newItem = { region_id: genId('region'), display_order: 0, ...payload };
       mockDatabase.regions.push(newItem);
@@ -138,7 +232,8 @@ const SupabaseAPI_Raw = {
   },
 
   async updateRegion(regionId, payload) {
-    regionsPromise = null; // Clear cache on mutation
+    invalidateCacheByPrefix('regions');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.regions.findIndex(r => r.region_id === regionId);
       if (idx < 0) throw new Error('not-found');
@@ -154,7 +249,8 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteRegion(regionId) {
-    regionsPromise = null; // Clear cache on mutation
+    invalidateCacheByPrefix('regions');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       mockDatabase.regions = mockDatabase.regions.filter(r => r.region_id !== regionId);
       return;
@@ -167,41 +263,37 @@ const SupabaseAPI_Raw = {
   // ARCS
   // ===========================================================================
   async getArcsByRegion(regionId) {
-    if (arcsByRegionPromises[regionId]) return arcsByRegionPromises[regionId];
-
-    arcsByRegionPromises[regionId] = (async () => {
-      try {
-        if (USE_MOCK_DB)
-          return sortByOrder(mockDatabase.arcs.filter(a => a.region_id === regionId));
-        const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order');
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        delete arcsByRegionPromises[regionId]; // Clear cache on error
-        throw err;
-      }
-    })();
-
-    return arcsByRegionPromises[regionId];
+    return fetchWithCache(`arcs_region_${regionId}`, API_CACHE_TTL.REGIONS_ARCS, async () => {
+      if (USE_MOCK_DB)
+        return sortByOrder(mockDatabase.arcs.filter(a => a.region_id === regionId));
+      const { data, error } = await supabase.from('arcs').select('*').eq('region_id', regionId).order('display_order');
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getArcs() {
-    if (USE_MOCK_DB) return sortByOrder(mockDatabase.arcs);
-    const { data, error } = await supabase.from('arcs').select('*').order('display_order');
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache('arcs_all', API_CACHE_TTL.REGIONS_ARCS, async () => {
+      if (USE_MOCK_DB) return sortByOrder(mockDatabase.arcs);
+      const { data, error } = await supabase.from('arcs').select('*').order('display_order');
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getArc(arcId) {
     if (USE_MOCK_DB)
       return mockDatabase.arcs.find(a => a.arc_id === arcId) || null;
-    const { data, error } = await supabase.from('arcs').select('*').eq('arc_id', arcId).limit(1);
-    if (error) throw error;
-    return data?.[0] || null;
+    return fetchWithCache(`arc_${arcId}`, API_CACHE_TTL.REGIONS_ARCS, async () => {
+      const { data, error } = await supabase.from('arcs').select('*').eq('arc_id', arcId).limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    });
   },
 
   async createArc(payload) {
-    arcsByRegionPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('arcs');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const newItem = { arc_id: genId('arc'), display_order: 0, ...payload };
       mockDatabase.arcs.push(newItem);
@@ -213,7 +305,8 @@ const SupabaseAPI_Raw = {
   },
 
   async updateArc(arcId, payload) {
-    arcsByRegionPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('arcs');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.arcs.findIndex(a => a.arc_id === arcId);
       if (idx < 0) throw new Error('not-found');
@@ -226,7 +319,8 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteArc(arcId) {
-    arcsByRegionPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('arcs');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       mockDatabase.arcs = mockDatabase.arcs.filter(a => a.arc_id !== arcId);
       return;
@@ -239,22 +333,13 @@ const SupabaseAPI_Raw = {
   // EVENTS
   // ===========================================================================
   async getEventsByArc(arcId) {
-    if (eventsByArcPromises[arcId]) return eventsByArcPromises[arcId];
-
-    eventsByArcPromises[arcId] = (async () => {
-      try {
-        if (USE_MOCK_DB)
-          return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId)).map(e => this._enrichEvent(e));
-        const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
-        if (error) throw error;
-        return (data || []).map(e => this._enrichEvent(e));
-      } catch (err) {
-        delete eventsByArcPromises[arcId]; // Clear cache on error
-        throw err;
-      }
-    })();
-
-    return eventsByArcPromises[arcId];
+    return fetchWithCache(`events_arc_${arcId}`, API_CACHE_TTL.EVENTS, async () => {
+      if (USE_MOCK_DB)
+        return sortByOrder(mockDatabase.events.filter(e => e.arc_id === arcId)).map(e => this._enrichEvent(e));
+      const { data, error } = await supabase.from('events').select('*').eq('arc_id', arcId).order('display_order');
+      if (error) throw error;
+      return (data || []).map(e => this._enrichEvent(e));
+    });
   },
 
   _enrichEvent(event) {
@@ -271,10 +356,12 @@ const SupabaseAPI_Raw = {
   },
 
   async getEvents() {
-    if (USE_MOCK_DB) return sortByOrder(mockDatabase.events).map(e => this._enrichEvent(e));
-    const { data, error } = await supabase.from('events').select('*').order('display_order');
-    if (error) throw error;
-    return (data || []).map(e => this._enrichEvent(e));
+    return fetchWithCache('events_all', API_CACHE_TTL.EVENTS, async () => {
+      if (USE_MOCK_DB) return sortByOrder(mockDatabase.events).map(e => this._enrichEvent(e));
+      const { data, error } = await supabase.from('events').select('*').order('display_order');
+      if (error) throw error;
+      return (data || []).map(e => this._enrichEvent(e));
+    });
   },
 
   async getEvent(eventId) {
@@ -282,13 +369,16 @@ const SupabaseAPI_Raw = {
       const found = mockDatabase.events.find(e => e.event_id === eventId);
       return found ? this._enrichEvent(found) : null;
     }
-    const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
-    if (error) throw error;
-    return data?.[0] ? this._enrichEvent(data[0]) : null;
+    return fetchWithCache(`event_${eventId}`, API_CACHE_TTL.EVENTS, async () => {
+      const { data, error } = await supabase.from('events').select('*').eq('event_id', eventId).limit(1);
+      if (error) throw error;
+      return data?.[0] ? this._enrichEvent(data[0]) : null;
+    });
   },
 
   async createEvent(payload) {
-    eventsByArcPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('events');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const newItem = { event_id: genId('event'), display_order: 0, ...payload };
       mockDatabase.events.push(newItem);
@@ -323,7 +413,8 @@ const SupabaseAPI_Raw = {
   },
 
   async updateEvent(eventId, payload) {
-    eventsByArcPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('events');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.events.findIndex(e => e.event_id === eventId);
       if (idx < 0) throw new Error('not-found');
@@ -363,7 +454,8 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteEvent(eventId) {
-    eventsByArcPromises = {}; // Invalidate cache on mutation
+    invalidateCacheByPrefix('events');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       mockDatabase.events = mockDatabase.events.filter(e => e.event_id !== eventId);
       return;
@@ -377,46 +469,57 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   async getStoriesByEvent(eventId, options = {}) {
     const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
-    if (USE_MOCK_DB) {
-      let list = mockDatabase.stories.filter(s => s.event_id === eventId);
-      if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
-      return sortByOrder(list);
-    }
-    let query = supabase.from('stories').select('*').eq('event_id', eventId);
-    if (!includeDrafts) {
-      query = query.neq('status', 'draft');
-    }
-    const { data, error } = await query.order('display_order');
-    if (error) throw error;
-    return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
+    const cacheKey = `stories_event_${eventId}_drafts_${includeDrafts}`;
+    return fetchWithCache(cacheKey, API_CACHE_TTL.STORIES_META, async () => {
+      if (USE_MOCK_DB) {
+        let list = mockDatabase.stories.filter(s => s.event_id === eventId);
+        if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
+        return sortByOrder(list);
+      }
+      let query = supabase.from('stories').select(STORY_SUMMARY_COLUMNS).eq('event_id', eventId);
+      if (!includeDrafts) {
+        query = query.neq('status', 'draft');
+      }
+      const { data, error } = await query.order('display_order');
+      if (error) throw error;
+      return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
+    });
   },
 
   async getStories(options = {}) {
     const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
-    if (USE_MOCK_DB) {
-      let list = mockDatabase.stories;
-      if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
-      return sortByOrder(list);
-    }
-    let query = supabase.from('stories').select('*');
-    if (!includeDrafts) {
-      query = query.neq('status', 'draft');
-    }
-    const { data, error } = await query.order('display_order');
-    if (error) throw error;
-    return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
+    const cacheKey = `stories_all_drafts_${includeDrafts}`;
+    return fetchWithCache(cacheKey, API_CACHE_TTL.STORIES_META, async () => {
+      if (USE_MOCK_DB) {
+        let list = mockDatabase.stories;
+        if (!includeDrafts) list = list.filter(s => s.status !== 'draft');
+        return sortByOrder(list);
+      }
+      let query = supabase.from('stories').select(STORY_SUMMARY_COLUMNS);
+      if (!includeDrafts) {
+        query = query.neq('status', 'draft');
+      }
+      const { data, error } = await query.order('display_order');
+      if (error) throw error;
+      return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
+    });
   },
 
   async getStory(storyId) {
     if (USE_MOCK_DB)
       return mockDatabase.stories.find(s => s.story_id === storyId) || null;
-    const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
-    if (error) throw error;
-    if (!data?.[0]) return null;
-    return { ...data[0], status: data[0].status || 'published' };
+    return fetchWithCache(`story_single_${storyId}`, API_CACHE_TTL.STORY_CONTENT, async () => {
+      const { data, error } = await supabase.from('stories').select('*').eq('story_id', storyId).limit(1);
+      if (error) throw error;
+      if (!data?.[0]) return null;
+      return { ...data[0], status: data[0].status || 'published' };
+    });
   },
 
   async createStory(payload) {
+    invalidateCacheByPrefix('stories');
+    invalidateCacheByPrefix('story_single_');
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const newItem = {
         story_id: genId('story'),
@@ -437,6 +540,9 @@ const SupabaseAPI_Raw = {
   },
 
   async updateStory(storyId, payload) {
+    invalidateCacheByPrefix('stories');
+    invalidateCacheByPrefix(`story_single_${storyId}`);
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.stories.findIndex(s => s.story_id === storyId);
       if (idx < 0) throw new Error('not-found');
@@ -449,6 +555,9 @@ const SupabaseAPI_Raw = {
   },
 
   async toggleStoryStatus(storyId, status) {
+    invalidateCacheByPrefix('stories');
+    invalidateCacheByPrefix(`story_single_${storyId}`);
+    invalidateCacheByPrefix('tree');
     const { data, error } = await supabase
       .from('stories')
       .update({ status })
@@ -460,6 +569,9 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteStory(storyId) {
+    invalidateCacheByPrefix('stories');
+    invalidateCacheByPrefix(`story_single_${storyId}`);
+    invalidateCacheByPrefix('tree');
     if (USE_MOCK_DB) {
       mockDatabase.stories = mockDatabase.stories.filter(s => s.story_id !== storyId);
       return;
@@ -469,63 +581,65 @@ const SupabaseAPI_Raw = {
   },
 
   async getFullStoryTree() {
-    const [regions, arcs, events, stories] = await Promise.all([
-      this.getRegions(),
-      this.getArcs(),
-      this.getEvents(),
-      this.getStories({ includeDrafts: true }),
-    ]);
+    return fetchWithCache('tree_story_full', API_CACHE_TTL.STORIES_META, async () => {
+      const [regions, arcs, events, stories] = await Promise.all([
+        this.getRegions(),
+        this.getArcs(),
+        this.getEvents(),
+        this.getStories({ includeDrafts: true }),
+      ]);
 
-    const storiesByEvent = {};
-    (stories || []).forEach(s => {
-      const eid = s.event_id;
-      if (!storiesByEvent[eid]) storiesByEvent[eid] = [];
-      storiesByEvent[eid].push({
-        type: 'story',
-        parentId: eid,
-        parentType: 'event',
-        ...s,
-        id: s.story_id,
-        children: []
+      const storiesByEvent = {};
+      (stories || []).forEach(s => {
+        const eid = s.event_id;
+        if (!storiesByEvent[eid]) storiesByEvent[eid] = [];
+        storiesByEvent[eid].push({
+          type: 'story',
+          parentId: eid,
+          parentType: 'event',
+          ...s,
+          id: s.story_id,
+          children: []
+        });
       });
-    });
 
-    const eventsByArc = {};
-    (events || []).forEach(e => {
-      const aid = e.arc_id;
-      if (!eventsByArc[aid]) eventsByArc[aid] = [];
-      eventsByArc[aid].push({
-        type: 'event',
-        parentId: aid,
-        parentType: 'arc',
-        ...e,
-        id: e.event_id,
-        children: storiesByEvent[e.event_id] || []
+      const eventsByArc = {};
+      (events || []).forEach(e => {
+        const aid = e.arc_id;
+        if (!eventsByArc[aid]) eventsByArc[aid] = [];
+        eventsByArc[aid].push({
+          type: 'event',
+          parentId: aid,
+          parentType: 'arc',
+          ...e,
+          id: e.event_id,
+          children: storiesByEvent[e.event_id] || []
+        });
       });
-    });
 
-    const arcsByRegion = {};
-    (arcs || []).forEach(a => {
-      const rid = a.region_id;
-      if (!arcsByRegion[rid]) arcsByRegion[rid] = [];
-      arcsByRegion[rid].push({
-        type: 'arc',
-        parentId: rid,
-        parentType: 'region',
-        ...a,
-        id: a.arc_id,
-        children: eventsByArc[a.arc_id] || []
+      const arcsByRegion = {};
+      (arcs || []).forEach(a => {
+        const rid = a.region_id;
+        if (!arcsByRegion[rid]) arcsByRegion[rid] = [];
+        arcsByRegion[rid].push({
+          type: 'arc',
+          parentId: rid,
+          parentType: 'region',
+          ...a,
+          id: a.arc_id,
+          children: eventsByArc[a.arc_id] || []
+        });
       });
-    });
 
-    return (regions || []).map(r => ({
-      type: 'region',
-      parentId: null,
-      parentType: null,
-      ...r,
-      id: r.region_id,
-      children: arcsByRegion[r.region_id] || []
-    }));
+      return (regions || []).map(r => ({
+        type: 'region',
+        parentId: null,
+        parentType: null,
+        ...r,
+        id: r.region_id,
+        children: arcsByRegion[r.region_id] || []
+      }));
+    });
   },
 
   // ===========================================================================
@@ -569,21 +683,26 @@ const SupabaseAPI_Raw = {
   },
 
   async getCharacters() {
-    if (USE_MOCK_DB) return this._enrichCharactersWithExpressions([...mockDatabase.characters]);
-    const { data, error } = await supabase.from('characters').select('*');
-    if (error) throw error;
-    return this._enrichCharactersWithExpressions(data || []);
+    return fetchWithCache('characters_all', API_CACHE_TTL.CHARACTERS, async () => {
+      if (USE_MOCK_DB) return this._enrichCharactersWithExpressions([...mockDatabase.characters]);
+      const { data, error } = await supabase.from('characters').select('*');
+      if (error) throw error;
+      return this._enrichCharactersWithExpressions(data || []);
+    });
   },
 
   async getCharacter(characterId) {
     if (USE_MOCK_DB)
       return mockDatabase.characters.find(c => c.character_id === characterId) || null;
-    const { data, error } = await supabase.from('characters').select('*').eq('character_id', characterId).limit(1);
-    if (error) throw error;
-    return data?.[0] || null;
+    return fetchWithCache(`character_${characterId}`, API_CACHE_TTL.CHARACTERS, async () => {
+      const { data, error } = await supabase.from('characters').select('*').eq('character_id', characterId).limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    });
   },
 
   async createCharacter(payload) {
+    invalidateCacheByPrefix('characters');
     const { expressions, ...charData } = payload;
 
     // Determine the character identifier, prioritizing 'id' then 'character_id' then 'asset_id'
@@ -646,6 +765,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateCharacter(characterId, payload) {
+    invalidateCacheByPrefix('characters');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.characters.findIndex(c => c.character_id === characterId);
       if (idx < 0) throw new Error('not-found');
@@ -658,6 +778,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteCharacter(characterId) {
+    invalidateCacheByPrefix('characters');
     if (USE_MOCK_DB) {
       mockDatabase.characters = mockDatabase.characters.filter(c => c.character_id !== characterId);
       return;
@@ -713,40 +834,44 @@ const SupabaseAPI_Raw = {
 
   /** Fetch characters for an event (via event_characters join table) */
   async getCharactersByEvent(eventId) {
-    if (USE_MOCK_DB) {
-      if (!mockDatabase.event_characters) return [];
-      const links = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
-      const results = links.map(link => {
-        const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
-        return { ...char, ...link };
-      });
-      return this._enrichCharactersWithExpressions(sortByOrder(results));
-    }
+    return fetchWithCache(`characters_event_${eventId}`, API_CACHE_TTL.CHARACTERS, async () => {
+      if (USE_MOCK_DB) {
+        if (!mockDatabase.event_characters) return [];
+        const links = mockDatabase.event_characters.filter(ec => ec.event_id === eventId);
+        const results = links.map(link => {
+          const char = mockDatabase.characters.find(c => c.character_id === link.character_id);
+          return { ...char, ...link };
+        });
+        return this._enrichCharactersWithExpressions(sortByOrder(results));
+      }
 
-    const { data, error } = await supabase
-      .from('event_characters')
-      .select('*, characters(*)')
-      .eq('event_id', eventId)
-      .order('display_order');
-    if (error) throw error;
+      const { data, error } = await supabase
+        .from('event_characters')
+        .select('*, characters(*)')
+        .eq('event_id', eventId)
+        .order('display_order');
+      if (error) throw error;
 
-    const characters = (data || []).map(row => ({
-      ...row.characters,
-      ...row
-    }));
+      const characters = (data || []).map(row => ({
+        ...row.characters,
+        ...row
+      }));
 
-    return this._enrichCharactersWithExpressions(characters);
+      return this._enrichCharactersWithExpressions(characters);
+    });
   },
 
   // ===========================================================================
   // CHARACTER EXPRESSIONS
   // ===========================================================================
   async getExpressionsByCharacter(characterId) {
-    if (USE_MOCK_DB)
-      return mockDatabase.character_expressions.filter(e => e.character_id === characterId);
-    const { data, error } = await supabase.from('character_expressions').select('*').eq('character_id', characterId);
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache(`expressions_char_${characterId}`, API_CACHE_TTL.CHARACTERS, async () => {
+      if (USE_MOCK_DB)
+        return mockDatabase.character_expressions.filter(e => e.character_id === characterId);
+      const { data, error } = await supabase.from('character_expressions').select('*').eq('character_id', characterId);
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   /**
@@ -756,27 +881,32 @@ const SupabaseAPI_Raw = {
    */
   async getExpressionsByCharacters(characterIds) {
     if (!characterIds?.length) return {};
-    if (USE_MOCK_DB) {
-      const rows = mockDatabase.character_expressions.filter(e => characterIds.includes(e.character_id));
+    const unique = [...new Set(characterIds)].sort();
+    const cacheKey = `expressions_chars_${unique.join('_')}`;
+    return fetchWithCache(cacheKey, API_CACHE_TTL.CHARACTERS, async () => {
+      if (USE_MOCK_DB) {
+        const rows = mockDatabase.character_expressions.filter(e => unique.includes(e.character_id));
+        const map = {};
+        for (const r of rows) {
+          map[r.character_id] = map[r.character_id] || [];
+          map[r.character_id].push(r);
+        }
+        return map;
+      }
+      const { data, error } = await supabase.from('character_expressions').select('*').in('character_id', unique);
+      if (error) throw error;
       const map = {};
-      for (const r of rows) {
+      (data || []).forEach(r => {
         map[r.character_id] = map[r.character_id] || [];
         map[r.character_id].push(r);
-      }
+      });
       return map;
-    }
-    const unique = [...new Set(characterIds)];
-    const { data, error } = await supabase.from('character_expressions').select('*').in('character_id', unique);
-    if (error) throw error;
-    const map = {};
-    (data || []).forEach(r => {
-      map[r.character_id] = map[r.character_id] || [];
-      map[r.character_id].push(r);
     });
-    return map;
   },
 
   async createExpression(payload) {
+    invalidateCacheByPrefix('characters');
+    invalidateCacheByPrefix('expressions_');
     if (USE_MOCK_DB) {
       const maxId = Math.max(0, ...mockDatabase.character_expressions.map(e => e.id));
       const newItem = { id: maxId + 1, ...payload };
@@ -795,6 +925,8 @@ const SupabaseAPI_Raw = {
   },
 
   async updateExpression(characterId, name, payload) {
+    invalidateCacheByPrefix('characters');
+    invalidateCacheByPrefix('expressions_');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.character_expressions.findIndex(e => e.character_id === characterId && e.name === name);
       if (idx < 0) throw new Error('not-found');
@@ -819,6 +951,8 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteExpression(characterId, name, forceDbDelete = false) {
+    invalidateCacheByPrefix('characters');
+    invalidateCacheByPrefix('expressions_');
     if (USE_MOCK_DB) {
       mockDatabase.character_expressions = mockDatabase.character_expressions.filter(e => !(e.character_id === characterId && e.name === name));
       return;
@@ -863,52 +997,62 @@ const SupabaseAPI_Raw = {
   },
 
   async getAssets() {
-    if (USE_MOCK_DB) return [...mockDatabase.assets];
-    let allAssets = [];
-    let page = 0;
-    const pageSize = 1000;
-    while (true) {
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*')
-        .order('id', { ascending: false })
-        .range(from, to);
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      allAssets.push(...data);
-      if (data.length < pageSize) break;
-      page++;
-    }
-    return allAssets;
+    return fetchWithCache('assets_all', API_CACHE_TTL.ASSETS, async () => {
+      if (USE_MOCK_DB) return [...mockDatabase.assets];
+      let allAssets = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+        const { data, error } = await supabase
+          .from('assets')
+          .select('*')
+          .order('id', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allAssets.push(...data);
+        if (data.length < pageSize) break;
+        page++;
+      }
+      return allAssets;
+    });
   },
 
   async getAssetsByCategory(category) {
-    if (USE_MOCK_DB)
-      return mockDatabase.assets.filter(a => a.category === category);
-    const { data, error } = await supabase.from('assets').select('*').eq('category', category);
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache(`assets_cat_${category}`, API_CACHE_TTL.ASSETS, async () => {
+      if (USE_MOCK_DB)
+        return mockDatabase.assets.filter(a => a.category === category);
+      const { data, error } = await supabase.from('assets').select('*').eq('category', category);
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getAssetsByType(type) {
-    if (USE_MOCK_DB)
-      return mockDatabase.assets.filter(a => a.type === type);
-    const { data, error } = await supabase.from('assets').select('*').eq('type', type);
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache(`assets_type_${type}`, API_CACHE_TTL.ASSETS, async () => {
+      if (USE_MOCK_DB)
+        return mockDatabase.assets.filter(a => a.type === type);
+      const { data, error } = await supabase.from('assets').select('*').eq('type', type);
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getAsset(assetId) {
     if (USE_MOCK_DB)
       return mockDatabase.assets.find(a => a.asset_id === assetId) || null;
-    const { data, error } = await supabase.from('assets').select('*').eq('asset_id', assetId).limit(1);
-    if (error) throw error;
-    return data?.[0] || null;
+    return fetchWithCache(`asset_${assetId}`, API_CACHE_TTL.ASSETS, async () => {
+      const { data, error } = await supabase.from('assets').select('*').eq('asset_id', assetId).limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    });
   },
 
   async createAsset(payload) {
+    invalidateCacheByPrefix('assets');
+    invalidateCacheByPrefix('gallery');
     if (USE_MOCK_DB) {
       if (mockDatabase.assets.find(a => a.asset_id === payload.asset_id)) throw new Error('duplicate-asset');
       const newItem = { ...payload };
@@ -928,6 +1072,8 @@ const SupabaseAPI_Raw = {
   },
 
   async updateAsset(assetId, payload) {
+    invalidateCacheByPrefix('assets');
+    invalidateCacheByPrefix('gallery');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.assets.findIndex(a => a.asset_id === assetId);
       if (idx < 0) throw new Error('not-found');
@@ -945,6 +1091,8 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteAsset(assetId) {
+    invalidateCacheByPrefix('assets');
+    invalidateCacheByPrefix('gallery');
     if (USE_MOCK_DB) {
       mockDatabase.assets = mockDatabase.assets.filter(a => a.asset_id !== assetId);
       return;
@@ -972,60 +1120,65 @@ const SupabaseAPI_Raw = {
   // GALLERY
   // ===========================================================================
   async getGalleryByEvent(eventId) {
-    if (USE_MOCK_DB) {
-      if (!mockDatabase.gallery) return [];
-      const list = sortByOrder(mockDatabase.gallery.filter(g => g.event_id === eventId));
-      return list.map(g => {
-        const asset = mockDatabase.assets?.find(a => a.asset_id === g.gallery_id);
-        return asset ? { ...g, image_url: asset.url || g.image_url } : g;
-      });
-    }
-    const { data, error } = await supabase
-      .from('gallery')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('display_order', { ascending: true });
-    if (error) throw error;
-    if (!data || data.length === 0) return [];
-
-    try {
-      const galleryIds = data.map(g => g.gallery_id).filter(Boolean);
-      if (galleryIds.length > 0) {
-        const { data: assetMatches } = await supabase
-          .from('assets')
-          .select('asset_id, name, url')
-          .in('asset_id', galleryIds);
-
-        if (assetMatches && assetMatches.length > 0) {
-          const assetMap = Object.fromEntries(assetMatches.map(a => [a.asset_id, a]));
-          return data.map(g => {
-            const matched = assetMap[g.gallery_id];
-            if (!matched) return g;
-            return {
-              ...g,
-              image_url: matched.url || g.image_url,
-              title: g.title || matched.name
-            };
-          });
-        }
+    return fetchWithCache(`gallery_event_${eventId}`, API_CACHE_TTL.GALLERY, async () => {
+      if (USE_MOCK_DB) {
+        if (!mockDatabase.gallery) return [];
+        const list = sortByOrder(mockDatabase.gallery.filter(g => g.event_id === eventId));
+        return list.map(g => {
+          const asset = mockDatabase.assets?.find(a => a.asset_id === g.gallery_id);
+          return asset ? { ...g, image_url: asset.url || g.image_url } : g;
+        });
       }
-    } catch (enrichErr) {
-      console.warn('Failed to enrich gallery with asset data:', enrichErr);
-    }
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
 
-    return data || [];
+      try {
+        const galleryIds = data.map(g => g.gallery_id).filter(Boolean);
+        if (galleryIds.length > 0) {
+          const { data: assetMatches } = await supabase
+            .from('assets')
+            .select('asset_id, name, url')
+            .in('asset_id', galleryIds);
+
+          if (assetMatches && assetMatches.length > 0) {
+            const assetMap = Object.fromEntries(assetMatches.map(a => [a.asset_id, a]));
+            return data.map(g => {
+              const matched = assetMap[g.gallery_id];
+              if (!matched) return g;
+              return {
+                ...g,
+                image_url: matched.url || g.image_url,
+                title: g.title || matched.name
+              };
+            });
+          }
+        }
+      } catch (enrichErr) {
+        console.warn('Failed to enrich gallery with asset data:', enrichErr);
+      }
+
+      return data || [];
+    });
   },
 
   async getAllGallery() {
-    if (USE_MOCK_DB) {
-      return [...(mockDatabase.gallery || [])];
-    }
-    const { data, error } = await supabase.from('gallery').select('*');
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache('gallery_all', API_CACHE_TTL.GALLERY, async () => {
+      if (USE_MOCK_DB) {
+        return [...(mockDatabase.gallery || [])];
+      }
+      const { data, error } = await supabase.from('gallery').select('*');
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async createGallery(payload) {
+    invalidateCacheByPrefix('gallery');
     const galleryId = payload.gallery_id || payload.asset_id || payload.id;
     if (USE_MOCK_DB) {
       const existingIdx = (mockDatabase.gallery || []).findIndex(g => g.gallery_id === galleryId);
@@ -1059,6 +1212,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteGallery(galleryId) {
+    invalidateCacheByPrefix('gallery');
     if (USE_MOCK_DB) {
       if (!mockDatabase.gallery) return;
       mockDatabase.gallery = mockDatabase.gallery.filter(g => g.gallery_id !== galleryId);
@@ -1072,6 +1226,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateGallery(galleryId, payload) {
+    invalidateCacheByPrefix('gallery');
     if (USE_MOCK_DB) {
       const idx = mockDatabase.gallery.findIndex(g => g.gallery_id === galleryId);
       if (idx < 0) throw new Error('not-found');
@@ -1094,10 +1249,12 @@ const SupabaseAPI_Raw = {
   // SUGGESTIONS
   // ===========================================================================
   async getSuggestionsByArc(arcId) {
-    if (USE_MOCK_DB) return []; // no mock data for suggestions
-    const { data, error } = await supabase.from('suggestions').select('*').eq('arc_id', arcId).order('position');
-    if (error) throw error;
-    return data || [];
+    return fetchWithCache(`suggestions_arc_${arcId}`, API_CACHE_TTL.EVENTS, async () => {
+      if (USE_MOCK_DB) return []; // no mock data for suggestions
+      const { data, error } = await supabase.from('suggestions').select('*').eq('arc_id', arcId).order('position');
+      if (error) throw error;
+      return data || [];
+    });
   },
 
   async getSuggestedEvents(arcId) {
@@ -1760,6 +1917,7 @@ const SupabaseAPI_Raw = {
     }
     cleanPayload.display_order = Number(cleanPayload.display_order) || 1;
     cleanPayload.updated_at = new Date().toISOString();
+    invalidateCacheByPrefix('tree_operator_story');
     const { data, error } = await supabase
       .from('operator_records')
       .upsert(cleanPayload, { onConflict: 'record_id' })
@@ -1769,6 +1927,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateOperatorRecord(recordId, payload) {
+    invalidateCacheByPrefix('tree_operator_story');
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
     const { data, error } = await supabase
@@ -1784,6 +1943,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteOperatorRecord(recordId) {
+    invalidateCacheByPrefix('tree_operator_story');
     const { error } = await supabase
       .from('operator_records')
       .delete()
@@ -1792,30 +1952,36 @@ const SupabaseAPI_Raw = {
   },
 
   async getOperatorStoryTree() {
-    try {
-      const [opsRes, recsRes] = await Promise.all([
-        supabase.from('operators').select('operator_id, name, appellation, rarity, class_id, factions').order('name'),
-        supabase.from('operator_records').select('record_id, operator_id, name, display_order').order('display_order', { ascending: true })
-      ]);
+    return fetchWithCache('tree_operator_story', API_CACHE_TTL.STORIES_META, async () => {
+      try {
+        const [opsRes, recsRes] = await Promise.all([
+          supabase.from('operators').select('operator_id, name, appellation, rarity, class_id, factions').order('name'),
+          supabase.from('operator_records').select('record_id, operator_id, name, display_order').order('display_order', { ascending: true })
+        ]);
 
-      const operators = opsRes.data || [];
-      const records = recsRes.data || [];
+        const operators = opsRes.data || [];
+        const records = recsRes.data || [];
 
-      // Group records by operator_id
-      const recordsMap = {};
-      records.forEach(r => {
-        if (!recordsMap[r.operator_id]) recordsMap[r.operator_id] = [];
-        recordsMap[r.operator_id].push(r);
-      });
+        // Group records by operator_id
+        const recordsMap = {};
+        records.forEach(r => {
+          if (!recordsMap[r.operator_id]) recordsMap[r.operator_id] = [];
+          recordsMap[r.operator_id].push(r);
+        });
 
-      return operators.map(op => ({
-        ...op,
-        records: recordsMap[op.operator_id] || []
-      }));
-    } catch (err) {
-      console.warn('getOperatorStoryTree failed:', err);
-      return [];
-    }
+        return operators.map(op => ({
+          ...op,
+          records: recordsMap[op.operator_id] || []
+        }));
+      } catch (err) {
+        console.warn('getOperatorStoryTree failed:', err);
+        return [];
+      }
+    });
+  },
+
+  clearCache() {
+    clearAllApiCache();
   },
 };
 
