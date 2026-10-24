@@ -174,6 +174,14 @@ export const EditorCache = {
     },
 
     /**
+     * Invalidate operators cache
+     */
+    invalidateOperators() {
+        SupabaseAPI.invalidateOperatorsCache?.();
+        this.notifyUpdated('operators');
+    },
+
+    /**
      * Invalidate all editor caches
      */
     invalidateAll() {

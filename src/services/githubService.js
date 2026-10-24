@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase, tryRefreshToken } from './supabaseClient';
 import { fileToBase64 } from '../utils/fileUtils';
 
 /**
@@ -69,7 +69,11 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
     try {
         const contentBase64 = await fileToBase64(file);
 
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            session = await tryRefreshToken();
+        }
 
         if (!session) {
             throw new Error('Phiên làm việc không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại để tải tệp lên.');
@@ -198,7 +202,10 @@ export const deleteFileFromGithub = async (url) => {
  */
 export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            session = await tryRefreshToken();
+        }
         if (!session) throw new Error('Unauthorized');
 
         // Convert all files to base64 and prepare payload

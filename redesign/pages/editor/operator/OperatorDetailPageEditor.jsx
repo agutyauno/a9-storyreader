@@ -5,7 +5,7 @@ import NotificationToast from '../components/NotificationToast'
 import ConfirmModal from '../components/modals/ConfirmModal'
 import RecordModal from '../components/modals/RecordModal'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
-import { supabase } from '../../../../src/services/supabaseClient'
+import { supabase, tryRefreshToken } from '../../../../src/services/supabaseClient'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
     getHierarchicalFactions
@@ -456,14 +456,21 @@ export default function OperatorDetailPageEditor() {
         }
 
         // Kiểm tra phiên đăng nhập sớm để cảnh báo người dùng nếu chưa có quyền
+        let session = null
         try {
-            const { data: { session } } = await supabase.auth.getSession()
+            const sessionRes = await supabase.auth.getSession()
+            session = sessionRes?.data?.session
             if (!session) {
-                showToast('Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để lưu cán viên!', 'error')
-                return
+                session = await tryRefreshToken()
             }
         } catch (authErr) {
             console.warn('Check auth session warning:', authErr)
+        }
+
+        if (!session) {
+            showToast('Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để lưu cán viên!', 'error')
+            navigate('/login', { state: { from: location } })
+            return
         }
 
         setSaving(true)
@@ -565,7 +572,10 @@ export default function OperatorDetailPageEditor() {
                     state: { toastMessage: 'Đã tạo cán viên mới thành công!', toastType: 'success' }
                 })
             } else {
-                await SupabaseAPI.updateOperator(id, payload)
+                const updatedOp = await SupabaseAPI.updateOperator(id, payload)
+                if (!updatedOp) {
+                    throw new Error('Dữ liệu không được ghi nhận vào cơ sở dữ liệu (0 hàng cập nhật).')
+                }
 
                 // Đồng bộ cập nhật thông tin và mô tả skin
                 if (skins && skins.length > 0) {

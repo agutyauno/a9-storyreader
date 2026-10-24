@@ -23,6 +23,7 @@ import ConfirmModal from './components/modals/ConfirmModal'
 
 import { StoryScriptParser } from '../../../src/utils/storyParser'
 import { SupabaseAPI } from '../../../src/services/supabaseApi'
+import { supabase, tryRefreshToken } from '../../../src/services/supabaseClient'
 import { EditorCache } from '../../../src/services/editorCache'
 import './storyEditor.css'
 
@@ -409,6 +410,24 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
     }
 
     const handleSave = async (silent = false) => {
+        // Kiểm tra phiên đăng nhập trước khi thực hiện lưu
+        let session = null
+        try {
+            const sessionRes = await supabase.auth.getSession()
+            session = sessionRes?.data?.session
+            if (!session) {
+                session = await tryRefreshToken()
+            }
+        } catch (authErr) {
+            console.warn('Session check warning in storyEditor:', authErr)
+        }
+
+        if (!session) {
+            if (!silent) showNotification('Phiên làm việc đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại!', 'error')
+            navigate('/login', { state: { from: location } })
+            return false
+        }
+
         setSaving(true)
         try {
             // Validate syntax before saving
@@ -426,7 +445,8 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 }
 
                 if (metadata.record_id) {
-                    await SupabaseAPI.updateOperatorRecord(metadata.record_id, payload)
+                    const updated = await SupabaseAPI.updateOperatorRecord(metadata.record_id, payload)
+                    if (!updated) throw new Error('Không thể cập nhật ký sự vào cơ sở dữ liệu (0 hàng thay đổi).')
                     setInitialScript(scriptText)
                     if (!silent) showNotification('Đã lưu kịch bản ký sự cán viên!', 'success')
                     return true
@@ -449,7 +469,8 @@ export default function RedesignStoryEditorPage({ isRecord = false }) {
                 }
 
                 if (metadata.story_id) {
-                    await SupabaseAPI.updateStory(metadata.story_id, payload)
+                    const updated = await SupabaseAPI.updateStory(metadata.story_id, payload)
+                    if (!updated) throw new Error('Không thể cập nhật chương cốt truyện vào cơ sở dữ liệu (0 hàng thay đổi).')
                     EditorCache.invalidateStoryTree()
                     setInitialScript(scriptText)
                     if (!silent) showNotification('Đã lưu kịch bản chương!', 'success')

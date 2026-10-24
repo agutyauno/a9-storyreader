@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase, tryRefreshToken } from './supabaseClient';
 import { mockDatabase } from '../utils/mockStoryData';
 import { deleteFileFromGithub } from './githubService';
 import { getAssetUrl } from '../utils/assetUtils';
@@ -23,7 +23,7 @@ const generateUuid = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
       return crypto.randomUUID();
-    } catch (e) {}
+    } catch (e) { }
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -32,14 +32,32 @@ const generateUuid = () => {
   });
 };
 
-/** Handle common Supabase errors, especially 401 Unauthorized */
-const handleAuthError = (error) => {
-  if (error?.status === 401 || error?.code === '401' || error?.message?.includes('JWT expired')) {
-    console.error('Session expired or unauthorized. Redirecting to login...');
-    // Sign out to clear any stale local state
-    supabase.auth.signOut().then(() => {
-      window.location.href = '/login?expired=true';
-    });
+/** Handle common Supabase errors, especially 401 Unauthorized, with auto-refresh */
+const handleAuthError = async (error) => {
+  const isAuthError =
+    error?.status === 401 ||
+    error?.code === '401' ||
+    error?.message?.toLowerCase().includes('jwt expired') ||
+    error?.message?.toLowerCase().includes('invalid token') ||
+    error?.message?.toLowerCase().includes('unauthorized');
+
+  if (isAuthError) {
+    const newSession = await tryRefreshToken();
+    if (newSession) {
+      console.log('Session refreshed successfully in SupabaseAPI.');
+      return newSession;
+    }
+
+    console.error('Session expired and refresh failed. Redirecting to login...', error?.message);
+    try {
+      await supabase.auth.signOut();
+    } catch (e) { }
+
+    const currentHash = window.location.hash || '';
+    if (!currentHash.startsWith('#/login')) {
+      const returnUrl = encodeURIComponent(currentHash.replace(/^#/, ''));
+      window.location.hash = `#/login?expired=true&from=${returnUrl}`;
+    }
   }
   throw error;
 };
@@ -121,7 +139,7 @@ function getCachedData(key, ttl) {
         }
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -132,7 +150,7 @@ function setCachedData(key, data) {
     if (typeof window !== 'undefined' && window.sessionStorage) {
       window.sessionStorage.setItem(STORAGE_CACHE_PREFIX + key, JSON.stringify(item));
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export function invalidateCacheByPrefix(prefix) {
@@ -149,7 +167,7 @@ export function invalidateCacheByPrefix(prefix) {
         }
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export function clearAllApiCache() {
@@ -164,7 +182,7 @@ export function clearAllApiCache() {
         }
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 async function fetchWithCache(key, ttl, fetcher) {
@@ -551,7 +569,10 @@ const SupabaseAPI_Raw = {
     }
     const { data, error } = await supabase.from('stories').update(payload).eq('story_id', storyId).select();
     if (error) throw error;
-    return data?.[0] || null;
+    if (!data || data.length === 0) {
+      throw new Error('Cập nhật cốt truyện thất bại (0 hàng được thay đổi). Phiên đăng nhập có thể đã hết hạn hoặc bạn chưa có quyền ghi vào bảng stories.');
+    }
+    return data[0];
   },
 
   async toggleStoryStatus(storyId, status) {
@@ -1667,6 +1688,7 @@ const SupabaseAPI_Raw = {
   async createOperator(payload) {
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
+    invalidateCacheByPrefix('tree_operator_story');
     if (cleanPayload.display_order === undefined || cleanPayload.display_order === null) {
       cleanPayload.display_order = 0;
     }
@@ -1684,14 +1706,22 @@ const SupabaseAPI_Raw = {
       .upsert(cleanPayload, { onConflict: 'operator_id' })
       .select();
     if (error) throw error;
-    return data?.[0] || cleanPayload;
+    if (!data || data.length === 0) {
+      throw new Error('Tạo cán viên không thành công (0 hàng được tạo). Vui lòng kiểm tra lại phiên đăng nhập hoặc quyền hạn cơ sở dữ liệu.');
+    }
+    return data[0];
   },
 
   async updateOperator(operatorId, payload) {
+    invalidateCacheByPrefix('tree_operator_story');
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
     if (cleanPayload.combat_info) {
       cleanPayload.combat_info = cleanCombatInfo(cleanPayload.combat_info);
+    }
+    // Tránh gửi lại operator_id nếu không thay đổi để không kích hoạt ràng buộc khóa chính
+    if (cleanPayload.operator_id === operatorId) {
+      delete cleanPayload.operator_id;
     }
     const { data, error } = await supabase
       .from('operators')
@@ -1699,10 +1729,14 @@ const SupabaseAPI_Raw = {
       .eq('operator_id', operatorId)
       .select();
     if (error) throw error;
-    return data?.[0] || null;
+    if (!data || data.length === 0) {
+      throw new Error('Cập nhật cán viên thất bại (0 hàng được thay đổi). Phiên đăng nhập có thể đã hết hạn hoặc bạn chưa có quyền ghi vào bảng operators.');
+    }
+    return data[0];
   },
 
   async toggleOperatorStatus(operatorId, status) {
+    invalidateCacheByPrefix('tree_operator_story');
     const { data, error } = await supabase
       .from('operators')
       .update({ status, updated_at: new Date().toISOString() })
@@ -1713,6 +1747,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteOperator(operatorId) {
+    invalidateCacheByPrefix('tree_operator_story');
     // 1. Delete associated records, dialogues, skins first to avoid foreign key violations
     try {
       await supabase.from('operator_records').delete().eq('operator_id', operatorId);
@@ -1752,6 +1787,7 @@ const SupabaseAPI_Raw = {
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: true });
       if (error) {
+        if (error.status === 401 || error.code === '401' || error.message?.includes('JWT expired'));
         console.warn('getOperatorSkins warning:', error.message);
         return [];
       }
@@ -1821,6 +1857,7 @@ const SupabaseAPI_Raw = {
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: true });
       if (error) {
+        if (error.status === 401 || error.code === '401' || error.message?.includes('JWT expired'));
         console.warn('getOperatorDialogues warning:', error.message);
         return [];
       }
@@ -1832,6 +1869,7 @@ const SupabaseAPI_Raw = {
   },
 
   async createOperatorDialogue(payload) {
+    if (payload.operator_id) invalidateCacheByPrefix(`operator_single_${payload.operator_id}`);
     const cleanPayload = { ...payload };
     if (!cleanPayload.dialogue_id || String(cleanPayload.dialogue_id).startsWith('temp_')) {
       cleanPayload.dialogue_id = generateUuid();
@@ -1849,6 +1887,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateOperatorDialogue(dialogueId, payload) {
+    invalidateCacheByPrefix('operator_single_');
     const cleanPayload = { ...payload };
     if (cleanPayload.audio_url_jp) cleanPayload.audio_url_jp = cleanUrl(cleanPayload.audio_url_jp);
     if (cleanPayload.audio_url_en) cleanPayload.audio_url_en = cleanUrl(cleanPayload.audio_url_en);
@@ -1866,6 +1905,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteOperatorDialogue(dialogueId) {
+    invalidateCacheByPrefix('operator_single_');
     const { error } = await supabase
       .from('operator_dialogues')
       .delete()
@@ -1980,12 +2020,17 @@ const SupabaseAPI_Raw = {
     });
   },
 
+  invalidateOperatorsCache() {
+    invalidateCacheByPrefix('operators_');
+    invalidateCacheByPrefix('operator_single_');
+  },
+
   clearCache() {
     clearAllApiCache();
   },
 };
 
-// Proxy to wrap all SupabaseAPI methods with auth error handling
+// Proxy to wrap all SupabaseAPI methods with auth error handling and auto-retry
 export const SupabaseAPI = new Proxy(SupabaseAPI_Raw, {
   get(target, prop) {
     const original = target[prop];
@@ -1994,7 +2039,18 @@ export const SupabaseAPI = new Proxy(SupabaseAPI_Raw, {
         try {
           return await original.apply(target, args);
         } catch (err) {
-          return handleAuthError(err);
+          const isAuthError =
+            err?.status === 401 ||
+            err?.code === '401' ||
+            err?.message?.toLowerCase().includes('jwt expired');
+          if (isAuthError) {
+            const refreshed = await tryRefreshToken();
+            if (refreshed) {
+              // Retry once with refreshed token
+              return await original.apply(target, args);
+            }
+          }
+          return await handleAuthError(err);
         }
       };
     }
