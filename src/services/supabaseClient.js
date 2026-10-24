@@ -15,10 +15,24 @@ const PROXY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes cooldown before retrying p
 /**
  * Intelligent Fallback Fetch:
  * Prioritizes Cloudflare Worker proxy, automatically falls back to direct Supabase on any error or 5xx.
+ * Enforces cache: 'no-store' and no-cache headers so browser HTTP disk/memory cache does not serve
+ * stale responses when proxy returns 'Cache-Control: public, max-age=7200'.
  */
 const fallbackFetch = async (input, init) => {
   const originalUrl = typeof input === 'string' ? input : (input?.url || '');
   const now = Date.now();
+
+  // Build headers preventing browser and intermediate proxy caching
+  const headers = new Headers(init?.headers || (typeof Request !== 'undefined' && input instanceof Request ? input.headers : {}));
+  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('x-bypass-cache', '1');
+
+  const fetchInit = {
+    ...init,
+    cache: 'no-store',
+    headers
+  };
 
   const createTarget = (targetUrl) => {
     if (typeof Request !== 'undefined' && input instanceof Request) {
@@ -33,7 +47,7 @@ const fallbackFetch = async (input, init) => {
   if (shouldTryProxy) {
     const proxyTargetUrl = originalUrl.replace(DIRECT_URL, PROXY_URL);
     try {
-      const res = await fetch(createTarget(proxyTargetUrl), init);
+      const res = await fetch(createTarget(proxyTargetUrl), fetchInit);
 
       // If proxy server returns 5xx error or Cloudflare gateway error
       if (res.status >= 500) {
@@ -57,7 +71,7 @@ const fallbackFetch = async (input, init) => {
 
   // Fallback: Fetch directly from Supabase
   const directTargetUrl = originalUrl.replace(PROXY_URL, DIRECT_URL);
-  return fetch(createTarget(directTargetUrl), init);
+  return fetch(createTarget(directTargetUrl), fetchInit);
 };
 
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -69,6 +83,9 @@ const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true
   },
   global: {
+    headers: {
+      'x-bypass-cache': '1'
+    },
     fetch: fallbackFetch
   }
 });

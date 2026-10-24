@@ -1688,7 +1688,7 @@ const SupabaseAPI_Raw = {
   async createOperator(payload) {
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
-    invalidateCacheByPrefix('tree_operator_story');
+    this.invalidateOperatorsCache();
     if (cleanPayload.display_order === undefined || cleanPayload.display_order === null) {
       cleanPayload.display_order = 0;
     }
@@ -1713,7 +1713,7 @@ const SupabaseAPI_Raw = {
   },
 
   async updateOperator(operatorId, payload) {
-    invalidateCacheByPrefix('tree_operator_story');
+    this.invalidateOperatorsCache();
     const cleanPayload = { ...payload };
     cleanPayload.updated_at = new Date().toISOString();
     if (cleanPayload.combat_info) {
@@ -1736,7 +1736,7 @@ const SupabaseAPI_Raw = {
   },
 
   async toggleOperatorStatus(operatorId, status) {
-    invalidateCacheByPrefix('tree_operator_story');
+    this.invalidateOperatorsCache();
     const { data, error } = await supabase
       .from('operators')
       .update({ status, updated_at: new Date().toISOString() })
@@ -1747,7 +1747,7 @@ const SupabaseAPI_Raw = {
   },
 
   async deleteOperator(operatorId) {
-    invalidateCacheByPrefix('tree_operator_story');
+    this.invalidateOperatorsCache();
     // 1. Delete associated records, dialogues, skins first to avoid foreign key violations
     try {
       await supabase.from('operator_records').delete().eq('operator_id', operatorId);
@@ -2023,6 +2023,7 @@ const SupabaseAPI_Raw = {
   invalidateOperatorsCache() {
     invalidateCacheByPrefix('operators_');
     invalidateCacheByPrefix('operator_single_');
+    invalidateCacheByPrefix('tree_operator_story');
   },
 
   clearCache() {

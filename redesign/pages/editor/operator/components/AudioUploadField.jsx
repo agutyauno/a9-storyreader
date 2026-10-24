@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Upload, X, Play, Square, Loader2, Volume2 } from 'lucide-react'
 import { uploadFileToGithub } from '../../../../../src/services/githubService'
-import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtils'
+import { getAssetUrl, getSafeAudioUrl, clearAudioBlobCache } from '../../../../../src/utils/assetUtils'
 
 /**
  * AudioUploadField
@@ -14,7 +14,7 @@ import { getAssetUrl, getSafeAudioUrl } from '../../../../../src/utils/assetUtil
  * @param {string} label - Field label
  * @param {string} placeholder - URL input placeholder
  * @param {string} hint - Helper text
- * @param {string} customFileName - Optional custom filename without extension
+ * @param {string|function} customFileName - Optional custom filename or filename generator function
  */
 export default function AudioUploadField({
     value = '',
@@ -31,6 +31,7 @@ export default function AudioUploadField({
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState(null)
     const [isPlaying, setIsPlaying] = useState(false)
+    const [localPreviewUrl, setLocalPreviewUrl] = useState(null)
 
     // Cleanup audio instance when component unmounts
     useEffect(() => {
@@ -39,8 +40,11 @@ export default function AudioUploadField({
                 audioRef.current.pause()
                 audioRef.current = null
             }
+            if (localPreviewUrl) {
+                URL.revokeObjectURL(localPreviewUrl)
+            }
         }
-    }, [])
+    }, [localPreviewUrl])
 
     // Stop playback if value changes or is cleared
     useEffect(() => {
@@ -55,12 +59,32 @@ export default function AudioUploadField({
         const file = e.target.files?.[0]
         if (!file) return
 
+        // Validate file size (max 15MB to prevent memory spike & Edge Function timeout)
+        const MAX_SIZE_MB = 15
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            const sizeErr = `Tệp âm thanh quá lớn (${(file.size / (1024 * 1024)).toFixed(1)}MB). Vui lòng chọn tệp nhỏ hơn ${MAX_SIZE_MB}MB.`
+            setUploadError(sizeErr)
+            onNotify?.(sizeErr, 'error')
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
+
         setUploading(true)
         setUploadError(null)
 
         try {
-            const res = await uploadFileToGithub(file, folderPath, customFileName)
+            const targetFileName = typeof customFileName === 'function' ? customFileName(file) : customFileName
+            const res = await uploadFileToGithub(file, folderPath, targetFileName)
             if (res && res.url) {
+                // Clear any previous cached audio blob for this path
+                if (value) clearAudioBlobCache(value)
+                clearAudioBlobCache(res.url)
+
+                // Create local object URL for instant zero-latency preview
+                if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl)
+                const localUrl = URL.createObjectURL(file)
+                setLocalPreviewUrl(localUrl)
+
                 onChange(res.url)
                 onNotify?.('Đã tải tệp âm thanh lên Server thành công!', 'success')
             } else {
@@ -80,36 +104,49 @@ export default function AudioUploadField({
     }
 
     const togglePlay = async () => {
-        if (!value) return
-        const targetUrl = getAssetUrl(value, 'audio')
-        if (!targetUrl) return
+        if (!value && !localPreviewUrl) return
 
         if (isPlaying) {
             audioRef.current?.pause()
             setIsPlaying(false)
-        } else {
-            const safeUrl = await getSafeAudioUrl(targetUrl)
-            if (!audioRef.current || audioRef.current._src !== targetUrl) {
-                if (audioRef.current) {
-                    audioRef.current.pause()
-                }
-                const audio = new Audio(safeUrl)
-                audio._src = targetUrl
-                audio.onended = () => setIsPlaying(false)
-                audio.onerror = () => {
-                    setIsPlaying(false)
-                    setUploadError('Không thể phát file âm thanh từ URL này.')
-                }
-                audioRef.current = audio
-            }
-            audioRef.current.play()
-                .then(() => setIsPlaying(true))
-                .catch((err) => {
-                    console.error('Audio playback error:', err)
-                    setIsPlaying(false)
-                    setUploadError('Lỗi phát âm thanh. Vui lòng kiểm tra định dạng hoặc đường dẫn.')
-                })
+            return
         }
+
+        // Prioritize local blob url for immediate playback (avoids 1-5min GitHub Pages deploy lag)
+        let playUrl = localPreviewUrl
+        if (!playUrl && value) {
+            const targetUrl = getAssetUrl(value, 'audio')
+            if (targetUrl) {
+                playUrl = await getSafeAudioUrl(targetUrl)
+            }
+        }
+
+        if (!playUrl) {
+            setUploadError('Không tìm thấy đường dẫn âm thanh hợp lệ.')
+            return
+        }
+
+        if (!audioRef.current || audioRef.current._src !== playUrl) {
+            if (audioRef.current) {
+                audioRef.current.pause()
+            }
+            const audio = new Audio(playUrl)
+            audio._src = playUrl
+            audio.onended = () => setIsPlaying(false)
+            audio.onerror = () => {
+                setIsPlaying(false)
+                setUploadError('Không thể phát file âm thanh từ URL này.')
+            }
+            audioRef.current = audio
+        }
+
+        audioRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch((err) => {
+                console.error('Audio playback error:', err)
+                setIsPlaying(false)
+                setUploadError('Lỗi phát âm thanh. Vui lòng kiểm tra định dạng hoặc đường dẫn.')
+            })
     }
 
     // Extract filename from URL for display
@@ -125,7 +162,13 @@ export default function AudioUploadField({
                     className="img-upload-url-input"
                     placeholder={placeholder}
                     value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={(e) => {
+                        if (localPreviewUrl) {
+                            URL.revokeObjectURL(localPreviewUrl)
+                            setLocalPreviewUrl(null)
+                        }
+                        onChange(e.target.value)
+                    }}
                 />
 
                 <input
@@ -147,11 +190,20 @@ export default function AudioUploadField({
                     <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
                 </button>
 
-                {value && (
+                {(value || localPreviewUrl) && (
                     <button
                         type="button"
                         className="img-upload-clear-btn"
-                        onClick={() => onChange('')}
+                        onClick={() => {
+                            if (localPreviewUrl) {
+                                URL.revokeObjectURL(localPreviewUrl)
+                                setLocalPreviewUrl(null)
+                            }
+                            if (value) {
+                                clearAudioBlobCache(value)
+                            }
+                            onChange('')
+                        }}
                         title="Xoá âm thanh"
                     >
                         <X size={14} />

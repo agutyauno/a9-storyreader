@@ -6,6 +6,7 @@ import ConfirmModal from '../components/modals/ConfirmModal'
 import RecordModal from '../components/modals/RecordModal'
 import { SupabaseAPI } from '../../../../src/services/supabaseApi'
 import { supabase, tryRefreshToken } from '../../../../src/services/supabaseClient'
+import { EditorCache } from '../../../../src/services/editorCache'
 import {
     CLASSES, CLASSES_MAP, SUBCLASSES, SUBCLASSES_MAP, FACTIONS, FACTIONS_MAP,
     getHierarchicalFactions
@@ -18,7 +19,8 @@ import {
     Shield, Swords, Zap, Clock, Package, Home, Volume2, MoveUp, MoveDown,
     ChevronDown, Eye, EyeOff
 } from 'lucide-react'
-import { getAssetUrl } from '../../../../src/utils/assetUtils'
+import { getAssetUrl, getSafeAudioUrl } from '../../../../src/utils/assetUtils'
+import { deleteFileFromGithub, sanitizeFileName } from '../../../../src/services/githubService'
 import '../../operator/operator.css'
 import './operatorEditorPages.css'
 
@@ -536,19 +538,28 @@ export default function OperatorDetailPageEditor() {
 
                 // 2. Batch create dialogues with mapped skin_id
                 if (dialogues.length > 0) {
+                    const failedDialogues = []
                     for (let idx = 0; idx < dialogues.length; idx++) {
                         const d = dialogues[idx]
                         const targetSkinId = d.skin_id ? (skinIdMap.get(d.skin_id) || null) : null
-                        await SupabaseAPI.createOperatorDialogue({
-                            operator_id: confirmedOpId,
-                            title: d.title,
-                            text_content: d.text_content,
-                            skin_id: targetSkinId,
-                            audio_url_jp: d.audio_url_jp || null,
-                            audio_url_en: d.audio_url_en || null,
-                            audio_url_cn: d.audio_url_cn || null,
-                            display_order: Number(d.display_order ?? (idx + 1))
-                        })
+                        try {
+                            await SupabaseAPI.createOperatorDialogue({
+                                operator_id: confirmedOpId,
+                                title: d.title,
+                                text_content: d.text_content,
+                                skin_id: targetSkinId,
+                                audio_url_jp: d.audio_url_jp || null,
+                                audio_url_en: d.audio_url_en || null,
+                                audio_url_cn: d.audio_url_cn || null,
+                                display_order: Number(d.display_order ?? (idx + 1))
+                            })
+                        } catch (dlgErr) {
+                            console.error(`Failed to create dialogue ${d.title}:`, dlgErr)
+                            failedDialogues.push(d.title || `Thoại #${idx + 1}`)
+                        }
+                    }
+                    if (failedDialogues.length > 0) {
+                        showToast(`Cảnh báo: Không thể lưu ${failedDialogues.length} dòng thoại: ${failedDialogues.join(', ')}`, 'warning')
                     }
                 }
 
@@ -566,6 +577,7 @@ export default function OperatorDetailPageEditor() {
                     }
                 }
 
+                EditorCache.invalidateOperators()
                 showToast('Đã tạo cán viên mới và lưu toàn bộ dữ liệu thành công!', 'success')
                 navigate(`/editor/operator/${confirmedOpId}`, {
                     replace: true,
@@ -612,6 +624,7 @@ export default function OperatorDetailPageEditor() {
                     }
                 }
 
+                EditorCache.invalidateOperators()
                 showToast('Đã lưu hồ sơ cán viên thành công!', 'success')
             }
         } catch (err) {
@@ -856,6 +869,63 @@ export default function OperatorDetailPageEditor() {
     }
 
     // ─── DIALOGUES HANDLERS ────────────────────────────────────────────────────
+    const [activePlayingUrl, setActivePlayingUrl] = useState(null)
+    const listAudioRef = useRef(null)
+
+    useEffect(() => {
+        return () => {
+            if (listAudioRef.current) {
+                listAudioRef.current.pause()
+                listAudioRef.current = null
+            }
+        }
+    }, [])
+
+    const handlePlayDialogueVoice = async (url, lang) => {
+        if (!url) return
+
+        if (activePlayingUrl === url && listAudioRef.current) {
+            listAudioRef.current.pause()
+            listAudioRef.current = null
+            setActivePlayingUrl(null)
+            return
+        }
+
+        try {
+            if (listAudioRef.current) {
+                listAudioRef.current.pause()
+                listAudioRef.current = null
+            }
+            const targetUrl = getAssetUrl(url, 'audio')
+            const safeUrl = await getSafeAudioUrl(targetUrl)
+            const audio = new Audio(safeUrl)
+            listAudioRef.current = audio
+            setActivePlayingUrl(url)
+            audio.onended = () => {
+                setActivePlayingUrl(null)
+                listAudioRef.current = null
+            }
+            audio.onerror = () => {
+                setActivePlayingUrl(null)
+                listAudioRef.current = null
+                showToast(`Không thể phát audio (${lang}).`, 'error')
+            }
+            await audio.play()
+        } catch (err) {
+            console.error('Play dialogue voice error:', err)
+            setActivePlayingUrl(null)
+            listAudioRef.current = null
+            showToast(`Lỗi phát audio (${lang}): ` + (err.message || 'Không thể phát'), 'error')
+        }
+    }
+
+    const getVoiceFileName = (lang) => {
+        const cleanOpId = (opId || 'operator').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        const cleanSkin = dialogueForm.skin_id ? sanitizeFileName(dialogueForm.skin_id) : 'default'
+        const titleSlug = sanitizeFileName(dialogueForm.title || 'voice')
+        return `${cleanOpId}_${cleanSkin}_${titleSlug}_${lang}_${Date.now()}`
+    }
+
     const handleMoveDialogue = (index, direction) => {
         const targetIndex = index + direction
         if (targetIndex < 0 || targetIndex >= dialogues.length) return
@@ -989,11 +1059,21 @@ export default function OperatorDetailPageEditor() {
     }
 
     const handleDeleteDialogue = (dialogueId) => {
+        const targetDlg = dialogues.find(d => d.dialogue_id === dialogueId)
         setConfirmData({
             title: 'XÓA DÒNG THOẠI',
             message: 'Bạn có chắc chắn muốn xóa dòng thoại này không?',
             onConfirm: async () => {
                 setConfirmOpen(false)
+
+                // Background cleanup of audio files on GitHub
+                if (targetDlg) {
+                    const audioUrls = [targetDlg.audio_url_jp, targetDlg.audio_url_en, targetDlg.audio_url_cn].filter(Boolean)
+                    for (const aUrl of audioUrls) {
+                        deleteFileFromGithub(aUrl).catch(e => console.warn('GitHub audio cleanup warning:', e))
+                    }
+                }
+
                 if (isNew) {
                     setDialogues(prev => prev.filter(d => d.dialogue_id !== dialogueId))
                     showToast('Đã xoá dòng thoại khỏi bộ nhớ tạm.', 'success')
@@ -2138,16 +2218,37 @@ export default function OperatorDetailPageEditor() {
                                                             {dlg.audio_url_jp && (
                                                                 <button
                                                                     type="button"
-                                                                    className="brutalist-icon-btn"
-                                                                    title="Nghe audio JP"
-                                                                    onClick={() => {
-                                                                        const audioUrl = getAssetUrl(dlg.audio_url_jp)
-                                                                        if (audioUrl) {
-                                                                            new Audio(audioUrl).play().catch(() => showToast('Không thể phát audio từ URL này.', 'error'))
-                                                                        }
-                                                                    }}
+                                                                    className={`brutalist-icon-btn ${activePlayingUrl === dlg.audio_url_jp ? 'active' : ''}`}
+                                                                    title={activePlayingUrl === dlg.audio_url_jp ? 'Dừng audio JP' : 'Nghe audio JP'}
+                                                                    onClick={() => handlePlayDialogueVoice(dlg.audio_url_jp, 'JP')}
+                                                                    style={{ fontSize: '0.65rem', fontWeight: 800, gap: '2px', padding: '0 4px', display: 'flex', alignItems: 'center' }}
                                                                 >
-                                                                    <Volume2 size={12} />
+                                                                    <Volume2 size={11} />
+                                                                    <span>JP</span>
+                                                                </button>
+                                                            )}
+                                                            {dlg.audio_url_en && (
+                                                                <button
+                                                                    type="button"
+                                                                    className={`brutalist-icon-btn ${activePlayingUrl === dlg.audio_url_en ? 'active' : ''}`}
+                                                                    title={activePlayingUrl === dlg.audio_url_en ? 'Dừng audio EN' : 'Nghe audio EN'}
+                                                                    onClick={() => handlePlayDialogueVoice(dlg.audio_url_en, 'EN')}
+                                                                    style={{ fontSize: '0.65rem', fontWeight: 800, gap: '2px', padding: '0 4px', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <Volume2 size={11} />
+                                                                    <span>EN</span>
+                                                                </button>
+                                                            )}
+                                                            {dlg.audio_url_cn && (
+                                                                <button
+                                                                    type="button"
+                                                                    className={`brutalist-icon-btn ${activePlayingUrl === dlg.audio_url_cn ? 'active' : ''}`}
+                                                                    title={activePlayingUrl === dlg.audio_url_cn ? 'Dừng audio CN' : 'Nghe audio CN'}
+                                                                    onClick={() => handlePlayDialogueVoice(dlg.audio_url_cn, 'CN')}
+                                                                    style={{ fontSize: '0.65rem', fontWeight: 800, gap: '2px', padding: '0 4px', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <Volume2 size={11} />
+                                                                    <span>CN</span>
                                                                 </button>
                                                             )}
                                                             <button
@@ -2439,8 +2540,9 @@ export default function OperatorDetailPageEditor() {
                                 folderPath="audio/operators_voices/jp"
                                 value={dialogueForm.audio_url_jp}
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_jp: url })}
+                                customFileName={() => getVoiceFileName('jp')}
                                 placeholder="URL audio JP hoặc tải tệp lên (.mp3, .wav, .ogg)..."
-                                hint="Được tải lên thư mục GitHub: audio/operators_voices/jp"
+                                hint="Được tải lên: audio/operators_voices/jp (Định danh tự động chống ghi đè)"
                                 onNotify={showToast}
                             />
 
@@ -2450,8 +2552,9 @@ export default function OperatorDetailPageEditor() {
                                 folderPath="audio/operators_voices/en"
                                 value={dialogueForm.audio_url_en}
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_en: url })}
+                                customFileName={() => getVoiceFileName('en')}
                                 placeholder="URL audio EN hoặc tải tệp lên (.mp3, .wav, .ogg)..."
-                                hint="Được tải lên thư mục GitHub: audio/operators_voices/en"
+                                hint="Được tải lên: audio/operators_voices/en (Định danh tự động chống ghi đè)"
                                 onNotify={showToast}
                             />
 
@@ -2461,8 +2564,9 @@ export default function OperatorDetailPageEditor() {
                                 folderPath="audio/operators_voices/cn"
                                 value={dialogueForm.audio_url_cn}
                                 onChange={(url) => setDialogueForm({ ...dialogueForm, audio_url_cn: url })}
+                                customFileName={() => getVoiceFileName('cn')}
                                 placeholder="URL audio CN hoặc tải tệp lên (.mp3, .wav, .ogg)..."
-                                hint="Được tải lên thư mục GitHub: audio/operators_voices/cn"
+                                hint="Được tải lên: audio/operators_voices/cn (Định danh tự động chống ghi đè)"
                                 onNotify={showToast}
                             />
                         </div>

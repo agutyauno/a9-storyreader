@@ -170,6 +170,20 @@ export function getGoogleDriveId(url) {
 const audioBlobCache = new Map();
 
 /**
+ * Purges cached audio blob URL(s) from memory.
+ * @param {string} [urlOrPath] - Optional specific URL or path to clear. If omitted, clears entire cache.
+ */
+export function clearAudioBlobCache(urlOrPath = null) {
+  if (!urlOrPath) {
+    audioBlobCache.clear();
+    return;
+  }
+  const trimmed = String(urlOrPath).trim();
+  const cacheKey = extractDataSubpath(trimmed) || trimmed;
+  audioBlobCache.delete(cacheKey);
+}
+
+/**
  * Returns a safe playable URL for audio with three-tier CDN fallback:
  * 1. GitHub CDN (GitHub Pages): Native streaming, correct audio/wav headers
  * 2. jsDelivr:                  Fast edge CDN for files <= 20MB
