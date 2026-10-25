@@ -6,6 +6,35 @@ const STORAGE_PREFIX = 'ced_editor_cache_';
 // In-Memory Cache (RAM Map for instantaneous 0ms access across components)
 const memoryCache = new Map();
 
+// Cross-tab broadcast synchronization for Editor components
+const EDITOR_CHANNEL_NAME = 'ced_editor_cache_channel';
+let editorBroadcastChannel = null;
+
+if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+    try {
+        editorBroadcastChannel = new BroadcastChannel(EDITOR_CHANNEL_NAME);
+        editorBroadcastChannel.onmessage = (event) => {
+            const type = event.data?.type;
+            if (type === 'assets') {
+                memoryCache.delete('assets_bundle');
+                removeSessionItem('assets_bundle');
+            } else if (type === 'storyTree') {
+                memoryCache.delete('story_tree');
+                removeSessionItem('story_tree');
+            } else {
+                memoryCache.clear();
+                removeSessionItem('assets_bundle');
+                removeSessionItem('story_tree');
+            }
+            window.dispatchEvent(new CustomEvent('cedEditorCacheUpdated', {
+                detail: { type: type || 'all', timestamp: Date.now() }
+            }));
+        };
+    } catch (e) {
+        editorBroadcastChannel = null;
+    }
+}
+
 /**
  * Helper to get item from sessionStorage with TTL check
  */
@@ -65,7 +94,11 @@ export const EditorCache = {
     async getAssetsBundle({ force = false } = {}) {
         const cacheKey = 'assets_bundle';
 
-        if (!force) {
+        if (force) {
+            memoryCache.delete(cacheKey);
+            removeSessionItem(cacheKey);
+            SupabaseAPI.invalidateAssetsCache?.();
+        } else {
             // Check memory cache first (0ms)
             if (memoryCache.has(cacheKey)) {
                 return memoryCache.get(cacheKey);
@@ -80,9 +113,9 @@ export const EditorCache = {
 
         // Fetch fresh data in parallel
         const [assetData, charData, galleryData] = await Promise.all([
-            SupabaseAPI.getAssets(),
-            SupabaseAPI.getCharacters(),
-            SupabaseAPI.getAllGallery(),
+            SupabaseAPI.getAssets({ force }),
+            SupabaseAPI.getCharacters({ force }),
+            SupabaseAPI.getAllGallery({ force }),
         ]);
 
         const rawAssets = assetData || [];
@@ -131,7 +164,11 @@ export const EditorCache = {
     async getStoryTree({ force = false } = {}) {
         const cacheKey = 'story_tree';
 
-        if (!force) {
+        if (force) {
+            memoryCache.delete(cacheKey);
+            removeSessionItem(cacheKey);
+            SupabaseAPI.invalidateStoryTreeCache?.();
+        } else {
             if (memoryCache.has(cacheKey)) {
                 return memoryCache.get(cacheKey);
             }
@@ -142,7 +179,7 @@ export const EditorCache = {
             }
         }
 
-        const data = await SupabaseAPI.getFullStoryTree();
+        const data = await SupabaseAPI.getFullStoryTree({ force });
         const tree = data || [];
 
         memoryCache.set(cacheKey, tree);
@@ -161,6 +198,7 @@ export const EditorCache = {
     invalidateAssets() {
         memoryCache.delete('assets_bundle');
         removeSessionItem('assets_bundle');
+        SupabaseAPI.invalidateAssetsCache?.();
         this.notifyUpdated('assets');
     },
 
@@ -170,6 +208,7 @@ export const EditorCache = {
     invalidateStoryTree() {
         memoryCache.delete('story_tree');
         removeSessionItem('story_tree');
+        SupabaseAPI.invalidateStoryTreeCache?.();
         this.notifyUpdated('storyTree');
     },
 
@@ -188,6 +227,7 @@ export const EditorCache = {
         memoryCache.clear();
         removeSessionItem('assets_bundle');
         removeSessionItem('story_tree');
+        SupabaseAPI.clearCache?.();
         this.notifyUpdated('all');
     },
 
@@ -199,6 +239,11 @@ export const EditorCache = {
             window.dispatchEvent(new CustomEvent('cedEditorCacheUpdated', {
                 detail: { type, timestamp: Date.now() }
             }));
+            if (editorBroadcastChannel) {
+                try {
+                    editorBroadcastChannel.postMessage({ type });
+                } catch (e) { }
+            }
         }
     }
 };

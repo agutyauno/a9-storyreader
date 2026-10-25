@@ -268,9 +268,28 @@ export default function RedesignEventPage() {
 
     // 2. Load all available regions for the Sidebar Region Switcher
     useEffect(() => {
-        SupabaseAPI.getRegions().then(regs => {
-            if (regs && regs.length > 0) setAllRegions(regs)
-        }).catch(err => console.error('Failed to load all regions:', err))
+        const fetchRegions = () => {
+            SupabaseAPI.getRegions().then(regs => {
+                if (regs) setAllRegions(regs)
+            }).catch(err => console.error('Failed to load all regions:', err))
+        }
+
+        fetchRegions()
+
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.key === 'regions_all' && Array.isArray(e.detail?.data)) {
+                setAllRegions(e.detail.data)
+            } else if (e.detail?.prefix === 'regions' || e.detail?.prefix === 'tree') {
+                fetchRegions()
+            }
+        }
+
+        window.addEventListener('cedDataUpdated', handleCacheUpdate)
+        window.addEventListener('cedCacheInvalidated', handleCacheUpdate)
+        return () => {
+            window.removeEventListener('cedDataUpdated', handleCacheUpdate)
+            window.removeEventListener('cedCacheInvalidated', handleCacheUpdate)
+        }
     }, [])
 
     // 3. Fetch Region Events & Suggestions for Sidebar

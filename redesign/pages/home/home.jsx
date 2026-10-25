@@ -40,34 +40,66 @@ export default function RedesignHomePage() {
     // Vite base path for redirecting to original app page
     const BASE_URL = import.meta.env.BASE_URL || '/'
 
-    // Load all regions on mount
-    useEffect(() => {
-        document.title = 'Civilight Eterna Database'
-        document.querySelector('link[rel="icon"]').href = '/assets/images/logo/ced_white.png'
-
-        async function loadRegions() {
-            try {
-                setLoadingRegions(true)
-                const data = await SupabaseAPI.getRegions()
-                setRegions(data)
-                if (data && data.length > 0) {
-                    // Ưu tiên: 1. state từ router, 2. query param, 3. region của event vừa rời đi/chọn cuối cùng
+    const loadRegions = useCallback(async () => {
+        try {
+            setLoadingRegions(true)
+            const data = await SupabaseAPI.getRegions()
+            setRegions(data || [])
+            if (data && data.length > 0) {
+                // Ưu tiên: 1. region đang chọn nếu còn tồn tại, 2. state từ router, 3. query param, 4. localStorage, 5. item đầu
+                setSelectedRegion(prev => {
+                    if (prev && data.some(r => r.region_id === prev.region_id)) {
+                        return data.find(r => r.region_id === prev.region_id)
+                    }
                     const targetRegionId = location.state?.regionId ||
                         new URLSearchParams(location.search).get('region') ||
                         localStorage.getItem('lastActiveRegionId') ||
                         localStorage.getItem('selectedRegionId')
                     const targetRegion = targetRegionId ? data.find(r => r.region_id === targetRegionId) : null
-                    setSelectedRegion(targetRegion || data[0])
-                }
-            } catch (err) {
-                console.error('Error loading regions:', err)
-                setError('Đã xảy ra lỗi khi kết nối cơ sở dữ liệu vùng.')
-            } finally {
-                setLoadingRegions(false)
+                    return targetRegion || data[0]
+                })
+            } else {
+                setSelectedRegion(null)
+            }
+        } catch (err) {
+            console.error('Error loading regions:', err)
+            setError('Đã xảy ra lỗi khi kết nối cơ sở dữ liệu vùng.')
+        } finally {
+            setLoadingRegions(false)
+        }
+    }, [location.state?.regionId, location.search])
+
+    // Load all regions on mount
+    useEffect(() => {
+        document.title = 'Civilight Eterna Database'
+        document.querySelector('link[rel="icon"]').href = '/assets/images/logo/ced_white.png'
+        loadRegions()
+    }, [loadRegions])
+
+    // Reactive cache updates from background revalidation or other tabs (e.g., deleted or added regions)
+    useEffect(() => {
+        const handleCacheUpdate = (e) => {
+            if (e.detail?.key === 'regions_all' && Array.isArray(e.detail?.data)) {
+                const freshData = e.detail.data
+                setRegions(freshData)
+                setSelectedRegion(prev => {
+                    if (prev && freshData.some(r => r.region_id === prev.region_id)) {
+                        return freshData.find(r => r.region_id === prev.region_id)
+                    }
+                    return freshData[0] || null
+                })
+            } else if (e.detail?.prefix === 'regions' || e.detail?.prefix === 'tree') {
+                loadRegions()
             }
         }
-        loadRegions()
-    }, [])
+
+        window.addEventListener('cedDataUpdated', handleCacheUpdate)
+        window.addEventListener('cedCacheInvalidated', handleCacheUpdate)
+        return () => {
+            window.removeEventListener('cedDataUpdated', handleCacheUpdate)
+            window.removeEventListener('cedCacheInvalidated', handleCacheUpdate)
+        }
+    }, [loadRegions])
 
     // Lưu region đang chọn vào localStorage
     useEffect(() => {

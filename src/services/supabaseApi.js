@@ -105,13 +105,25 @@ const cleanCombatInfo = (combatInfo) => {
 
 // ─── TTL CONFIGURATION (ms) ───────────────────────────────────────────────────
 export const API_CACHE_TTL = {
-  REGIONS_ARCS: 24 * 60 * 60 * 1000, // 24 hours
-  EVENTS: 12 * 60 * 60 * 1000,       // 12 hours
-  CHARACTERS: 12 * 60 * 60 * 1000,   // 12 hours
-  ASSETS: 12 * 60 * 60 * 1000,       // 12 hours
-  GALLERY: 12 * 60 * 60 * 1000,      // 12 hours
-  STORIES_META: 2 * 60 * 60 * 1000,  // 2 hours
-  STORY_CONTENT: 2 * 60 * 60 * 1000, // 2 hours
+  REGIONS_ARCS: 60 * 60 * 1000,      // 1 hour max hard TTL
+  EVENTS: 60 * 60 * 1000,            // 1 hour max hard TTL
+  CHARACTERS: 60 * 60 * 1000,        // 1 hour max hard TTL
+  ASSETS: 60 * 60 * 1000,            // 1 hour max hard TTL
+  GALLERY: 60 * 60 * 1000,           // 1 hour max hard TTL
+  STORIES_META: 60 * 60 * 1000,      // 1 hour max hard TTL
+  STORY_CONTENT: 60 * 60 * 1000,     // 1 hour max hard TTL
+};
+
+// Stale-While-Revalidate window: after this duration, cached data is still served
+// instantly (0ms) but an asynchronous background check runs to update any additions/deletions/edits
+export const API_CACHE_STALE_TTL = {
+  REGIONS_ARCS: 30 * 1000,           // 30 seconds
+  EVENTS: 30 * 1000,                 // 30 seconds
+  STORIES_META: 30 * 1000,           // 30 seconds
+  CHARACTERS: 60 * 1000,             // 1 minute
+  ASSETS: 60 * 1000,                 // 1 minute
+  GALLERY: 60 * 1000,                // 1 minute
+  STORY_CONTENT: 5 * 60 * 1000,      // 5 minutes
 };
 
 // Summary columns for story listings - excludes large 'story_content' JSON script
@@ -120,27 +132,90 @@ export const STORY_SUMMARY_COLUMNS = 'story_id, event_id, name, description, dis
 const STORAGE_CACHE_PREFIX = 'a9_api_cache_';
 const memoryCache = new Map();
 const inFlightPromises = new Map();
+const revalidatingKeys = new Set();
 
-function getCachedData(key, ttl) {
-  const mem = memoryCache.get(key);
-  if (mem && (Date.now() - mem.time < ttl)) {
-    return mem.data;
-  }
+// Cross-tab broadcast synchronization
+const CACHE_CHANNEL_NAME = 'ced_api_cache_sync';
+let broadcastChannel = null;
+
+if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
   try {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const raw = window.sessionStorage.getItem(STORAGE_CACHE_PREFIX + key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Date.now() - parsed.time < ttl) {
-          memoryCache.set(key, parsed);
-          return parsed.data;
-        } else {
-          window.sessionStorage.removeItem(STORAGE_CACHE_PREFIX + key);
+    broadcastChannel = new BroadcastChannel(CACHE_CHANNEL_NAME);
+    broadcastChannel.onmessage = (event) => {
+      const msg = event.data;
+      if (!msg) return;
+
+      if (msg.type === 'invalidate' && msg.prefix) {
+        const prefix = msg.prefix;
+        for (const k of memoryCache.keys()) {
+          if (k.startsWith(prefix)) memoryCache.delete(k);
+        }
+        inFlightPromises.clear();
+        try {
+          if (window.sessionStorage) {
+            for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+              const k = window.sessionStorage.key(i);
+              if (k && k.startsWith(STORAGE_CACHE_PREFIX + prefix)) {
+                window.sessionStorage.removeItem(k);
+              }
+            }
+          }
+        } catch (e) { }
+
+        // Local event for active components in this tab
+        window.dispatchEvent(new CustomEvent('cedCacheInvalidated', { detail: { prefix } }));
+      } else if (msg.type === 'clearAll') {
+        memoryCache.clear();
+        inFlightPromises.clear();
+        try {
+          if (window.sessionStorage) {
+            for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+              const k = window.sessionStorage.key(i);
+              if (k && k.startsWith(STORAGE_CACHE_PREFIX)) {
+                window.sessionStorage.removeItem(k);
+              }
+            }
+          }
+        } catch (e) { }
+        window.dispatchEvent(new CustomEvent('cedCacheInvalidated', { detail: { prefix: '' } }));
+      } else if (msg.type === 'update' && msg.key && msg.data) {
+        setCachedData(msg.key, msg.data);
+        window.dispatchEvent(new CustomEvent('cedDataUpdated', { detail: { key: msg.key, data: msg.data } }));
+      }
+    };
+  } catch (e) {
+    broadcastChannel = null;
+  }
+}
+
+function getCacheItem(key, ttl) {
+  let mem = memoryCache.get(key);
+  if (!mem) {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const raw = window.sessionStorage.getItem(STORAGE_CACHE_PREFIX + key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Date.now() - (parsed.time || 0) < ttl) {
+            mem = parsed;
+            memoryCache.set(key, parsed);
+          } else {
+            window.sessionStorage.removeItem(STORAGE_CACHE_PREFIX + key);
+          }
         }
       }
-    }
-  } catch (e) { }
+    } catch (e) { }
+  }
+
+  if (mem && (Date.now() - (mem.time || 0) < ttl)) {
+    return mem;
+  }
   return null;
+}
+
+function getCachedData(key, ttl) {
+  const item = getCacheItem(key, ttl);
+  return item ? item.data : null;
 }
 
 function setCachedData(key, data) {
@@ -151,6 +226,58 @@ function setCachedData(key, data) {
       window.sessionStorage.setItem(STORAGE_CACHE_PREFIX + key, JSON.stringify(item));
     }
   } catch (e) { }
+}
+
+function isDataEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const itemA = a[i];
+      const itemB = b[i];
+      if (itemA === itemB) continue;
+      if (!itemA || !itemB) return false;
+      const idA = itemA.id ?? itemA.region_id ?? itemA.arc_id ?? itemA.event_id ?? itemA.story_id ?? itemA.asset_id ?? itemA.character_id ?? itemA.gallery_id;
+      const idB = itemB.id ?? itemB.region_id ?? itemB.arc_id ?? itemB.event_id ?? itemB.story_id ?? itemB.asset_id ?? itemB.character_id ?? itemB.gallery_id;
+      if (idA !== undefined && idB !== undefined && idA !== idB) return false;
+    }
+  }
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch (e) {
+    return false;
+  }
+}
+
+async function revalidateInBackground(key, fetcher, oldData) {
+  if (revalidatingKeys.has(key)) return;
+  revalidatingKeys.add(key);
+
+  try {
+    const freshResult = await fetcher();
+    if (freshResult !== undefined && freshResult !== null) {
+      const changed = !isDataEqual(oldData, freshResult);
+      setCachedData(key, freshResult);
+
+      if (changed) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('cedDataUpdated', {
+            detail: { key, data: freshResult }
+          }));
+        }
+        if (broadcastChannel) {
+          try {
+            broadcastChannel.postMessage({ type: 'update', key, data: freshResult });
+          } catch (e) { }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[SupabaseAPI Cache] Background revalidation failed for ${key}:`, err?.message || err);
+  } finally {
+    revalidatingKeys.delete(key);
+  }
 }
 
 export function invalidateCacheByPrefix(prefix) {
@@ -168,6 +295,16 @@ export function invalidateCacheByPrefix(prefix) {
       }
     }
   } catch (e) { }
+
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type: 'invalidate', prefix });
+    } catch (e) { }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('cedCacheInvalidated', { detail: { prefix } }));
+  }
 }
 
 export function clearAllApiCache() {
@@ -183,14 +320,60 @@ export function clearAllApiCache() {
       }
     }
   } catch (e) { }
+
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type: 'clearAll' });
+    } catch (e) { }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('cedCacheInvalidated', { detail: { prefix: '' } }));
+  }
 }
 
-async function fetchWithCache(key, ttl, fetcher) {
-  const cached = getCachedData(key, ttl);
-  if (cached !== null) return cached;
+export function invalidateStoryTreeCache() {
+  invalidateCacheByPrefix('tree');
+  invalidateCacheByPrefix('regions');
+  invalidateCacheByPrefix('arcs');
+  invalidateCacheByPrefix('events');
+  invalidateCacheByPrefix('stories');
+}
 
-  if (inFlightPromises.has(key)) {
-    return inFlightPromises.get(key);
+export function invalidateAssetsCache() {
+  invalidateCacheByPrefix('assets');
+  invalidateCacheByPrefix('asset_');
+  invalidateCacheByPrefix('characters');
+  invalidateCacheByPrefix('character_');
+  invalidateCacheByPrefix('expressions');
+  invalidateCacheByPrefix('gallery');
+}
+
+async function fetchWithCache(key, ttl, fetcher, force = false, staleMs = 30 * 1000) {
+  if (!force) {
+    const item = getCacheItem(key, ttl);
+    if (item !== null) {
+      const age = Date.now() - (item.time || 0);
+      // Fresh cache: return instantly
+      if (age < staleMs) {
+        return item.data;
+      }
+      // Stale cache: return cached data immediately (0ms) and revalidate in background (SWR)
+      revalidateInBackground(key, fetcher, item.data);
+      return item.data;
+    }
+
+    if (inFlightPromises.has(key)) {
+      return inFlightPromises.get(key);
+    }
+  } else {
+    memoryCache.delete(key);
+    inFlightPromises.delete(key);
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem(STORAGE_CACHE_PREFIX + key);
+      }
+    } catch (e) { }
   }
 
   const promise = (async () => {
@@ -213,13 +396,14 @@ const SupabaseAPI_Raw = {
   // ===========================================================================
   // REGIONS
   // ===========================================================================
-  async getRegions() {
+  async getRegions(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('regions_all', API_CACHE_TTL.REGIONS_ARCS, async () => {
       if (USE_MOCK_DB) return sortByOrder(mockDatabase.regions);
       const { data, error } = await supabase.from('regions').select('*').order('display_order');
       if (error) throw error;
       return data || [];
-    });
+    }, force);
   },
 
   async getRegion(regionId) {
@@ -290,13 +474,14 @@ const SupabaseAPI_Raw = {
     });
   },
 
-  async getArcs() {
+  async getArcs(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('arcs_all', API_CACHE_TTL.REGIONS_ARCS, async () => {
       if (USE_MOCK_DB) return sortByOrder(mockDatabase.arcs);
       const { data, error } = await supabase.from('arcs').select('*').order('display_order');
       if (error) throw error;
       return data || [];
-    });
+    }, force);
   },
 
   async getArc(arcId) {
@@ -373,13 +558,14 @@ const SupabaseAPI_Raw = {
     return enriched;
   },
 
-  async getEvents() {
+  async getEvents(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('events_all', API_CACHE_TTL.EVENTS, async () => {
       if (USE_MOCK_DB) return sortByOrder(mockDatabase.events).map(e => this._enrichEvent(e));
       const { data, error } = await supabase.from('events').select('*').order('display_order');
       if (error) throw error;
       return (data || []).map(e => this._enrichEvent(e));
-    });
+    }, force);
   },
 
   async getEvent(eventId) {
@@ -505,7 +691,7 @@ const SupabaseAPI_Raw = {
   },
 
   async getStories(options = {}) {
-    const { includeDrafts = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
+    const { includeDrafts = false, force = false } = typeof options === 'boolean' ? { includeDrafts: options } : options;
     const cacheKey = `stories_all_drafts_${includeDrafts}`;
     return fetchWithCache(cacheKey, API_CACHE_TTL.STORIES_META, async () => {
       if (USE_MOCK_DB) {
@@ -520,7 +706,7 @@ const SupabaseAPI_Raw = {
       const { data, error } = await query.order('display_order');
       if (error) throw error;
       return (data || []).map(s => ({ ...s, status: s.status || 'published' }));
-    });
+    }, force);
   },
 
   async getStory(storyId) {
@@ -601,13 +787,17 @@ const SupabaseAPI_Raw = {
     if (error) throw error;
   },
 
-  async getFullStoryTree() {
+  async getFullStoryTree(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
+    if (force) {
+      this.invalidateStoryTreeCache();
+    }
     return fetchWithCache('tree_story_full', API_CACHE_TTL.STORIES_META, async () => {
       const [regions, arcs, events, stories] = await Promise.all([
-        this.getRegions(),
-        this.getArcs(),
-        this.getEvents(),
-        this.getStories({ includeDrafts: true }),
+        this.getRegions({ force }),
+        this.getArcs({ force }),
+        this.getEvents({ force }),
+        this.getStories({ includeDrafts: true, force }),
       ]);
 
       const storiesByEvent = {};
@@ -703,13 +893,14 @@ const SupabaseAPI_Raw = {
     }
   },
 
-  async getCharacters() {
+  async getCharacters(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('characters_all', API_CACHE_TTL.CHARACTERS, async () => {
       if (USE_MOCK_DB) return this._enrichCharactersWithExpressions([...mockDatabase.characters]);
       const { data, error } = await supabase.from('characters').select('*');
       if (error) throw error;
       return this._enrichCharactersWithExpressions(data || []);
-    });
+    }, force);
   },
 
   async getCharacter(characterId) {
@@ -1017,7 +1208,8 @@ const SupabaseAPI_Raw = {
     if (error) throw error;
   },
 
-  async getAssets() {
+  async getAssets(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('assets_all', API_CACHE_TTL.ASSETS, async () => {
       if (USE_MOCK_DB) return [...mockDatabase.assets];
       let allAssets = [];
@@ -1038,7 +1230,7 @@ const SupabaseAPI_Raw = {
         page++;
       }
       return allAssets;
-    });
+    }, force);
   },
 
   async getAssetsByCategory(category) {
@@ -1187,7 +1379,8 @@ const SupabaseAPI_Raw = {
     });
   },
 
-  async getAllGallery() {
+  async getAllGallery(options = {}) {
+    const { force = false } = typeof options === 'boolean' ? { force: options } : options;
     return fetchWithCache('gallery_all', API_CACHE_TTL.GALLERY, async () => {
       if (USE_MOCK_DB) {
         return [...(mockDatabase.gallery || [])];
@@ -1195,7 +1388,7 @@ const SupabaseAPI_Raw = {
       const { data, error } = await supabase.from('gallery').select('*');
       if (error) throw error;
       return data || [];
-    });
+    }, force);
   },
 
   async createGallery(payload) {
@@ -2018,6 +2211,14 @@ const SupabaseAPI_Raw = {
         return [];
       }
     });
+  },
+
+  invalidateStoryTreeCache() {
+    invalidateStoryTreeCache();
+  },
+
+  invalidateAssetsCache() {
+    invalidateAssetsCache();
   },
 
   invalidateOperatorsCache() {
