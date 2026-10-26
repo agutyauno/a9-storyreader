@@ -60,13 +60,13 @@ export default function EventBgmManager({ eventId, showNotification, onPickAsset
 
         try {
             stopPreview();
-            let finalSrc = srcToPlay;
+            let finalSrc = String(srcToPlay || '').trim().replace(/\\/g, '/');
 
             // Resolve asset_id if it doesn't have an extension or slash
             if (!finalSrc.includes('.') && !finalSrc.includes('/') && !finalSrc.startsWith('http')) {
                 try {
                     const asset = await SupabaseAPI.getAsset(finalSrc);
-                    if (asset?.url) finalSrc = asset.url;
+                    if (asset?.url) finalSrc = String(asset.url).trim().replace(/\\/g, '/');
                 } catch (e) {
                     console.warn('Failed to resolve BGM asset in preview:', e);
                 }

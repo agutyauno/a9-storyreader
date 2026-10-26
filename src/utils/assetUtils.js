@@ -30,7 +30,7 @@ export const GITHUB_PAGES_CDN = CDN_PROVIDERS.GITHUB_PAGES;
  */
 export function extractDataSubpath(path) {
   if (!path) return '';
-  let p = String(path).trim();
+  let p = String(path).trim().replace(/\\/g, '/');
 
   // Strip known CDN domains
   p = p.replace(/^https?:\/\/agutyauno\.github\.io\/a9sr-data\/?/i, '');
@@ -39,12 +39,11 @@ export function extractDataSubpath(path) {
   p = p.replace(/^https?:\/\/raw\.githubusercontent\.com\/agutyauno\/a9-storyreader\/(main|master)\/?/i, '');
   p = p.replace(/^https?:\/\/cdn\.jsdelivr\.net\/gh\/agutyauno\/a9-storyreader(@main)?\/?/i, '');
 
-  // Strip duplicated / concatenated segments
-  p = p.replace('/audio/bgm/audio/bgm/', '/audio/bgm/');
-  p = p.replace('/audio/sfx/audio/sfx/', '/audio/sfx/');
-  p = p.replace('/assets/audio/bgm/audio/', '/audio/');
-  p = p.replace('/assets/audio/sfx/audio/', '/audio/');
-  p = p.replace('/assets/audio/audio/', '/audio/');
+  // Strip duplicated / concatenated segments (handling Windows or repeated folder concatenations)
+  p = p.replace(/(\/)?(assets\/)?(audio\/(bgm|sfx)\/)+/g, '$1audio/$4/');
+  p = p.replace(/(\/)?assets\/audio\/audio\//g, '$1audio/');
+  p = p.replace(/(audio\/bgm\/)+/g, 'audio/bgm/');
+  p = p.replace(/(audio\/sfx\/)+/g, 'audio/sfx/');
 
   // Clean leading slash
   if (p.startsWith('/')) p = p.slice(1);
@@ -71,7 +70,7 @@ export function extractDataSubpath(path) {
  */
 export function getAssetFallbackUrls(path, type = null) {
   if (!path) return [];
-  const trimmed = String(path).trim();
+  const trimmed = String(path).trim().replace(/\\/g, '/');
   if (!trimmed) return [];
 
   if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
@@ -111,7 +110,7 @@ export function getAssetFallbackUrls(path, type = null) {
  */
 export function getAssetUrl(path, type = null) {
   if (!path) return '';
-  const trimmed = String(path).trim();
+  const trimmed = String(path).trim().replace(/\\/g, '/');
   if (!trimmed) return '';
 
   const fallbacks = getAssetFallbackUrls(trimmed, type);
@@ -178,7 +177,7 @@ export function clearAudioBlobCache(urlOrPath = null) {
     audioBlobCache.clear();
     return;
   }
-  const trimmed = String(urlOrPath).trim();
+  const trimmed = String(urlOrPath).trim().replace(/\\/g, '/');
   const cacheKey = extractDataSubpath(trimmed) || trimmed;
   audioBlobCache.delete(cacheKey);
 }
@@ -194,7 +193,7 @@ export function clearAudioBlobCache(urlOrPath = null) {
  */
 export async function getSafeAudioUrl(urlOrPath) {
   if (!urlOrPath) return '';
-  const trimmed = String(urlOrPath).trim();
+  const trimmed = String(urlOrPath).trim().replace(/\\/g, '/');
   if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return trimmed;
 
   const cacheKey = extractDataSubpath(trimmed) || trimmed;

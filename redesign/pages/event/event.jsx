@@ -411,14 +411,14 @@ export default function RedesignEventPage() {
         }
 
         async function initAudio() {
-            let finalSrc = String(rawBgm).trim()
+            let finalSrc = String(rawBgm).trim().replace(/\\/g, '/')
 
             // Resolve asset_id if it doesn't contain a file extension or slash
             if (!finalSrc.includes('.') && !finalSrc.includes('/') && !finalSrc.startsWith('http')) {
                 try {
                     const asset = await SupabaseAPI.getAsset(finalSrc)
                     if (asset?.url) {
-                        finalSrc = asset.url
+                        finalSrc = String(asset.url).trim().replace(/\\/g, '/')
                     }
                 } catch (err) {
                     console.warn('Failed to resolve BGM asset ID:', err)

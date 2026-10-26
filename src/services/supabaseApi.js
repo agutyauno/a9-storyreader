@@ -68,6 +68,8 @@ const handleAuthError = async (error) => {
 const cleanUrl = (url) => {
   if (!url || typeof url !== 'string') return url;
 
+  let cleaned = url.trim().replace(/\\/g, '/');
+
   const prefixes = [
     'https://raw.githubusercontent.com/agutyauno/a9sr-data/main/',
     'https://raw.githubusercontent.com/agutyauno/a9-storyreader/main/',
@@ -75,7 +77,6 @@ const cleanUrl = (url) => {
     'https://cdn.jsdelivr.net/gh/agutyauno/a9-storyreader@main/'
   ];
 
-  let cleaned = url;
   for (const p of prefixes) {
     if (cleaned.startsWith(p)) {
       cleaned = '/' + cleaned.slice(p.length);
