@@ -15,7 +15,29 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
         editorBroadcastChannel = new BroadcastChannel(EDITOR_CHANNEL_NAME);
         editorBroadcastChannel.onmessage = (event) => {
             const type = event.data?.type;
-            if (type === 'assets') {
+            if (type === 'character_added' && event.data?.character) {
+                const char = event.data.character;
+                const memBundle = memoryCache.get('assets_bundle');
+                if (memBundle && Array.isArray(memBundle.characters)) {
+                    memBundle.characters = [char, ...memBundle.characters.filter(c => c.character_id !== char.character_id)];
+                }
+                const sessionBundle = getSessionItem('assets_bundle');
+                if (sessionBundle && Array.isArray(sessionBundle.characters)) {
+                    sessionBundle.characters = [char, ...sessionBundle.characters.filter(c => c.character_id !== char.character_id)];
+                    setSessionItem('assets_bundle', sessionBundle);
+                }
+            } else if (type === 'asset_added' && event.data?.asset) {
+                const asset = event.data.asset;
+                const memBundle = memoryCache.get('assets_bundle');
+                if (memBundle && Array.isArray(memBundle.assets)) {
+                    memBundle.assets = [asset, ...memBundle.assets.filter(a => a.asset_id !== asset.asset_id)];
+                }
+                const sessionBundle = getSessionItem('assets_bundle');
+                if (sessionBundle && Array.isArray(sessionBundle.assets)) {
+                    sessionBundle.assets = [asset, ...sessionBundle.assets.filter(a => a.asset_id !== asset.asset_id)];
+                    setSessionItem('assets_bundle', sessionBundle);
+                }
+            } else if (type === 'assets') {
                 memoryCache.delete('assets_bundle');
                 removeSessionItem('assets_bundle');
             } else if (type === 'storyTree') {
@@ -229,6 +251,42 @@ export const EditorCache = {
         removeSessionItem('story_tree');
         SupabaseAPI.clearCache?.();
         this.notifyUpdated('all');
+    },
+
+    /**
+     * Optimistically append new character to in-memory and session cache
+     */
+    appendCharacter(char) {
+        if (!char) return;
+        const cacheKey = 'assets_bundle';
+        const memBundle = memoryCache.get(cacheKey);
+        if (memBundle && Array.isArray(memBundle.characters)) {
+            memBundle.characters = [char, ...memBundle.characters.filter(c => c.character_id !== char.character_id)];
+        }
+        const sessionBundle = getSessionItem(cacheKey);
+        if (sessionBundle && Array.isArray(sessionBundle.characters)) {
+            sessionBundle.characters = [char, ...sessionBundle.characters.filter(c => c.character_id !== char.character_id)];
+            setSessionItem(cacheKey, sessionBundle);
+        }
+        this.notifyUpdated('character_added', { character: char });
+    },
+
+    /**
+     * Optimistically append new asset to in-memory and session cache
+     */
+    appendAsset(asset) {
+        if (!asset) return;
+        const cacheKey = 'assets_bundle';
+        const memBundle = memoryCache.get(cacheKey);
+        if (memBundle && Array.isArray(memBundle.assets)) {
+            memBundle.assets = [asset, ...memBundle.assets.filter(a => a.asset_id !== asset.asset_id)];
+        }
+        const sessionBundle = getSessionItem(cacheKey);
+        if (sessionBundle && Array.isArray(sessionBundle.assets)) {
+            sessionBundle.assets = [asset, ...sessionBundle.assets.filter(a => a.asset_id !== asset.asset_id)];
+            setSessionItem(cacheKey, sessionBundle);
+        }
+        this.notifyUpdated('asset_added', { asset });
     },
 
     /**

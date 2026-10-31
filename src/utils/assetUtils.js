@@ -66,7 +66,7 @@ export function extractDataSubpath(path) {
  */
 export function findCachedAsset(assetId) {
   if (!assetId) return null;
-  const cleanId = String(assetId).trim();
+  const cleanId = String(assetId).trim().toLowerCase();
   if (!cleanId) return null;
 
   try {
@@ -75,8 +75,12 @@ export function findCachedAsset(assetId) {
       const parsed = JSON.parse(raw);
       const list = parsed?.data?.assets || parsed?.assets;
       if (Array.isArray(list)) {
-        const found = list.find(a => (a.asset_id && a.asset_id.toLowerCase() === cleanId.toLowerCase()) || (a.id && String(a.id).toLowerCase() === cleanId.toLowerCase()));
-        if (found) return found;
+        // Pass 1: Prioritize matching business identifier asset_id
+        const byAssetId = list.find(a => a.asset_id && a.asset_id.toLowerCase() === cleanId);
+        if (byAssetId) return byAssetId;
+        // Pass 2: Fallback to database numeric id
+        const byId = list.find(a => a.id && String(a.id).toLowerCase() === cleanId);
+        if (byId) return byId;
       }
     }
   } catch (e) {
@@ -137,7 +141,8 @@ export function getAssetFallbackUrls(path, type = null) {
       ];
     }
 
-    // For each variant, if in audio/bgm/ also add audio/sfx/, and vice versa
+    // For each variant, if in audio/bgm/ also add audio/sfx/, and vice versa.
+    // If variant doesn't have an audio folder prefix, probe both audio/sfx/ and audio/bgm/.
     const allVariants = [];
     for (const v of baseVariants) {
       allVariants.push(v);
@@ -145,6 +150,9 @@ export function getAssetFallbackUrls(path, type = null) {
         allVariants.push(v.replace('audio/bgm/', 'audio/sfx/'));
       } else if (v.startsWith('audio/sfx/')) {
         allVariants.push(v.replace('audio/sfx/', 'audio/bgm/'));
+      } else {
+        allVariants.push(`audio/sfx/${v}`);
+        allVariants.push(`audio/bgm/${v}`);
       }
     }
 

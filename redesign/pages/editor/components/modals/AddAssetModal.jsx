@@ -64,6 +64,13 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
     const isBulkMode = bulkFiles.length > 1;
 
     const resetForm = () => {
+        // Clean up any remaining blob URLs to prevent memory leaks
+        expressions.forEach(e => {
+            if (e.avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(e.avatarPreview);
+            if (e.fullPreview?.startsWith('blob:')) URL.revokeObjectURL(e.fullPreview);
+        });
+        if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+
         setAssetValue('background');
         setAssetId('');
         setName('');

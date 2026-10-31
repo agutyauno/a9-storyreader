@@ -282,8 +282,10 @@ export const StoryRenderer = {
     const loopAttr = isLoop ? ' data-sfx-loop="true"' : '';
     const parallelAttr = isParallel ? ' data-sfx-parallel="true"' : '';
 
+    const sfxSrcAttr = sfx.src ? (sfx.src.startsWith('http') ? sfx.src : (getAssetUrl(sfx.src, 'audio') || sfx.src)) : '';
+
     return `
-      <div class="${cx(`sfx_player ${isLoop ? 'sfx_loop' : ''} ${isParallel ? 'sfx_parallel' : 'sfx_queue'}`, styles)}" data-sfx-src="${getAssetUrl(sfx.src)}" data-sfx-name="${sfx.name || ''}"${loopAttr}${parallelAttr} title="Âm thanh hiệu ứng: Click để phát lại">
+      <div class="${cx(`sfx_player ${isLoop ? 'sfx_loop' : ''} ${isParallel ? 'sfx_parallel' : 'sfx_queue'}`, styles)}" data-sfx-src="${sfxSrcAttr}" data-sfx-name="${sfx.name || ''}"${loopAttr}${parallelAttr} title="Âm thanh hiệu ứng: Click để phát lại">
         <span class="${cx('sfx-name', styles)}">${sfx.name || 'Sound Effect'}</span>
       </div>
     `;

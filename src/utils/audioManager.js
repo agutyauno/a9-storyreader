@@ -686,6 +686,8 @@ export class SFXManager {
       const audio = new Audio();
       audio.src = this.resolveSrc(sfxSrc);
       audio.volume = this.volume;
+      audio._sfxSrc = sfxSrc;
+      audio._sfxName = element?.dataset?.sfxName || '';
       this.activeAudios.add(audio);
       element.classList.add('playing');
 
@@ -737,6 +739,8 @@ export class SFXManager {
       const audio = new Audio();
       audio.src = this.resolveSrc(sfxSrc);
       audio.volume = this.volume;
+      audio._sfxSrc = sfxSrc;
+      audio._sfxName = element?.dataset?.sfxName || '';
       this.currentQueueAudio = audio;
 
       audio.addEventListener('ended', () => {
@@ -786,11 +790,13 @@ export class SFXManager {
       return;
     }
 
+    const targetClean = String(target).trim();
+
     // Dừng âm thanh cụ thể theo target key/src/name
     this.activeLoops.forEach(({ audio, element }, key) => {
       const src = element?.dataset?.sfxSrc || '';
       const name = element?.dataset?.sfxName || '';
-      if (key === target || src.includes(target) || name === target) {
+      if (key === targetClean || src === targetClean || src.includes(targetClean) || name === targetClean) {
         audio.pause();
         audio.currentTime = 0;
         if (element) element.classList.remove('playing');
@@ -800,14 +806,14 @@ export class SFXManager {
 
     // Dừng âm thanh song song cụ thể
     this.activeAudios.forEach(audio => {
-      if (audio.src?.includes(target)) {
+      if (audio._sfxSrc === targetClean || audio._sfxName === targetClean || audio.src?.includes(targetClean)) {
         audio.pause();
         audio.currentTime = 0;
         this.activeAudios.delete(audio);
       }
     });
 
-    if (this.currentQueueAudio && this.currentQueueAudio.src?.includes(target)) {
+    if (this.currentQueueAudio && (this.currentQueueAudio._sfxSrc === targetClean || this.currentQueueAudio._sfxName === targetClean || this.currentQueueAudio.src?.includes(targetClean))) {
       this.currentQueueAudio.pause();
       this.currentQueueAudio = null;
       this.isQueueProcessing = false;
