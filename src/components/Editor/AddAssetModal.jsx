@@ -49,6 +49,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
     const [error, setError] = useState(null);
+    const [warning, setWarning] = useState(null);
 
     // Update assetValue when initialCategory or isOpen changes
     React.useEffect(() => {
@@ -72,6 +73,23 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         const files = Array.from(e.target.files);
         if (!files.length) return;
         setError(null);
+        setWarning(null);
+
+        const MAX_AUDIO_MB = 25;
+        const WARN_AUDIO_MB = 15;
+
+        if (selectedType.type === 'audio') {
+            const oversized = files.filter(f => f.size > MAX_AUDIO_MB * 1024 * 1024);
+            if (oversized.length > 0) {
+                setError(`Tệp âm thanh "${oversized[0].name}" quá lớn (${(oversized[0].size / (1024 * 1024)).toFixed(1)}MB). Vượt quá giới hạn tối đa ${MAX_AUDIO_MB}MB.`);
+                e.target.value = '';
+                return;
+            }
+            const heavy = files.filter(f => f.size > WARN_AUDIO_MB * 1024 * 1024);
+            if (heavy.length > 0) {
+                setWarning(`File "${heavy[0].name}" có dung lượng khá lớn (${(heavy[0].size / (1024 * 1024)).toFixed(1)}MB). Quá trình tải lên GitHub có thể mất 30-60s hoặc dễ timeout. Nên nén sang .mp3/.ogg.`);
+            }
+        }
 
         if (isCharacter || files.length === 1) {
             // Single file mode
@@ -176,6 +194,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
         setUploadProgress({ current: 0, total: 0 });
         setError(null);
+        setWarning(null);
     };
 
     // ── Submit ────────────────────────────────────────────────────────────────

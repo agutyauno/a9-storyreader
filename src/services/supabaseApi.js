@@ -83,6 +83,12 @@ const cleanUrl = (url) => {
       break;
     }
   }
+
+  // Ensure leading slash if it is a relative assets/audio/images subpath
+  if (cleaned.startsWith('audio/') || cleaned.startsWith('images/') || cleaned.startsWith('video/') || cleaned.startsWith('assets/')) {
+    cleaned = '/' + cleaned;
+  }
+
   return cleaned;
 };
 

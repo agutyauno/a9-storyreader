@@ -1,6 +1,9 @@
 import { supabase, tryRefreshToken } from './supabaseClient';
 import { fileToBase64 } from '../utils/fileUtils';
 
+export const MAX_UPLOAD_SIZE_MB = 25;
+export const WARN_AUDIO_SIZE_MB = 15;
+
 /**
  * Maps asset type and category to the correct GitHub folder path.
  * @param {string} type - 'image', 'audio', 'video'
@@ -67,6 +70,9 @@ export const sanitizeFileName = (fileName) => {
  */
 export const uploadFileToGithub = async (file, folderPath, customFileName = null) => {
     try {
+        if (file && file.size > MAX_UPLOAD_SIZE_MB * 1024 * 1024) {
+            throw new Error(`Dung lượng tệp (${(file.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn tối đa ${MAX_UPLOAD_SIZE_MB}MB.`);
+        }
         const contentBase64 = await fileToBase64(file);
 
         let { data: { session } } = await supabase.auth.getSession();
@@ -82,8 +88,11 @@ export const uploadFileToGithub = async (file, folderPath, customFileName = null
         // Determine final filename: custom (if provided) or sanitized original filename
         let finalFileName = sanitizeFileName(file.name);
         if (customFileName) {
-            const ext = file.name.split('.').pop();
-            finalFileName = sanitizeFileName(`${customFileName}.${ext}`);
+            const ext = file.name.split('.').pop().toLowerCase();
+            const cleanCustom = customFileName.toLowerCase().endsWith(`.${ext}`)
+                ? customFileName.slice(0, -ext.length - 1)
+                : customFileName;
+            finalFileName = sanitizeFileName(`${cleanCustom}.${ext}`);
         }
 
         const { data, error } = await supabase.functions.invoke('github-manager', {
@@ -202,6 +211,11 @@ export const deleteFileFromGithub = async (url) => {
  */
 export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
     try {
+        for (const item of fileItems) {
+            if (item.file && item.file.size > MAX_UPLOAD_SIZE_MB * 1024 * 1024) {
+                throw new Error(`Tệp ${item.file.name} (${(item.file.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn tối đa ${MAX_UPLOAD_SIZE_MB}MB.`);
+            }
+        }
         let { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             session = await tryRefreshToken();
@@ -215,8 +229,11 @@ export const uploadFilesToGithub = async (fileItems, branch = 'main') => {
             // Determine filename
             let fileName = sanitizeFileName(item.file.name);
             if (item.customFileName) {
-                const ext = item.file.name.split('.').pop();
-                fileName = sanitizeFileName(`${item.customFileName}.${ext}`);
+                const ext = item.file.name.split('.').pop().toLowerCase();
+                const cleanCustom = item.customFileName.toLowerCase().endsWith(`.${ext}`)
+                    ? item.customFileName.slice(0, -ext.length - 1)
+                    : item.customFileName;
+                fileName = sanitizeFileName(`${cleanCustom}.${ext}`);
             }
 
             const cleanFolder = (item.folderPath || '').replace(/\/$/, '').replace(/^\//, '');

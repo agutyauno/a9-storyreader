@@ -65,11 +65,22 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (asset.type === 'audio') {
+            if (file.size > 25 * 1024 * 1024) {
+                setError(`Tệp âm thanh "${file.name}" quá lớn (${(file.size / (1024 * 1024)).toFixed(1)}MB). Vượt quá giới hạn 25MB.`);
+                e.target.value = '';
+                return;
+            }
+            if (file.size > 15 * 1024 * 1024) {
+                showNotification?.('File âm thanh khá lớn (> 15MB), quá trình tải lên GitHub có thể mất nhiều thời gian.', 'warning');
+            }
+        }
+
         setUploadingFile(true);
         setError(null);
         try {
             const folderPath = getFolderPath(asset.type || 'image', asset.category || 'thumbnail');
-            const result = await uploadFileToGithub(file, folderPath);
+            const result = await uploadFileToGithub(file, folderPath, asset.asset_id);
             if (!result.success) throw new Error(result.error || 'Tải file lên GitHub thất bại');
 
             await purgeJsDelivrCache(result.url);

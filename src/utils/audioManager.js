@@ -13,6 +13,8 @@ export class BGMManager {
     this.isIntroPlaying = false;
     this.isNewTrack = true;
     this.playToken = 0;
+    this.pendingAutoplay = false;
+    this._unlockHandler = this._handleUserInteraction.bind(this);
     this.onIntroEnded = this.onIntroEnded.bind(this);
     this.setupAudioElements();
     this.loadState();
@@ -92,20 +94,62 @@ export class BGMManager {
     this.isEnabled = !this.isEnabled;
     this.saveState();
     if (this.isEnabled) {
-      if (this.currentTrack && !this.isPlaying) this.play();
+      if (this.currentTrack && !this.isPlaying) {
+        this.play().catch(() => {});
+      }
     } else {
       this.pause();
+      this.removeAutoplayUnlock();
     }
     if (window.sfxManager) window.sfxManager.setEnabled(this.isEnabled);
     this.updateUI();
   }
 
-  loadTrack(track) {
-    if (this.currentTrack && this.currentTrack.id === track.id) return;
+  setupAutoplayUnlock() {
+    if (this.pendingAutoplay) return;
+    this.pendingAutoplay = true;
+    const events = ['click', 'pointerdown', 'keydown', 'touchstart'];
+    events.forEach(evt => {
+      window.addEventListener(evt, this._unlockHandler, { capture: true, once: true });
+    });
+  }
+
+  removeAutoplayUnlock() {
+    this.pendingAutoplay = false;
+    const events = ['click', 'pointerdown', 'keydown', 'touchstart'];
+    events.forEach(evt => {
+      window.removeEventListener(evt, this._unlockHandler, { capture: true });
+    });
+  }
+
+  async _handleUserInteraction() {
+    this.removeAutoplayUnlock();
+    if (this.isEnabled && this.currentTrack && !this.isPlaying) {
+      await this.play();
+      if (this.isPlaying) {
+        this.introAudio.volume = this.volume;
+        this.loopAudio.volume = this.volume;
+      }
+    }
+  }
+
+  async loadTrack(track, token = null) {
+    if (token === null) {
+      token = ++this.playToken;
+    }
+
+    const isSameTrack = this.currentTrack && (
+      (track.id && this.currentTrack.id === track.id) ||
+      (!track.id && this.currentTrack.intro === track.intro && this.currentTrack.loop === track.loop)
+    );
+
+    if (isSameTrack && (this.introAudio.src || this.loopAudio.src)) {
+      return;
+    }
+
     this.stopAudio();
     this.currentTrack = track;
     this.isNewTrack = true;
-    const token = ++this.playToken;
 
     const resolvePath = (src) => {
       if (!src) return '';
@@ -116,29 +160,35 @@ export class BGMManager {
       return getAssetUrl(normalized, 'audio');
     };
 
+    let introPromise = Promise.resolve('');
     if (track.intro) {
       const introRaw = resolvePath(track.intro);
-      getSafeAudioUrl(introRaw).then(safeIntro => {
-        if (this.playToken === token) {
-          this.introAudio.src = safeIntro;
-          this.introAudio.load();
-        }
-      });
+      introPromise = getSafeAudioUrl(introRaw);
     } else {
       this.introAudio.removeAttribute('src');
       this.introAudio.load();
     }
+
     const loopSrc = track.loop || (track.intro ? null : track.id);
+    let loopPromise = Promise.resolve('');
     if (loopSrc) {
       const loopRaw = resolvePath(loopSrc);
-      getSafeAudioUrl(loopRaw).then(safeLoop => {
-        if (this.playToken === token) {
-          this.loopAudio.src = safeLoop;
-          this.loopAudio.load();
-        }
-      });
+      loopPromise = getSafeAudioUrl(loopRaw);
     } else {
       this.loopAudio.removeAttribute('src');
+      this.loopAudio.load();
+    }
+
+    const [safeIntro, safeLoop] = await Promise.all([introPromise, loopPromise]);
+
+    if (this.playToken !== token) return;
+
+    if (safeIntro) {
+      this.introAudio.src = safeIntro;
+      this.introAudio.load();
+    }
+    if (safeLoop) {
+      this.loopAudio.src = safeLoop;
       this.loopAudio.load();
     }
   }
@@ -147,6 +197,7 @@ export class BGMManager {
     if (!this.currentTrack || !this.isEnabled) return;
     this.isPlaying = true;
     this.updateUI();
+
     try {
       if (this.currentTrack.intro && this.introAudio.src && this.introAudio.src !== window.location.href) {
         if (this.isNewTrack) {
@@ -158,7 +209,7 @@ export class BGMManager {
           if (this.isIntroPlaying) {
             await this.introAudio.play();
           } else {
-            await this.loopAudio.play();
+            await this.startLoop();
           }
         }
       } else {
@@ -166,27 +217,34 @@ export class BGMManager {
         this.isIntroPlaying = false;
         await this.startLoop();
       }
+      this.removeAutoplayUnlock();
     } catch (error) {
-      console.error('BGMManager: Playback failed', error);
+      console.warn('BGMManager: Playback failed (waiting for user interaction)', error);
       this.isPlaying = false;
       this.updateUI();
+
+      if (error?.name === 'NotAllowedError') {
+        this.setupAutoplayUnlock();
+      }
     }
   }
 
   onIntroEnded() {
     this.isIntroPlaying = false;
-    if (this.isPlaying) this.startLoop();
+    if (this.isPlaying) this.startLoop().catch(() => {});
   }
 
   async startLoop() {
-    if (!this.currentTrack || !this.currentTrack.loop) return;
+    const hasLoop = this.currentTrack && (this.currentTrack.loop || (!this.currentTrack.intro && this.currentTrack.id) || this.loopAudio.src);
+    if (!hasLoop || !this.loopAudio.src || this.loopAudio.src === window.location.href) return;
     try {
       if (this.isNewTrack) {
         this.loopAudio.currentTime = 0;
       }
       await this.loopAudio.play();
     } catch (error) {
-      console.error('BGMManager: Loop playback failed', error);
+      console.warn('BGMManager: Loop playback failed', error);
+      throw error;
     }
   }
 
@@ -209,8 +267,7 @@ export class BGMManager {
   stop(cancelPending = true) {
     if (cancelPending) this.playToken++;
     this.stopAudio();
-
-    document.removeEventListener('click', this.handleFirstClick);
+    this.removeAutoplayUnlock();
 
     if (this.scrollObserver) {
       this.scrollObserver.disconnect();
@@ -223,7 +280,9 @@ export class BGMManager {
 
   async changeTrack(track, fadeTransition = true) {
     if (!this.isEnabled) {
-      if (track.id || track.intro || track.loop) this.loadTrack(track);
+      if (track.id || track.intro || track.loop) {
+        await this.loadTrack(track);
+      }
       return;
     }
 
@@ -232,20 +291,28 @@ export class BGMManager {
     if (!track.id && !track.intro && !track.loop) {
       if (fadeTransition && this.isPlaying) await this.fadeOut(currentToken);
       if (this.playToken === currentToken) {
-        this.stop();
+        this.stop(false);
         this.currentTrack = null;
       }
       return;
     }
 
-    if (fadeTransition && this.isPlaying) await this.fadeOut(currentToken);
+    if (fadeTransition && this.isPlaying) {
+      await this.fadeOut(currentToken);
+    }
 
     if (this.playToken !== currentToken) return;
 
-    this.loadTrack(track);
-    
-    this.introAudio.volume = this.volume;
-    this.loopAudio.volume = this.volume;
+    await this.loadTrack(track, currentToken);
+    if (this.playToken !== currentToken) return;
+
+    if (fadeTransition) {
+      this.introAudio.volume = 0;
+      this.loopAudio.volume = 0;
+    } else {
+      this.introAudio.volume = this.volume;
+      this.loopAudio.volume = this.volume;
+    }
 
     await this.play();
 
@@ -254,7 +321,9 @@ export class BGMManager {
       return;
     }
 
-    if (fadeTransition) await this.fadeIn(currentToken);
+    if (fadeTransition && this.isPlaying) {
+      await this.fadeIn(currentToken);
+    }
   }
 
   fadeOut(token) {
@@ -321,7 +390,7 @@ export class BGMManager {
       this.scrollObserver.disconnect();
       this.scrollObserver = null;
     }
-    document.removeEventListener('click', this.handleFirstClick);
+    this.removeAutoplayUnlock();
   }
 
   setupScrollTriggers(options = {}) {
@@ -340,7 +409,7 @@ export class BGMManager {
       return;
     }
 
-    document.addEventListener('click', this.handleFirstClick, { once: true });
+    this.setupAutoplayUnlock();
 
     this.intersectingElements = new Set();
 

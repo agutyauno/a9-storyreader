@@ -192,6 +192,17 @@ export default function AssetDetailModal({ isOpen, asset, kind, onClose, onUpdat
             setError('Chưa chọn file để upload');
             return;
         }
+
+        if (asset.type === 'audio') {
+            if (file.size > 25 * 1024 * 1024) {
+                setError(`Tệp âm thanh "${file.name}" quá lớn (${(file.size / (1024 * 1024)).toFixed(1)}MB). Vượt quá giới hạn tối đa 25MB.`);
+                return;
+            }
+            if (file.size > 15 * 1024 * 1024) {
+                showNotification?.('File âm thanh khá lớn (> 15MB), quá trình tải lên GitHub có thể mất nhiều thời gian.', 'warning');
+            }
+        }
+
         setUploading(true);
         try {
             // Choose folder path based on type/category
