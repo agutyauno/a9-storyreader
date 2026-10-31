@@ -1,4 +1,4 @@
-import { getAssetUrl, getSafeAudioUrl } from './assetUtils';
+import { getAssetUrl, getSafeAudioUrl, findCachedAsset } from './assetUtils';
 
 export class BGMManager {
   constructor(options = {}) {
@@ -154,10 +154,20 @@ export class BGMManager {
     const resolvePath = (src) => {
       if (!src) return '';
       const normalized = String(src).trim().replace(/\\/g, '/');
-      if (!normalized.startsWith('http') && !normalized.startsWith('/') && !normalized.startsWith('data:') && !normalized.startsWith('audio/') && !normalized.startsWith('assets/')) {
-        return getAssetUrl(this.basePath + normalized, 'audio');
+
+      // 1. Check cached asset directly (cross-category lookup)
+      const cached = findCachedAsset(normalized);
+      if (cached?.url) {
+        return getAssetUrl(cached.url, 'audio');
       }
-      return getAssetUrl(normalized, 'audio');
+
+      // 2. If it is already a full path or URL
+      if (normalized.startsWith('http') || normalized.startsWith('/') || normalized.startsWith('data:') || normalized.startsWith('audio/') || normalized.startsWith('assets/')) {
+        return getAssetUrl(normalized, 'audio');
+      }
+
+      // 3. Fallback to basePath (/assets/audio/bgm/) with cross-folder fallback
+      return getAssetUrl(this.basePath + normalized, 'audio');
     };
 
     let introPromise = Promise.resolve('');
@@ -494,14 +504,21 @@ export class SFXManager {
 
   resolveSrc(sfxSrc) {
     if (!sfxSrc) return '';
-    let finalSrc = String(sfxSrc).trim().replace(/\\/g, '/');
-    if (!finalSrc.startsWith('http') && !finalSrc.startsWith('/') && !finalSrc.startsWith('data:') && !finalSrc.startsWith('audio/') && !finalSrc.startsWith('assets/')) {
-      finalSrc = this.basePath + finalSrc;
+    const raw = String(sfxSrc).trim().replace(/\\/g, '/');
+
+    // 1. Check cached asset directly (cross-category lookup for BGM, SFX, voices, etc.)
+    const cached = findCachedAsset(raw);
+    if (cached?.url) {
+      return getAssetUrl(cached.url, 'audio');
     }
-    if (!finalSrc.startsWith('data:') && !/\.(mp3|wav|ogg|flac|aac|m4a)$/i.test(finalSrc)) {
-      finalSrc = `${finalSrc}.mp3`;
+
+    // 2. If already a full path or URL
+    if (raw.startsWith('http') || raw.startsWith('/') || raw.startsWith('data:') || raw.startsWith('audio/') || raw.startsWith('assets/')) {
+      return getAssetUrl(raw, 'audio');
     }
-    return getAssetUrl(finalSrc, 'audio');
+
+    // 3. Fallback to basePath (/assets/audio/sfx/) with cross-folder fallback
+    return getAssetUrl(this.basePath + raw, 'audio');
   }
 
   setEnabled(enabled) {

@@ -234,14 +234,15 @@ export const EditorCache = {
     /**
      * Broadcast update event to all active editor components
      */
-    notifyUpdated(type) {
+    notifyUpdated(type, extra = {}) {
+        const payload = { type, timestamp: Date.now(), ...extra };
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('cedEditorCacheUpdated', {
-                detail: { type, timestamp: Date.now() }
+                detail: payload
             }));
             if (editorBroadcastChannel) {
                 try {
-                    editorBroadcastChannel.postMessage({ type });
+                    editorBroadcastChannel.postMessage(payload);
                 } catch (e) { }
             }
         }

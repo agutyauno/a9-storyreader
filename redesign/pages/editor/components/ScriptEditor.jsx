@@ -192,12 +192,34 @@ const ScriptEditor = forwardRef(({ value, onChange, characters = [], assets = []
 
         if (assetMatch || bgRawMatch || sfxRawMatch) {
             const currentWord = context.matchBefore(/[\w]*/);
+            const isAudioContext = textBefore.match(/(?:intro|loop|src|stop)\s*=\s*"[^"]*$/) || sfxRawMatch;
+            const isBgContext = bgRawMatch || textBefore.match(/image\s*=\s*"[^"]*$/);
+
+            let sortedAssets = [...(assets || [])];
+            if (isAudioContext) {
+                sortedAssets.sort((a, b) => {
+                    const aIsAudio = a.type === 'audio' || a.category === 'bgm' || a.category === 'sfx';
+                    const bIsAudio = b.type === 'audio' || b.category === 'bgm' || b.category === 'sfx';
+                    if (aIsAudio && !bIsAudio) return -1;
+                    if (!aIsAudio && bIsAudio) return 1;
+                    return 0;
+                });
+            } else if (isBgContext) {
+                sortedAssets.sort((a, b) => {
+                    const aIsBg = a.category === 'background' || a.category === 'gallery';
+                    const bIsBg = b.category === 'background' || b.category === 'gallery';
+                    if (aIsBg && !bIsBg) return -1;
+                    if (!aIsBg && bIsBg) return 1;
+                    return 0;
+                });
+            }
+
             return {
                 from: currentWord.from,
-                options: (assets || []).map(a => ({
+                options: sortedAssets.map(a => ({
                     label: a.asset_id || a.id || '',
                     type: 'constant',
-                    detail: a.category || a.type
+                    detail: a.category ? `[${a.category.toUpperCase()}] ${a.name || ''}` : (a.type || '')
                 }))
             };
         }

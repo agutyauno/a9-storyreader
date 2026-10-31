@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Loader, Image as ImageIcon, Plus, Trash2, CheckCircle2, Video, Music, UserSquare2 } from 'lucide-react';
-import { uploadFileToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
+import { uploadFileToGithub, uploadFilesToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
 import '../editorComponents.css';
 
@@ -72,7 +72,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         setPreviewUrl('');
         setExternalUrl('');
         setBulkFiles([]);
-        setExpressions([{ name: 'default', avatarUrl: '', fullUrl: '' }]);
+        setExpressions([{ name: 'default', avatarFile: null, avatarPreview: '', avatarUrl: '', fullFile: null, fullPreview: '', fullUrl: '' }]);
         setUploadProgress({ current: 0, total: 0 });
         setError(null);
         setWarning(null);
@@ -154,10 +154,20 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
 
     // Character expressions handlers
     const addExpression = () => {
-        setExpressions([...expressions, { name: '', avatarUrl: '', fullUrl: '' }]);
+        setExpressions([
+            ...expressions, 
+            { name: '', avatarFile: null, avatarPreview: '', avatarUrl: '', fullFile: null, fullPreview: '', fullUrl: '' }
+        ]);
     };
 
     const removeExpression = (index) => {
+        const expr = expressions[index];
+        if (expr?.avatarPreview && expr.avatarPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(expr.avatarPreview);
+        }
+        if (expr?.fullPreview && expr.fullPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(expr.fullPreview);
+        }
         setExpressions(expressions.filter((_, i) => i !== index));
     };
 
@@ -167,26 +177,67 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         setExpressions(newExprs);
     };
 
-    const handleExprFileUpload = async (index, field, selectedFile) => {
+    const handleExprFileSelect = (index, field, selectedFile) => {
         if (!selectedFile) return;
-        const fieldKey = `${index}-${field}`;
-        setUploadingFields(prev => ({ ...prev, [fieldKey]: true }));
-        try {
-            const category = field === 'avatarUrl' ? 'char_avatar' : 'character';
-            const folderPath = getFolderPath('image', category);
-            const result = await uploadFileToGithub(selectedFile, folderPath);
-            if (!result.success) {
-                throw new Error(result.error || 'Tải file lên Server thất bại');
-            }
-            updateExpression(index, field, result.url);
-            await purgeJsDelivrCache(result.url);
-        } catch (err) {
-            console.error('Upload expression image failed:', err);
-            setError(`Tải ảnh biểu cảm thất bại: ${err.message}`);
-        } finally {
-            setUploadingFields(prev => ({ ...prev, [fieldKey]: false }));
+
+        if (selectedFile.size > 25 * 1024 * 1024) {
+            setError(`Tệp ${selectedFile.name} vượt quá dung lượng tối đa 25MB.`);
+            return;
         }
+
+        const previewKey = field === 'avatarUrl' ? 'avatarPreview' : 'fullPreview';
+        const fileKey = field === 'avatarUrl' ? 'avatarFile' : 'fullFile';
+
+        const oldPreview = expressions[index]?.[previewKey];
+        if (oldPreview && oldPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(oldPreview);
+        }
+
+        const newPreview = URL.createObjectURL(selectedFile);
+
+        setExpressions(prev => {
+            const next = [...prev];
+            next[index] = {
+                ...next[index],
+                [fileKey]: selectedFile,
+                [previewKey]: newPreview
+            };
+            return next;
+        });
+        setError(null);
     };
+
+    const handleClearExprImage = (index, field) => {
+        const previewKey = field === 'avatarUrl' ? 'avatarPreview' : 'fullPreview';
+        const fileKey = field === 'avatarUrl' ? 'avatarFile' : 'fullFile';
+        const urlKey = field === 'avatarUrl' ? 'avatarUrl' : 'fullUrl';
+
+        const oldPreview = expressions[index]?.[previewKey];
+        if (oldPreview && oldPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(oldPreview);
+        }
+
+        setExpressions(prev => {
+            const next = [...prev];
+            next[index] = {
+                ...next[index],
+                [fileKey]: null,
+                [previewKey]: '',
+                [urlKey]: ''
+            };
+            return next;
+        });
+    };
+
+    // Clean up object URLs on unmount
+    useEffect(() => {
+        return () => {
+            expressions.forEach(e => {
+                if (e.avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(e.avatarPreview);
+                if (e.fullPreview?.startsWith('blob:')) URL.revokeObjectURL(e.fullPreview);
+            });
+        };
+    }, []);
 
     // Submit logic
     const handleSubmit = async (e) => {
@@ -227,13 +278,66 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                 }
 
                 for (const expr of filteredExprs) {
-                    if (!expr.avatarUrl || !expr.fullUrl) {
+                    const hasAvatar = expr.avatarFile || expr.avatarUrl;
+                    const hasFull = expr.fullFile || expr.fullUrl;
+                    if (!hasAvatar || !hasFull) {
                         setError(`Biểu cảm "${expr.name}" chưa chọn đủ ảnh Avatar và Full Body.`);
                         setIsUploading(false);
                         return;
                     }
                 }
 
+                // 1. Gather all files that need uploading
+                const fileItems = [];
+                filteredExprs.forEach((expr, idx) => {
+                    const cleanCharId = assetId.trim();
+                    const cleanExprName = expr.name.trim();
+
+                    if (expr.avatarFile) {
+                        fileItems.push({
+                            file: expr.avatarFile,
+                            folderPath: getFolderPath('image', 'char_avatar'),
+                            customFileName: `${cleanCharId}_${cleanExprName}_avatar`,
+                            exprIdx: idx,
+                            type: 'avatar'
+                        });
+                    }
+                    if (expr.fullFile) {
+                        fileItems.push({
+                            file: expr.fullFile,
+                            folderPath: getFolderPath('image', 'character'),
+                            customFileName: `${cleanCharId}_${cleanExprName}_full`,
+                            exprIdx: idx,
+                            type: 'full'
+                        });
+                    }
+                });
+
+                // 2. Upload all files in a single Git commit via bulk_save
+                if (fileItems.length > 0) {
+                    setUploadProgress({ current: 0, total: fileItems.length });
+                    const uploadResult = await uploadFilesToGithub(fileItems.map(f => ({
+                        file: f.file,
+                        folderPath: f.folderPath,
+                        customFileName: f.customFileName
+                    })));
+
+                    if (!uploadResult.success) {
+                        throw new Error(uploadResult.error || 'Tải ảnh biểu cảm lên GitHub thất bại.');
+                    }
+
+                    fileItems.forEach((item, i) => {
+                        const uploaded = uploadResult.files[i];
+                        if (item.type === 'avatar') {
+                            filteredExprs[item.exprIdx].avatarUrl = uploaded.url;
+                        } else if (item.type === 'full') {
+                            filteredExprs[item.exprIdx].fullUrl = uploaded.url;
+                        }
+                    });
+                    setUploadProgress({ current: fileItems.length, total: fileItems.length });
+                }
+
+                // 3. Submit enriched expressions to DB
                 await onSubmit({
                     type: selectedType.type,
                     category: selectedType.category,
@@ -246,6 +350,8 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
                         full_url: e.fullUrl
                     })),
                 });
+                onClose();
+                return;
             } else if (isVideo) {
                 await onSubmit({
                     type: selectedType.type,
@@ -541,27 +647,57 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
 
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                                                 {/* Avatar Upload */}
-                                                <div style={{ backgroundColor: '#0D0D0D', padding: '0.5rem', border: '1px dashed rgba(245,237,220,0.15)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                                                    <span style={{ fontSize: '0.68rem', color: 'rgba(245,237,220,0.6)', width: '100%' }}>Avatar Image</span>
-                                                    {expr.avatarUrl ? (
-                                                        <img src={getAssetUrl(expr.avatarUrl)} alt="" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.2)' }} />
+                                                <div style={{ backgroundColor: '#0D0D0D', padding: '0.5rem', border: '1px dashed rgba(245,237,220,0.15)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', borderRadius: '4px' }}>
+                                                    <span style={{ fontSize: '0.68rem', color: 'rgba(245,237,220,0.6)', width: '100%', textAlign: 'center' }}>Avatar Image</span>
+                                                    {(expr.avatarPreview || expr.avatarUrl) ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
+                                                            <img 
+                                                                src={expr.avatarPreview || getAssetUrl(expr.avatarUrl)} 
+                                                                alt="" 
+                                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.2)' }} 
+                                                            />
+                                                            <div style={{ display: 'flex', gap: '0.3rem', width: '100%', justifyContent: 'center' }}>
+                                                                <label style={{ fontSize: '0.65rem', color: 'var(--color-terracotta)', cursor: 'pointer', backgroundColor: '#1A1A1A', padding: '2px 6px', border: '1px solid rgba(245,237,220,0.2)', borderRadius: '2px' }}>
+                                                                    Đổi ảnh
+                                                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileSelect(index, 'avatarUrl', e.target.files?.[0])} disabled={isUploading} />
+                                                                </label>
+                                                                <button type="button" onClick={() => handleClearExprImage(index, 'avatarUrl')} disabled={isUploading} style={{ fontSize: '0.65rem', color: '#FF5252', cursor: 'pointer', backgroundColor: '#1A1A1A', padding: '2px 6px', border: '1px solid rgba(255,82,82,0.3)', borderRadius: '2px' }}>
+                                                                    Gỡ
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     ) : (
-                                                        <label style={{ display: 'block', width: '100%', padding: '0.8rem 0.4rem', textAlign: 'center', cursor: 'pointer', backgroundColor: '#1A1A1A', fontSize: '0.7rem', color: '#F5EDDC' }}>
-                                                            {uploadingFields[`${index}-avatarUrl`] ? 'Đang tải...' : 'Chọn ảnh Avatar'}
-                                                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileUpload(index, 'avatarUrl', e.target.files[0])} />
+                                                        <label style={{ display: 'block', width: '100%', padding: '0.8rem 0.4rem', textAlign: 'center', cursor: 'pointer', backgroundColor: '#1A1A1A', fontSize: '0.7rem', color: '#F5EDDC', borderRadius: '4px' }}>
+                                                            <span>Chọn ảnh Avatar</span>
+                                                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileSelect(index, 'avatarUrl', e.target.files?.[0])} disabled={isUploading} />
                                                         </label>
                                                     )}
                                                 </div>
 
                                                 {/* Full Body Upload */}
-                                                <div style={{ backgroundColor: '#0D0D0D', padding: '0.5rem', border: '1px dashed rgba(245,237,220,0.15)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                                                    <span style={{ fontSize: '0.68rem', color: 'rgba(245,237,220,0.6)', width: '100%' }}>Full Body Image</span>
-                                                    {expr.fullUrl ? (
-                                                        <img src={getAssetUrl(expr.fullUrl)} alt="" style={{ height: '140px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.2)' }} />
+                                                <div style={{ backgroundColor: '#0D0D0D', padding: '0.5rem', border: '1px dashed rgba(245,237,220,0.15)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', borderRadius: '4px' }}>
+                                                    <span style={{ fontSize: '0.68rem', color: 'rgba(245,237,220,0.6)', width: '100%', textAlign: 'center' }}>Full Body Image</span>
+                                                    {(expr.fullPreview || expr.fullUrl) ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
+                                                            <img 
+                                                                src={expr.fullPreview || getAssetUrl(expr.fullUrl)} 
+                                                                alt="" 
+                                                                style={{ height: '140px', maxWidth: '100%', objectFit: 'contain', borderRadius: '4px', border: '1px solid rgba(245,237,220,0.2)' }} 
+                                                            />
+                                                            <div style={{ display: 'flex', gap: '0.3rem', width: '100%', justifyContent: 'center' }}>
+                                                                <label style={{ fontSize: '0.65rem', color: 'var(--color-terracotta)', cursor: 'pointer', backgroundColor: '#1A1A1A', padding: '2px 6px', border: '1px solid rgba(245,237,220,0.2)', borderRadius: '2px' }}>
+                                                                    Đổi ảnh
+                                                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileSelect(index, 'fullUrl', e.target.files?.[0])} disabled={isUploading} />
+                                                                </label>
+                                                                <button type="button" onClick={() => handleClearExprImage(index, 'fullUrl')} disabled={isUploading} style={{ fontSize: '0.65rem', color: '#FF5252', cursor: 'pointer', backgroundColor: '#1A1A1A', padding: '2px 6px', border: '1px solid rgba(255,82,82,0.3)', borderRadius: '2px' }}>
+                                                                    Gỡ
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     ) : (
-                                                        <label style={{ display: 'block', width: '100%', padding: '0.8rem 0.4rem', textAlign: 'center', cursor: 'pointer', backgroundColor: '#1A1A1A', fontSize: '0.7rem', color: '#F5EDDC' }}>
-                                                            {uploadingFields[`${index}-fullUrl`] ? 'Đang tải...' : 'Chọn ảnh Full Body'}
-                                                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileUpload(index, 'fullUrl', e.target.files[0])} />
+                                                        <label style={{ display: 'block', width: '100%', padding: '0.8rem 0.4rem', textAlign: 'center', cursor: 'pointer', backgroundColor: '#1A1A1A', fontSize: '0.7rem', color: '#F5EDDC', borderRadius: '4px' }}>
+                                                            <span>Chọn ảnh Full Body</span>
+                                                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleExprFileSelect(index, 'fullUrl', e.target.files?.[0])} disabled={isUploading} />
                                                         </label>
                                                     )}
                                                 </div>

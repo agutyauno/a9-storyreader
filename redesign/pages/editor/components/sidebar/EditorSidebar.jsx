@@ -149,20 +149,34 @@ export default function EditorSidebar({
     const handleAddAssetSubmit = async (assetData) => {
         try {
             if (assetData.type === 'character') {
-                await SupabaseAPI.createCharacter({
+                const newChar = await SupabaseAPI.createCharacter({
                     character_id: assetData.asset_id,
                     name: assetData.name,
                     description: assetData.description || '',
                     expressions: assetData.expressions || []
                 });
+                EditorCache.appendCharacter(newChar);
             } else if (assetData.category === 'gallery') {
-                await SupabaseAPI.createGallery({
+                const newGal = await SupabaseAPI.createGallery({
                     gallery_id: assetData.asset_id,
                     title: assetData.name,
                     image_url: assetData.url || '',
                 });
+                EditorCache.appendAsset({
+                    asset_id: newGal?.gallery_id || assetData.asset_id,
+                    name: newGal?.title || assetData.name,
+                    url: newGal?.image_url || assetData.url || '',
+                    type: 'image',
+                    category: 'gallery'
+                });
             } else {
-                await SupabaseAPI.createAsset({
+                const newAsset = await SupabaseAPI.createAsset({
+                    asset_id: assetData.asset_id,
+                    type: assetData.type,
+                    category: assetData.category,
+                    url: assetData.url || '',
+                });
+                EditorCache.appendAsset(newAsset || {
                     asset_id: assetData.asset_id,
                     type: assetData.type,
                     category: assetData.category,
@@ -170,9 +184,7 @@ export default function EditorSidebar({
                 });
             }
 
-            EditorCache.invalidateAssets();
             showNotification?.(`Đã thêm asset "${assetData.name || assetData.asset_id}"`, 'success');
-            assetReloadRef.current?.();
         } catch (err) {
             console.error('Add asset error:', err);
             showNotification?.(`Lỗi thêm asset: ${err.message}`, 'error');

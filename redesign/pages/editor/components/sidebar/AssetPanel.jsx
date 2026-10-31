@@ -292,7 +292,18 @@ const AssetPanel = React.memo(function AssetPanel({ onAddAsset, showNotification
     // Reactive cache updates from other components/modals
     useEffect(() => {
         const handleCacheUpdate = (e) => {
-            if (e.detail?.type === 'assets' || e.detail?.type === 'all') {
+            const detail = e.detail;
+            if (detail?.type === 'character_added' && detail?.character) {
+                const newChar = detail.character;
+                setCharacters(prev => [newChar, ...prev.filter(c => c.character_id !== newChar.character_id)]);
+                return;
+            }
+            if (detail?.type === 'asset_added' && detail?.asset) {
+                const newAsset = detail.asset;
+                setAssets(prev => [newAsset, ...prev.filter(a => a.asset_id !== newAsset.asset_id)]);
+                return;
+            }
+            if (detail?.type === 'assets' || detail?.type === 'all') {
                 loadData(false);
             }
         };

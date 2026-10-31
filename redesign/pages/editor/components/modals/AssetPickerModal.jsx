@@ -67,7 +67,24 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
 
         // Reactive update if assets change while modal is open
         const handleCacheUpdate = (e) => {
-            if (e.detail?.type === 'assets' || e.detail?.type === 'all') {
+            const detail = e.detail;
+            if (detail?.type === 'character_added' && detail?.character && filterType === 'character') {
+                const c = detail.character;
+                setAssets(prev => [{
+                    asset_id: c.character_id,
+                    name: c.name,
+                    url: c.avatar_url,
+                    type: 'character',
+                    category: 'character'
+                }, ...prev.filter(item => item.asset_id !== c.character_id)]);
+                return;
+            }
+            if (detail?.type === 'asset_added' && detail?.asset && filterType !== 'character') {
+                const a = detail.asset;
+                setAssets(prev => [a, ...prev.filter(item => item.asset_id !== a.asset_id)]);
+                return;
+            }
+            if (detail?.type === 'assets' || detail?.type === 'all') {
                 loadAssets(false);
             }
         };
@@ -80,27 +97,40 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, filterType
     const handleAddAssetSubmit = async (newAssetData) => {
         try {
             if (newAssetData.type === 'character') {
-                await SupabaseAPI.createCharacter({
-                    id: newAssetData.asset_id,
+                const newChar = await SupabaseAPI.createCharacter({
+                    character_id: newAssetData.asset_id,
                     name: newAssetData.name,
-                    description: newAssetData.description || ''
+                    description: newAssetData.description || '',
+                    expressions: newAssetData.expressions || []
                 });
+                EditorCache.appendCharacter(newChar);
             } else if (newAssetData.category === 'gallery') {
-                await SupabaseAPI.createGallery({
+                const newGal = await SupabaseAPI.createGallery({
                     gallery_id: newAssetData.asset_id,
                     title: newAssetData.name,
                     image_url: newAssetData.url || ''
                 });
+                EditorCache.appendAsset({
+                    asset_id: newGal?.gallery_id || newAssetData.asset_id,
+                    name: newGal?.title || newAssetData.name,
+                    url: newGal?.image_url || newAssetData.url || '',
+                    type: 'image',
+                    category: 'gallery'
+                });
             } else {
-                await SupabaseAPI.createAsset({
+                const newAsset = await SupabaseAPI.createAsset({
+                    asset_id: newAssetData.asset_id,
+                    type: newAssetData.type,
+                    category: newAssetData.category,
+                    url: newAssetData.url || ''
+                });
+                EditorCache.appendAsset(newAsset || {
                     asset_id: newAssetData.asset_id,
                     type: newAssetData.type,
                     category: newAssetData.category,
                     url: newAssetData.url || ''
                 });
             }
-            EditorCache.invalidateAssets();
-            await loadAssets(false);
             setShowAddModal(false);
         } catch (err) {
             console.error('Create asset failed:', err);

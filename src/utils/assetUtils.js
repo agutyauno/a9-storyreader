@@ -59,10 +59,39 @@ export function extractDataSubpath(path) {
 }
 
 /**
+ * Helper to find an asset by asset_id or id from EditorCache / sessionStorage.
+ * Instant 0ms synchronous lookup across all asset categories (bgm, sfx, image, etc.).
+ * @param {string} assetId 
+ * @returns {Object|null}
+ */
+export function findCachedAsset(assetId) {
+  if (!assetId) return null;
+  const cleanId = String(assetId).trim();
+  if (!cleanId) return null;
+
+  try {
+    const raw = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ced_editor_cache_assets_bundle') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const list = parsed?.data?.assets || parsed?.assets;
+      if (Array.isArray(list)) {
+        const found = list.find(a => (a.asset_id && a.asset_id.toLowerCase() === cleanId.toLowerCase()) || (a.id && String(a.id).toLowerCase() === cleanId.toLowerCase()));
+        if (found) return found;
+      }
+    }
+  } catch (e) {
+    // Ignore storage parse errors
+  }
+  return null;
+}
+
+/**
  * Returns an ordered list of fallback URLs for any asset path:
  * 1. GitHub CDN (GitHub Pages): https://agutyauno.github.io/a9sr-data/...
  * 2. jsDelivr:                  https://cdn.jsdelivr.net/gh/agutyauno/a9sr-data@main/...
  * 3. GitHub Raw:                https://raw.githubusercontent.com/agutyauno/a9sr-data/main/...
+ *
+ * Supports bidirectional audio fallback (audio/bgm <-> audio/sfx) and extension probing.
  *
  * @param {string} path - The path to resolve
  * @param {string} [type] - The type of asset (e.g., 'audio', 'image', 'video')
@@ -94,7 +123,42 @@ export function getAssetFallbackUrls(path, type = null) {
   const subpath = extractDataSubpath(trimmed);
   if (!subpath) return [];
 
-  // Three-tier fallback in order: GitHub Pages -> jsDelivr -> GitHub Raw
+  // For audio assets: generate cross-category fallbacks (audio/bgm <-> audio/sfx) and extension fallbacks
+  if (type === 'audio' || subpath.startsWith('audio/')) {
+    const hasExtension = /\.(mp3|wav|ogg|flac|aac|m4a)$/i.test(subpath);
+
+    // If missing extension, probe candidates with .wav, .mp3, then raw
+    let baseVariants = [subpath];
+    if (!hasExtension) {
+      baseVariants = [
+        `${subpath}.wav`,
+        `${subpath}.mp3`,
+        subpath
+      ];
+    }
+
+    // For each variant, if in audio/bgm/ also add audio/sfx/, and vice versa
+    const allVariants = [];
+    for (const v of baseVariants) {
+      allVariants.push(v);
+      if (v.startsWith('audio/bgm/')) {
+        allVariants.push(v.replace('audio/bgm/', 'audio/sfx/'));
+      } else if (v.startsWith('audio/sfx/')) {
+        allVariants.push(v.replace('audio/sfx/', 'audio/bgm/'));
+      }
+    }
+
+    const uniqueVariants = [...new Set(allVariants)];
+    const urls = [];
+    for (const variant of uniqueVariants) {
+      urls.push(`${CDN_PROVIDERS.GITHUB_PAGES}${variant}`);
+      urls.push(`${CDN_PROVIDERS.JSDELIVR}${variant}`);
+      urls.push(`${CDN_PROVIDERS.GITHUB_RAW}${variant}`);
+    }
+    return urls;
+  }
+
+  // Standard fallback for images, videos, etc.
   return [
     `${CDN_PROVIDERS.GITHUB_PAGES}${subpath}`,
     `${CDN_PROVIDERS.JSDELIVR}${subpath}`,

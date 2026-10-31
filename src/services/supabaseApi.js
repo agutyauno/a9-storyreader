@@ -980,7 +980,22 @@ const SupabaseAPI_Raw = {
       if (exprErr) throw exprErr;
     }
 
-    return char;
+    const exprList = expressions || [];
+    const expressionsMap = {};
+    exprList.forEach(e => {
+      if (e.name) expressionsMap[e.name] = e;
+    });
+    const defKey = Object.keys(expressionsMap).find(k => k.toLowerCase() === 'default');
+    const def = defKey ? expressionsMap[defKey] : (exprList[0] || {});
+
+    return {
+      ...char,
+      avatar_url: def.avatar_url || '',
+      image_url: def.full_url || '',
+      full_url: def.full_url || '',
+      expressions: expressionsMap,
+      expressionList: exprList
+    };
   },
 
   async updateCharacter(characterId, payload) {

@@ -73,9 +73,11 @@ export const StoryScriptParser = {
                 if (el.type === 'background' && el.image) assetIdsNeeded.add(el.image);
                 if (el.type === 'video' && el.src) assetIdsNeeded.add(el.src);
                 if (el.bgm) {
-                    if (el.bgm.id) assetIdsNeeded.add(el.bgm.id);
                     if (el.bgm.intro) assetIdsNeeded.add(el.bgm.intro);
                     if (el.bgm.loop) assetIdsNeeded.add(el.bgm.loop);
+                    if (!el.bgm.intro && !el.bgm.loop && el.bgm.id) {
+                        assetIdsNeeded.add(el.bgm.id);
+                    }
                 }
                 const collectFromDialogues = (dialogues) => {
                     for (const d of (dialogues || [])) {
@@ -84,9 +86,11 @@ export const StoryScriptParser = {
                         if (d.type === 'background') {
                             if (d.image) assetIdsNeeded.add(d.image);
                             if (d.bgm) {
-                                if (d.bgm.id) assetIdsNeeded.add(d.bgm.id);
                                 if (d.bgm.intro) assetIdsNeeded.add(d.bgm.intro);
                                 if (d.bgm.loop) assetIdsNeeded.add(d.bgm.loop);
+                                if (!d.bgm.intro && !d.bgm.loop && d.bgm.id) {
+                                    assetIdsNeeded.add(d.bgm.id);
+                                }
                             }
                             collectFromDialogues(d.dialogues);
                         }
@@ -152,10 +156,12 @@ export const StoryScriptParser = {
                     el.src = resolveAssetUrl(el.src);
                 }
                 if (el.bgm) {
-                    el.bgm._id = el.bgm.id; // Preserve
-                    if (el.bgm.id) el.bgm.id = resolveAssetUrl(el.bgm.id);
+                    el.bgm._id = el.bgm.id; // Preserve original scene identifier
                     if (el.bgm.intro) el.bgm.intro = resolveAssetUrl(el.bgm.intro);
                     if (el.bgm.loop) el.bgm.loop = resolveAssetUrl(el.bgm.loop);
+                    if (!el.bgm.intro && !el.bgm.loop && el.bgm.id) {
+                        el.bgm.id = resolveAssetUrl(el.bgm.id);
+                    }
                 }
                 const resolveInDialogues = (dialogues) => {
                     for (const d of (dialogues || [])) {
@@ -174,9 +180,11 @@ export const StoryScriptParser = {
                             }
                             if (d.bgm) {
                                 d.bgm._id = d.bgm.id;
-                                if (d.bgm.id) d.bgm.id = resolveAssetUrl(d.bgm.id);
                                 if (d.bgm.intro) d.bgm.intro = resolveAssetUrl(d.bgm.intro);
                                 if (d.bgm.loop) d.bgm.loop = resolveAssetUrl(d.bgm.loop);
+                                if (!d.bgm.intro && !d.bgm.loop && d.bgm.id) {
+                                    d.bgm.id = resolveAssetUrl(d.bgm.id);
+                                }
                             }
                             resolveInDialogues(d.dialogues);
                         }
