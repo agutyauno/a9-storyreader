@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, Loader, Image as ImageIcon, Plus, Trash2, CheckCircle2, Video, Music, UserSquare2 } from 'lucide-react';
 import { uploadFileToGithub, uploadFilesToGithub, getFolderPath, purgeJsDelivrCache } from '../../../../../src/services/githubService';
 import { getAssetUrl } from '../../../../../src/utils/assetUtils';
@@ -46,6 +46,16 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
     const [error, setError] = useState(null);
     const [warning, setWarning] = useState(null);
 
+    const expressionsRef = useRef(expressions);
+    useEffect(() => {
+        expressionsRef.current = expressions;
+    }, [expressions]);
+
+    const previewUrlRef = useRef(previewUrl);
+    useEffect(() => {
+        previewUrlRef.current = previewUrl;
+    }, [previewUrl]);
+
     useEffect(() => {
         if (isOpen) {
             resetForm();
@@ -56,7 +66,16 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         }
     }, [isOpen, initialCategory]);
 
-    if (!isOpen) return null;
+    // Clean up object URLs on unmount
+    useEffect(() => {
+        return () => {
+            expressionsRef.current?.forEach(e => {
+                if (e.avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(e.avatarPreview);
+                if (e.fullPreview?.startsWith('blob:')) URL.revokeObjectURL(e.fullPreview);
+            });
+            if (previewUrlRef.current?.startsWith('blob:')) URL.revokeObjectURL(previewUrlRef.current);
+        };
+    }, []);
 
     const selectedType = ASSET_TYPES.find(t => t.value === assetValue) || ASSET_TYPES[0];
     const isCharacter = assetValue === 'character';
@@ -236,15 +255,7 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
         });
     };
 
-    // Clean up object URLs on unmount
-    useEffect(() => {
-        return () => {
-            expressions.forEach(e => {
-                if (e.avatarPreview?.startsWith('blob:')) URL.revokeObjectURL(e.avatarPreview);
-                if (e.fullPreview?.startsWith('blob:')) URL.revokeObjectURL(e.fullPreview);
-            });
-        };
-    }, []);
+
 
     // Submit logic
     const handleSubmit = async (e) => {
@@ -450,6 +461,8 @@ export default function AddAssetModal({ isOpen, onClose, onSubmit, initialCatego
             onClose();
         }
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="redesign-modal-overlay" onClick={onClose}>
