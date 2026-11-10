@@ -436,7 +436,7 @@ export const SUBCLASSES = [
   },
   {
     id: 'bard',
-    name: 'Phiêu Ca',
+    name: 'Ca Hát',
     classId: 'supporter',
     description: 'Không tấn công nhưng liên tục hồi phục HP cho tất cả đồng minh trong tầm (lượng HP hồi mỗi giây bằng 10% sức tấn công bản thân). Bản thân không nhận hiệu ứng Cảm Hứng.',
     icon: '/assets/images/icon/class/Bard_Supporter.png'
@@ -503,7 +503,7 @@ export const SUBCLASSES = [
     id: 'dollkeeper',
     name: 'Thế Thân',
     classId: 'specialist',
-    description: 'Không rút lui khi nhận sát thương chí tử, thay vào đó chuyển sang một Thế Thân (Thế Thân chặn 0). Chuyển lại về bản thể sau 20 giây.',
+    description: 'Khi bị hạ gục, chuyển thành <Thế Thân> thay vì rút lui. Chuyển lại về bản gốc sau 20 giây (Thế Thân có 0 Chặn)',
     icon: '/assets/images/icon/class/Dollkeeper_Specialist.png'
   },
   {

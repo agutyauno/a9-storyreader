@@ -1952,7 +1952,7 @@
 .module-lore-text {
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    color: rgba(24, 24, 24, 0.6);
+    color: rgba(24, 24, 24);
     line-height: 1.6;
     border-left: 2px solid var(--color-terracotta);
     padding-left: 0.75rem;
