@@ -279,11 +279,6 @@ export class BGMManager {
     this.stopAudio();
     this.removeAutoplayUnlock();
 
-    if (this.scrollObserver) {
-      this.scrollObserver.disconnect();
-      this.scrollObserver = null;
-    }
-
     this.currentTrack = null;
     this.updateUI();
   }
@@ -302,7 +297,7 @@ export class BGMManager {
       if (fadeTransition && this.isPlaying) await this.fadeOut(currentToken);
       if (this.playToken === currentToken) {
         this.stop(false);
-        this.currentTrack = null;
+        this.currentTrack = { id: '', intro: null, loop: null };
       }
       return;
     }
@@ -444,7 +439,9 @@ export class BGMManager {
           const trackId = activeElement.dataset.bgmId || '';
           const intro = activeElement.dataset.bgmIntro || null;
           const loop = activeElement.dataset.bgmLoop || null;
-          if (!this.currentTrack || this.currentTrack.id !== trackId || !this.isPlaying) {
+          const isSameTrack = this.currentTrack && this.currentTrack.id === trackId;
+          const hasTrackToPlay = Boolean(trackId || intro || loop);
+          if (!isSameTrack || (!this.isPlaying && hasTrackToPlay)) {
             this.changeTrack({ id: trackId, intro, loop }, true);
           }
         }

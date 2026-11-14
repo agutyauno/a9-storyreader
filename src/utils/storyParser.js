@@ -280,6 +280,25 @@ export const StoryScriptParser = {
             }
         };
 
+        const ensureBackground = () => {
+            if (!currentSection) {
+                currentSection = { type: 'dialogue_section', elements: [] };
+                result.sections.push(currentSection);
+            }
+            if (stack.length > 0 && stack[stack.length - 1].type === 'response') {
+                const top = stack[stack.length - 1];
+                if (!top.currentBackground) {
+                    top.currentBackground = { type: 'background', image: '', dialogues: [] };
+                    top.elements.push(top.currentBackground);
+                }
+                return top.currentBackground;
+            }
+            if (!currentBackground) {
+                currentBackground = { type: 'background', image: '', dialogues: [] };
+            }
+            return currentBackground;
+        };
+
         // Second pass: parse content
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
@@ -379,9 +398,7 @@ export const StoryScriptParser = {
             // @bgm
             const bgmMatch = trimmed.match(/^@bgm\s+(.*)/);
             if (bgmMatch) {
-                const activeBg = (stack.length > 0 && stack[stack.length - 1].type === 'response' && stack[stack.length - 1].currentBackground) 
-                    ? stack[stack.length - 1].currentBackground 
-                    : currentBackground;
+                const activeBg = ensureBackground();
                 
                 if (activeBg) {
                     const params = ScriptUtils.parseParams(bgmMatch[1]);
@@ -395,7 +412,8 @@ export const StoryScriptParser = {
             }
 
             // @sfx
-            if (trimmed.startsWith('@sfx') && currentBackground) {
+            if (trimmed.startsWith('@sfx')) {
+                ensureBackground();
                 // Case 1: @sfx "Name" ...
                 const sfxWithNameMatch = trimmed.match(/^@sfx\s+"([^"]*)"\s*(.*)/);
                 if (sfxWithNameMatch) {
@@ -430,7 +448,8 @@ export const StoryScriptParser = {
 
             // @narrator: text OR @narrator {
             const narratorMatch = trimmed.match(/^@narrator:?\s*(.*)/);
-            if (narratorMatch && currentBackground) {
+            if (narratorMatch) {
+                ensureBackground();
                 const content = narratorMatch[1].trim();
                 const narrator = { type: 'narrator', text: '' };
                 
@@ -446,7 +465,8 @@ export const StoryScriptParser = {
 
             // @decision
             const decisionMatch = trimmed.match(/^@decision\s+"([^"]*)"\s*(?:\[([^\]]*)\])?\s*/);
-            if (decisionMatch && currentBackground) {
+            if (decisionMatch) {
+                ensureBackground();
                 const chars = decisionMatch[2] ? decisionMatch[2].split(',').map(s => s.trim()) : [];
                 const choices = [];
                 while (i + 1 < lines.length) {
@@ -514,7 +534,8 @@ export const StoryScriptParser = {
 
             // Dialogue: Name [left, right]: text
             const dialogueMatch = trimmed.match(/^([^\[\]:]+?)\s*\[([^\]]*)\]\s*:\s*(.+)/);
-            if (dialogueMatch && currentBackground) {
+            if (dialogueMatch) {
+                ensureBackground();
                 const name = dialogueMatch[1].trim();
                 const bracketContent = dialogueMatch[2];
                 const text = dialogueMatch[3];
@@ -537,7 +558,8 @@ export const StoryScriptParser = {
             // Simple dialogue: Name: text
             // Support spaces in names by matching until colon
             const simpleMatch = trimmed.match(/^([^:@]+):\s*(.+)/);
-            if (simpleMatch && currentBackground) {
+            if (simpleMatch) {
+                ensureBackground();
                 const name = simpleMatch[1].trim();
                 const text = simpleMatch[2].trim();
                 pushToParent({

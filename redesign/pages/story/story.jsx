@@ -237,7 +237,7 @@ export default function RedesignStoryPage({ isRecord = false }) {
     fetchStoryData()
 
     return () => {
-      if (window.bgmManager) window.bgmManager.stop()
+      if (window.bgmManager) window.bgmManager.destroy()
       if (window.sfxManager) window.sfxManager.destroy()
     }
   }, [id, location.search])
